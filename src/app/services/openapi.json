@@ -1,0 +1,1107 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "Blockcore Indexer API",
+        "description": "Blockchain index database that can be used for blockchain based software and services.",
+        "contact": {
+            "name": "Blockcore",
+            "url": "https://www.blockcore.net/"
+        },
+        "version": "0.2.69.0"
+    },
+    "paths": {
+        "/api/command/send": {
+            "post": {
+                "tags": [
+                    "Command"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json-patch+json": {
+                            "schema": {
+                                "type": "string"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "type": "string"
+                            }
+                        },
+                        "text/json": {
+                            "schema": {
+                                "type": "string"
+                            }
+                        },
+                        "application/*+json": {
+                            "schema": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/insight/supply": {
+            "get": {
+                "tags": [
+                    "Insight"
+                ],
+                "summary": "Returns all available information on the supply. The results is cached for 10 seconds.",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Supply"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Supply"
+                                }
+                            },
+                            "text/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Supply"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/insight/supply/circulating": {
+            "get": {
+                "tags": [
+                    "Insight"
+                ],
+                "summary": "Calculates the circulating supply that is available when funds, locked and burned wallets has been deducated.",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "number",
+                                    "format": "double"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "format": "double"
+                                }
+                            },
+                            "text/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "format": "double"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/insight/supply/total": {
+            "get": {
+                "tags": [
+                    "Insight"
+                ],
+                "summary": "Returns the total supply available, including funds, locked and burnt wallets.",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "number",
+                                    "format": "double"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "format": "double"
+                                }
+                            },
+                            "text/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "format": "double"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/insight/rewards": {
+            "get": {
+                "tags": [
+                    "Insight"
+                ],
+                "summary": "Returns an estimate of rewards that block producers have received.",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "number",
+                                    "format": "double"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "format": "double"
+                                }
+                            },
+                            "text/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "format": "double"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/insight/wallets": {
+            "get": {
+                "tags": [
+                    "Insight"
+                ],
+                "summary": "Retrieve details about known wallets. Results is cached for 10 seconds.",
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/insight/richlist": {
+            "get": {
+                "tags": [
+                    "Insight"
+                ],
+                "summary": "Returns richlist entries based on the offset and limit. The entries are sorted from from lowest to highest balance.",
+                "parameters": [
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "schema": {
+                            "maximum": 2147483647,
+                            "minimum": 0,
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "maximum": 100,
+                            "minimum": 1,
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/Angor/projects": {
+            "get": {
+                "tags": [
+                    "ProjectQuery"
+                ],
+                "parameters": [
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "schema": {
+                            "minimum": 0,
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "maximum": 50,
+                            "minimum": 1,
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/Angor/projects/{projectId}": {
+            "get": {
+                "tags": [
+                    "ProjectQuery"
+                ],
+                "parameters": [
+                    {
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "maxLength": 100,
+                            "minLength": 2,
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/Angor/projects/{projectId}/stats": {
+            "get": {
+                "tags": [
+                    "ProjectQuery"
+                ],
+                "parameters": [
+                    {
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "maxLength": 100,
+                            "minLength": 2,
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/Angor/projects/{projectId}/investments": {
+            "get": {
+                "tags": [
+                    "ProjectQuery"
+                ],
+                "parameters": [
+                    {
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "maxLength": 100,
+                            "minLength": 2,
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "schema": {
+                            "minimum": 0,
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "maximum": 50,
+                            "minimum": 1,
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/Angor/projects/{projectId}/investments/{investorPublicKey}": {
+            "get": {
+                "tags": [
+                    "ProjectQuery"
+                ],
+                "parameters": [
+                    {
+                        "name": "investorPublicKey",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "maxLength": 100,
+                            "minLength": 2,
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/address/{address}": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Get the balance on address.",
+                "parameters": [
+                    {
+                        "name": "address",
+                        "in": "path",
+                        "description": "",
+                        "required": true,
+                        "schema": {
+                            "maxLength": 100,
+                            "minLength": 4,
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/addresses/balance": {
+            "post": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Only returns addresses with outputs or spent outputs (also when balance is 0)",
+                "parameters": [
+                    {
+                        "name": "includeUnconfirmed",
+                        "in": "query",
+                        "description": "",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "",
+                    "content": {
+                        "application/json-patch+json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "text/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "application/*+json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/address/{address}/transactions": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Get transactions that exists on the address.",
+                "parameters": [
+                    {
+                        "name": "address",
+                        "in": "path",
+                        "description": "",
+                        "required": true,
+                        "schema": {
+                            "maxLength": 100,
+                            "minLength": 4,
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "Set to null to get latest entries and not the first entries.",
+                        "schema": {
+                            "maximum": 2147483647,
+                            "minimum": 0,
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "",
+                        "schema": {
+                            "maximum": 50,
+                            "minimum": 1,
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/address/{address}/transactions/unspent": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Get unspent transactions that exists on the address.",
+                "parameters": [
+                    {
+                        "name": "address",
+                        "in": "path",
+                        "description": "",
+                        "required": true,
+                        "schema": {
+                            "maxLength": 100,
+                            "minLength": 30,
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "confirmations",
+                        "in": "query",
+                        "description": "",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "",
+                        "schema": {
+                            "maximum": 2147483647,
+                            "minimum": 0,
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "",
+                        "schema": {
+                            "maximum": 50,
+                            "minimum": 1,
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/mempool/transactions": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Returns transactions in the memory pool (mempool).",
+                "parameters": [
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "",
+                        "schema": {
+                            "maximum": 2147483647,
+                            "minimum": 0,
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "",
+                        "schema": {
+                            "maximum": 50,
+                            "minimum": 1,
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/mempool/transactions/count": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Get the number of transactions in mempool.",
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/transaction/{transactionId}": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Get a transaction based on the transaction ID (hash).",
+                "parameters": [
+                    {
+                        "name": "transactionId",
+                        "in": "path",
+                        "description": "",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/transaction/{transactionId}/hex": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Get a transaction in hex format based on the transaction ID (hash).",
+                "parameters": [
+                    {
+                        "name": "transactionId",
+                        "in": "path",
+                        "description": "",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/block": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Returns blocks based on the offset and limit. The blocks are sorted from from lowest to highest index. You can use the \"link\" HTTP header to get dynamic paging links.",
+                "parameters": [
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "If value set to null, then query will start from block tip, not from 0 (genesis).",
+                        "schema": {
+                            "maximum": 2147483647,
+                            "minimum": 0,
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Number of blocks to return. Maximum 50.",
+                        "schema": {
+                            "maximum": 50,
+                            "minimum": 1,
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/block/{hash}/transactions": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Return transactions in a block based on block hash.",
+                "parameters": [
+                    {
+                        "name": "hash",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "",
+                        "schema": {
+                            "maximum": 2147483647,
+                            "minimum": 0,
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "",
+                        "schema": {
+                            "maximum": 50,
+                            "minimum": 1,
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/block/{hash}": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Returns a block based on the block id (hash).",
+                "parameters": [
+                    {
+                        "name": "hash",
+                        "in": "path",
+                        "description": "Hash (ID) of the block to return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/block/{hash}/hex": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Returns a block based on the block id (hash).",
+                "parameters": [
+                    {
+                        "name": "hash",
+                        "in": "path",
+                        "description": "Hash (ID) of the block to return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/block/orphan": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Returns orphan blocks based on the offset and limit. Orphan blocks are blocks that are not part of the main chain.",
+                "parameters": [
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "If value set to null, then query will start from block tip, not from 0 (genesis).",
+                        "schema": {
+                            "maximum": 2147483647,
+                            "minimum": 0,
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Number of blocks to return. Maximum 50.",
+                        "schema": {
+                            "maximum": 50,
+                            "minimum": 1,
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/block/orphan/{hash}": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Returns info of an orphan block based on the block id (hash).",
+                "parameters": [
+                    {
+                        "name": "hash",
+                        "in": "path",
+                        "description": "Hash (ID) of the block to return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/block/index/{index}": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Returns a block based on the block height (index).",
+                "parameters": [
+                    {
+                        "name": "index",
+                        "in": "path",
+                        "description": "The block height to get block from.",
+                        "required": true,
+                        "schema": {
+                            "minimum": 0,
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/block/index/{index}/transactions": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Return transactions in a block based on block height (index).",
+                "parameters": [
+                    {
+                        "name": "index",
+                        "in": "path",
+                        "description": "The block height to get block from.",
+                        "required": true,
+                        "schema": {
+                            "minimum": 0,
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "",
+                        "schema": {
+                            "maximum": 2147483647,
+                            "minimum": 0,
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "maximum": 50,
+                            "minimum": 1,
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/query/block/latest": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Returns the latest blocks that is available.",
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/stats/heartbeat": {
+            "get": {
+                "tags": [
+                    "Stats"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/stats/connections": {
+            "get": {
+                "tags": [
+                    "Stats"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/stats": {
+            "get": {
+                "tags": [
+                    "Stats"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/stats/info": {
+            "get": {
+                "tags": [
+                    "Stats"
+                ],
+                "summary": "Returns a lot of information about the network, node and consensus rules.",
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/stats/peers": {
+            "get": {
+                "tags": [
+                    "Stats"
+                ],
+                "summary": "Returns a list of currently connected nodes.",
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/stats/peers/{date}": {
+            "get": {
+                "tags": [
+                    "Stats"
+                ],
+                "summary": "Returns a list of nodes observed after the date supplied in the URL.",
+                "parameters": [
+                    {
+                        "name": "date",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/stats/fee": {
+            "get": {
+                "tags": [
+                    "Stats"
+                ],
+                "summary": "Returns fee rate estimations for each of the confirmations in the array.",
+                "parameters": [
+                    {
+                        "name": "confirmations",
+                        "in": "query",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer",
+                                "format": "int32"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Supply": {
+                "type": "object",
+                "properties": {
+                    "circulating": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "total": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "max": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "rewards": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "height": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                },
+                "additionalProperties": false
+            }
+        }
+    }
+}
