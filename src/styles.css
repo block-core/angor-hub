@@ -83,6 +83,12 @@ nav a:hover {
 .logo {
   height: 32px;
   width: auto;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logo-link:hover .logo {
+  transform: scale(1.05);
+  filter: brightness(1.2);
 }
 
 .logo-link {
