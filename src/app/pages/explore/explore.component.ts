@@ -165,13 +165,12 @@ import { AgoPipe } from '../../pipes/ato.pipe';
     ></app-breadcrumb> -->
 
     <section class="hero">
-
-    <app-breadcrumb
-      [items]="[
-        { label: 'Home', url: '/' },
-        { label: 'Explore', url: '' }
-      ]"
-    ></app-breadcrumb>
+      <app-breadcrumb
+        [items]="[
+          { label: 'Home', url: '/' },
+          { label: 'Explore', url: '' }
+        ]"
+      ></app-breadcrumb>
 
       <div class="hero-wrapper">
         <div class="hero-content">
@@ -192,7 +191,9 @@ import { AgoPipe } from '../../pipes/ato.pipe';
       } @else if (indexer.projects().length === 0) {
       <div class="text-center">
         <p>No projects found.</p>
-        <button class="primary-button" (click)="retryLoadProjects()">Retry</button>
+        <button class="primary-button" (click)="retryLoadProjects()">
+          Retry
+        </button>
       </div>
       } @else {
       <section class="projects">
@@ -241,12 +242,9 @@ import { AgoPipe } from '../../pipes/ato.pipe';
 
             @if ((project.metadata?.['about'] ?? '') !== '') {
             <p class="about">{{ project.metadata?.['about'] ?? '' }}</p>
-            } 
-            @else {
+            } @else {
             <p class="about"></p>
-            }
-            
-            @if (project.details) {
+            } @if (project.details) {
             <div class="project-info">
               <!-- <div class="info-item">
                 <div class="info-label">Target Amount</div>
@@ -255,7 +253,11 @@ import { AgoPipe } from '../../pipes/ato.pipe';
                 </div>
               </div> -->
               <div class="info-item">
-                <div class="info-label">Starts in</div>
+                @if(isProjectNotStarted(project.details.startDate)) {
+                  <div class="info-label">Starts</div>
+                } @else { 
+                  <div class="info-label">Started</div>
+                }
                 <div class="info-value">
                   {{ project.details.startDate | ago }}
                 </div>
@@ -277,7 +279,6 @@ import { AgoPipe } from '../../pipes/ato.pipe';
                   {{ project.stats?.investorCount }}
                 </div>
               </div>
-
             </div>
             <div class="funding-progress">
               <div class="progress-stats">
@@ -286,8 +287,8 @@ import { AgoPipe } from '../../pipes/ato.pipe';
                     project.stats?.amountInvested
                       ? project.stats!.amountInvested / 100000000
                       : '0'
-                  }} / {{ project.details.targetAmount}}
-                  BTC raised</span
+                  }}
+                  / {{ project.details.targetAmount }} BTC raised</span
                 >
                 <span class="funding-percentage"
                   >{{ getFundingPercentage(project) }}%</span
@@ -385,9 +386,6 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       if (project) {
         project.details = update;
       }
-
-
-
 
       // if (project) {
       //   // Update project with latest data
@@ -626,6 +624,11 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     return Math.min(Math.round(percentage * 10) / 10, 999.9); // Cap at 999.9% and round to 1 decimal
   }
 
+  isProjectNotStarted(date: number | undefined): boolean {
+    if (!date) return true;
+    return Date.now() < date * 1000;
+  }
+
   async loadMore() {
     // console.log('LoadMore called:', {
     //   isLoading: this.indexer.loading(),
@@ -649,10 +652,13 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
         await this.indexer.loadMore();
         // Observe new projects after they're loaded
         this.observeProjects();
-        console.log('Load more completed, new project count:', this.indexer.projects().length);
+        console.log(
+          'Load more completed, new project count:',
+          this.indexer.projects().length
+        );
       } finally {
         this.isLoadingMore = false;
-        
+
         // If there's a queued request, process it
         if (this.loadMoreQueued) {
           this.loadMoreQueued = false;
