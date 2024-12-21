@@ -122,8 +122,6 @@ export class RelayService {
 
         sub.on('event', (event: NDKEvent) => {
           try {
-            console.log('CHECK THIS:', event);
-            
             const projectDetails = JSON.parse(event.content);
             this.fetchProfile([projectDetails.nostrPubKey]);
             this.projectUpdates.next(projectDetails);

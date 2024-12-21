@@ -156,6 +156,12 @@ export class IndexerService {
         this.totalProjectsFetched = true;
       }
 
+      // When there is no new page to fetch, we should not make a request.
+      if (limit == 0) {
+        this.loading.set(false);
+        return;
+      }
+
       const params = new URLSearchParams();
       params.append('limit', limit.toString());
 
@@ -163,10 +169,14 @@ export class IndexerService {
         params.append('offset', this.offset.toString());
       }
 
-      const url = `${this.indexerUrl}api/query/Angor/projects?${params.toString()}`;
-      console.log('Fetching:', url);
+      const url = `${
+        this.indexerUrl
+      }api/query/Angor/projects?${params.toString()}`;
+      // console.log('Fetching:', url);
 
-      const { data: response, headers } = await this.fetchJson<IndexedProject[]>(url);
+      const { data: response, headers } = await this.fetchJson<
+        IndexedProject[]
+      >(url);
 
       if (Array.isArray(response) && response.length > 0) {
         if (this.offset === -1000) {
@@ -180,8 +190,10 @@ export class IndexerService {
         // Merge new projects with existing ones, avoiding duplicates
         this.projects.update((existing) => {
           const merged = [...existing];
-          response.forEach(newProject => {
-            const existingIndex = merged.findIndex(p => p.projectIdentifier === newProject.projectIdentifier);
+          response.forEach((newProject) => {
+            const existingIndex = merged.findIndex(
+              (p) => p.projectIdentifier === newProject.projectIdentifier
+            );
             if (existingIndex === -1) {
               merged.push(newProject);
             }
@@ -198,7 +210,9 @@ export class IndexerService {
         this.totalProjectsFetched = true;
       }
     } catch (err) {
-      this.error.set(err instanceof Error ? err.message : 'Failed to fetch projects');
+      this.error.set(
+        err instanceof Error ? err.message : 'Failed to fetch projects'
+      );
     } finally {
       this.loading.set(false);
     }
