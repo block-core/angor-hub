@@ -190,7 +190,10 @@ import { AgoPipe } from '../../pipes/ato.pipe';
         <div class="spinner"></div>
       </div>
       } @else if (indexer.projects().length === 0) {
-      <p class="text-center">No projects found.</p>
+      <div class="text-center">
+        <p>No projects found.</p>
+        <button class="primary-button" (click)="retryLoadProjects()">Retry</button>
+      </div>
       } @else {
       <section class="projects">
         @for (project of indexer.projects(); track project.projectIdentifier;
@@ -658,5 +661,10 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
     }
+  }
+
+  async retryLoadProjects() {
+    await this.indexer.fetchProjects();
+    this.observeProjects();
   }
 }
