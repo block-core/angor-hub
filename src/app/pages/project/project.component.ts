@@ -9,7 +9,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import { RelayService } from '../../services/relay.service';
 import NDK, { NDKKind, NDKUser } from '@nostr-dev-kit/ndk';
-import { AgoPipe } from '../../pipes/ato.pipe';
+import { AgoPipe } from '../../pipes/ago.pipe';
 import { ImagePopupComponent } from '../../components/image-popup.component';
 
 export interface FaqItem {

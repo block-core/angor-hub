@@ -18,7 +18,7 @@ import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import { CommonModule } from '@angular/common';
 import { Location } from '@angular/common';
 import { filter } from 'rxjs/operators';
-import { AgoPipe } from '../../pipes/ato.pipe';
+import { AgoPipe } from '../../pipes/ago.pipe';
 
 @Component({
   selector: 'app-explore',
