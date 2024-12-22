@@ -8,7 +8,7 @@ import {
 import { CommonModule, DatePipe } from '@angular/common';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import { RelayService } from '../../services/relay.service';
-import NDK, { NDKKind, NDKUser } from '@nostr-dev-kit/ndk';
+import NDK, { NDKEvent, NDKKind, NDKUser } from '@nostr-dev-kit/ndk';
 import { AgoPipe } from '../../pipes/ago.pipe';
 import { ImagePopupComponent } from '../../components/image-popup.component';
 
@@ -16,6 +16,12 @@ export interface FaqItem {
   id: string;
   question: string;
   answer: string;
+}
+
+interface ExternalIdentity {
+  platform: string;
+  username: string;
+  proofUrl?: string;
 }
 
 @Component({
@@ -133,6 +139,21 @@ export interface FaqItem {
             njump
           </a>
           }
+          <div class="social-links">
+            @for (identity of externalIdentities(); track identity.platform) {
+            <a
+              [href]="getSocialLink(identity)"
+              target="_blank"
+              class="social-link"
+              [title]="identity.username"
+            >
+              <span class="material-icons">{{
+                getSocialIcon(identity.platform)
+              }}</span>
+              <span>{{ formatUsername(identity.username) }}</span>
+            </a>
+            }
+          </div>
         </div>
         <div class="invest-button-container">
           <button
@@ -908,6 +929,33 @@ export interface FaqItem {
           padding: 1rem;
         }
       }
+
+      .social-links {
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .social-link {
+        color: var(--text-secondary);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+      }
+
+      .social-link:hover {
+        background: var(--surface-hover);
+        color: var(--text-primary);
+      }
+
+      .social-link .material-icons {
+        font-size: 1.2rem;
+      }
     `,
   ],
 })
@@ -1100,6 +1148,11 @@ export class ProjectComponent implements OnInit, OnDestroy {
         const profileSub = this.relay.profileUpdates.subscribe((update) => {
           if (update.pubkey == projectData.details.nostrPubKey) {
             projectData.metadata = update.profile;
+
+            // Parse the external identities from profile metadata.
+            this.externalIdentities.set(
+              this.getExternalIdentities(update.event)
+            );
           }
 
           // if (projectData?.details?.nostrPubKey === update.pubkey) {
@@ -1170,5 +1223,68 @@ export class ProjectComponent implements OnInit, OnDestroy {
     const invested = this.project()?.stats?.amountInvested ?? 0;
     if (invested === 0) return 0;
     return Number(((penalties / invested) * 100).toFixed(1));
+  }
+
+  externalIdentities = signal<ExternalIdentity[]>([]);
+
+  getExternalIdentities(event: NDKEvent): ExternalIdentity[] {
+    console.log('Event:', event);
+    
+    return event.tags
+      .filter((tag) => tag[0] === 'i')
+      .map((tag) => ({
+        platform: tag[1].split(':')[0],
+        username: tag[1].split(':')[1],
+        proofUrl: tag[2],
+      }));
+  }
+
+  getSocialIcon(platform: string): string {
+    const icons: { [key: string]: string } = {
+      github: 'code',
+      twitter: 'flutter_dash', // X icon
+      facebook: 'facebook',
+      telegram: 'telegram',
+      instagram: 'photo_camera',
+      linkedin: 'work',
+      youtube: 'smart_display',
+      mastodon: 'forum',
+      twitch: 'videogame_asset',
+      discord: 'chat',
+      email: 'email',
+    };
+
+    return icons[platform.toLowerCase()] || 'link';
+  }
+
+  getSocialLink(identity: ExternalIdentity): string {
+    const baseUrls: { [key: string]: string } = {
+      github: 'https://github.com/',
+      twitter: 'https://x.com/',
+      facebook: 'https://facebook.com/',
+      telegram: 'https://t.me/',
+      instagram: 'https://instagram.com/',
+      linkedin: 'https://linkedin.com/in/',
+      youtube: 'https://youtube.com/@',
+      mastodon: '', // Will use full username as it contains domain
+      twitch: 'https://twitch.tv/',
+      discord: 'https://discord.com/users/',
+      email: 'mailto:',
+    };
+
+    if (identity.platform === 'mastodon') {
+      return `https://${identity.username}`;
+    }
+
+    const baseUrl = baseUrls[identity.platform.toLowerCase()];
+    return baseUrl ? `${baseUrl}${identity.username}` : '#';
+  }
+
+  formatUsername(username: string): string {
+    // Remove domain parts for mastodon usernames
+    if (username.includes('@')) {
+      return '@' + username.split('@')[1];
+    }
+    return '@' + username;
   }
 }

@@ -6,6 +6,7 @@ import { Subject } from 'rxjs';
 export interface ProfileUpdate {
   pubkey: string;
   profile: NDKUserProfile;
+  event: NDKEvent
 }
 
 export interface ProjectUpdate {
@@ -165,9 +166,11 @@ export class RelayService {
         sub.on('event', (event: NDKEvent) => {
           try {
             const profile = JSON.parse(event.content);
+
             this.profileUpdates.next({
               pubkey: event.pubkey,
               profile,
+              event
             });
           } catch (error) {
             console.error('Failed to parse profile:', error);
