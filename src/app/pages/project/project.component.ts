@@ -8,14 +8,26 @@ import {
 import { CommonModule, DatePipe } from '@angular/common';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import { RelayService } from '../../services/relay.service';
-import NDK, { NDKUser } from '@nostr-dev-kit/ndk';
+import NDK, { NDKKind, NDKUser } from '@nostr-dev-kit/ndk';
 import { AgoPipe } from '../../pipes/ato.pipe';
 import { ImagePopupComponent } from '../../components/image-popup.component';
+
+export interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+}
 
 @Component({
   selector: 'app-project',
   standalone: true,
-  imports: [CommonModule, BreadcrumbComponent, AgoPipe, RouterModule, ImagePopupComponent],
+  imports: [
+    CommonModule,
+    BreadcrumbComponent,
+    AgoPipe,
+    RouterModule,
+    ImagePopupComponent,
+  ],
   template: `
     <!-- <app-breadcrumb
       [items]="[
@@ -69,17 +81,15 @@ import { ImagePopupComponent } from '../../components/image-popup.component';
 
     <!-- Add new mobile invest button here -->
     <div class="mobile-invest-button-container">
-      <button 
-        class="invest-button" 
+      <button
+        class="invest-button"
         [disabled]="isProjectNotStarted()"
         [class.disabled]="isProjectNotStarted()"
         (click)="!isProjectNotStarted() && openInvestWindow()"
       >
-        @if (isProjectNotStarted()) {
-          Starts {{ (project()?.details?.startDate ?? 0) | ago }}
-        } @else {
-          Invest Now
-        }
+        @if (isProjectNotStarted()) { Starts
+        {{ project()?.details?.startDate ?? 0 | ago }}
+        } @else { Invest Now }
       </button>
     </div>
 
@@ -109,47 +119,41 @@ import { ImagePopupComponent } from '../../components/image-popup.component';
             Primal </a
           >,
           <a
-            [href]="
-              'https://notes.blockcore.net/p/' + user?.npub
-            "
+            [href]="'https://notes.blockcore.net/p/' + user?.npub"
             target="_blank"
             class="primal-link"
           >
-            Notes
-          </a>,
+            Notes </a
+          >,
           <a
-            [href]="
-              'https://njump.me/' + user?.npub
-            "
+            [href]="'https://njump.me/' + user?.npub"
             target="_blank"
             class="primal-link"
           >
-          njump
+            njump
           </a>
           }
         </div>
         <div class="invest-button-container">
-          <button 
-            class="invest-button" 
+          <button
+            class="invest-button"
             [disabled]="isProjectNotStarted()"
             [class.disabled]="isProjectNotStarted()"
             (click)="!isProjectNotStarted() && openInvestWindow()"
           >
-            @if (isProjectNotStarted()) {
-              Starts {{ (project()?.details?.startDate ?? 0) | ago }}
-            } @else {
-              Invest Now
-            }
+            @if (isProjectNotStarted()) { Starts
+            {{ project()?.details?.startDate ?? 0 | ago }}
+            } @else { Invest Now }
           </button>
         </div>
       </div>
 
       @if (showImagePopup && project()?.metadata?.['picture']) {
-        <app-image-popup
-          [imageUrl]="project()?.metadata?.['picture']?.toString() || ''"
-          altText="Project logo"
-          (close)="showImagePopup = false"
-        ></app-image-popup>
+      <app-image-popup
+        [imageUrl]="project()?.metadata?.['picture']?.toString() || ''"
+        altText="Project logo"
+        (close)="showImagePopup = false"
+      ></app-image-popup>
       }
 
       <div class="tabs">
@@ -168,11 +172,20 @@ import { ImagePopupComponent } from '../../components/image-popup.component';
           <div class="project-grid">
             <!-- Project Statistics -->
             <section class="stats-grid">
-              <div class="stat-card investment-card" [style.--investment-percentage]="((project()?.stats?.amountInvested ?? 0) / ((project()?.details?.targetAmount ?? 1) * 100000000)) * 100 + '%'">
+              <div
+                class="stat-card investment-card"
+                [style.--investment-percentage]="
+                  ((project()?.stats?.amountInvested ?? 0) /
+                    ((project()?.details?.targetAmount ?? 1) * 100000000)) *
+                    100 +
+                  '%'
+                "
+              >
                 <div class="stat-values">
                   <div>
                     <div class="stat-value">
-                      {{ (project()?.stats?.amountInvested ?? 0) / 100000000 }} BTC
+                      {{ (project()?.stats?.amountInvested ?? 0) / 100000000 }}
+                      BTC
                     </div>
                     <div class="stat-label">Total Invested</div>
                   </div>
@@ -184,7 +197,13 @@ import { ImagePopupComponent } from '../../components/image-popup.component';
                   </div>
                 </div>
                 <div class="stat-percentage">
-                  {{ ((project()?.stats?.amountInvested ?? 0) / ((project()?.details?.targetAmount ?? 1) * 100000000) * 100).toFixed(1) }}%
+                  {{
+                    (
+                      ((project()?.stats?.amountInvested ?? 0) /
+                        ((project()?.details?.targetAmount ?? 1) * 100000000)) *
+                      100
+                    ).toFixed(1)
+                  }}%
                 </div>
               </div>
               <div class="stat-card">
@@ -193,17 +212,32 @@ import { ImagePopupComponent } from '../../components/image-popup.component';
                 </div>
                 <div class="stat-label">Total Investors</div>
               </div>
-              <div class="stat-card spending-card" [style.--spent-percentage]="getSpentPercentage()">
+              <div
+                class="stat-card spending-card"
+                [style.--spent-percentage]="getSpentPercentage()"
+              >
                 <div class="stat-value">
-                  {{ (project()?.stats?.amountSpentSoFarByFounder ?? 0) / 100000000 }} BTC
+                  {{
+                    (project()?.stats?.amountSpentSoFarByFounder ?? 0) /
+                      100000000
+                  }}
+                  BTC
                 </div>
-                <div class="stat-label">Spent ({{ getSpentPercentage() }}%)</div>
+                <div class="stat-label">
+                  Spent ({{ getSpentPercentage() }}%)
+                </div>
               </div>
-              <div class="stat-card penalties-card" [style.--penalties-percentage]="getPenaltiesPercentage()">
+              <div
+                class="stat-card penalties-card"
+                [style.--penalties-percentage]="getPenaltiesPercentage()"
+              >
                 <div class="stat-value">
-                  {{ (project()?.stats?.amountInPenalties ?? 0) / 100000000 }} BTC
+                  {{ (project()?.stats?.amountInPenalties ?? 0) / 100000000 }}
+                  BTC
                 </div>
-                <div class="stat-label">Penalties ({{ getPenaltiesPercentage() }}%)</div>
+                <div class="stat-label">
+                  Penalties ({{ getPenaltiesPercentage() }}%)
+                </div>
               </div>
               <div class="stat-card">
                 <div class="stat-value">
@@ -284,7 +318,23 @@ import { ImagePopupComponent } from '../../components/image-popup.component';
 
         <div *ngSwitchCase="'faq'" class="faq-tab">
           <h2>Frequently Asked Questions</h2>
-          <p>No FAQs available yet.</p>
+
+          <div class="faq-container">
+            <div
+              *ngFor="let faq of faqItems; trackBy: trackById"
+              class="faq-item"
+            >
+              <div class="faq-header"></div>
+              <div class="form-group">
+                <label>Question</label>
+                <span>{{ faq.question }}</span>
+              </div>
+              <div class="form-group">
+                <label>Answer</label>
+                <span>{{ faq.answer }}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div *ngSwitchCase="'updates'" class="updates-tab">
@@ -623,11 +673,11 @@ import { ImagePopupComponent } from '../../components/image-popup.component';
           min-width: 0;
           text-align: center;
         }
-        
+
         .tab-text {
           display: none;
         }
-        
+
         .tab-icon {
           display: inline;
           font-size: 1.2rem;
@@ -663,7 +713,7 @@ import { ImagePopupComponent } from '../../components/image-popup.component';
         .tab-text {
           display: none;
         }
-        
+
         .tab-icon {
           display: inline;
           font-size: 1.2rem;
@@ -799,6 +849,65 @@ import { ImagePopupComponent } from '../../components/image-popup.component';
           margin: 1rem;
         }
       }
+
+      .faq-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        max-width: 800px;
+        margin: 2rem auto;
+      }
+
+      .faq-item {
+        background: var(--surface-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .faq-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .faq-item .form-group {
+        margin-bottom: 1rem;
+      }
+
+      .faq-item .form-group:last-child {
+        margin-bottom: 0;
+      }
+
+      .faq-item label {
+        display: block;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--accent);
+        margin-bottom: 0.5rem;
+      }
+
+      .faq-item span {
+        display: block;
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--text);
+        white-space: pre-wrap;
+      }
+
+      .faq-item .form-group:first-child span {
+        font-weight: 500;
+      }
+
+      @media (max-width: 768px) {
+        .faq-container {
+          margin: 1rem;
+        }
+
+        .faq-item {
+          padding: 1rem;
+        }
+      }
     `,
   ],
 })
@@ -823,14 +932,46 @@ export class ProjectComponent implements OnInit, OnDestroy {
   comments = signal<any[]>([]);
   loading = signal<boolean>(false);
   showImagePopup = false;
+  faqItems: FaqItem[] = [];
 
-  setActiveTab(tabId: string) {
+  async setActiveTab(tabId: string) {
     this.activeTab = tabId;
     if (tabId === 'updates' && this.updates().length === 0) {
       this.fetchUpdates();
     }
     if (tabId === 'comments' && this.comments().length === 0) {
       this.fetchComments();
+    }
+    if (tabId === 'faq') {
+      this.faqItems = await this.fetchFaq();
+    }
+  }
+
+  async fetchFaq() {
+    if (!this.project()?.details?.nostrPubKey) return;
+
+    this.loading.set(true);
+    try {
+      const ndk = await this.relay.ensureConnected();
+      const filter = {
+        kinds: [NDKKind.AppSpecificData],
+        authors: [this.project()!.details!.nostrPubKey],
+        '#d': ['angor:faq'],
+        limit: 50,
+      };
+
+      const event = await ndk.fetchEvent(filter);
+
+      if (event) {
+        return JSON.parse(event.content);
+      }
+      return null;
+
+      // this.updates.set(Array.from(events));
+    } catch (error) {
+      console.error('Error fetching updates:', error);
+    } finally {
+      this.loading.set(false);
     }
   }
 
@@ -983,6 +1124,10 @@ export class ProjectComponent implements OnInit, OnDestroy {
     }
   }
 
+  trackById(index: number, item: FaqItem) {
+    return item.id;
+  }
+
   ngOnDestroy() {
     // Clean up subscriptions
     this.subscriptions.forEach((sub) => sub.unsubscribe());
@@ -1008,7 +1153,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   openInvestWindow() {
-    const url = 'https://test.angor.io/view/' + this.project()?.projectIdentifier;
+    const url =
+      'https://test.angor.io/view/' + this.project()?.projectIdentifier;
     window.open(url, '_blank');
   }
 
