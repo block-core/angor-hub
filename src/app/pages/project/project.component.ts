@@ -7,7 +7,11 @@ import {
 } from '../../services/indexer.service';
 import { CommonModule, DatePipe } from '@angular/common';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
-import { RelayService } from '../../services/relay.service';
+import {
+  ProfileUpdate,
+  ProjectUpdate,
+  RelayService,
+} from '../../services/relay.service';
 import NDK, { NDKEvent, NDKKind, NDKUser } from '@nostr-dev-kit/ndk';
 import { AgoPipe } from '../../pipes/ago.pipe';
 import { ImagePopupComponent } from '../../components/image-popup.component';
@@ -1067,6 +1071,10 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
   user: NDKUser | undefined;
 
+  profileEvent?: NDKEvent;
+
+  projectEvent?: NDKEvent;
+
   async ngOnInit() {
     window.scrollTo(0, 0);
 
@@ -1117,10 +1125,24 @@ export class ProjectComponent implements OnInit, OnDestroy {
         //   this.relay.fetchProfile(projectData.details.nostrPubKey);
         // }
 
-        // 3. Subscribe to project updates from relay
-        const projectSub = this.relay.projectUpdates.subscribe((details) => {
-          // If we get data from relay, make sure the ID is the same then set the details.
+        // 3. Subscribe to project updates from relay with timestamp check
+        const projectSub = this.relay.projectUpdates.subscribe((event) => {
+          if (!event) {
+            return;
+          }
+
+          const details: ProjectUpdate = JSON.parse(event.content);
+
           if (details.projectIdentifier == id) {
+            if (this.projectEvent) {
+              if (this.projectEvent.created_at! > event.created_at!) {
+                {
+                  return;
+                }
+              }
+            }
+
+            this.projectEvent = event;
             projectData.details = details;
 
             // As soon as we have details, make an NDKUser instance
@@ -1128,41 +1150,37 @@ export class ProjectComponent implements OnInit, OnDestroy {
               pubkey: projectData.details.nostrPubKey,
               relayUrls: this.relay.relayUrls,
             });
-            console.log('User:', this.user);
 
             // Go fetch the profile
             this.relay.fetchProfile([details.nostrPubKey]);
           }
-
-          // if (details.projectIdentifier === id) {
-          //   this.project.update((current) => {
-          //     if (current) {
-          //       return { ...current, details };
-          //     }
-          //     return current;
-          //   });
-          // }
         });
 
-        // 4. Subscribe to profile updates from relay
-        const profileSub = this.relay.profileUpdates.subscribe((update) => {
-          if (update.pubkey == projectData.details.nostrPubKey) {
-            projectData.metadata = update.profile;
-
-            // Parse the external identities from profile metadata.
-            this.externalIdentities.set(
-              this.getExternalIdentities(update.event)
-            );
+        // 4. Subscribe to profile updates from relay with timestamp check
+        const profileSub = this.relay.profileUpdates.subscribe((event) => {
+          if (!event) {
+            return;
           }
 
-          // if (projectData?.details?.nostrPubKey === update.pubkey) {
-          //   this.project.update((current) => {
-          //     if (current) {
-          //       return { ...current, metadata: update.profile };
-          //     }
-          //     return current;
-          //   });
-          // }
+          const update: ProfileUpdate = JSON.parse(event.content);
+
+          if (event.pubkey == projectData.details?.nostrPubKey) {
+            if (this.profileEvent) {
+              if (this.profileEvent.created_at! > event.created_at!) {
+                {
+                  return;
+                }
+              }
+            }
+
+            this.profileEvent = event;
+            projectData.metadata = update;
+
+            // Parse the external identities from profile metadata
+            this.externalIdentities.set(
+              this.getExternalIdentities(event)
+            );
+          }
         });
 
         this.subscriptions.push(projectSub, profileSub);
@@ -1229,7 +1247,9 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
   getExternalIdentities(event: NDKEvent): ExternalIdentity[] {
     console.log('Event:', event);
-    
+
+    if (!event.tags) return [];
+
     return event.tags
       .filter((tag) => tag[0] === 'i')
       .map((tag) => ({

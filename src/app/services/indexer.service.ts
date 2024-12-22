@@ -1,6 +1,6 @@
 import { Injectable, signal, inject, effect } from '@angular/core';
 import { ProfileUpdate, ProjectUpdate, RelayService } from './relay.service';
-import { NDKUserProfile } from '@nostr-dev-kit/ndk';
+import { NDKEvent, NDKUserProfile } from '@nostr-dev-kit/ndk';
 
 export interface IndexedProject {
   founderKey: string;
@@ -14,7 +14,9 @@ export interface IndexedProject {
     about?: string;
   };
   details?: ProjectUpdate;
+  details_created_at: number | undefined;
   metadata?: NDKUserProfile;
+  metadata_created_at: number | undefined;
   stats?: ProjectStats;
 }
 
@@ -84,7 +86,7 @@ export class IndexerService {
   constructor() {
     // Subscribe to both profile and project updates
     this.relay.profileUpdates.subscribe((update) => {
-      this.updateProjectMetadata(update.pubkey, update.profile);
+      this.updateProjectMetadata(update);
     });
 
     this.relay.projectUpdates.subscribe((update) => {
@@ -113,7 +115,10 @@ export class IndexerService {
     );
   }
 
-  private updateProjectMetadata(pubkey: string, metadata: any) {
+  private updateProjectMetadata(event: NDKEvent) {
+    const pubkey = event.pubkey;
+    const metadata = JSON.parse(event.content) as NDKUserProfile;
+
     this.projects.update((projects) =>
       projects.map((project) =>
         project.founderKey === pubkey ? { ...project, metadata } : project

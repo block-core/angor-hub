@@ -254,9 +254,9 @@ import { AgoPipe } from '../../pipes/ago.pipe';
               </div> -->
               <div class="info-item">
                 @if(isProjectNotStarted(project.details.startDate)) {
-                  <div class="info-label">Starts</div>
-                } @else { 
-                  <div class="info-label">Started</div>
+                <div class="info-label">Starts</div>
+                } @else {
+                <div class="info-label">Started</div>
                 }
                 <div class="info-value">
                   {{ project.details.startDate | ago }}
@@ -352,8 +352,8 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     // Listen for profile updates
-    this.relay.profileUpdates.subscribe((update) => {
-      const id = update.pubkey;
+    this.relay.profileUpdates.subscribe((event) => {
+      const id = event.pubkey;
 
       // Find the project from this.indexer.projects() that has the ID.
       const project = this.indexer
@@ -361,46 +361,58 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
         .find((p) => p.details?.nostrPubKey === id);
 
       if (project) {
-        project.metadata = update.profile;
+        project.metadata = JSON.parse(event.content);
       }
 
       // Update the matching project with new profile data
       this.indexer.projects.update((projects) =>
         projects.map((project) =>
-          project.founderKey === update.pubkey
-            ? { ...project, metadata: update.profile }
+          project.founderKey === event.pubkey
+            ? { ...project, metadata: project.metadata }
             : project
         )
       );
     });
 
-    // Listen for profile updates
-    this.relay.projectUpdates.subscribe((update) => {
+    // Listen for project updates with timestamp check
+    this.relay.projectUpdates.subscribe((event) => {
+      const update = JSON.parse(event.content);
       const id = update.projectIdentifier;
-
-      // Find the project from this.indexer.projects() that has the ID.
       const project = this.indexer
         .projects()
         .find((p) => p.projectIdentifier === id);
 
       if (project) {
-        project.details = update;
+        // Only update if new data is newer or we don't have existing details
+        if (
+          !project.details ||
+          event.created_at! > project.details_created_at!
+        ) {
+          project.details = update;
+          project.details_created_at = event.created_at;
+        }
       }
+    });
 
-      // if (project) {
-      //   // Update project with latest data
-      //   this.indexer.projects.update(projects =>
-      //     projects.map(p => p.projectIdentifier === id ? { ...p, metadata: update } : p)
-      //   );
-      // }
+    // Listen for profile updates with timestamp check
+    this.relay.profileUpdates.subscribe((event) => {
+      const update = JSON.parse(event.content);
+      const id = event.pubkey;
 
-      // console.log('Project update:', update);
-      // Update the matching project with new profile data
-      // this.indexer.projects.update((projects) =>
-      //   projects.map((project) => {
-      //     console.log(project);
-      //   })
-      // );
+      const project = this.indexer
+        .projects()
+        .find((p) => p.details?.nostrPubKey === id);
+
+      if (project) {
+        // Only update if new data is newer or we don't have existing metadata
+        if (
+          !project.metadata ||
+          update.event.created_at > (project.metadata_created_at || 0)
+        ) {
+          project.metadata = update.profile;
+          project.metadata_created_at = update.event.created_at;
+        }
+      }
     });
 
     // Replace popstate handling with Router events

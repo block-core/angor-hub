@@ -6,7 +6,7 @@ import { Subject } from 'rxjs';
 export interface ProfileUpdate {
   pubkey: string;
   profile: NDKUserProfile;
-  event: NDKEvent
+  event: NDKEvent;
 }
 
 export interface ProjectUpdate {
@@ -49,8 +49,8 @@ export class RelayService {
   private connectedRelays = signal<string[]>([]);
   public projects = signal<ProjectEvent[]>([]);
   public loading = signal<boolean>(false);
-  public profileUpdates = new Subject<ProfileUpdate>();
-  public projectUpdates = new Subject<ProjectUpdate>();
+  public profileUpdates = new Subject<NDKEvent>();
+  public projectUpdates = new Subject<NDKEvent>();
 
   constructor() {
     this.initializeRelays();
@@ -125,7 +125,7 @@ export class RelayService {
           try {
             const projectDetails = JSON.parse(event.content);
             this.fetchProfile([projectDetails.nostrPubKey]);
-            this.projectUpdates.next(projectDetails);
+            this.projectUpdates.next(event);
           } catch (error) {
             console.error('Failed to parse profile:', error);
           }
@@ -165,13 +165,7 @@ export class RelayService {
 
         sub.on('event', (event: NDKEvent) => {
           try {
-            const profile = JSON.parse(event.content);
-
-            this.profileUpdates.next({
-              pubkey: event.pubkey,
-              profile,
-              event
-            });
+            this.profileUpdates.next(event);
           } catch (error) {
             console.error('Failed to parse profile:', error);
           }
