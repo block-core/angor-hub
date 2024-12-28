@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { RouterOutlet, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ThemeService } from './services/theme.service';
+import { environment } from '../environment';
 
 @Component({
   selector: 'app-root',
@@ -80,7 +81,7 @@ import { ThemeService } from './services/theme.service';
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2024 Angor Hub. All rights reserved.</p>
+        <p>&copy; 2024 Angor Hub. All rights reserved. Version {{ version }}.</p>
       </div>
     </footer>
   `,
@@ -226,7 +227,11 @@ import { ThemeService } from './services/theme.service';
 export class AppComponent {
   title = 'angor-hub';
 
-  constructor(public themeService: ThemeService) {}
+  version = environment.appVersion
+
+  constructor(public themeService: ThemeService) {
+
+  }
 
   toggleTheme() {
     this.themeService.toggleTheme();
