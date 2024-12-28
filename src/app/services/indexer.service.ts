@@ -120,19 +120,37 @@ export class IndexerService {
     const metadata = JSON.parse(event.content) as NDKUserProfile;
 
     this.projects.update((projects) =>
-      projects.map((project) =>
-        project.founderKey === pubkey ? { ...project, metadata } : project
-      )
+      projects.map((project) => {
+        if (project.founderKey === pubkey) {
+          // Only update if the new event is newer than existing metadata
+          if (!project.metadata_created_at || event.created_at! > project.metadata_created_at) {
+            return {
+              ...project,
+              metadata,
+              metadata_created_at: event.created_at
+            };
+          }
+        }
+        return project;
+      })
     );
   }
 
   private updateProjectDetails(details: any) {
     this.projects.update((projects) =>
-      projects.map((project) =>
-        project.projectIdentifier === details.projectIdentifier
-          ? { ...project, details }
-          : project
-      )
+      projects.map((project) => {
+        if (project.projectIdentifier === details.projectIdentifier) {
+          // Only update if the new event is newer than existing details
+          if (!project.details_created_at || details.created_at > project.details_created_at) {
+            return {
+              ...project,
+              details,
+              details_created_at: details.created_at
+            };
+          }
+        }
+        return project;
+      })
     );
   }
 

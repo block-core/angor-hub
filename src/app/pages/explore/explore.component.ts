@@ -351,29 +351,6 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       // console.log('Projects updated:', projects.length);
     });
 
-    // Listen for profile updates
-    this.relay.profileUpdates.subscribe((event) => {
-      const id = event.pubkey;
-
-      // Find the project from this.indexer.projects() that has the ID.
-      const project = this.indexer
-        .projects()
-        .find((p) => p.details?.nostrPubKey === id);
-
-      if (project) {
-        project.metadata = JSON.parse(event.content);
-      }
-
-      // Update the matching project with new profile data
-      this.indexer.projects.update((projects) =>
-        projects.map((project) =>
-          project.founderKey === event.pubkey
-            ? { ...project, metadata: project.metadata }
-            : project
-        )
-      );
-    });
-
     // Listen for project updates with timestamp check
     this.relay.projectUpdates.subscribe((event) => {
       const update = JSON.parse(event.content);
@@ -396,6 +373,10 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Listen for profile updates with timestamp check
     this.relay.profileUpdates.subscribe((event) => {
+      if (!event) {
+        return;
+      }
+
       const update = JSON.parse(event.content);
       const id = event.pubkey;
 
@@ -407,10 +388,10 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
         // Only update if new data is newer or we don't have existing metadata
         if (
           !project.metadata ||
-          update.event.created_at > (project.metadata_created_at || 0)
+          event.created_at! > (project.metadata_created_at || 0)
         ) {
-          project.metadata = update.profile;
-          project.metadata_created_at = update.event.created_at;
+          project.metadata = update;
+          project.metadata_created_at = event.created_at;
         }
       }
     });
