@@ -195,150 +195,157 @@ interface ExternalIdentity {
       <div class="tab-content" [ngSwitch]="activeTab">
         <div *ngSwitchCase="'project'">
           <div class="project-grid">
+            <!-- Project Content -->
+            <div class="project-content">
+              <div class="content-text">{{ project()?.content }}</div>
+            </div>
+
             <!-- Project Statistics -->
-            <section class="stats-grid">
-              <div
-                class="stat-card investment-card"
-                [style.--investment-percentage]="
-                  ((project()?.stats?.amountInvested ?? 0) /
-                    ((project()?.details?.targetAmount ?? 1) * 100000000)) *
-                    100 +
-                  '%'
-                "
-              >
-                <div class="stat-values">
-                  <div>
-                    <div class="stat-value">
-                      {{ (project()?.stats?.amountInvested ?? 0) / 100000000 }}
-                      BTC
+            <div class="project-sidebar">
+              <section class="stats-grid">
+                <div
+                  class="stat-card investment-card"
+                  [style.--investment-percentage]="
+                    ((project()?.stats?.amountInvested ?? 0) /
+                      ((project()?.details?.targetAmount ?? 1) * 100000000)) *
+                      100 +
+                    '%'
+                  "
+                >
+                  <div class="stat-values">
+                    <div>
+                      <div class="stat-value">
+                        {{ (project()?.stats?.amountInvested ?? 0) / 100000000 }}
+                        BTC
+                      </div>
+                      <div class="stat-label">Total Invested</div>
                     </div>
-                    <div class="stat-label">Total Invested</div>
-                  </div>
-                  <div>
-                    <div class="stat-value target">
-                      {{ project()?.details?.targetAmount }} BTC
+                    <div>
+                      <div class="stat-value target">
+                        {{ project()?.details?.targetAmount }} BTC
+                      </div>
+                      <div class="stat-label">Target Amount</div>
                     </div>
-                    <div class="stat-label">Target Amount</div>
+                  </div>
+                  <div class="stat-percentage">
+                    {{
+                      (
+                        ((project()?.stats?.amountInvested ?? 0) /
+                          ((project()?.details?.targetAmount ?? 1) * 100000000)) *
+                        100
+                      ).toFixed(1)
+                    }}%
                   </div>
                 </div>
-                <div class="stat-percentage">
-                  {{
-                    (
-                      ((project()?.stats?.amountInvested ?? 0) /
-                        ((project()?.details?.targetAmount ?? 1) * 100000000)) *
-                      100
-                    ).toFixed(1)
-                  }}%
+                <div class="stat-card">
+                  <div class="stat-value">
+                    {{ project()?.stats?.investorCount }}
+                  </div>
+                  <div class="stat-label">Total Investors</div>
                 </div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">
-                  {{ project()?.stats?.investorCount }}
-                </div>
-                <div class="stat-label">Total Investors</div>
-              </div>
-              <div
-                class="stat-card spending-card"
-                [style.--spent-percentage]="getSpentPercentage()"
-              >
-                <div class="stat-value">
-                  {{
-                    (project()?.stats?.amountSpentSoFarByFounder ?? 0) /
-                      100000000
-                  }}
-                  BTC
-                </div>
-                <div class="stat-label">
-                  Spent ({{ getSpentPercentage() }}%)
-                </div>
-              </div>
-              <div
-                class="stat-card penalties-card"
-                [style.--penalties-percentage]="getPenaltiesPercentage()"
-              >
-                <div class="stat-value">
-                  {{ (project()?.stats?.amountInPenalties ?? 0) / 100000000 }}
-                  BTC
-                </div>
-                <div class="stat-label">
-                  Penalties ({{ getPenaltiesPercentage() }}%)
-                </div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">
-                  {{ project()?.stats?.countInPenalties }}
-                </div>
-                <div class="stat-label">Penalties Count</div>
-              </div>
-            </section>
-
-            <!-- Project Details -->
-            <section class="project-details">
-              <h2>Project Details</h2>
-              <div class="info-grid">
-                <!-- <div class="info-item">
-                  <label>Target Amount</label>
-                  <span>{{ project()?.details?.targetAmount }} BTC</span>
-                </div> -->
-
-                <div class="info-item">
-                  <label>Start Date</label>
-                  <span>{{ formatDate(project()?.details?.startDate) }}</span>
-                </div>
-                <div class="info-item">
-                  <label>Expiry Date</label>
-                  <span>{{ formatDate(project()?.details?.expiryDate) }}</span>
-                </div>
-                <div class="info-item">
-                  <label>Penalty Days</label>
-                  <span>{{ project()?.details?.penaltyDays }} days</span>
-                </div>
-              </div>
-            </section>
-
-            <!-- Funding Stages -->
-            <section class="funding-stages">
-              <h2>Funding Stages</h2>
-              <div class="stages-timeline">
-                @for (stage of project()?.details?.stages; track $index) {
-                <div class="stage-card">
-                  <div class="stage-number">Stage {{ $index + 1 }}</div>
-                  <div class="stage-amount">{{ stage.amountToRelease }}%</div>
-                  <div class="stage-date">
-                    {{ formatDate(stage.releaseDate) }}
+                <div
+                  class="stat-card spending-card"
+                  [style.--spent-percentage]="getSpentPercentage()"
+                >
+                  <div class="stat-value">
+                    {{
+                      (project()?.stats?.amountSpentSoFarByFounder ?? 0) /
+                        100000000
+                    }}
+                    BTC
+                  </div>
+                  <div class="stat-label">
+                    Spent ({{ getSpentPercentage() }}%)
                   </div>
                 </div>
-                }
-              </div>
-            </section>
+                <div
+                  class="stat-card penalties-card"
+                  [style.--penalties-percentage]="getPenaltiesPercentage()"
+                >
+                  <div class="stat-value">
+                    {{ (project()?.stats?.amountInPenalties ?? 0) / 100000000 }}
+                    BTC
+                  </div>
+                  <div class="stat-label">
+                    Penalties ({{ getPenaltiesPercentage() }}%)
+                  </div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-value">
+                    {{ project()?.stats?.countInPenalties }}
+                  </div>
+                  <div class="stat-label">Penalties Count</div>
+                </div>
+              </section>
 
-            <section class="project-details">
-              <h2>Public Keys</h2>
-              <div class="info-stack">
-                <div class="info-item">
-                  <label>Project ID</label>
-                  <span class="ellipsis">{{
-                    project()?.projectIdentifier
-                  }}</span>
+              <!-- Project Details -->
+              <section class="project-details">
+                <h2>Project Details</h2>
+                <div class="info-grid">
+                  <!-- <div class="info-item">
+                    <label>Target Amount</label>
+                    <span>{{ project()?.details?.targetAmount }} BTC</span>
+                  </div> -->
+
+                  <div class="info-item">
+                    <label>Start Date</label>
+                    <span>{{ formatDate(project()?.details?.startDate) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Expiry Date</label>
+                    <span>{{ formatDate(project()?.details?.expiryDate) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Penalty Days</label>
+                    <span>{{ project()?.details?.penaltyDays }} days</span>
+                  </div>
                 </div>
-                <div class="info-item">
-                  <label>Founder Key</label>
-                  <span class="ellipsis">{{ project()?.founderKey }}</span>
+              </section>
+
+              <!-- Funding Stages -->
+              <section class="funding-stages">
+                <h2>Funding Stages</h2>
+                <div class="stages-timeline">
+                  @for (stage of project()?.details?.stages; track $index) {
+                  <div class="stage-card">
+                    <div class="stage-number">Stage {{ $index + 1 }}</div>
+                    <div class="stage-amount">{{ stage.amountToRelease }}%</div>
+                    <div class="stage-date">
+                      {{ formatDate(stage.releaseDate) }}
+                    </div>
+                  </div>
+                  }
                 </div>
-                <div class="info-item">
-                  <label>Recovery Key</label>
-                  <span class="ellipsis">{{
-                    project()?.details?.founderRecoveryKey
-                  }}</span>
+              </section>
+
+              <section class="project-details">
+                <h2>Public Keys</h2>
+                <div class="info-stack">
+                  <div class="info-item">
+                    <label>Project ID</label>
+                    <span class="ellipsis">{{
+                      project()?.projectIdentifier
+                    }}</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Founder Key</label>
+                    <span class="ellipsis">{{ project()?.founderKey }}</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Recovery Key</label>
+                    <span class="ellipsis">{{
+                      project()?.details?.founderRecoveryKey
+                    }}</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Nostr Public Key</label>
+                    <span class="ellipsis">
+                      {{ user?.npub }}
+                    </span>
+                  </div>
                 </div>
-                <div class="info-item">
-                  <label>Nostr Public Key</label>
-                  <span class="ellipsis">
-                    {{ user?.npub }}
-                  </span>
-                </div>
-              </div>
-            </section>
+              </section>
+            </div>
           </div>
         </div>
 
@@ -523,8 +530,43 @@ interface ExternalIdentity {
 
       .project-grid {
         display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
         gap: 2rem;
         margin: 2rem 2rem;
+      }
+
+      .project-content {
+        background: var(--surface-card);
+        padding: 2rem;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+      }
+
+      .content-text {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+      }
+
+      .project-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+      }
+
+      @media (max-width: 1024px) {
+        .project-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .project-content {
+          order: 2;
+        }
+
+        .project-sidebar {
+          order: 1;
+        }
       }
 
       .project-header {
