@@ -18,6 +18,8 @@ export interface IndexedProject {
   metadata?: NDKUserProfile;
   metadata_created_at: number | undefined;
   stats?: ProjectStats;
+  content?: string;
+  content_created_at: number | undefined;
 }
 
 export interface ProjectStats {

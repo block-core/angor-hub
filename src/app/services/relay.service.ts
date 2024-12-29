@@ -1,6 +1,6 @@
 import { Injectable, signal, effect } from '@angular/core';
 import { SimplePool, Filter, Event, Relay } from 'nostr-tools';
-import NDK, { NDKEvent, NDKUserProfile } from '@nostr-dev-kit/ndk';
+import NDK, { NDKEvent, NDKKind, NDKUserProfile } from '@nostr-dev-kit/ndk';
 import { Subject } from 'rxjs';
 
 export interface ProfileUpdate {
@@ -50,6 +50,7 @@ export class RelayService {
   public projects = signal<ProjectEvent[]>([]);
   public loading = signal<boolean>(false);
   public profileUpdates = new Subject<NDKEvent>();
+  public contentUpdates = new Subject<NDKEvent>();
   public projectUpdates = new Subject<NDKEvent>();
 
   constructor() {
@@ -125,6 +126,7 @@ export class RelayService {
           try {
             const projectDetails = JSON.parse(event.content);
             this.fetchProfile([projectDetails.nostrPubKey]);
+            this.fetchContent([projectDetails.nostrPubKey]);
             this.projectUpdates.next(event);
           } catch (error) {
             console.error('Failed to parse profile:', error);
@@ -179,6 +181,43 @@ export class RelayService {
           });
         });
       }
+    } catch (error) {
+      console.error('Error fetching profiles:', error);
+    }
+  }
+
+  async fetchContent(pubkeys: string[]): Promise<void> {
+    try {
+      const ndk = await this.ensureConnected();
+
+      const filter = {
+        kinds: [NDKKind.AppSpecificData],
+        authors: pubkeys,
+        '#d': ['angor:project'],
+        limit: 1,
+      };
+
+      const sub = ndk.subscribe(filter);
+
+      const timeout = setTimeout(() => {
+        // sub.close();
+      }, 5000);
+
+      sub.on('event', (event: NDKEvent) => {
+        try {
+          this.contentUpdates.next(event);
+        } catch (error) {
+          console.error('Failed to parse profile:', error);
+        }
+      });
+
+      // Wait for batch completion
+      await new Promise((resolve) => {
+        sub.on('eose', () => {
+          clearTimeout(timeout);
+          resolve(null);
+        });
+      });
     } catch (error) {
       console.error('Error fetching profiles:', error);
     }

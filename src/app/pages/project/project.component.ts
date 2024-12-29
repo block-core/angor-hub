@@ -280,10 +280,7 @@ interface ExternalIdentity {
                   <label>Target Amount</label>
                   <span>{{ project()?.details?.targetAmount }} BTC</span>
                 </div> -->
-                <div class="info-item">
-                  <label>Penalty Days</label>
-                  <span>{{ project()?.details?.penaltyDays }} days</span>
-                </div>
+
                 <div class="info-item">
                   <label>Start Date</label>
                   <span>{{ formatDate(project()?.details?.startDate) }}</span>
@@ -291,6 +288,10 @@ interface ExternalIdentity {
                 <div class="info-item">
                   <label>Expiry Date</label>
                   <span>{{ formatDate(project()?.details?.expiryDate) }}</span>
+                </div>
+                <div class="info-item">
+                  <label>Penalty Days</label>
+                  <span>{{ project()?.details?.penaltyDays }} days</span>
                 </div>
               </div>
             </section>
@@ -1177,13 +1178,33 @@ export class ProjectComponent implements OnInit, OnDestroy {
             projectData.metadata = update;
 
             // Parse the external identities from profile metadata
-            this.externalIdentities.set(
-              this.getExternalIdentities(event)
-            );
+            this.externalIdentities.set(this.getExternalIdentities(event));
           }
         });
 
-        this.subscriptions.push(projectSub, profileSub);
+        const contentSub = this.relay.contentUpdates.subscribe((event) => {
+          console.log('EVENT:', event);
+          this.project()!.content = event.content;
+          this.project()!.content_created_at = event.created_at;
+          // const update = JSON.parse(event.content);
+          // const id = update.projectIdentifier;
+          // const project = this.indexer
+          //   .projects()
+          //   .find((p) => p.projectIdentifier === id);
+
+          // if (project) {
+          //   // Only update if new data is newer or we don't have existing details
+          //   if (
+          //     !project.details ||
+          //     event.created_at! > project.details_created_at!
+          //   ) {
+          //     project.details = update;
+          //     project.details_created_at = event.created_at;
+          //   }
+          // }
+        });
+
+        this.subscriptions.push(projectSub, profileSub, contentSub);
 
         // 5. Fetch project details from relay
         // if (projectData.nostrEventId) {
@@ -1246,8 +1267,6 @@ export class ProjectComponent implements OnInit, OnDestroy {
   externalIdentities = signal<ExternalIdentity[]>([]);
 
   getExternalIdentities(event: NDKEvent): ExternalIdentity[] {
-    console.log('Event:', event);
-
     if (!event.tags) return [];
 
     return event.tags
