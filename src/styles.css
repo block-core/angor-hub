@@ -53,6 +53,15 @@ body {
   scrollbar-color: var(--border) var(--background);
 }
 
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--accent-light);
+}
+
 header {
   background: var(--header-bg);
   padding: 1rem;
@@ -113,7 +122,6 @@ footer {
   text-align: center;
   padding: 1rem;
 }
-
 
 /* Hero Styles */
 .hero {
@@ -504,7 +512,7 @@ footer {
 
 .feature-card::before,
 .feature-card::after {
-  content: '';
+  content: "";
   position: absolute;
   width: 100%;
   height: 100%;

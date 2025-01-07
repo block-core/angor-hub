@@ -22,10 +22,10 @@ export interface IndexedProject {
   content_created_at: number | undefined;
 
 
-  members?: any;
+  members?: string[];
   members_created_at: number | undefined;
-
-  media?: string[];
+  
+  media?: any[];
   media_created_at: number | undefined;
 }
 

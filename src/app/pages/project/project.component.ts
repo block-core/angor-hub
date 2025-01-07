@@ -197,6 +197,38 @@ interface ExternalIdentity {
           <div class="project-grid">
             <!-- Project Content -->
             <div class="project-content">
+              @if (project()?.media?.length) {
+                <div class="carousel">
+                  <div class="carousel-inner" [style.transform]="'translateX(' + -currentSlide * 100 + '%)'">
+                    @for (item of project()?.media; track item.url) {
+                      @if (item.type === 'image') {
+                        <div class="carousel-item">
+                          <img [src]="item.url" alt="Project media" loading="lazy" (click)="showImagePopup = true; selectedImage = item.url">
+                        </div>
+                      }
+                    }
+                  </div>
+                  @if (project()?.media?.length) {
+                    <button class="carousel-control prev" (click)="prevSlide()">❮</button>
+                    <button class="carousel-control next" (click)="nextSlide()">❯</button>
+                  }
+                </div>
+              }
+
+              @if (project()?.members?.length) {
+                <div class="members-list">
+                  <h3>Project Members</h3>
+                  <div class="member-grid">
+                    @for (member of project()?.members; track member) {
+                      <div class="member-item">
+                        <span class="material-icons">person</span>
+                        <span class="member-npub"><a href="https://primal.net/p/{{member}}" target="_blank">{{ formatNpub(member) }}</a></span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
               <div class="content-text">{{ project()?.content }}</div>
             </div>
 
@@ -1008,6 +1040,101 @@ interface ExternalIdentity {
       .social-link .material-icons {
         font-size: 1.2rem;
       }
+
+      .carousel {
+        position: relative;
+        width: 100%;
+        margin-bottom: 2rem;
+        border-radius: 12px;
+        overflow: hidden;
+        aspect-ratio: 16/9;
+      }
+
+      .carousel-inner {
+        display: flex;
+        transition: transform 0.3s ease-in-out;
+        height: 100%;
+      }
+
+      .carousel-item {
+        min-width: 100%;
+        height: 100%;
+      }
+
+      .carousel-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        cursor: pointer;
+      }
+
+      .carousel-control {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        padding: 1rem;
+        cursor: pointer;
+        font-size: 1.5rem;
+        transition: background-color 0.2s;
+      }
+
+      .carousel-control:hover {
+        background: rgba(0, 0, 0, 0.7);
+      }
+
+      .carousel-control.prev {
+        left: 0;
+        border-radius: 0 4px 4px 0;
+      }
+
+      .carousel-control.next {
+        right: 0;
+        border-radius: 4px 0 0 4px;
+      }
+
+      .members-list {
+        margin: 2rem 0;
+        padding: 1.5rem;
+        background: var(--surface-card);
+        border-radius: 8px;
+        border: 1px solid var(--border);
+      }
+
+      .members-list h3 {
+        margin: 0 0 1rem 0;
+        color: var(--text);
+      }
+
+      .member-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+      }
+
+      .member-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: var(--background);
+        border-radius: 4px;
+        font-family: monospace;
+      }
+
+      .member-item .material-icons {
+        font-size: 1.2rem;
+        opacity: 0.7;
+      }
+
+      .member-npub {
+        font-size: 0.9rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
     `,
   ],
 })
@@ -1033,6 +1160,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
   loading = signal<boolean>(false);
   showImagePopup = false;
   faqItems: FaqItem[] = [];
+  currentSlide = 0;
+  selectedImage: string | null = null;
 
   async setActiveTab(tabId: string) {
     this.activeTab = tabId;
@@ -1401,5 +1530,19 @@ export class ProjectComponent implements OnInit, OnDestroy {
       return '@' + username.split('@')[1];
     }
     return '@' + username;
+  }
+
+  prevSlide() {
+    if (!this.project()?.media) return;
+    this.currentSlide = (this.currentSlide - 1 + this.project()!.media!.length) % this.project()!.media!.length;
+  }
+
+  nextSlide() {
+    if (!this.project()?.media) return;
+    this.currentSlide = (this.currentSlide + 1) % this.project()!.media!.length;
+  }
+
+  formatNpub(pubkey: string): string {
+    return pubkey.substring(0, 8) + '...' + pubkey.substring(pubkey.length - 8);
   }
 }
