@@ -215,7 +215,9 @@ interface ExternalIdentity {
                   <div class="stat-values">
                     <div>
                       <div class="stat-value">
-                        {{ (project()?.stats?.amountInvested ?? 0) / 100000000 }}
+                        {{
+                          (project()?.stats?.amountInvested ?? 0) / 100000000
+                        }}
                         BTC
                       </div>
                       <div class="stat-label">Total Invested</div>
@@ -231,7 +233,8 @@ interface ExternalIdentity {
                     {{
                       (
                         ((project()?.stats?.amountInvested ?? 0) /
-                          ((project()?.details?.targetAmount ?? 1) * 100000000)) *
+                          ((project()?.details?.targetAmount ?? 1) *
+                            100000000)) *
                         100
                       ).toFixed(1)
                     }}%
@@ -293,7 +296,9 @@ interface ExternalIdentity {
                   </div>
                   <div class="info-item">
                     <label>Expiry Date</label>
-                    <span>{{ formatDate(project()?.details?.expiryDate) }}</span>
+                    <span>{{
+                      formatDate(project()?.details?.expiryDate)
+                    }}</span>
                   </div>
                   <div class="info-item">
                     <label>Penalty Days</label>
@@ -1118,6 +1123,16 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
   projectEvent?: NDKEvent;
 
+  getDTags(event: NDKEvent): { tag: string }[] {
+    if (!event.tags) return [];
+
+    return event.tags
+      .filter((tag) => tag[0] === 'd')
+      .map((tag) => ({
+        tag: tag[1],
+      }));
+  }
+
   async ngOnInit() {
     window.scrollTo(0, 0);
 
@@ -1225,9 +1240,28 @@ export class ProjectComponent implements OnInit, OnDestroy {
         });
 
         const contentSub = this.relay.contentUpdates.subscribe((event) => {
-          console.log('EVENT:', event);
-          this.project()!.content = event.content;
-          this.project()!.content_created_at = event.created_at;
+          const getTag = this.getDTags(event);
+
+          if (getTag.length === 0) {
+            return;
+          }
+
+          const tag = getTag[0].tag;
+          const project = this.project()!;
+
+          if (tag == 'angor:project') {
+            project.content = event.content;
+            project.content_created_at = event.created_at;
+          } else if (tag == 'angor:media') {
+            project.media = JSON.parse(event.content);
+            project.media_created_at = event.created_at;
+          } else if (tag == 'angor:members') {
+            project.members = JSON.parse(event.content).pubkeys;
+            project.members_created_at = event.created_at;
+          } else {
+            console.warn('Unknown tag:', tag);
+          }
+
           // const update = JSON.parse(event.content);
           // const id = update.projectIdentifier;
           // const project = this.indexer

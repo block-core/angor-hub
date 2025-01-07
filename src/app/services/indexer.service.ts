@@ -20,6 +20,13 @@ export interface IndexedProject {
   stats?: ProjectStats;
   content?: string;
   content_created_at: number | undefined;
+
+
+  members?: any;
+  members_created_at: number | undefined;
+
+  media?: string[];
+  media_created_at: number | undefined;
 }
 
 export interface ProjectStats {

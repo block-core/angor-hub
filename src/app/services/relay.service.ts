@@ -190,12 +190,28 @@ export class RelayService {
     try {
       const ndk = await this.ensureConnected();
 
-      const filter = {
+      const filter1 = {
         kinds: [NDKKind.AppSpecificData],
         authors: pubkeys,
         '#d': ['angor:project'],
         limit: 1,
       };
+
+      const filter2 = {
+        kinds: [NDKKind.AppSpecificData],
+        authors: pubkeys,
+        '#d': ['angor:media'],
+        limit: 1,
+      };
+
+      const filter3 = {
+        kinds: [NDKKind.AppSpecificData],
+        authors: pubkeys,
+        '#d': ['angor:members'],
+        limit: 1,
+      };
+
+      const filter = [filter1, filter2, filter3];
 
       const sub = ndk.subscribe(filter);
 
