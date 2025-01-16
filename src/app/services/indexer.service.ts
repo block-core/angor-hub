@@ -1,6 +1,7 @@
 import { Injectable, signal, inject, effect } from '@angular/core';
 import { ProfileUpdate, ProjectUpdate, RelayService } from './relay.service';
 import { NDKEvent, NDKUserProfile } from '@nostr-dev-kit/ndk';
+import { NetworkService } from './network.service';
 
 export interface IndexedProject {
   founderKey: string;
@@ -21,10 +22,9 @@ export interface IndexedProject {
   content?: string;
   content_created_at: number | undefined;
 
-
   members?: string[];
   members_created_at: number | undefined;
-  
+
   media?: any[];
   media_created_at: number | undefined;
 }
@@ -81,7 +81,7 @@ export interface NetworkStats {
 })
 export class IndexerService {
   private readonly LIMIT = 6;
-  private readonly indexerUrl = 'https://tbtc.indexer.angor.io/';
+  private indexerUrl = 'https://tbtc.indexer.angor.io/';
   private offset = -1000; // Change back to simple number
   private totalItems = 0;
   private totalProjectsFetched = false;
@@ -91,6 +91,7 @@ export class IndexerService {
   public loading = signal<boolean>(false);
   public projects = signal<IndexedProject[]>([]);
   public error = signal<string | null>(null);
+  private network = inject(NetworkService);
 
   constructor() {
     // Subscribe to both profile and project updates
@@ -101,6 +102,12 @@ export class IndexerService {
     this.relay.projectUpdates.subscribe((update) => {
       this.updateProjectDetails(update);
     });
+
+    if (this.network.isMain()) {
+      this.indexerUrl = 'https://btc.indexer.angor.io/';
+    } else {
+      this.indexerUrl = 'https://tbtc.indexer.angor.io/';
+    }
   }
 
   private async fetchJson<T>(
@@ -132,11 +139,14 @@ export class IndexerService {
       projects.map((project) => {
         if (project.founderKey === pubkey) {
           // Only update if the new event is newer than existing metadata
-          if (!project.metadata_created_at || event.created_at! > project.metadata_created_at) {
+          if (
+            !project.metadata_created_at ||
+            event.created_at! > project.metadata_created_at
+          ) {
             return {
               ...project,
               metadata,
-              metadata_created_at: event.created_at
+              metadata_created_at: event.created_at,
             };
           }
         }
@@ -150,11 +160,14 @@ export class IndexerService {
       projects.map((project) => {
         if (project.projectIdentifier === details.projectIdentifier) {
           // Only update if the new event is newer than existing details
-          if (!project.details_created_at || details.created_at > project.details_created_at) {
+          if (
+            !project.details_created_at ||
+            details.created_at > project.details_created_at
+          ) {
             return {
               ...project,
               details,
-              details_created_at: details.created_at
+              details_created_at: details.created_at,
             };
           }
         }

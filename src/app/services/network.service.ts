@@ -22,5 +22,8 @@ export class NetworkService {
   setNetwork(network: string): void {
     this.network = network;
     localStorage.setItem(this.NETWORK_KEY, network);
+
+    // Reload until we can handle proper full network reset, with relays, etc.
+    window.location.reload();
   }
 }
