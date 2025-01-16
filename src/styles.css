@@ -10,6 +10,7 @@
   --accent-dark: #065666;
   --accent-light: #0a8ca7;
   --surface-card: #f8f9fa;
+  --warning: #ff0000;
 }
 
 [data-theme="dark"] {
@@ -22,6 +23,7 @@
   --accent-dark: #086c81;
   --accent-light: #0caac9;
   --surface-card: #242424;
+  --warning: #ff0000;
 }
 
 /* Inter Variable Font */
@@ -164,6 +166,7 @@ footer {
   opacity: 0.9;
   font-weight: 500;
 }
+
 
 .hero-description {
   font-size: 1rem;
@@ -677,4 +680,10 @@ footer {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+
+
+.notice {
+  color: var(--warning);
 }

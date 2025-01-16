@@ -180,6 +180,12 @@ import { NetworkService } from '../../services/network.service';
           <p class="hero-description">
             Check out our projects and find your next investment opportunity.
           </p>
+          @if(networkService.isMain()) {
+
+          <p class="hero-description notice">
+            Notice! Angor is not yet released for Bitcoin mainnet.
+          </p>
+          }
         </div>
       </div>
     </section>
@@ -289,7 +295,8 @@ import { NetworkService } from '../../services/network.service';
                       ? project.stats!.amountInvested / 100000000
                       : '0'
                   }}
-                  / {{ project.details.targetAmount }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }} raised</span
+                  / {{ project.details.targetAmount }}
+                  {{ networkService.isMain() ? 'BTC' : 'TBTC' }} raised</span
                 >
                 <span class="funding-percentage"
                   >{{ getFundingPercentage(project) }}%</span
