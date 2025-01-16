@@ -15,6 +15,7 @@ import {
 import NDK, { NDKEvent, NDKKind, NDKUser } from '@nostr-dev-kit/ndk';
 import { AgoPipe } from '../../pipes/ago.pipe';
 import { ImagePopupComponent } from '../../components/image-popup.component';
+import { NetworkService } from '../../services/network.service';
 
 export interface FaqItem {
   id: string;
@@ -250,13 +251,13 @@ interface ExternalIdentity {
                         {{
                           (project()?.stats?.amountInvested ?? 0) / 100000000
                         }}
-                        BTC
+                        {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                       </div>
                       <div class="stat-label">Total Invested</div>
                     </div>
                     <div>
                       <div class="stat-value target">
-                        {{ project()?.details?.targetAmount }} BTC
+                        {{ project()?.details?.targetAmount }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                       </div>
                       <div class="stat-label">Target Amount</div>
                     </div>
@@ -287,7 +288,7 @@ interface ExternalIdentity {
                       (project()?.stats?.amountSpentSoFarByFounder ?? 0) /
                         100000000
                     }}
-                    BTC
+                    {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                   </div>
                   <div class="stat-label">
                     Spent ({{ getSpentPercentage() }}%)
@@ -299,7 +300,7 @@ interface ExternalIdentity {
                 >
                   <div class="stat-value">
                     {{ (project()?.stats?.amountInPenalties ?? 0) / 100000000 }}
-                    BTC
+                    {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                   </div>
                   <div class="stat-label">
                     Penalties ({{ getPenaltiesPercentage() }}%)
@@ -864,7 +865,7 @@ interface ExternalIdentity {
 
       .comment-author {
         font-weight: 600;
-        color: var(--primary-color);
+        color: var (--primary-color);
       }
 
       .update-content,
@@ -1144,6 +1145,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
   indexer = inject(IndexerService);
   private relay = inject(RelayService);
   private subscriptions: { unsubscribe: () => void }[] = [];
+  public networkService = inject(NetworkService);
 
   project = signal<IndexedProject | null>(null);
   projectId: string = '';

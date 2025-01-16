@@ -3,6 +3,7 @@ import { RouterOutlet, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ThemeService } from './services/theme.service';
 import { environment } from '../environment';
+import { NetworkService } from './services/network.service';
 
 @Component({
   selector: 'app-root',
@@ -15,8 +16,10 @@ import { environment } from '../environment';
           <img src="images/logo-text.svg" alt="Angor Hub Logo" class="logo">
         </a>
         <div class="nav-links">
-          <a routerLink="/explore">Explore</a>
-          <!-- <a routerLink="/project">Projects</a> -->
+          <select (change)="onNetworkChange($event)" [value]="networkService.getNetwork()" class="network-selector">
+            <option value="mainnet">Mainnet &#x1F4B0;</option>
+            <option value="testnet">Angor Testnet &#x1F4B0;</option>
+          </select>
           <button (click)="toggleTheme()" class="theme-toggle">
             {{ (themeService.theme$ | async) === 'light' ? '☀️' : '🌙' }}
           </button>
@@ -222,6 +225,12 @@ import { environment } from '../environment';
       margin: 0 auto;
       line-height: 1.5;
     }
+
+    .network-selector {
+      margin-right: 1rem;
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
   `]
 })
 export class AppComponent {
@@ -229,11 +238,16 @@ export class AppComponent {
 
   version = environment.appVersion
 
-  constructor(public themeService: ThemeService) {
+  constructor(public themeService: ThemeService, public networkService: NetworkService) {
 
   }
 
   toggleTheme() {
     this.themeService.toggleTheme();
+  }
+
+  onNetworkChange(event: Event) {
+    const selectElement = event.target as HTMLSelectElement;
+    this.networkService.setNetwork(selectElement.value);
   }
 }

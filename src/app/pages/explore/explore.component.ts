@@ -19,6 +19,7 @@ import { CommonModule } from '@angular/common';
 import { Location } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { AgoPipe } from '../../pipes/ago.pipe';
+import { NetworkService } from '../../services/network.service';
 
 @Component({
   selector: 'app-explore',
@@ -288,7 +289,7 @@ import { AgoPipe } from '../../pipes/ago.pipe';
                       ? project.stats!.amountInvested / 100000000
                       : '0'
                   }}
-                  / {{ project.details.targetAmount }} BTC raised</span
+                  / {{ project.details.targetAmount }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }} raised</span
                 >
                 <span class="funding-percentage"
                   >{{ getFundingPercentage(project) }}%</span
@@ -341,7 +342,8 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   private isLoadingMore = false;
   private loadMoreQueued = false;
 
-  indexer = inject(IndexerService);
+  public indexer = inject(IndexerService);
+  public networkService = inject(NetworkService);
 
   constructor() {
     // Optional: Subscribe to project updates if you need to trigger any UI updates
