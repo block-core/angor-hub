@@ -14,6 +14,8 @@
   --accent-light: #0a8ca7;
   --surface-card: #f8f9fa;
   --warning: #ff0000;
+  --bitcoin-mainnet: #F7931A;
+  --bitcoin-testnet: #28C025;
 }
 
 [data-theme="dark"] {
@@ -751,9 +753,33 @@ footer {
   font-size: 1.1rem;
 }
 
+.custom-dropdown-item i.fa-bitcoin {
+  transition: color 0.2s ease;
+}
+
+.custom-dropdown-item[data-network="mainnet"] i.fa-bitcoin {
+  color: var(--bitcoin-mainnet);
+}
+
+.custom-dropdown-item[data-network="testnet"] i.fa-bitcoin {
+  color: var(--bitcoin-testnet);
+}
+
 .custom-dropdown-toggle i {
   font-size: 1.1rem;
   color: var(--accent);
+}
+
+.custom-dropdown-toggle i.fa-bitcoin {
+  transition: color 0.2s ease;
+}
+
+[data-network="mainnet"] .custom-dropdown-toggle i.fa-bitcoin {
+  color: var(--bitcoin-mainnet);
+}
+
+[data-network="testnet"] .custom-dropdown-toggle i.fa-bitcoin {
+  color: var(--bitcoin-testnet);
 }
 
 .notice {

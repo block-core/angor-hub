@@ -16,18 +16,18 @@ import { NetworkService } from './services/network.service';
           <img src="images/logo-text.svg" alt="Angor Hub Logo" class="logo">
         </a>
         <div class="nav-links">
-          <div class="custom-dropdown" [class.open]="isDropdownOpen">
+          <div class="custom-dropdown" [class.open]="isDropdownOpen" [attr.data-network]="networkService.getNetwork()">
             <div class="custom-dropdown-toggle" (click)="toggleDropdown()">
               <i class="fa-brands fa-bitcoin"></i>
               <span>{{ networkService.getNetwork() === 'mainnet' ? 'Mainnet' : 'Angor Testnet' }}</span>
               <i class="fa-solid fa-chevron-down"></i>
             </div>
             <div class="custom-dropdown-menu">
-              <div class="custom-dropdown-item" (click)="selectNetwork('mainnet')">
+              <div class="custom-dropdown-item" (click)="selectNetwork('mainnet')" data-network="mainnet">
                 <i class="fa-brands fa-bitcoin"></i>
                 <span>Mainnet</span>
               </div>
-              <div class="custom-dropdown-item" (click)="selectNetwork('testnet')">
+              <div class="custom-dropdown-item" (click)="selectNetwork('testnet')" data-network="testnet">
                 <i class="fa-brands fa-bitcoin"></i>
                 <span>Angor Testnet</span>
               </div>
