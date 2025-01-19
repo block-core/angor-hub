@@ -55,8 +55,8 @@ import { NetworkService } from './services/network.service';
           <div class="footer-section">
             <h3>About</h3>
             <ul>
-              <li><a href="/terms">Terms of Use</a></li>
-              <li><a href="/privacy">Privacy Policy</a></li>
+              <li><a href="https://angor.io/terms/">Terms of Use</a></li>
+              <li><a href="https://angor.io/privacy/">Privacy Policy</a></li>
             </ul>
           </div>
 
