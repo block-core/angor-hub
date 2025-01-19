@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { RouterOutlet, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ThemeService } from './services/theme.service';
@@ -16,11 +16,23 @@ import { NetworkService } from './services/network.service';
           <img src="images/logo-text.svg" alt="Angor Hub Logo" class="logo">
         </a>
         <div class="nav-links">
-        <i class="fa-brands fa-bitcoin"></i>
-          <select (change)="onNetworkChange($event)" [value]="networkService.getNetwork()" class="network-selector">
-            <option value="mainnet">Mainnet <i class="fa-brands fa-bitcoin"></i></option>
-            <option value="testnet">Angor Testnet <i class="fa-brands fa-bitcoin"></i></option>
-          </select>
+          <div class="custom-dropdown" [class.open]="isDropdownOpen">
+            <div class="custom-dropdown-toggle" (click)="toggleDropdown()">
+              <i class="fa-brands fa-bitcoin"></i>
+              <span>{{ networkService.getNetwork() === 'mainnet' ? 'Mainnet' : 'Angor Testnet' }}</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <div class="custom-dropdown-menu">
+              <div class="custom-dropdown-item" (click)="selectNetwork('mainnet')">
+                <i class="fa-brands fa-bitcoin"></i>
+                <span>Mainnet</span>
+              </div>
+              <div class="custom-dropdown-item" (click)="selectNetwork('testnet')">
+                <i class="fa-brands fa-bitcoin"></i>
+                <span>Angor Testnet</span>
+              </div>
+            </div>
+          </div>
           <button (click)="toggleTheme()" class="theme-toggle">
             {{ (themeService.theme$ | async) === 'light' ? '☀️' : '🌙' }}
           </button>
@@ -246,12 +258,40 @@ import { NetworkService } from './services/network.service';
     .network-selector option {
       font-family: "Font Awesome 6 Brands", sans-serif;
     }
+
+    .custom-dropdown {
+      position: relative;
+      margin-right: 1rem;
+    }
+
+    .fa-chevron-down {
+      font-size: 0.8rem;
+      margin-left: 0.5rem;
+      opacity: 0.7;
+      transition: transform 0.2s ease;
+    }
+
+    .custom-dropdown.open .fa-chevron-down {
+      transform: rotate(180deg);
+    }
+
+    @media (max-width: 768px) {
+      .custom-dropdown-toggle span {
+        display: none;
+      }
+      
+      .custom-dropdown-toggle {
+        padding: 0.5rem;
+      }
+    }
   `]
 })
 export class AppComponent {
   title = 'angor-hub';
 
   version = environment.appVersion
+
+  isDropdownOpen = false;
 
   constructor(public themeService: ThemeService, public networkService: NetworkService) {
 
@@ -261,8 +301,20 @@ export class AppComponent {
     this.themeService.toggleTheme();
   }
 
-  onNetworkChange(event: Event) {
-    const selectElement = event.target as HTMLSelectElement;
-    this.networkService.setNetwork(selectElement.value);
+  toggleDropdown() {
+    this.isDropdownOpen = !this.isDropdownOpen;
+  }
+
+  selectNetwork(network: string) {
+    this.networkService.setNetwork(network);
+    this.isDropdownOpen = false;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const dropdown = (event.target as HTMLElement).closest('.custom-dropdown');
+    if (!dropdown) {
+      this.isDropdownOpen = false;
+    }
   }
 }
