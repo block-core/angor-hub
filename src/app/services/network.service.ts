@@ -8,7 +8,7 @@ export class NetworkService {
   private network: string;
 
   constructor() {
-    this.network = localStorage.getItem(this.NETWORK_KEY) || 'mainnet';
+    this.network = localStorage.getItem(this.NETWORK_KEY) || 'testnet';
   }
 
   getNetwork(): string {
