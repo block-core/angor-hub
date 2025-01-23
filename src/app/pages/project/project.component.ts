@@ -199,35 +199,50 @@ interface ExternalIdentity {
             <!-- Project Content -->
             <div class="project-content">
               @if (project()?.media?.length) {
-                <div class="carousel">
-                  <div class="carousel-inner" [style.transform]="'translateX(' + -currentSlide * 100 + '%)'">
-                    @for (item of project()?.media; track item.url) {
-                      @if (item.type === 'image') {
-                        <div class="carousel-item">
-                          <img [src]="item.url" alt="Project media" loading="lazy" (click)="showImagePopup = true; selectedImage = item.url">
-                        </div>
-                      }
-                    }
+              <div class="carousel">
+                <div
+                  class="carousel-inner"
+                  [style.transform]="'translateX(' + -currentSlide * 100 + '%)'"
+                >
+                  @for (item of project()?.media; track item.url) { @if
+                  (item.type === 'image') {
+                  <div class="carousel-item">
+                    <img
+                      [src]="item.url"
+                      alt="Project media"
+                      loading="lazy"
+                      (click)="showImagePopup = true; selectedImage = item.url"
+                    />
                   </div>
-                  @if (project()?.media?.length) {
-                    <button class="carousel-control prev" (click)="prevSlide()">❮</button>
-                    <button class="carousel-control next" (click)="nextSlide()">❯</button>
+                  } }
+                </div>
+                @if (project()?.media?.length) {
+                <button class="carousel-control prev" (click)="prevSlide()">
+                  ❮
+                </button>
+                <button class="carousel-control next" (click)="nextSlide()">
+                  ❯
+                </button>
+                }
+              </div>
+              } @if (project()?.members?.length) {
+              <div class="members-list">
+                <h3>Project Members</h3>
+                <div class="member-grid">
+                  @for (member of project()?.members; track member) {
+                  <div class="member-item">
+                    <span class="material-icons">person</span>
+                    <span class="member-npub"
+                      ><a
+                        href="https://primal.net/p/{{ member }}"
+                        target="_blank"
+                        >{{ formatNpub(member) }}</a
+                      ></span
+                    >
+                  </div>
                   }
                 </div>
-              }
-
-              @if (project()?.members?.length) {
-                <div class="members-list">
-                  <h3>Project Members</h3>
-                  <div class="member-grid">
-                    @for (member of project()?.members; track member) {
-                      <div class="member-item">
-                        <span class="material-icons">person</span>
-                        <span class="member-npub"><a href="https://primal.net/p/{{member}}" target="_blank">{{ formatNpub(member) }}</a></span>
-                      </div>
-                    }
-                  </div>
-                </div>
+              </div>
               }
 
               <div class="content-text">{{ project()?.content }}</div>
@@ -257,7 +272,8 @@ interface ExternalIdentity {
                     </div>
                     <div>
                       <div class="stat-value target">
-                        {{ project()?.details?.targetAmount }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
+                        {{ project()?.details?.targetAmount }}
+                        {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                       </div>
                       <div class="stat-label">Target Amount</div>
                     </div>
@@ -1306,13 +1322,11 @@ export class ProjectComponent implements OnInit, OnDestroy {
             pubkey: projectData.details.nostrPubKey,
             relayUrls: this.relay.relayUrls,
           });
-          console.log('User:', this.user);
-        }
 
-        // if (!projectData.metadata) {
-        //   // Go fetch metadata
-        //   this.relay.fetchProfile(projectData.details.nostrPubKey);
-        // }
+          if (!projectData.content) {
+            this.relay.fetchContent([projectData.details.nostrPubKey]);
+          }
+        }
 
         // 3. Subscribe to project updates from relay with timestamp check
         const projectSub = this.relay.projectUpdates.subscribe((event) => {
@@ -1536,7 +1550,9 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
   prevSlide() {
     if (!this.project()?.media) return;
-    this.currentSlide = (this.currentSlide - 1 + this.project()!.media!.length) % this.project()!.media!.length;
+    this.currentSlide =
+      (this.currentSlide - 1 + this.project()!.media!.length) %
+      this.project()!.media!.length;
   }
 
   nextSlide() {

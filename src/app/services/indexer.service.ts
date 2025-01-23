@@ -249,7 +249,7 @@ export class IndexerService {
         const eventIds = response.map((project) => project.nostrEventId);
 
         if (eventIds.length > 0) {
-          this.relay.fetchData(eventIds);
+          this.relay.fetchListData(eventIds);
         }
       } else {
         this.totalProjectsFetched = true;

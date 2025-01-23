@@ -40,13 +40,13 @@ export class RelayService {
   private ndk: NDK | null = null;
   private isConnected = false;
   public relayUrls = [
+    'wss://purplepag.es',
     'wss://relay.primal.net',
     'wss://nos.lol',
     'wss://relay.angor.io',
     'wss://relay2.angor.io',
   ];
 
-  private connectedRelays = signal<string[]>([]);
   public projects = signal<ProjectEvent[]>([]);
   public loading = signal<boolean>(false);
   public profileUpdates = new Subject<NDKEvent>();
@@ -55,13 +55,6 @@ export class RelayService {
 
   constructor() {
     this.initializeRelays();
-
-    effect(() => {
-      // Automatically fetch projects when relays are connected
-      if (this.connectedRelays().length > 0) {
-        this.subscribeToProjects();
-      }
-    });
   }
 
   public async ensureConnected(): Promise<NDK> {
@@ -103,6 +96,48 @@ export class RelayService {
       batches.push(array.slice(i, i + batchSize));
     }
     return batches;
+  }
+
+  async fetchListData(ids: string[]): Promise<void> {
+    try {
+      const ndk = await this.ensureConnected();
+      // Split pubkeys into batches of 10
+      const batches = this.batchArray(ids, 1);
+
+      for (const batch of batches) {
+        const filter = {
+          kinds: [30078],
+          ids: ids,
+        };
+
+        const sub = ndk.subscribe(filter);
+        const timeout = setTimeout(() => {
+          // sub.close();
+        }, 5000);
+
+        sub.on('event', (event: NDKEvent) => {
+          try {
+            const projectDetails = JSON.parse(event.content);
+            this.fetchProfile([projectDetails.nostrPubKey]);
+            // this.fetchContent([projectDetails.nostrPubKey]);
+            this.projectUpdates.next(event);
+          } catch (error) {
+            console.error('Failed to parse profile:', error);
+          }
+        });
+
+        // Wait for each batch to complete
+        await new Promise((resolve) => {
+          sub.on('eose', () => {
+            clearTimeout(timeout);
+            // sub.close();
+            resolve(null);
+          });
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching profiles:', error);
+    }
   }
 
   async fetchData(ids: string[]): Promise<void> {
@@ -237,23 +272,6 @@ export class RelayService {
     } catch (error) {
       console.error('Error fetching profiles:', error);
     }
-  }
-
-  private subscribeToProjects() {
-    // this.loading.set(true);
-    // const filter: Filter = {
-    //   kinds: [1],
-    //   tags: [['t', 'project']],
-    //   limit: 100,
-    // };
-    // let sub = this.pool.sub(this.relayUrls, [filter]);
-    // sub.on('event', (event: Event) => {
-    //   this.projects.update((projects) => [...projects, event]);
-    // });
-    // sub.on('eose', () => {
-    //   this.loading.set(false);
-    //   sub.unsub();
-    // });
   }
 
   public disconnect() {
