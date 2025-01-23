@@ -90,51 +90,39 @@ export class RelayService {
     }
   }
 
-  private batchArray<T>(array: T[], batchSize: number): T[][] {
-    const batches: T[][] = [];
-    for (let i = 0; i < array.length; i += batchSize) {
-      batches.push(array.slice(i, i + batchSize));
-    }
-    return batches;
-  }
-
   async fetchListData(ids: string[]): Promise<void> {
     try {
       const ndk = await this.ensureConnected();
-      // Split pubkeys into batches of 10
-      const batches = this.batchArray(ids, 1);
 
-      for (const batch of batches) {
-        const filter = {
-          kinds: [30078],
-          ids: ids,
-        };
+      const filter = {
+        kinds: [30078],
+        ids: ids,
+      };
 
-        const sub = ndk.subscribe(filter);
-        const timeout = setTimeout(() => {
+      const sub = ndk.subscribe(filter);
+      const timeout = setTimeout(() => {
+        // sub.close();
+      }, 5000);
+
+      sub.on('event', (event: NDKEvent) => {
+        try {
+          const projectDetails = JSON.parse(event.content);
+          this.fetchProfile([projectDetails.nostrPubKey]);
+          // this.fetchContent([projectDetails.nostrPubKey]);
+          this.projectUpdates.next(event);
+        } catch (error) {
+          console.error('Failed to parse profile:', error);
+        }
+      });
+
+      // Wait for each batch to complete
+      await new Promise((resolve) => {
+        sub.on('eose', () => {
+          clearTimeout(timeout);
           // sub.close();
-        }, 5000);
-
-        sub.on('event', (event: NDKEvent) => {
-          try {
-            const projectDetails = JSON.parse(event.content);
-            this.fetchProfile([projectDetails.nostrPubKey]);
-            // this.fetchContent([projectDetails.nostrPubKey]);
-            this.projectUpdates.next(event);
-          } catch (error) {
-            console.error('Failed to parse profile:', error);
-          }
+          resolve(null);
         });
-
-        // Wait for each batch to complete
-        await new Promise((resolve) => {
-          sub.on('eose', () => {
-            clearTimeout(timeout);
-            // sub.close();
-            resolve(null);
-          });
-        });
-      }
+      });
     } catch (error) {
       console.error('Error fetching profiles:', error);
     }
@@ -143,40 +131,36 @@ export class RelayService {
   async fetchData(ids: string[]): Promise<void> {
     try {
       const ndk = await this.ensureConnected();
-      // Split pubkeys into batches of 10
-      const batches = this.batchArray(ids, 1);
 
-      for (const batch of batches) {
-        const filter = {
-          kinds: [30078],
-          ids: ids,
-        };
+      const filter = {
+        kinds: [30078],
+        ids: ids,
+      };
 
-        const sub = ndk.subscribe(filter);
-        const timeout = setTimeout(() => {
+      const sub = ndk.subscribe(filter);
+      const timeout = setTimeout(() => {
+        // sub.close();
+      }, 5000);
+
+      sub.on('event', (event: NDKEvent) => {
+        try {
+          const projectDetails = JSON.parse(event.content);
+          this.fetchProfile([projectDetails.nostrPubKey]);
+          this.fetchContent([projectDetails.nostrPubKey]);
+          this.projectUpdates.next(event);
+        } catch (error) {
+          console.error('Failed to parse profile:', error);
+        }
+      });
+
+      // Wait for each batch to complete
+      await new Promise((resolve) => {
+        sub.on('eose', () => {
+          clearTimeout(timeout);
           // sub.close();
-        }, 5000);
-
-        sub.on('event', (event: NDKEvent) => {
-          try {
-            const projectDetails = JSON.parse(event.content);
-            this.fetchProfile([projectDetails.nostrPubKey]);
-            this.fetchContent([projectDetails.nostrPubKey]);
-            this.projectUpdates.next(event);
-          } catch (error) {
-            console.error('Failed to parse profile:', error);
-          }
+          resolve(null);
         });
-
-        // Wait for each batch to complete
-        await new Promise((resolve) => {
-          sub.on('eose', () => {
-            clearTimeout(timeout);
-            // sub.close();
-            resolve(null);
-          });
-        });
-      }
+      });
     } catch (error) {
       console.error('Error fetching profiles:', error);
     }
@@ -185,37 +169,34 @@ export class RelayService {
   async fetchProfile(pubkeys: string[]): Promise<void> {
     try {
       const ndk = await this.ensureConnected();
-      const batches = this.batchArray(pubkeys, 20);
 
-      for (const batch of batches) {
-        const filter = {
-          kinds: [0],
-          authors: batch,
-          limit: 1,
-        };
+      const filter = {
+        kinds: [0],
+        authors: pubkeys,
+        limit: 1,
+      };
 
-        const sub = ndk.subscribe(filter);
+      const sub = ndk.subscribe(filter);
 
-        const timeout = setTimeout(() => {
-          // sub.close();
-        }, 5000);
+      const timeout = setTimeout(() => {
+        // sub.close();
+      }, 5000);
 
-        sub.on('event', (event: NDKEvent) => {
-          try {
-            this.profileUpdates.next(event);
-          } catch (error) {
-            console.error('Failed to parse profile:', error);
-          }
+      sub.on('event', (event: NDKEvent) => {
+        try {
+          this.profileUpdates.next(event);
+        } catch (error) {
+          console.error('Failed to parse profile:', error);
+        }
+      });
+
+      // Wait for batch completion
+      await new Promise((resolve) => {
+        sub.on('eose', () => {
+          clearTimeout(timeout);
+          resolve(null);
         });
-
-        // Wait for batch completion
-        await new Promise((resolve) => {
-          sub.on('eose', () => {
-            clearTimeout(timeout);
-            resolve(null);
-          });
-        });
-      }
+      });
     } catch (error) {
       console.error('Error fetching profiles:', error);
     }
