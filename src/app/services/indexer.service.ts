@@ -2,6 +2,7 @@ import { Injectable, signal, inject, effect } from '@angular/core';
 import { ProfileUpdate, ProjectUpdate, RelayService } from './relay.service';
 import { NDKEvent, NDKUserProfile } from '@nostr-dev-kit/ndk';
 import { NetworkService } from './network.service';
+import { DenyService } from './deny.service';
 
 export interface IndexedProject {
   founderKey: string;
@@ -87,6 +88,7 @@ export class IndexerService {
   private totalProjectsFetched = false;
   private relay = inject(RelayService);
   private readonly pageSize = 100;
+  private denyService = inject(DenyService);
 
   public loading = signal<boolean>(false);
   public projects = signal<IndexedProject[]>([]);
@@ -189,6 +191,8 @@ export class IndexerService {
     }
 
     try {
+      await this.denyService.loadDenyList();
+
       this.loading.set(true);
       this.error.set(null);
       let limit = this.LIMIT;
@@ -224,6 +228,16 @@ export class IndexerService {
       >(url);
 
       if (Array.isArray(response) && response.length > 0) {
+        // Filter out denied projects
+        const filteredResponse: IndexedProject[] = [];
+  
+        for (const item of response) {
+          const isDenied = await this.denyService.isEventDenied(item.nostrEventId);
+          if (!isDenied) {
+            filteredResponse.push(item);
+          }
+        }
+      
         if (this.offset === -1000) {
           this.totalItems = parseInt(headers.get('pagination-total') || '0');
           this.offset = Math.max(0, this.totalItems - limit - limit);
@@ -235,7 +249,8 @@ export class IndexerService {
         // Merge new projects with existing ones, avoiding duplicates
         this.projects.update((existing) => {
           const merged = [...existing];
-          response.forEach((newProject) => {
+
+          filteredResponse.forEach((newProject) => {
             const existingIndex = merged.findIndex(
               (p) => p.projectIdentifier === newProject.projectIdentifier
             );
@@ -243,10 +258,12 @@ export class IndexerService {
               merged.push(newProject);
             }
           });
+
           return merged;
         });
 
-        const eventIds = response.map((project) => project.nostrEventId);
+        const eventIds = filteredResponse.map((project) => project.nostrEventId);
+        // const eventIds = filteredResponse.map((project) => project.nostrEventId);
 
         if (eventIds.length > 0) {
           this.relay.fetchListData(eventIds);
@@ -258,44 +275,52 @@ export class IndexerService {
       this.error.set(
         err instanceof Error ? err.message : 'Failed to fetch projects'
       );
+      console.error(err);
     } finally {
       this.loading.set(false);
     }
   }
 
-  async getProjects() {
-    try {
-      // Initial request to get total count
-      const response = await fetch(
-        `${this.indexerUrl}api/query/Angor/projects`
-      );
-      const total = parseInt(
-        response.headers.get('pagination-total') || '0',
-        this.LIMIT
-      );
+  // async getProjects() {
+  //   try {
+  //     await this.denyService.loadDenyList();
 
-      let currentOffset = 0;
-      const allProjects: IndexedProject[] = [];
+  //     // Initial request to get total count
+  //     const response = await fetch(
+  //       `${this.indexerUrl}api/query/Angor/projects`
+  //     );
+  //     const total = parseInt(
+  //       response.headers.get('pagination-total') || '0',
+  //       this.LIMIT
+  //     );
 
-      // Continue fetching while there are more items
-      while (currentOffset < total) {
-        const batch = await this.fetchProjectsBatch(
-          currentOffset,
-          this.pageSize
-        );
-        if (!batch || batch.length === 0) break;
+  //     let currentOffset = 0;
+  //     const allProjects: IndexedProject[] = [];
 
-        allProjects.push(...batch);
-        currentOffset += this.pageSize;
-      }
+  //     // Continue fetching while there are more items
+  //     while (currentOffset < total) {
+  //       const batch = await this.fetchProjectsBatch(
+  //         currentOffset,
+  //         this.pageSize
+  //       );
+  //       if (!batch || batch.length === 0) break;
 
-      this.projects.set(allProjects);
-      return allProjects;
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-      throw error;
-    }
-  }
+  //       // Filter out denied projects
+  //       const filteredBatch = batch.filter(
+  //         project => !this.denyService.isEventDenied(project.nostrEventId)
+  //       );
+
+  //       allProjects.push(...filteredBatch);
+  //       currentOffset += this.pageSize;
+  //     }
+
+  //     this.projects.set(allProjects);
+  //     return allProjects;
+  //   } catch (error) {
+  //     console.error('Error fetching projects:', error);
+  //     throw error;
+  //   }
+  // }
 
   private async fetchProjectsBatch(offset: number, limit: number) {
     console.log('fetchProjectsBatch');
