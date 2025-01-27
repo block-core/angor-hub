@@ -232,7 +232,7 @@ export class IndexerService {
         const filteredResponse: IndexedProject[] = [];
   
         for (const item of response) {
-          const isDenied = await this.denyService.isEventDenied(item.nostrEventId);
+          const isDenied = await this.denyService.isEventDenied(item.projectIdentifier);
           if (!isDenied) {
             filteredResponse.push(item);
           }

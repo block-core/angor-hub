@@ -22,10 +22,10 @@ export class DenyService {
     }
   }
 
-  isEventDenied(nostrEventId: string): boolean {
+  isEventDenied(projectIdentifier: string): boolean {
     if (!this.denyList) {
       return false;
     }
-    return this.denyList.includes(nostrEventId);
+    return this.denyList.includes(projectIdentifier);
   }
 }
