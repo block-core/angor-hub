@@ -3,6 +3,7 @@ import { ProfileUpdate, ProjectUpdate, RelayService } from './relay.service';
 import { NDKEvent, NDKUserProfile } from '@nostr-dev-kit/ndk';
 import { NetworkService } from './network.service';
 import { DenyService } from './deny.service';
+import { ExternalIdentity } from '../models/models';
 
 export interface IndexedProject {
   founderKey: string;
@@ -28,6 +29,9 @@ export interface IndexedProject {
 
   media?: any[];
   media_created_at: number | undefined;
+
+  externalIdentities?: ExternalIdentity[];
+  externalIdentities_created_at: number | undefined;
 }
 
 export interface ProjectStats {

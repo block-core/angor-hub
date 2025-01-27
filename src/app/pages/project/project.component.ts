@@ -12,22 +12,17 @@ import {
   ProjectUpdate,
   RelayService,
 } from '../../services/relay.service';
-import NDK, { NDKEvent, NDKKind, NDKUser } from '@nostr-dev-kit/ndk';
+import NDK, {
+  NDKEvent,
+  NDKKind,
+  NDKUser,
+  NDKUserProfile,
+} from '@nostr-dev-kit/ndk';
 import { AgoPipe } from '../../pipes/ago.pipe';
 import { ImagePopupComponent } from '../../components/image-popup.component';
 import { NetworkService } from '../../services/network.service';
-
-export interface FaqItem {
-  id: string;
-  question: string;
-  answer: string;
-}
-
-interface ExternalIdentity {
-  platform: string;
-  username: string;
-  proofUrl?: string;
-}
+import { ExternalIdentity, FaqItem } from '../../models/models';
+import { UtilsService } from '../../services/utils.service';
 
 @Component({
   selector: 'app-project',
@@ -145,7 +140,8 @@ interface ExternalIdentity {
           </a>
           }
           <div class="social-links">
-            @for (identity of externalIdentities(); track identity.platform) {
+            @for (identity of project()?.externalIdentities; track
+            identity.platform) {
             <a
               [href]="getSocialLink(identity)"
               target="_blank"
@@ -1162,6 +1158,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
   private relay = inject(RelayService);
   private subscriptions: { unsubscribe: () => void }[] = [];
   public networkService = inject(NetworkService);
+  public utils = inject(UtilsService);
 
   project = signal<IndexedProject | null>(null);
   projectId: string = '';
@@ -1292,7 +1289,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
     this.projectId = id;
 
     // 1. First try to get from existing projects cache
-    let projectData: any = this.indexer.getProject(id);
+    let projectData: IndexedProject | undefined | null =
+      this.indexer.getProject(id);
 
     try {
       // 2. If not in cache, fetch from Indexer API
@@ -1301,6 +1299,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
       }
 
       if (projectData) {
+        console.log('Project Data:  ', projectData);
         // Set initial project data
         this.project.set(projectData);
 
@@ -1309,7 +1308,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
           this.indexer
             .fetchProjectStats(id)
             .then((stats: ProjectStats | null) => {
-              projectData.stats = stats;
+              projectData!.stats = stats!;
             });
         }
 
@@ -1346,11 +1345,11 @@ export class ProjectComponent implements OnInit, OnDestroy {
             }
 
             this.projectEvent = event;
-            projectData.details = details;
+            projectData!.details = details;
 
             // As soon as we have details, make an NDKUser instance
             this.user = new NDKUser({
-              pubkey: projectData.details.nostrPubKey,
+              pubkey: projectData!.details.nostrPubKey,
               relayUrls: this.relay.relayUrls,
             });
 
@@ -1365,9 +1364,9 @@ export class ProjectComponent implements OnInit, OnDestroy {
             return;
           }
 
-          const update: ProfileUpdate = JSON.parse(event.content);
+          const update: NDKUserProfile = JSON.parse(event.content);
 
-          if (event.pubkey == projectData.details?.nostrPubKey) {
+          if (event.pubkey == projectData!.details?.nostrPubKey) {
             if (this.profileEvent) {
               if (this.profileEvent.created_at! > event.created_at!) {
                 {
@@ -1377,10 +1376,11 @@ export class ProjectComponent implements OnInit, OnDestroy {
             }
 
             this.profileEvent = event;
-            projectData.metadata = update;
+            projectData!.metadata = update;
 
-            // Parse the external identities from profile metadata
-            this.externalIdentities.set(this.getExternalIdentities(event));
+            projectData!.externalIdentities =
+              this.utils.getExternalIdentities(event);
+            projectData!.externalIdentities_created_at = event.created_at;
           }
         });
 
@@ -1426,6 +1426,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
         });
 
         this.subscriptions.push(projectSub, profileSub, contentSub);
+
+        console.log('Subscriptions: ', this.subscriptions);
 
         // 5. Fetch project details from relay
         // if (projectData.nostrEventId) {
@@ -1485,19 +1487,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
     return Number(((penalties / invested) * 100).toFixed(1));
   }
 
-  externalIdentities = signal<ExternalIdentity[]>([]);
-
-  getExternalIdentities(event: NDKEvent): ExternalIdentity[] {
-    if (!event.tags) return [];
-
-    return event.tags
-      .filter((tag) => tag[0] === 'i')
-      .map((tag) => ({
-        platform: tag[1].split(':')[0],
-        username: tag[1].split(':')[1],
-        proofUrl: tag[2],
-      }));
-  }
+  // externalIdentities = signal<ExternalIdentity[]>([]);
 
   getSocialIcon(platform: string): string {
     const icons: { [key: string]: string } = {

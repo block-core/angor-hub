@@ -20,6 +20,7 @@ import { Location } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { AgoPipe } from '../../pipes/ago.pipe';
 import { NetworkService } from '../../services/network.service';
+import { UtilsService } from '../../services/utils.service';
 
 @Component({
   selector: 'app-explore',
@@ -351,6 +352,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public indexer = inject(IndexerService);
   public networkService = inject(NetworkService);
+  public utils = inject(UtilsService);
 
   constructor() {
     // Optional: Subscribe to project updates if you need to trigger any UI updates
@@ -401,6 +403,10 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
         ) {
           project.metadata = update;
           project.metadata_created_at = event.created_at;
+
+          project.externalIdentities = this.utils.getExternalIdentities(event);
+          project.externalIdentities_created_at = event.created_at
+
         }
       }
     });
