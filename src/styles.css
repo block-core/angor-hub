@@ -16,6 +16,7 @@
   --warning: #ff0000;
   --bitcoin-mainnet: #F7931A;
   --bitcoin-testnet: #28C025;
+  --card-bg-rgb: 255, 255, 255;
 }
 
 [data-theme="dark"] {
@@ -29,6 +30,7 @@
   --accent-light: #0caac9;
   --surface-card: #242424;
   --warning: #ff0000;
+  --card-bg-rgb: 32, 33, 36;
 }
 
 /* Inter Variable Font */
