@@ -4,60 +4,16 @@ import { CommonModule } from '@angular/common';
 import { ThemeService } from './services/theme.service';
 import { environment } from '../environment';
 import { NetworkService } from './services/network.service';
+import { AppLauncherComponent } from './shared/components/app-launcher/app-launcher.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, CommonModule],
+  imports: [RouterOutlet, RouterLink, CommonModule, AppLauncherComponent],
   template: `
     <header>
       <nav>
-        <div class="app-launcher">
-          <a class="logo-link" (click)="toggleAppMenu($event)">
-            <img src="images/logo.svg" alt="Angor Menu" class="logo">
-          </a>
-          <div class="app-menu" [class.show]="isAppMenuOpen">
-            <div class="app-menu-content">
-            <a href="https://test.angor.io" class="app-item">
-                <i class="fa-solid fa-rocket"></i>
-                <div>
-                  <span class="app-name">Angor App</span>
-                  <span class="app-desc">Create and manage funding</span>
-                </div>
-              </a>
-              <a href="https://blog.angor.io" class="app-item">
-                <i class="fa-solid fa-newspaper"></i>
-                <div>
-                  <span class="app-name">Angor Blog</span>
-                  <span class="app-desc">News and updates</span>
-                </div>
-              </a>
-              <a href="https://hub.angor.io" class="app-item">
-                <i class="fa-solid fa-compass"></i>
-                <div>
-                  <span class="app-name">Angor Hub</span>
-                  <span class="app-desc">Discover projects to fund</span>
-                </div>
-              </a>
-              <a href="https://profile.angor.io" class="app-item">
-                <i class="fa-solid fa-user"></i>
-                <div>
-                  <span class="app-name">Angor Profile</span>
-                  <span class="app-desc">Manage your project profile</span>
-                </div>
-              </a>
-
-              <a href="https://angor.io" class="app-item">
-                <i class="fa-solid fa-globe"></i>
-                <div>
-                  <span class="app-name">Angor Web</span>
-                  <span class="app-desc">Learn about Angor Protocol</span>
-                </div>
-              </a>
-
-            </div>
-          </div>
-        </div>
+        <app-launcher></app-launcher>
         <a routerLink="/" class="logo-link">
           <img src="images/logo-text.svg" alt="Angor Hub Logo" class="logo">
         </a>
@@ -431,23 +387,11 @@ export class AppComponent {
     this.isDropdownOpen = false;
   }
 
-  toggleAppMenu(event: Event) {
-    event.preventDefault();
-    this.isAppMenuOpen = !this.isAppMenuOpen;
-  }
-
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {
-    // Handle both dropdown and app menu clicks
     const dropdown = (event.target as HTMLElement).closest('.custom-dropdown');
-    const appLauncher = (event.target as HTMLElement).closest('.app-launcher');
-    
     if (!dropdown) {
       this.isDropdownOpen = false;
-    }
-    
-    if (!appLauncher) {
-      this.isAppMenuOpen = false;
     }
   }
 }
