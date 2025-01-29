@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ThemeService } from './services/theme.service';
 import { environment } from '../environment';
 import { NetworkService } from './services/network.service';
-import { AppLauncherComponent } from './shared/components/app-launcher/app-launcher.component';
+import { AppLauncherComponent } from './components/app-launcher.component';
 
 @Component({
   selector: 'app-root',
