@@ -17,6 +17,7 @@
   --bitcoin-mainnet: #F7931A;
   --bitcoin-testnet: #28C025;
   --card-bg-rgb: 255, 255, 255;
+  --scrollbar: silver;
 }
 
 [data-theme="dark"] {
@@ -31,6 +32,7 @@
   --surface-card: #242424;
   --warning: #ff0000;
   --card-bg-rgb: 32, 33, 36;
+  --scrollbar: gray;
 }
 
 /* Inter Variable Font */
@@ -58,8 +60,14 @@ body {
   color: var(--text);
 }
 
-* {
-  scrollbar-color: var(--border) var(--background);
+::-webkit-scrollbar {
+  background-color: transparent;
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar);
+  border-radius: 6px;
 }
 
 a {
