@@ -54,13 +54,14 @@ import { CommonModule } from '@angular/common';
   styles: [`
     .app-launcher {
       position: relative;
+      cursor: pointer;
     }
 
     .app-menu {
       position: absolute;
       top: 100%;
       left: 0;
-      background: rgba(var(--card-bg-rgb), 0.95);
+      // background: rgba(var(--card-bg-rgb), 0.97);
       border: 1px solid var(--border);
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -70,7 +71,7 @@ import { CommonModule } from '@angular/common';
       transition: all 0.2s ease;
       z-index: 1000;
       margin-top: 0.5rem;
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(16px) brightness(0.7);
     }
 
     .app-menu.show {
@@ -89,11 +90,13 @@ import { CommonModule } from '@angular/common';
       color: var(--text);
       text-decoration: none;
       border-radius: 6px;
-      transition: background-color 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.19, 1, 0.22, 1);
     }
 
     .app-item:hover {
       background-color: var(--hover-bg);
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     .app-item i {
@@ -101,7 +104,14 @@ import { CommonModule } from '@angular/common';
       margin-right: 1rem;
       width: 24px;
       text-align: center;
+      color: var(--text);
+      opacity: 0.7;
+      transition: all 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    .app-item:hover i {
       color: var(--accent);
+      opacity: 1;
     }
 
     .app-item div {
@@ -130,6 +140,7 @@ import { CommonModule } from '@angular/common';
       height: 32px;
       width: auto;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
     }
 
     .logo-link:hover .logo {
