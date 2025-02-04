@@ -23,6 +23,7 @@ import { ImagePopupComponent } from '../../components/image-popup.component';
 import { NetworkService } from '../../services/network.service';
 import { ExternalIdentity, FaqItem } from '../../models/models';
 import { UtilsService } from '../../services/utils.service';
+import { ProfileComponent } from '../../components/profile.component';
 
 @Component({
   selector: 'app-project',
@@ -33,6 +34,7 @@ import { UtilsService } from '../../services/utils.service';
     AgoPipe,
     RouterModule,
     ImagePopupComponent,
+    ProfileComponent
   ],
   template: `
     <!-- <app-breadcrumb
@@ -227,14 +229,17 @@ import { UtilsService } from '../../services/utils.service';
                 <div class="member-grid">
                   @for (member of project()?.members; track member) {
                   <div class="member-item">
-                    <span class="material-icons">person</span>
+
+                    <app-profile [npub]="member" [link]="'https://primal.net/p/' + member"></app-profile>
+
+                    <!-- <span class="material-icons">person</span>
                     <span class="member-npub"
                       ><a
                         href="https://primal.net/p/{{ member }}"
                         target="_blank"
                         >{{ formatNpub(member) }}</a
                       ></span
-                    >
+                    > -->
                   </div>
                   }
                 </div>
@@ -1142,12 +1147,7 @@ import { UtilsService } from '../../services/utils.service';
         opacity: 0.7;
       }
 
-      .member-npub {
-        font-size: 0.9rem;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
+
     `,
   ],
 })
