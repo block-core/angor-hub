@@ -34,7 +34,7 @@ import { ProfileComponent } from '../../components/profile.component';
     AgoPipe,
     RouterModule,
     ImagePopupComponent,
-    ProfileComponent
+    ProfileComponent,
   ],
   template: `
     <!-- <app-breadcrumb
@@ -116,7 +116,26 @@ import { ProfileComponent } from '../../components/profile.component';
         />
         }
         <div class="project-title-content">
-          <h1>{{ project()?.metadata?.name || projectId }}</h1>
+          <div class="project-title-header">
+            <h1>{{ project()?.metadata?.name || projectId }}</h1>
+
+            <span
+              [class.favorite]="isFavorite()"
+              (click)="toggleFavorite()"
+              class="material-icons favorite-icon"
+              >{{ isFavorite() ? 'star' : 'star_border' }}</span
+            >
+
+            <!-- <mat-icon 
+            class="favorite-icon" 
+            [class.favorite]="isFavorite()"
+            (click)="toggleFavorite()">
+            {{ isFavorite() ? 'star' : 'star_border' }}
+          </mat-icon> -->
+          </div>
+
+          <!-- <h1>{{ project()?.metadata?.name || projectId }}</h1> -->
+
           <p class="project-about">{{ project()?.metadata?.about }}</p>
           @if (project()?.details?.nostrPubKey) { Open in:
           <a
@@ -229,8 +248,10 @@ import { ProfileComponent } from '../../components/profile.component';
                 <div class="member-grid">
                   @for (member of project()?.members; track member) {
                   <div class="member-item">
-
-                    <app-profile [npub]="member" [link]="'https://primal.net/p/' + member"></app-profile>
+                    <app-profile
+                      [npub]="member"
+                      [link]="'https://primal.net/p/' + member"
+                    ></app-profile>
 
                     <!-- <span class="material-icons">person</span>
                     <span class="member-npub"
@@ -1147,7 +1168,33 @@ import { ProfileComponent } from '../../components/profile.component';
         opacity: 0.7;
       }
 
+      .project-title-header {
+        display: flex;
+        gap: 1em;
+        // align-items: center;
+        // justify-content: space-between;
+      }
 
+      .project-title-header h1 {
+        padding: 0;
+        margin: 0;
+      }
+
+      .favorite-icon {
+        align-self: center;
+        align-items: center;
+
+        cursor: pointer;
+        color: #666;
+
+        &.favorite {
+          color: #ffd700;
+        }
+
+        &:hover {
+          transform: scale(1.1);
+        }
+      }
     `,
   ],
 })
@@ -1259,6 +1306,29 @@ export class ProjectComponent implements OnInit, OnDestroy {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  // Add to component class:
+  isFavorite() {
+    const favorites = JSON.parse(
+      localStorage.getItem('angor-hub-favorites') || '[]'
+    );
+    return favorites.includes(this.projectId);
+  }
+
+  toggleFavorite() {
+    const favorites = JSON.parse(
+      localStorage.getItem('angor-hub-favorites') || '[]'
+    );
+    const index = favorites.indexOf(this.projectId);
+
+    if (index === -1) {
+      favorites.push(this.projectId);
+    } else {
+      favorites.splice(index, 1);
+    }
+
+    localStorage.setItem('angor-hub-favorites', JSON.stringify(favorites));
   }
 
   user: NDKUser | undefined;
