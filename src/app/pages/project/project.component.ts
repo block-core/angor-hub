@@ -120,6 +120,7 @@ import { ProfileComponent } from '../../components/profile.component';
             <h1>{{ project()?.metadata?.name || projectId }}</h1>
 
             <span
+              [title]="'Click to toggle as favorite'"
               [class.favorite]="isFavorite()"
               (click)="toggleFavorite()"
               class="material-icons favorite-icon"

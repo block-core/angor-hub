@@ -156,6 +156,37 @@ import { UtilsService } from '../../services/utils.service';
         font-weight: 600;
         color: var(--accent);
       }
+
+
+      .project-title-header {
+        display: flex;
+        gap: 1em;
+        // align-items: center;
+        // justify-content: space-between;
+      }
+
+      .project-title-header h3 {
+        padding: 0;
+        margin: 0;
+      }
+
+      .favorite-icon {
+        align-self: center;
+        align-items: center;
+
+        cursor: pointer;
+        color: #666;
+
+        &.favorite {
+          color: #ffd700;
+        }
+
+        &:hover {
+          transform: scale(1.1);
+        }
+      }
+
+
     `,
   ], // Remove fade-out animation styles
   template: `
@@ -231,6 +262,7 @@ import { UtilsService } from '../../services/utils.service';
               "
             ></div>
 
+            <div class="project-title-header">
             <h3>
               @if ((project.metadata?.['name'] ?? '') !== '') {
               {{ project.metadata?.['name'] }}
@@ -238,6 +270,11 @@ import { UtilsService } from '../../services/utils.service';
               {{ project.projectIdentifier }}
               }
             </h3>
+
+            @if (isFavorite(project.projectIdentifier)) {
+            <span class="material-icons favorite-icon favorite">star</span>
+            }
+          </div>
 
             <!-- <p>
               Founder: @if ((project.metadata?.['name'] ?? '') !== '') {
@@ -405,8 +442,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
           project.metadata_created_at = event.created_at;
 
           project.externalIdentities = this.utils.getExternalIdentities(event);
-          project.externalIdentities_created_at = event.created_at
-
+          project.externalIdentities_created_at = event.created_at;
         }
       }
     });
@@ -443,7 +479,13 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  favorites: string[] = [];
+
   async ngOnInit() {
+    this.favorites = JSON.parse(
+      localStorage.getItem('angor-hub-favorites') || '[]'
+    );
+
     this.watchForScrollTrigger();
     this.setupProjectObserver();
 
@@ -594,6 +636,10 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       { threshold: 0.1 }
     );
+  }
+
+  isFavorite(projectId: string) {
+    return this.favorites.includes(projectId);
   }
 
   private observeProjects() {
