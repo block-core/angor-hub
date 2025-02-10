@@ -24,6 +24,7 @@ import { NetworkService } from '../../services/network.service';
 import { ExternalIdentity, FaqItem } from '../../models/models';
 import { UtilsService } from '../../services/utils.service';
 import { ProfileComponent } from '../../components/profile.component';
+import { BitcoinUtilsService } from '../../services/bitcoin.service';
 
 @Component({
   selector: 'app-project',
@@ -278,7 +279,7 @@ import { ProfileComponent } from '../../components/profile.component';
                   class="stat-card investment-card"
                   [style.--investment-percentage]="
                     ((project()?.stats?.amountInvested ?? 0) /
-                      ((project()?.details?.targetAmount ?? 1) * 100000000)) *
+                      ((project()?.details?.targetAmount ?? 1))) *
                       100 +
                     '%'
                   "
@@ -287,7 +288,7 @@ import { ProfileComponent } from '../../components/profile.component';
                     <div>
                       <div class="stat-value">
                         {{
-                          (project()?.stats?.amountInvested ?? 0) / 100000000
+                          bitcoin.toBTC((project()?.stats?.amountInvested ?? 0))
                         }}
                         {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                       </div>
@@ -295,7 +296,7 @@ import { ProfileComponent } from '../../components/profile.component';
                     </div>
                     <div>
                       <div class="stat-value target">
-                        {{ project()?.details?.targetAmount }}
+                        {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }}
                         {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                       </div>
                       <div class="stat-label">Target Amount</div>
@@ -305,8 +306,7 @@ import { ProfileComponent } from '../../components/profile.component';
                     {{
                       (
                         ((project()?.stats?.amountInvested ?? 0) /
-                          ((project()?.details?.targetAmount ?? 1) *
-                            100000000)) *
+                          ((project()?.details?.targetAmount ?? 1))) *
                         100
                       ).toFixed(1)
                     }}%
@@ -324,8 +324,7 @@ import { ProfileComponent } from '../../components/profile.component';
                 >
                   <div class="stat-value">
                     {{
-                      (project()?.stats?.amountSpentSoFarByFounder ?? 0) /
-                        100000000
+                      bitcoin.toBTC((project()?.stats?.amountSpentSoFarByFounder ?? 0))
                     }}
                     {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                   </div>
@@ -338,7 +337,7 @@ import { ProfileComponent } from '../../components/profile.component';
                   [style.--penalties-percentage]="getPenaltiesPercentage()"
                 >
                   <div class="stat-value">
-                    {{ (project()?.stats?.amountInPenalties ?? 0) / 100000000 }}
+                    {{ bitcoin.toBTC((project()?.stats?.amountInPenalties ?? 0)) }}
                     {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                   </div>
                   <div class="stat-label">
@@ -1207,6 +1206,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
   private subscriptions: { unsubscribe: () => void }[] = [];
   public networkService = inject(NetworkService);
   public utils = inject(UtilsService);
+  public bitcoin = inject(BitcoinUtilsService);
 
   project = signal<IndexedProject | null>(null);
   projectId: string = '';
@@ -1545,15 +1545,15 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   getSpentPercentage(): number {
-    const spent = (this.project()?.stats?.amountSpentSoFarByFounder ?? 0) / 100000000;
-    const invested = (this.project()?.stats?.amountInvested ?? 0) / 100000000;
+    const spent = (this.project()?.stats?.amountSpentSoFarByFounder ?? 0);
+    const invested = (this.project()?.stats?.amountInvested ?? 0);
     if (invested === 0) return 0;
     return Number(((spent / invested) * 100).toFixed(1));
   }
 
   getPenaltiesPercentage(): number {
-    const penalties = (this.project()?.stats?.amountInPenalties ?? 0) / 100000000;
-    const invested = (this.project()?.stats?.amountInvested ?? 0) / 100000000;
+    const penalties = (this.project()?.stats?.amountInPenalties ?? 0);
+    const invested = (this.project()?.stats?.amountInvested ?? 0);
     if (invested === 0) return 0;
     return Number(((penalties / invested) * 100).toFixed(1));
   }

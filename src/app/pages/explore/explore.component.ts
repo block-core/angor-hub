@@ -21,6 +21,7 @@ import { filter } from 'rxjs/operators';
 import { AgoPipe } from '../../pipes/ago.pipe';
 import { NetworkService } from '../../services/network.service';
 import { UtilsService } from '../../services/utils.service';
+import { BitcoinUtilsService } from '../../services/bitcoin.service';
 
 @Component({
   selector: 'app-explore',
@@ -328,12 +329,18 @@ import { UtilsService } from '../../services/utils.service';
             <div class="funding-progress">
               <div class="progress-stats">
                 <span
-                  >{{
+                  >
+                  
+                  {{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}
+                  
+                  <!-- {{
                     project.stats?.amountInvested
                       ? project.stats!.amountInvested / 100000000
                       : '0'
-                  }}
-                  / {{ project.details.targetAmount / 100000000 }}
+                  }} -->
+                  / 
+                  {{ bitcoin.toBTC(project.details.targetAmount) }}
+                  <!-- {{ project.details.targetAmount / 100000000 }} -->
                   {{ networkService.isMain() ? 'BTC' : 'TBTC' }} raised</span
                 >
                 <span class="funding-percentage"
@@ -390,6 +397,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   public indexer = inject(IndexerService);
   public networkService = inject(NetworkService);
   public utils = inject(UtilsService);
+  public bitcoin = inject(BitcoinUtilsService);
 
   constructor() {
     // Optional: Subscribe to project updates if you need to trigger any UI updates
@@ -671,8 +679,9 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       return 0;
     }
 
-    let invested = project.stats.amountInvested / 100000000;
-    let target = project.details.targetAmount / 100000000;
+    let invested = project.stats.amountInvested; //  / 100000000;
+    let target = project.details.targetAmount; //  / 100000000;
+    
     const percentage = (invested / target) * 100;
 
     return Math.min(Math.round(percentage * 10) / 10, 999.9); // Cap at 999.9% and round to 1 decimal
