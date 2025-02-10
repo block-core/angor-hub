@@ -16,7 +16,9 @@ export class BitcoinUtilsService {
   toBTC(satoshis: number | string, decimals: number = 8): string {
     try {
       const amount = new Big(satoshis);
-      return amount.div(this.SATOSHIS_PER_BTC).toFixed(decimals);
+      const fixed = amount.div(this.SATOSHIS_PER_BTC).toFixed(decimals);
+      // Remove trailing zeros after decimal point, but keep at least one decimal place
+      return fixed.replace(/\.?0+$/, '');
     } catch (error) {
       console.error('Error converting satoshis to BTC:', error);
       return '0';
