@@ -379,9 +379,9 @@ export class IndexerService {
       const stats = (await this.fetchJson<ProjectStats>(url)).data;
 
       // Convert amounts from satoshis to BTC
-      stats.amountInvested = stats.amountInvested / 100000000;
-      stats.amountSpentSoFarByFounder = stats.amountSpentSoFarByFounder / 100000000;
-      stats.amountInPenalties = stats.amountInPenalties / 100000000;
+      stats.amountInvested = stats.amountInvested;
+      stats.amountSpentSoFarByFounder = stats.amountSpentSoFarByFounder;
+      stats.amountInPenalties = stats.amountInPenalties;
 
       return stats;
     } catch (err) {
