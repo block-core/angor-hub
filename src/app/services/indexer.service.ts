@@ -376,7 +376,14 @@ export class IndexerService {
       const url = `${this.indexerUrl}api/query/Angor/projects/${id}/stats`;
       // console.log('Fetching project stats:', url);
 
-      return (await this.fetchJson<ProjectStats>(url)).data;
+      const stats = (await this.fetchJson<ProjectStats>(url)).data;
+
+      // Convert amounts from satoshis to BTC
+      stats.amountInvested = stats.amountInvested / 100000000;
+      stats.amountSpentSoFarByFounder = stats.amountSpentSoFarByFounder / 100000000;
+      stats.amountInPenalties = stats.amountInPenalties / 100000000;
+
+      return stats;
     } catch (err) {
       this.error.set(
         err instanceof Error
