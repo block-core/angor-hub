@@ -577,7 +577,7 @@ import { ProfileComponent } from '../../components/profile.component';
         position: absolute;
         top: 0;
         left: 0;
-        width: var(--investment-percentage);
+        width: var (--investment-percentage);
         height: 100%;
         background: rgba(0, 255, 0, 0.1);
         z-index: 0;
@@ -1545,15 +1545,15 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   getSpentPercentage(): number {
-    const spent = this.project()?.stats?.amountSpentSoFarByFounder ?? 0;
-    const invested = this.project()?.stats?.amountInvested ?? 0;
+    const spent = (this.project()?.stats?.amountSpentSoFarByFounder ?? 0) / 100000000;
+    const invested = (this.project()?.stats?.amountInvested ?? 0) / 100000000;
     if (invested === 0) return 0;
     return Number(((spent / invested) * 100).toFixed(1));
   }
 
   getPenaltiesPercentage(): number {
-    const penalties = this.project()?.stats?.amountInPenalties ?? 0;
-    const invested = this.project()?.stats?.amountInvested ?? 0;
+    const penalties = (this.project()?.stats?.amountInPenalties ?? 0) / 100000000;
+    const invested = (this.project()?.stats?.amountInvested ?? 0) / 100000000;
     if (invested === 0) return 0;
     return Number(((penalties / invested) * 100).toFixed(1));
   }
