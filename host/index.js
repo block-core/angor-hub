@@ -2,9 +2,97 @@ import express from "express";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import fs from "fs/promises";
+import NDK from "@nostr-dev-kit/ndk";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Initialize NDK with specific relays
+const ndk = new NDK({
+  explicitRelayUrls: ["wss://purplepag.es", "wss://relay.angor.io"],
+});
+
+await ndk.connect();
+
+// Function to fetch Nostr metadata
+async function getNostrEvent(eventId) {
+  try {
+    // const filter = {
+    //   ids: eventId,
+    //   limit: 1,
+    // };
+
+    const filter = {
+      //   kinds: [30078], // PROTOCOL CHANGES THIS KIND ID!
+      ids: [eventId],
+    };
+
+    console.log("Nostr Filter: ", JSON.stringify(filter));
+
+    const event = await ndk.fetchEvent(filter);
+    return event;
+    console.log("EVENT ID EVENTS: ", events);
+
+    // Assuming projectId contains or maps to a Nostr pubkey
+    // const user = ndk.getUser({
+    //   pubkey: projectId,
+    // });
+
+    // await user.fetchProfile();
+
+    return {
+      name: user.profile?.name || projectId,
+      about: user.profile?.about || "No description available",
+      picture: user.profile?.picture || "https://hub.angor.io/assets/angor-hub-social.png",
+    };
+  } catch (error) {
+    console.error("Error fetching Nostr metadata:", error);
+    return null;
+  }
+}
+
+// Function to fetch Nostr metadata
+async function getNostrMetadata(pubkey) {
+  try {
+    // Assuming projectId contains or maps to a Nostr pubkey
+    // const user = ndk.getUser({
+    //   pubkey: pubkey,
+    // });
+
+    // console.log('User created: ', user);
+
+    // const ndk = await this.ensureConnected();
+
+    const filter = {
+      kinds: [0],
+      authors: [pubkey],
+      limit: 1,
+    };
+
+    const event = await ndk.fetchEvent(filter);
+    return event;
+    console.log("Events:", events);
+    const sub = ndk.subscribe(filter);
+
+    sub.on("event", (event) => {
+      try {
+        console.log("Profile event:", event);
+        // this.profileUpdates.next(event);
+      } catch (error) {
+        console.error("Failed to parse profile:", error);
+      }
+    });
+
+    return {
+      name: user.profile?.name || pubkey,
+      about: user.profile?.about || "No description available",
+      picture: user.profile?.picture || "https://hub.angor.io/assets/angor-hub-social.png",
+    };
+  } catch (error) {
+    console.error("Error fetching Nostr metadata:", error);
+    return null;
+  }
+}
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -16,36 +104,49 @@ app.use(async (req, res, next) => {
     return next();
   }
 
-  // console.log(req.path.match(/\/$/));
-  // console.log(req.path.match(/\.html$/));
-  // console.log(req.path !== '/');
-
-  // // Only process index.html-like requests (root, directories, or .html files)
-  // if (!req.path.match(/\/$/) && !req.path.match(/\.html$/) && req.path !== '/') {
-  //     return next();
-  // }
-
-  console.log("Passed the static asset check...");
-
-  if (true || req.headers["user-agent"]?.toLowerCase().includes("bot") || req.headers["user-agent"]?.toLowerCase().includes("facebook") || req.headers["user-agent"]?.toLowerCase().includes("twitter")) {
+  if (req.headers["user-agent"]?.toLowerCase().match(/(bot|facebookexternalhit|twitterbot|telegrambot|whatsapp|linkedin|slack|discord|signal|snapchat|pinterest|skype|googlebot|bingbot|yandexbot|duckduckbot)/i)) {
     try {
       // Extract project identifier from path
       const projectMatch = req.path.match(/\/project\/(angor1[a-zA-Z0-9]+)/);
       const projectId = projectMatch ? projectMatch[1] : null;
 
-      console.log("Project ID:", projectId);
+      if (!projectId) {
+        return next();
+      }
+
+      const indexerUrl = "https://tbtc.indexer.angor.io/api/query/Angor/projects/";
+
+      // Fetch project metadata if projectId exists
+      const response = await fetch(indexerUrl + projectId);
+
+      const projectMetadata = await response.json();
+      const nostrEventId = projectMetadata.nostrEventId;
+
+      // Fetch Nostr metadata if projectId exists
+      const nostrEvent = await getNostrEvent(nostrEventId);
+      const nostrParsed = JSON.parse(nostrEvent.content);
+      const nostrPubKey = nostrParsed.nostrPubKey;
+
+      if (!nostrPubKey) {
+        return next();
+      }
+
+      // Fetch Nostr metadata if projectId exists
+      const nostrMetadata = await getNostrMetadata(nostrPubKey);
+      //   console.log("Nostr Metadata:", nostrMetadata);
+      const profile = JSON.parse(nostrMetadata.content);
 
       const indexPath = join(__dirname, "dist/browser/index.html");
       let html = await fs.readFile(indexPath, "utf-8");
 
-      // Customize meta tags based on route and project
-      const title = projectId ? `Angor Hub - Project ${projectId}` : `Angor Hub - ${req.path}`;
-      const description = projectId ? `View project ${projectId} on Angor Hub - Your Investement Gateway` : "Explore Angor Hub - Your INvestement Gateway";
-      const image = "https://hub.angor.io/assets/angor-hub-social.png";
+      const title = `Angor Hub - ${profile.name}`;
+      const description = `${profile.about}`;
+      const image = profile?.banner || "https://hub.angor.io/assets/angor-hub-social.png";
 
       html = html
         .replace(/<title>.*?<\/title>/, `<title>${title}</title>`)
         .replace(/<meta property="og:title" content=".*?"/, `<meta property="og:title" content="${title}"`)
+        .replace(/<meta name="twitter:title" content=".*?"/, `<meta name="twitter:title" content="${title}"`)
         .replace(/<meta property="og:description" content=".*?"/, `<meta property="og:description" content="${description}"`)
         .replace(/<meta property="og:image" content=".*?"/, `<meta property="og:image" content="${image}"`);
 

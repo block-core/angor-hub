@@ -133,7 +133,7 @@ export class RelayService {
       const ndk = await this.ensureConnected();
 
       const filter = {
-        kinds: [30078],
+        // kinds: [30078], // REMOVE SINCE WE ARE CHANGING THE PROTOCOL!
         ids: ids,
       };
 

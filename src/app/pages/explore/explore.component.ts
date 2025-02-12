@@ -22,6 +22,7 @@ import { AgoPipe } from '../../pipes/ago.pipe';
 import { NetworkService } from '../../services/network.service';
 import { UtilsService } from '../../services/utils.service';
 import { BitcoinUtilsService } from '../../services/bitcoin.service';
+import { TitleService } from '../../services/title.service';
 
 @Component({
   selector: 'app-explore',
@@ -162,8 +163,6 @@ import { BitcoinUtilsService } from '../../services/bitcoin.service';
       .project-title-header {
         display: flex;
         gap: 1em;
-        // align-items: center;
-        // justify-content: space-between;
       }
 
       .project-title-header h3 {
@@ -398,6 +397,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   public networkService = inject(NetworkService);
   public utils = inject(UtilsService);
   public bitcoin = inject(BitcoinUtilsService);
+  public title = inject(TitleService);
 
   constructor() {
     // Optional: Subscribe to project updates if you need to trigger any UI updates
@@ -490,6 +490,9 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   favorites: string[] = [];
 
   async ngOnInit() {
+
+    this.title.setTitle('Explore');
+
     this.favorites = JSON.parse(
       localStorage.getItem('angor-hub-favorites') || '[]'
     );

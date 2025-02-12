@@ -25,6 +25,7 @@ import { ExternalIdentity, FaqItem } from '../../models/models';
 import { UtilsService } from '../../services/utils.service';
 import { ProfileComponent } from '../../components/profile.component';
 import { BitcoinUtilsService } from '../../services/bitcoin.service';
+import { TitleService } from '../../services/title.service';
 
 @Component({
   selector: 'app-project',
@@ -1171,8 +1172,6 @@ import { BitcoinUtilsService } from '../../services/bitcoin.service';
       .project-title-header {
         display: flex;
         gap: 1em;
-        // align-items: center;
-        // justify-content: space-between;
       }
 
       .project-title-header h1 {
@@ -1207,6 +1206,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
   public networkService = inject(NetworkService);
   public utils = inject(UtilsService);
   public bitcoin = inject(BitcoinUtilsService);
+  public title = inject(TitleService);
 
   project = signal<IndexedProject | null>(null);
   projectId: string = '';
@@ -1449,6 +1449,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
             this.profileEvent = event;
             projectData!.metadata = update;
 
+            this.title.setTitle(update.name);
+
             projectData!.externalIdentities =
               this.utils.getExternalIdentities(event);
             projectData!.externalIdentities_created_at = event.created_at;
@@ -1499,6 +1501,10 @@ export class ProjectComponent implements OnInit, OnDestroy {
         this.subscriptions.push(projectSub, profileSub, contentSub);
 
         console.log('Subscriptions: ', this.subscriptions);
+
+        if (this.project()?.metadata?.name) {
+          this.title.setTitle(this.project()?.metadata?.name);
+        }
 
         // 5. Fetch project details from relay
         // if (projectData.nostrEventId) {

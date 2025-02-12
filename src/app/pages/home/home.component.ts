@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import { BlogService, BlogPost } from '../../services/blog.service';
 import { DatePipe } from '@angular/common';
+import { TitleService } from '../../services/title.service';
 
 @Component({
   selector: 'app-home',
@@ -104,9 +105,11 @@ import { DatePipe } from '@angular/common';
 })
 export class HomeComponent implements OnInit {
   private blogService = inject(BlogService);
+  public title = inject(TitleService);
   blogPosts: BlogPost[] = [];
 
   async ngOnInit() {
+    this.title.setTitle('');
     this.blogPosts = await this.blogService.getLatestPosts();
   }
 }

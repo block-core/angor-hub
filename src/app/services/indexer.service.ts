@@ -129,14 +129,6 @@ export class IndexerService {
     };
   }
 
-  private updateProjectProfile(pubkey: string, profile: any) {
-    this.projects.update((projects) =>
-      projects.map((project) =>
-        project.founderKey === pubkey ? { ...project, profile } : project
-      )
-    );
-  }
-
   private updateProjectMetadata(event: NDKEvent) {
     const pubkey = event.pubkey;
     const metadata = JSON.parse(event.content) as NDKUserProfile;
@@ -355,6 +347,7 @@ export class IndexerService {
         `${this.indexerUrl}api/query/Angor/projects/${id}`
       );
       if (project) {
+        // TODO: VERIFY IF THIS ACTUALLY WORKS, it relies on FOUNDERKEY which is not nostr pub key.
         // Fetch profile in an array of one
         this.relay.fetchProfile([project.data.founderKey]);
       }
