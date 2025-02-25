@@ -61,7 +61,6 @@ import { CommonModule } from '@angular/common';
       position: absolute;
       top: 100%;
       left: 0;
-      // background: rgba(var(--card-bg-rgb), 0.97);
       border: 1px solid var(--border);
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
