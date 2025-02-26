@@ -1,13 +1,12 @@
-name: Build and Deploy
+name: Build Docker and Publish
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  packages: write
 
 jobs:
   build:
@@ -25,7 +24,6 @@ jobs:
       - name: Version
         run: |
             BASE_VERSION=$(npm run get-version --silent)
-            # Remove last digit and dot, then append run number
             VERSION=$(echo $BASE_VERSION | sed 's/\.[0-9]*$/.'${{ github.run_number }}/)
             echo "VERSION=$VERSION" >> $GITHUB_ENV
         shell: bash
@@ -53,3 +51,22 @@ jobs:
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
+
+      # Docker steps
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: sondreb
+          password: ${{ secrets.DOCKER_KEY }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            blockcore/angor-hub:latest
+            blockcore/angor-hub:${{ env.VERSION }}
