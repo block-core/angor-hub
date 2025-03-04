@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
   template: `
     <div class="app-launcher">
       <a class="logo-link" (click)="toggleAppMenu($event)">
-        <img src="images/logo.svg" alt="Angor Menu" class="logo">
+        <img src="images/logo-text.svg" alt="Angor Menu" class="logo">
       </a>
       <div class="app-menu" [class.show]="isAppMenuOpen">
         <div class="app-menu-content">

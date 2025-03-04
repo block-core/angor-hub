@@ -14,9 +14,9 @@ import { AppLauncherComponent } from './components/app-launcher.component';
     <header>
       <nav>
         <app-launcher></app-launcher>
-        <a routerLink="/" class="logo-link">
+        <!-- <a routerLink="/" class="logo-link">
           <img src="images/logo-text.svg" alt="Angor Hub Logo" class="logo">
-        </a>
+        </a> -->
         <div class="nav-links">
           <div class="custom-dropdown" [class.open]="isDropdownOpen" [attr.data-network]="networkService.getNetwork()">
             <div class="custom-dropdown-toggle" (click)="toggleDropdown()">
