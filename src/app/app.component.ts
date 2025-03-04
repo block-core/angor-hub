@@ -99,7 +99,15 @@ import { AppLauncherComponent } from './components/app-launcher.component';
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2024 Angor Hub. All rights reserved. Version {{ version }}.</p>
+
+      <div>
+          <img src="images/logo.svg" alt="Angor Logo" class="footer-logo">
+          <p class="footer-slogan">Angor is a decentralized crowdfunding platform built on Bitcoin</p>
+        </div>
+
+        <p>&copy; 2024 Angor Hub. All rights reserved. Version {{ version }}.
+           <a href="https://angor.io/terms/">Terms of Use</a>.
+        <a href="https://angor.io/privacy/">Privacy Policy</a>.</p>
       </div>
     </footer>
   `,
