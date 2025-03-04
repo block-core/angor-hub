@@ -140,28 +140,33 @@ import { TitleService } from '../../services/title.service';
           <!-- <h1>{{ project()?.metadata?.name || projectId }}</h1> -->
 
           <p class="project-about">{{ project()?.metadata?.about }}</p>
-          @if (project()?.details?.nostrPubKey) { Open in:
-          <a
-            [href]="'https://primal.net/p/' + user?.npub"
-            target="_blank"
-            class="primal-link"
-          >
-            Primal </a
-          >,
-          <a
-            [href]="'https://notes.blockcore.net/p/' + user?.npub"
-            target="_blank"
-            class="primal-link"
-          >
-            Notes </a
-          >,
-          <a
-            [href]="'https://njump.me/' + user?.npub"
-            target="_blank"
-            class="primal-link"
-          >
-            njump
-          </a>
+          @if (project()?.details?.nostrPubKey) { 
+          <div class="external-links">
+            <a
+              [href]="'https://primal.net/p/' + user?.npub"
+              target="_blank"
+              class="external-link-button"
+            >
+              <span class="material-icons">launch</span>
+              Primal
+            </a>
+            <a
+              [href]="'https://notes.blockcore.net/p/' + user?.npub"
+              target="_blank"
+              class="external-link-button"
+            >
+              <span class="material-icons">launch</span>
+              Notes
+            </a>
+            <a
+              [href]="'https://njump.me/' + user?.npub"
+              target="_blank"
+              class="external-link-button"
+            >
+              <span class="material-icons">launch</span>
+              njump
+            </a>
+          </div>
           }
           <div class="social-links">
             @for (identity of project()?.externalIdentities; track
@@ -1193,6 +1198,38 @@ import { TitleService } from '../../services/title.service';
         &:hover {
           transform: scale(1.1);
         }
+      }
+
+      .external-links {
+        display: flex;
+        gap: 0.75rem;
+        margin: 0.75rem 0;
+        flex-wrap: wrap;
+      }
+
+      .external-link-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--surface-card);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text);
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+      }
+
+      .external-link-button:hover {
+        background: var(--surface-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .external-link-button .material-icons {
+        font-size: 1rem;
+        opacity: 0.7;
       }
     `,
   ],
