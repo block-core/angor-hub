@@ -47,6 +47,13 @@ import { CommonModule } from '@angular/common';
               <span class="app-desc">Learn about Angor Protocol</span>
             </div>
           </a>
+          <a href="https://docs.angor.io" class="app-item">
+            <i class="fa-solid fa-book"></i>
+            <div>
+              <span class="app-name">Angor Docs</span>
+              <span class="app-desc">Angor Documentation</span>
+            </div>
+          </a>
         </div>
       </div>
     </div>
