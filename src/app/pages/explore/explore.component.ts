@@ -1,14 +1,4 @@
-import {
-  Component,
-  inject,
-  ElementRef,
-  ViewChild,
-  AfterViewInit,
-  OnDestroy,
-  OnInit,
-  HostListener,
-  effect,
-} from '@angular/core';
+import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, effect } from '@angular/core';
 import { RelayService } from '../../services/relay.service';
 import { IndexerService } from '../../services/indexer.service';
 import { RouterLink } from '@angular/router';
@@ -159,7 +149,6 @@ import { TitleService } from '../../services/title.service';
         color: var(--accent);
       }
 
-
       .project-title-header {
         display: flex;
         gap: 1em;
@@ -185,8 +174,6 @@ import { TitleService } from '../../services/title.service';
           transform: scale(1.1);
         }
       }
-
-
     `,
   ], // Remove fade-out animation styles
   template: `
@@ -209,14 +196,10 @@ import { TitleService } from '../../services/title.service';
         <div class="hero-content">
           <strong>Explore Projects</strong>
           <h1 class="hero-subtitle">What's your next investment?</h1>
-          <p class="hero-description">
-            Check out our projects and find your next investment opportunity.
-          </p>
+          <p class="hero-description">Check out our projects and find your next investment opportunity.</p>
           @if(networkService.isMain()) {
 
-          <p class="hero-description notice">
-            Notice! Angor is not yet released for Bitcoin mainnet.
-          </p>
+          <p class="hero-description notice">Notice! Angor is not yet released for Bitcoin mainnet.</p>
           }
         </div>
       </div>
@@ -230,19 +213,12 @@ import { TitleService } from '../../services/title.service';
       } @else if (indexer.projects().length === 0) {
       <div class="text-center">
         <p>No projects found.</p>
-        <button class="primary-button" (click)="retryLoadProjects()">
-          Retry
-        </button>
+        <button class="primary-button" (click)="retryLoadProjects()">Retry</button>
       </div>
       } @else {
       <section class="projects">
-        @for (project of indexer.projects(); track project.projectIdentifier;
-        let i = $index) {
-        <a
-          [routerLink]="['/project', project.projectIdentifier]"
-          class="project-card"
-          [attr.data-index]="i"
-        >
+        @for (project of indexer.projects(); track project.projectIdentifier; let i = $index) {
+        <a [routerLink]="['/project', project.projectIdentifier]" class="project-card" [attr.data-index]="i">
           <div
             class="project-banner"
             [style.background-image]="
@@ -263,18 +239,18 @@ import { TitleService } from '../../services/title.service';
             ></div>
 
             <div class="project-title-header">
-            <h3>
-              @if ((project.metadata?.['name'] ?? '') !== '') {
-              {{ project.metadata?.['name'] }}
-              } @else {
-              {{ project.projectIdentifier }}
-              }
-            </h3>
+              <h3>
+                @if ((project.metadata?.['name'] ?? '') !== '') {
+                {{ project.metadata?.['name'] }}
+                } @else {
+                {{ project.projectIdentifier }}
+                }
+              </h3>
 
-            @if (isFavorite(project.projectIdentifier)) {
-            <span class="material-icons favorite-icon favorite">star</span>
-            }
-          </div>
+              @if (isFavorite(project.projectIdentifier)) {
+              <span class="material-icons favorite-icon favorite">star</span>
+              }
+            </div>
 
             <!-- <p>
               Founder: @if ((project.metadata?.['name'] ?? '') !== '') {
@@ -327,30 +303,23 @@ import { TitleService } from '../../services/title.service';
             </div>
             <div class="funding-progress">
               <div class="progress-stats">
-                <span
-                  >
-                  
+                <span>
                   {{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}
-                  
+
                   <!-- {{
                     project.stats?.amountInvested
                       ? project.stats!.amountInvested / 100000000
                       : '0'
                   }} -->
-                  / 
+                  /
                   {{ bitcoin.toBTC(project.details.targetAmount) }}
                   <!-- {{ project.details.targetAmount / 100000000 }} -->
                   {{ networkService.isMain() ? 'BTC' : 'TBTC' }} raised</span
                 >
-                <span class="funding-percentage"
-                  >{{ getFundingPercentage(project) }}%</span
-                >
+                <span class="funding-percentage">{{ getFundingPercentage(project) }}%</span>
               </div>
               <div class="progress-bar">
-                <div
-                  class="progress-fill"
-                  [style.width]="getFundingPercentage(project) + '%'"
-                ></div>
+                <div class="progress-fill" [style.width]="getFundingPercentage(project) + '%'"></div>
               </div>
             </div>
             }
@@ -365,14 +334,20 @@ import { TitleService } from '../../services/title.service';
       </div>
       } @else {
       <div class="load-more">
-        <button class="primary-button" (click)="loadMore()">
-          Load More Projects
-        </button>
+        <button class="primary-button" (click)="loadMore()">Load More Projects</button>
       </div>
       }
 
       <!-- Move trigger after the button -->
       <div #scrollTrigger class="scroll-trigger"></div>
+      } @else {
+      <div class="load-finished">
+        <div class="checkmark-container">
+          <i class="fas fa-check checkmark"></i>
+        </div>
+        <h3 class="achievement-title">You Finished!</h3>
+        <p class="achievement-subtitle">You've viewed all available projects. Time to pick your next investment or check back later for new opportunities!</p>
+      </div>
       } }
     </div>
   `,
@@ -411,16 +386,11 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     this.relay.projectUpdates.subscribe((event) => {
       const update = JSON.parse(event.content);
       const id = update.projectIdentifier;
-      const project = this.indexer
-        .projects()
-        .find((p) => p.projectIdentifier === id);
+      const project = this.indexer.projects().find((p) => p.projectIdentifier === id);
 
       if (project) {
         // Only update if new data is newer or we don't have existing details
-        if (
-          !project.details ||
-          event.created_at! > project.details_created_at!
-        ) {
+        if (!project.details || event.created_at! > project.details_created_at!) {
           project.details = update;
           project.details_created_at = event.created_at;
         }
@@ -436,16 +406,11 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       const update = JSON.parse(event.content);
       const id = event.pubkey;
 
-      const project = this.indexer
-        .projects()
-        .find((p) => p.details?.nostrPubKey === id);
+      const project = this.indexer.projects().find((p) => p.details?.nostrPubKey === id);
 
       if (project) {
         // Only update if new data is newer or we don't have existing metadata
-        if (
-          !project.metadata ||
-          event.created_at! > (project.metadata_created_at || 0)
-        ) {
+        if (!project.metadata || event.created_at! > (project.metadata_created_at || 0)) {
           project.metadata = update;
           project.metadata_created_at = event.created_at;
 
@@ -456,30 +421,28 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     // Replace popstate handling with Router events
-    this.routerSubscription = this.router.events
-      .pipe(filter((event) => event instanceof NavigationEnd))
-      .subscribe(() => {
-        if (this.exploreState.hasState) {
-          if (this.isBackNavigation) {
-            // Browser back/forward navigation
-            requestAnimationFrame(() => {
-              window.scrollTo({
-                top: this.exploreState.lastScrollPosition,
-                behavior: 'instant',
-              });
+    this.routerSubscription = this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
+      if (this.exploreState.hasState) {
+        if (this.isBackNavigation) {
+          // Browser back/forward navigation
+          requestAnimationFrame(() => {
+            window.scrollTo({
+              top: this.exploreState.lastScrollPosition,
+              behavior: 'instant',
             });
-          } else {
-            // Regular navigation (e.g. clicking Explore link)
-            setTimeout(() => {
-              window.scrollTo({
-                top: this.exploreState.lastScrollPosition,
-                behavior: 'instant',
-              });
-            }, 100);
-          }
-          this.isBackNavigation = false;
+          });
+        } else {
+          // Regular navigation (e.g. clicking Explore link)
+          setTimeout(() => {
+            window.scrollTo({
+              top: this.exploreState.lastScrollPosition,
+              behavior: 'instant',
+            });
+          }, 100);
         }
-      });
+        this.isBackNavigation = false;
+      }
+    });
 
     // Listen for popstate events to detect browser back/forward
     window.addEventListener('popstate', () => {
@@ -490,12 +453,9 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   favorites: string[] = [];
 
   async ngOnInit() {
-
     this.title.setTitle('Explore');
 
-    this.favorites = JSON.parse(
-      localStorage.getItem('angor-hub-favorites') || '[]'
-    );
+    this.favorites = JSON.parse(localStorage.getItem('angor-hub-favorites') || '[]');
 
     this.watchForScrollTrigger();
     this.setupProjectObserver();
@@ -519,16 +479,9 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.loadingTimeout = setTimeout(() => {
       // Use documentElement.scrollTop for more accurate position
-      const scrollPosition = Math.max(
-        window.pageYOffset,
-        document.documentElement.scrollTop,
-        document.body.scrollTop
-      );
+      const scrollPosition = Math.max(window.pageYOffset, document.documentElement.scrollTop, document.body.scrollTop);
 
-      this.exploreState.saveState(
-        scrollPosition,
-        this.indexer.getCurrentOffset()
-      );
+      this.exploreState.saveState(scrollPosition, this.indexer.getCurrentOffset());
     }, 50);
   }
 
@@ -669,9 +622,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private async loadProjectStats(project: any) {
     try {
-      project.stats = await this.indexer.fetchProjectStats(
-        project.projectIdentifier
-      );
+      project.stats = await this.indexer.fetchProjectStats(project.projectIdentifier);
     } catch (error) {
       console.error('Error loading project stats:', error);
     }
@@ -684,7 +635,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
 
     let invested = project.stats.amountInvested; //  / 100000000;
     let target = project.details.targetAmount; //  / 100000000;
-    
+
     const percentage = (invested / target) * 100;
 
     return Math.min(Math.round(percentage * 10) / 10, 999.9); // Cap at 999.9% and round to 1 decimal
@@ -718,10 +669,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
         await this.indexer.loadMore();
         // Observe new projects after they're loaded
         this.observeProjects();
-        console.log(
-          'Load more completed, new project count:',
-          this.indexer.projects().length
-        );
+        console.log('Load more completed, new project count:', this.indexer.projects().length);
       } finally {
         this.isLoadingMore = false;
 

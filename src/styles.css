@@ -2,7 +2,6 @@
 
 @import '@fortawesome/fontawesome-free/css/all.min.css';
 
-
 :root {
   --background: #ffffff;
   --text: #000000;
@@ -339,6 +338,72 @@ footer {
   width: 100%;
   margin: 2rem 0;
   opacity: 0; /* Instead of visibility: hidden */
+}
+
+.load-finished {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 3rem 0;
+  padding: 2rem;
+  text-align: center;
+  animation: achievement-appear 0.8s cubic-bezier(0.17, 0.89, 0.32, 1.3) forwards;
+}
+
+.checkmark-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, var(--accent-light), var(--accent));
+  border-radius: 50%;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 6px 16px rgba(8, 108, 129, 0.3);
+  transform: scale(0);
+  animation: checkmark-appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s forwards;
+}
+
+.checkmark {
+  color: white;
+  font-size: 2.5rem;
+}
+
+.achievement-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--accent);
+}
+
+.achievement-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.7;
+  max-width: 600px;
+  line-height: 1.4;
+  margin: 0 auto;
+}
+
+@keyframes achievement-appear {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes checkmark-appear {
+  from {
+    transform: scale(0) rotate(-45deg);
+  }
+  to {
+    transform: scale(1) rotate(0deg);
+  }
 }
 
 .load-more {
