@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
   template: `
     <div class="app-launcher">
       <a class="logo-link" (click)="toggleAppMenu($event)">
-        <img src="images/logo.svg" alt="Angor Menu" class="logo">
+        <img src="images/logo-text.svg" alt="Angor Menu" class="logo">
       </a>
       <div class="app-menu" [class.show]="isAppMenuOpen">
         <div class="app-menu-content">
@@ -45,6 +45,13 @@ import { CommonModule } from '@angular/common';
             <div>
               <span class="app-name">Angor Web</span>
               <span class="app-desc">Learn about Angor Protocol</span>
+            </div>
+          </a>
+          <a href="https://docs.angor.io" class="app-item">
+            <i class="fa-solid fa-book"></i>
+            <div>
+              <span class="app-name">Angor Docs</span>
+              <span class="app-desc">Angor Documentation</span>
             </div>
           </a>
         </div>

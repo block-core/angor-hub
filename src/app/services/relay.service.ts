@@ -39,13 +39,7 @@ export class RelayService {
   private pool = new SimplePool();
   private ndk: NDK | null = null;
   private isConnected = false;
-  public relayUrls = [
-    'wss://purplepag.es',
-    'wss://relay.primal.net',
-    'wss://nos.lol',
-    'wss://relay.angor.io',
-    'wss://relay2.angor.io',
-  ];
+  public relayUrls = ['wss://purplepag.es', 'wss://relay.primal.net', 'wss://nos.lol', 'wss://relay.angor.io', 'wss://relay2.angor.io'];
 
   public projects = signal<ProjectEvent[]>([]);
   public loading = signal<boolean>(false);
@@ -133,34 +127,17 @@ export class RelayService {
       const ndk = await this.ensureConnected();
 
       const filter = {
-        // kinds: [30078], // REMOVE SINCE WE ARE CHANGING THE PROTOCOL!
         ids: ids,
       };
 
-      const sub = ndk.subscribe(filter);
-      const timeout = setTimeout(() => {
-        // sub.close();
-      }, 5000);
+      const event = await ndk.fetchEvent(filter);
 
-      sub.on('event', (event: NDKEvent) => {
-        try {
-          const projectDetails = JSON.parse(event.content);
-          this.fetchProfile([projectDetails.nostrPubKey]);
-          this.fetchContent([projectDetails.nostrPubKey]);
-          this.projectUpdates.next(event);
-        } catch (error) {
-          console.error('Failed to parse profile:', error);
-        }
-      });
-
-      // Wait for each batch to complete
-      await new Promise((resolve) => {
-        sub.on('eose', () => {
-          clearTimeout(timeout);
-          // sub.close();
-          resolve(null);
-        });
-      });
+      if (event) {
+        const projectDetails = JSON.parse(event.content);
+        this.fetchProfile([projectDetails.nostrPubKey]);
+        this.fetchContent([projectDetails.nostrPubKey]);
+        this.projectUpdates.next(event);
+      }
     } catch (error) {
       console.error('Error fetching profiles:', error);
     }
