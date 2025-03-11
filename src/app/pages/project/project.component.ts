@@ -26,6 +26,7 @@ import { UtilsService } from '../../services/utils.service';
 import { ProfileComponent } from '../../components/profile.component';
 import { BitcoinUtilsService } from '../../services/bitcoin.service';
 import { TitleService } from '../../services/title.service';
+import { MarkdownModule } from 'ngx-markdown';
 
 @Component({
   selector: 'app-project',
@@ -37,6 +38,7 @@ import { TitleService } from '../../services/title.service';
     RouterModule,
     ImagePopupComponent,
     ProfileComponent,
+    MarkdownModule,
   ],
   template: `
     <!-- <app-breadcrumb
@@ -275,7 +277,9 @@ import { TitleService } from '../../services/title.service';
               </div>
               }
 
-              <div class="content-text">{{ project()?.content }}</div>
+              <div class="content-text">
+                <markdown [data]="project()?.content"></markdown>
+              </div>
             </div>
 
             <!-- Project Statistics -->
