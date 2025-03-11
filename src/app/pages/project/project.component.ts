@@ -339,7 +339,7 @@ import { MarkdownModule } from 'ngx-markdown';
                     {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                   </div>
                   <div class="stat-label">
-                    Spent ({{ getSpentPercentage() }}%)
+                  Founder has spent ({{ getSpentPercentage() }}%)
                   </div>
                 </div>
                 <div
@@ -351,14 +351,14 @@ import { MarkdownModule } from 'ngx-markdown';
                     {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                   </div>
                   <div class="stat-label">
-                    Penalties ({{ getPenaltiesPercentage() }}%)
+                    Investors withdrew after investing ({{ getPenaltiesPercentage() }}%)
                   </div>
                 </div>
                 <div class="stat-card">
                   <div class="stat-value">
                     {{ project()?.stats?.countInPenalties }}
                   </div>
-                  <div class="stat-label">Penalties Count</div>
+                  <div class="stat-label">Investors who exited</div>
                 </div>
               </section>
 
