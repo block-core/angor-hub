@@ -302,24 +302,21 @@ import { MarkdownModule } from 'ngx-markdown';
                         }}
                         {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                       </div>
-                      <div class="stat-label">Total Invested</div>
+                      <div class="stat-label">Total Raised</div>
                     </div>
                     <div>
                       <div class="stat-value target">
                         {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }}
                         {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                       </div>
-                      <div class="stat-label">Target Amount</div>
-                    </div>
-                  </div>
-                  <div class="stat-percentage">
-                    {{
+                      <div class="stat-label">Target Amount  ({{
                       (
                         ((project()?.stats?.amountInvested ?? 0) /
                           ((project()?.details?.targetAmount ?? 1))) *
                         100
                       ).toFixed(1)
-                    }}%
+                    }}%)</div>
+                    </div>
                   </div>
                 </div>
                 <div class="stat-card">
@@ -351,15 +348,15 @@ import { MarkdownModule } from 'ngx-markdown';
                     {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                   </div>
                   <div class="stat-label">
-                    Investors withdrew after investing ({{ getPenaltiesPercentage() }}%)
+                  {{ project()?.stats?.countInPenalties }} Investors withdrew after investing ({{ getPenaltiesPercentage() }}%)
                   </div>
                 </div>
-                <div class="stat-card">
+                <!-- <div class="stat-card">
                   <div class="stat-value">
                     {{ project()?.stats?.countInPenalties }}
                   </div>
                   <div class="stat-label">Investors who exited</div>
-                </div>
+                </div> -->
               </section>
 
               <!-- Project Details -->
@@ -599,14 +596,6 @@ import { MarkdownModule } from 'ngx-markdown';
         align-items: flex-start;
         position: relative;
         z-index: 1;
-      }
-
-      .stat-percentage {
-        position: absolute;
-        bottom: 1rem;
-        right: 1.5rem;
-        font-size: 0.9rem;
-        opacity: 0.7;
       }
 
       .stat-value.target {
