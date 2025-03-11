@@ -248,7 +248,7 @@ import { TitleService } from '../../services/title.service';
               </h3>
 
               @if (isFavorite(project.projectIdentifier)) {
-              <span class="material-icons favorite-icon favorite">star</span>
+              <span class="material-icons favorite-icon favorite">bookmark</span>
               }
             </div>
 

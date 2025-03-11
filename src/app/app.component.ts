@@ -82,19 +82,6 @@ import { AppLauncherComponent } from './components/app-launcher.component';
       font-size: 0.9rem;
     }
 
-    .footer-logo {
-      height: 40px;
-      width: auto;
-      margin-bottom: 1rem;
-    }
-
-    .footer-slogan {
-      opacity: 0.8;
-      max-width: 400px;
-      margin: 0 auto;
-      line-height: 1.5;
-    }
-
     .network-selector {
       margin-right: 1rem;
       padding: 0.5rem;

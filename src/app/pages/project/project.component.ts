@@ -128,15 +128,9 @@ import { MarkdownModule } from 'ngx-markdown';
               [class.favorite]="isFavorite()"
               (click)="toggleFavorite()"
               class="material-icons favorite-icon"
-              >{{ isFavorite() ? 'star' : 'star_border' }}</span
+              >{{ isFavorite() ? 'bookmark' : 'bookmark_border' }}</span
             >
 
-            <!-- <mat-icon 
-            class="favorite-icon" 
-            [class.favorite]="isFavorite()"
-            (click)="toggleFavorite()">
-            {{ isFavorite() ? 'star' : 'star_border' }}
-          </mat-icon> -->
           </div>
 
           <!-- <h1>{{ project()?.metadata?.name || projectId }}</h1> -->
