@@ -124,7 +124,7 @@ import { MarkdownModule } from 'ngx-markdown';
             <h1>{{ project()?.metadata?.name || projectId }}</h1>
 
             <span
-              [title]="'Click to toggle as favorite'"
+              [title]="'Click to toggle bookmark'"
               [class.favorite]="isFavorite()"
               (click)="toggleFavorite()"
               class="material-icons favorite-icon"
