@@ -50,7 +50,7 @@ import { AppLauncherComponent } from './components/app-launcher.component';
       <div class="footer-bottom">
         <div>
           <img src="images/logo.svg" alt="Angor Logo" class="footer-logo">
-          <p class="footer-slogan">Angor is a decentralized crowdfunding platform built on Bitcoin</p>
+          <p class="footer-slogan">Angor is a P2P funding protocol built on Bitcoin and Nostr</p>
         </div>
 
         <p>&copy; 2024 Angor Hub. All rights reserved. Version {{ version }}.
