@@ -630,9 +630,7 @@ import { MarkdownModule } from 'ngx-markdown';
 
       .content-text {
         font-size: 1.1rem;
-        line-height: 1.6;
-        white-space: pre-wrap;
-        overflow-wrap: break-word;
+
       }
 
       .project-sidebar {
