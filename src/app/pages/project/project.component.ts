@@ -327,7 +327,7 @@ import { MarkdownModule } from 'ngx-markdown';
                 </div>
                 <div
                   class="stat-card spending-card"
-                  [style.--spent-percentage]="getSpentPercentage()"
+                  [style.--spent-percentage]="getSpentPercentage() + '%'"
                 >
                   <div class="stat-value">
                     {{
@@ -341,14 +341,14 @@ import { MarkdownModule } from 'ngx-markdown';
                 </div>
                 <div
                   class="stat-card penalties-card"
-                  [style.--penalties-percentage]="getPenaltiesPercentage()"
+                  [style.--penalties-percentage]="getPenaltiesPercentage() + '%'"
                 >
                   <div class="stat-value">
                     {{ bitcoin.toBTC((project()?.stats?.amountInPenalties ?? 0)) }}
                     {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                   </div>
                   <div class="stat-label">
-                  {{ project()?.stats?.countInPenalties }} Investors withdrew after investing ({{ getPenaltiesPercentage() }}%)
+                  {{ project()?.stats?.countInPenalties }} investors withdrew after investing ({{ getPenaltiesPercentage() }}%)
                   </div>
                 </div>
                 <!-- <div class="stat-card">
@@ -552,6 +552,7 @@ import { MarkdownModule } from 'ngx-markdown';
       .penalties-card {
         position: relative;
         overflow: hidden;
+        background-color: var(--surface-card);
       }
 
       .penalties-card::before {
@@ -564,6 +565,10 @@ import { MarkdownModule } from 'ngx-markdown';
         background: rgba(255, 0, 0, 0.2);
         z-index: 0;
         transition: width 0.3s ease;
+      }
+
+      .penalties-card:has(.stat-value:not(:empty)) {
+        background-color: rgba(255, 0, 0, 0.05);
       }
 
       .penalties-card .stat-value,
@@ -583,7 +588,7 @@ import { MarkdownModule } from 'ngx-markdown';
         position: absolute;
         top: 0;
         left: 0;
-        width: var (--investment-percentage);
+        width: var(--investment-percentage);
         height: 100%;
         background: rgba(0, 255, 0, 0.1);
         z-index: 0;
