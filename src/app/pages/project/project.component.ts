@@ -27,6 +27,7 @@ import { ProfileComponent } from '../../components/profile.component';
 import { BitcoinUtilsService } from '../../services/bitcoin.service';
 import { TitleService } from '../../services/title.service';
 import { MarkdownModule } from 'ngx-markdown';
+import { SafeContentPipe } from '../../pipes/safe-content.pipe';
 
 @Component({
   selector: 'app-project',
@@ -39,6 +40,7 @@ import { MarkdownModule } from 'ngx-markdown';
     ImagePopupComponent,
     ProfileComponent,
     MarkdownModule,
+    SafeContentPipe,
   ],
   template: `
     <!-- <app-breadcrumb
@@ -458,7 +460,7 @@ import { MarkdownModule } from 'ngx-markdown';
                 formatDate(update.created_at)
               }}</span>
             </div>
-            <div class="update-content">{{ update.content }}</div>
+            <div class="update-content" [innerHTML]="update.content | safeContent"></div>
           </div>
           }
         </div>
@@ -908,6 +910,18 @@ import { MarkdownModule } from 'ngx-markdown';
         line-height: 1.6;
         color: var(--text);
         white-space: pre-wrap;
+      }
+
+      .update-content .embedded-image {
+        max-width: 100%;
+        border-radius: 8px;
+        margin: 1rem 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .update-content a {
+        color: var(--accent);
+        word-break: break-word;
       }
 
       .loading {
