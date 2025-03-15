@@ -31,39 +31,54 @@ import { NDKUserProfile } from '@nostr-dev-kit/ndk';
         align-items: center;
         gap: 0.5rem;
         padding: 0.5rem;
-        background: var(--background);
         border-radius: 4px;
         font-family: monospace;
     }
 
-        .member-npub {
-          font-size: 0.9rem;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }`,
+    .member-npub {
+      font-size: 0.9rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }`,
 })
 export class ProfileComponent {
   relay = inject(RelayService);
-  npub = input.required<string>();
+  npub = input<string>();
   link = input.required<string>();
-  private pubkey = '';
+  pubkey = input<string>();
+  #pubkey: any = '';
   profile = signal<NDKUserProfile | null>(null);
 
   constructor() {
     effect(() => {
-      const currentNpub = this.npub();
+      const publicKey = this.pubkey();
+      this.#pubkey = publicKey;
+
+      if (publicKey) {
+        this.handleNpubChange(this.#pubkey);
+      }
+    });
+
+
+    effect(() => {
+      const currentNpub: any = this.npub();
+      
+      if (!currentNpub) {
+        return;
+      }
+
       const result = nip19.decode(currentNpub);
 
       if (result.data) {
-        this.pubkey = result.data as string;
-        this.handleNpubChange(this.pubkey);
+        this.#pubkey  = result.data as string;
+        this.handleNpubChange(this.#pubkey);
       }
     });
 
     this.relay.profileUpdates.subscribe((event) => {
       // Add your profile update handling logic here
-      if (event.pubkey == this.pubkey) {
+      if (event.pubkey == this.#pubkey) {
         console.log('Profile update for current user:', event);
         this.profile.set(JSON.parse(event.content));
       }

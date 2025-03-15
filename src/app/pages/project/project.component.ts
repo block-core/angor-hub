@@ -255,6 +255,7 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
                   @for (member of project()?.members; track member) {
                   <div class="member-item">
                     <app-profile
+                      class="project-member"
                       [npub]="member"
                       [link]="'https://primal.net/p/' + member"
                     ></app-profile>
@@ -472,7 +473,12 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
           } @for (comment of comments(); track comment.id) {
           <div class="comment-card">
             <div class="comment-header">
-              <span class="comment-author">{{ comment.pubkey }}</span>
+              <span class="comment-author">
+              <app-profile
+                      [pubkey]="comment.pubkey"
+                      [link]="'https://primal.net/p/' + comment.pubkey"
+                    ></app-profile>
+            </span>
               <span class="comment-date">{{
                 formatDate(comment.created_at)
               }}</span>
@@ -1161,6 +1167,11 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         gap: 1rem;
+      }
+
+      .project-member {
+        background: var(--background);
+        border-radius: 4px;
       }
 
       .member-item {
