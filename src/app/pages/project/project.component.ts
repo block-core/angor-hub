@@ -426,6 +426,30 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
                   </div>
                 </div>
               </section>
+
+              <section class="project-details">
+                <h2>Additional details</h2>
+                <div class="info-stack">
+                  <div class="info-item">
+                    <label>Created on Bitcoin block</label>
+                    <span class="ellipsis">{{
+                      project()?.createdOnBlock
+                    }}</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Transaction</label>
+                    <span class="ellipsis">
+                    @if(networkService.isMain()) {
+                      <a target="_blank" [href]="'https://explorer.angor.io/btc/explorer/transaction/' + project()?.trxId">{{ project()?.trxId }}
+                      </a>
+                    } @else {
+                      <a target="_blank" [href]="'https://explorer.angor.io/tbtc/explorer/transaction/' + project()?.trxId">{{ project()?.trxId }}
+                      </a>
+                    }
+                  </span>
+                  </div>
+                </div>
+              </section>
             </div>
           </div>
         } @else if (activeTab === 'faq') {
