@@ -7,22 +7,24 @@ import { NDKUserProfile } from '@nostr-dev-kit/ndk';
   selector: 'app-profile',
   standalone: true,
   template: `
-    @if(profile()) { @if(profile()!['picture']) {
-    <img [src]="profile()!['picture']" alt="avatar" width="32" height="32" />
-    } @if (profile()!.displayName) {
-    <div>
-      <!-- <span class="material-icons">person</span> -->
-      <a [href]="link()">{{ profile()!.displayName }}</a>
-    </div>
+    @if(profile()) { 
+      @if(profile()!['picture']) {
+        <img [src]="profile()!['picture']" alt="avatar" width="32" height="32" />
+      }
+      @if (profile()!.displayName) {
+        <div>
+          <a [href]="link()">{{ profile()!.displayName }}</a>
+        </div>
+      } @else {
+        <div>
+          <a [href]="link()">{{ profile()!.name }}</a>
+        </div>
+      }
     } @else {
-    <div>
-      <a [href]="link()">{{ profile()!.name }}</a>
-    </div>
-    } } @else {
-    <div>
-      <span class="material-icons">person</span
-      ><a [href]="link()">{{ npub() }}</a>
-    </div>
+      <div>
+        <span class="material-icons">person</span>
+        <a [href]="link()">{{ npub() }}</a>
+      </div>
     }
   `,
   styles: `

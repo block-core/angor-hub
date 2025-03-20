@@ -1,4 +1,4 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
       <a class="logo-link" (click)="toggleAppMenu($event)">
         <img src="images/logo-text.svg" alt="Angor Menu" class="logo">
       </a>
-      <div class="app-menu" [class.show]="isAppMenuOpen">
+      <div class="app-menu" [class.show]="isAppMenuOpen()">
         <div class="app-menu-content">
           <a href="https://test.angor.io" class="app-item">
             <i class="fa-solid fa-rocket"></i>
@@ -156,18 +156,18 @@ import { CommonModule } from '@angular/common';
   `]
 })
 export class AppLauncherComponent {
-  isAppMenuOpen = false;
+  isAppMenuOpen = signal<boolean>(false);
 
   toggleAppMenu(event: Event) {
     event.preventDefault();
-    this.isAppMenuOpen = !this.isAppMenuOpen;
+    this.isAppMenuOpen.update(value => !value);
   }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {
     const appLauncher = (event.target as HTMLElement).closest('.app-launcher');
     if (!appLauncher) {
-      this.isAppMenuOpen = false;
+      this.isAppMenuOpen.set(false);
     }
   }
 }

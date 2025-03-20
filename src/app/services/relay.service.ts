@@ -110,11 +110,11 @@ export class RelayService {
       });
 
       // Wait for each batch to complete
-      await new Promise((resolve) => {
+      await new Promise<void>((resolve) => {
         sub.on('eose', () => {
           clearTimeout(timeout);
           // sub.close();
-          resolve(null);
+          resolve();
         });
       });
     } catch (error) {

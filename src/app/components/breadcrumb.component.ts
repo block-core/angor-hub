@@ -14,12 +14,15 @@ interface BreadcrumbItem {
   template: `
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
-        <li class="breadcrumb-item" *ngFor="let item of items; let last = last">
-          <a *ngIf="!last" [routerLink]="item.url" [title]="item.label">{{
-            item.label
-          }}</a>
-          <span *ngIf="last" [title]="item.label">{{ item.label }}</span>
-        </li>
+        @for (item of items; track item.url; let last = $last) {
+          <li class="breadcrumb-item">
+            @if (!last) {
+              <a [routerLink]="item.url" [title]="item.label">{{ item.label }}</a>
+            } @else {
+              <span [title]="item.label">{{ item.label }}</span>
+            }
+          </li>
+        }
       </ol>
     </nav>
   `,

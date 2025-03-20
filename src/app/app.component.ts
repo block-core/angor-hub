@@ -1,24 +1,22 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, inject, signal } from '@angular/core';
 import { RouterOutlet, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ThemeService } from './services/theme.service';
 import { environment } from '../environment';
 import { NetworkService } from './services/network.service';
 import { AppLauncherComponent } from './components/app-launcher.component';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, CommonModule, AppLauncherComponent],
+  imports: [RouterOutlet, RouterLink, CommonModule, AppLauncherComponent, AsyncPipe],
   template: `
     <header>
       <nav>
         <app-launcher></app-launcher>
-        <!-- <a routerLink="/" class="logo-link">
-          <img src="images/logo-text.svg" alt="Angor Hub Logo" class="logo">
-        </a> -->
         <div class="nav-links">
-          <div class="custom-dropdown" [class.open]="isDropdownOpen" [attr.data-network]="networkService.getNetwork()">
+          <div class="custom-dropdown" [class.open]="isDropdownOpen()" [attr.data-network]="networkService.getNetwork()">
             <div class="custom-dropdown-toggle" (click)="toggleDropdown()">
               <i class="fa-brands fa-bitcoin"></i>
               <span>{{ networkService.getNetwork() === 'mainnet' ? 'Mainnet' : 'Angor Testnet' }}</span>
@@ -205,34 +203,30 @@ import { AppLauncherComponent } from './components/app-launcher.component';
 })
 export class AppComponent {
   title = 'angor-hub';
-
-  version = environment.appVersion
-
-  isDropdownOpen = false;
-  isAppMenuOpen = false;
-
-  constructor(public themeService: ThemeService, public networkService: NetworkService) {
-
-  }
+  version = environment.appVersion;
+  
+  isDropdownOpen = signal<boolean>(false);
+  themeService = inject(ThemeService);
+  networkService = inject(NetworkService);
 
   toggleTheme() {
     this.themeService.toggleTheme();
   }
 
   toggleDropdown() {
-    this.isDropdownOpen = !this.isDropdownOpen;
+    this.isDropdownOpen.update(value => !value);
   }
 
   selectNetwork(network: string) {
     this.networkService.setNetwork(network);
-    this.isDropdownOpen = false;
+    this.isDropdownOpen.set(false);
   }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {
     const dropdown = (event.target as HTMLElement).closest('.custom-dropdown');
     if (!dropdown) {
-      this.isDropdownOpen = false;
+      this.isDropdownOpen.set(false);
     }
   }
 }

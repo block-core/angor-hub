@@ -206,18 +206,19 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
       }
 
       <div class="tabs">
-        <button
-          *ngFor="let tab of tabs"
-          [class.active]="activeTab === tab.id"
-          (click)="setActiveTab(tab.id)"
-        >
-          <span class="tab-text">{{ tab.label }}</span>
-          <span class="tab-icon">{{ tab.icon }}</span>
-        </button>
+        @for (tab of tabs; track tab.id) {
+          <button
+            [class.active]="activeTab === tab.id"
+            (click)="setActiveTab(tab.id)"
+          >
+            <span class="tab-text">{{ tab.label }}</span>
+            <span class="tab-icon">{{ tab.icon }}</span>
+          </button>
+        }
       </div>
 
-      <div class="tab-content" [ngSwitch]="activeTab">
-        <div *ngSwitchCase="'project'">
+      <div class="tab-content">
+        @if (activeTab === 'project') {
           <div class="project-grid">
             <!-- Project Content -->
             <div class="project-content">
@@ -427,66 +428,63 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
               </section>
             </div>
           </div>
-        </div>
+        } @else if (activeTab === 'faq') {
+          <div class="faq-tab">
+            <h2>Frequently Asked Questions</h2>
 
-        <div *ngSwitchCase="'faq'" class="faq-tab">
-          <h2>Frequently Asked Questions</h2>
-
-          <div class="faq-container">
-            <div
-              *ngFor="let faq of faqItems; trackBy: trackById"
-              class="faq-item"
-            >
-              <div class="faq-header"></div>
-              <div class="form-group">
-                <label>Question</label>
-                <span>{{ faq.question }}</span>
-              </div>
-              <div class="form-group">
-                <label>Answer</label>
-                <span>{{ faq.answer }}</span>
-              </div>
+            <div class="faq-container">
+              @for (faq of faqItems; track faq.id) {
+                <div class="faq-item">
+                  <div class="faq-header"></div>
+                  <div class="form-group">
+                    <label>Question</label>
+                    <span>{{ faq.question }}</span>
+                  </div>
+                  <div class="form-group">
+                    <label>Answer</label>
+                    <span>{{ faq.answer }}</span>
+                  </div>
+                </div>
+              }
             </div>
           </div>
-        </div>
-
-        <div *ngSwitchCase="'updates'" class="updates-tab">
-          <h2>Project Updates</h2>
-          @if (loading()) {
-          <div class="loading">Loading updates...</div>
-          } @for (update of updates(); track update.id) {
-          <div class="update-card">
-            <div class="update-header">
-              <span class="update-date">{{
-                formatDate(update.created_at)
-              }}</span>
-            </div>
-            <div class="update-content" [innerHTML]="update.content | safeContent"></div>
+        } @else if (activeTab === 'updates') {
+          <div class="updates-tab">
+            <h2>Project Updates</h2>
+            @if (loading()) {
+              <div class="loading">Loading updates...</div>
+            }
+            @for (update of updates(); track update.id) {
+              <div class="update-card">
+                <div class="update-header">
+                  <span class="update-date">{{ formatDate(update.created_at) }}</span>
+                </div>
+                <div class="update-content" [innerHTML]="update.content | safeContent"></div>
+              </div>
+            }
           </div>
-          }
-        </div>
-
-        <div *ngSwitchCase="'comments'" class="comments-tab">
-          <h2>Comments</h2>
-          @if (loading()) {
-          <div class="loading">Loading comments...</div>
-          } @for (comment of comments(); track comment.id) {
-          <div class="comment-card">
-            <div class="comment-header">
-              <span class="comment-author">
-              <app-profile
+        } @else if (activeTab === 'comments') {
+          <div class="comments-tab">
+            <h2>Comments</h2>
+            @if (loading()) {
+              <div class="loading">Loading comments...</div>
+            }
+            @for (comment of comments(); track comment.id) {
+              <div class="comment-card">
+                <div class="comment-header">
+                  <span class="comment-author">
+                    <app-profile
                       [pubkey]="comment.pubkey"
                       [link]="'https://primal.net/p/' + comment.pubkey"
                     ></app-profile>
-            </span>
-              <span class="comment-date">{{
-                formatDate(comment.created_at)
-              }}</span>
-            </div>
-            <div class="comment-content">{{ comment.content }}</div>
+                  </span>
+                  <span class="comment-date">{{ formatDate(comment.created_at) }}</span>
+                </div>
+                <div class="comment-content">{{ comment.content }}</div>
+              </div>
+            }
           </div>
-          }
-        </div>
+        }
       </div>
       }
     </div>
