@@ -104,10 +104,16 @@ import { RelayService } from '../../services/relay.service';
             </div>
             
             <div class="relay-actions">
-              <button class="relay-save-btn" (click)="saveAndReloadRelays()">
-                <i class="fa-solid fa-save"></i>
-                Save & Reload
-              </button>
+              <div class="relay-buttons">
+                <button class="relay-save-btn" (click)="saveAndReloadRelays()">
+                  <i class="fa-solid fa-save"></i>
+                  Save & Reload
+                </button>
+                <button class="relay-reset-btn" (click)="resetToDefaultRelays()">
+                  <i class="fa-solid fa-rotate"></i>
+                  Reset to Defaults
+                </button>
+              </div>
               @if (relaySaveMessage()) {
                 <div class="relay-save-message">{{ relaySaveMessage() }}</div>
               }
@@ -276,23 +282,43 @@ import { RelayService } from '../../services/relay.service';
       gap: 0.5rem;
     }
     
-    .relay-save-btn {
+    .relay-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .relay-save-btn,
+    .relay-reset-btn {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
       padding: 0.75rem 1rem;
       border-radius: 6px;
-      background: var(--accent);
-      border: none;
-      color: white;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s ease;
+      flex: 1;
+    }
+    
+    .relay-save-btn {
+      background: var(--accent);
+      border: none;
+      color: white;
     }
     
     .relay-save-btn:hover {
       background: var(--accent-dark);
+    }
+    
+    .relay-reset-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    
+    .relay-reset-btn:hover {
+      background: var(--hover-bg);
     }
     
     .relay-save-message {
@@ -371,5 +397,12 @@ export class SettingsComponent {
     } catch {
       return false;
     }
+  }
+
+  resetToDefaultRelays(): void {
+    const defaultRelays = this.relayService.getDefaultRelays();
+    this.relayUrls.set(defaultRelays);
+    this.relaySaveMessage.set('Relay list reset to defaults. Click "Save & Reload" to apply changes.');
+    setTimeout(() => this.relaySaveMessage.set(''), 5000);
   }
 }

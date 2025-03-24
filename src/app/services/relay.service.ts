@@ -274,4 +274,9 @@ export class RelayService {
     }
     this.pool.close(this.relayUrls());
   }
+
+  // Add this new method to get default relays
+  public getDefaultRelays(): string[] {
+    return [...this.defaultRelays];
+  }
 }
