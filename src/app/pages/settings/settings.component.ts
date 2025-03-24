@@ -3,16 +3,31 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ThemeService } from '../../services/theme.service';
 import { NetworkService } from '../../services/network.service';
+import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, BreadcrumbComponent, FormsModule],
   template: `
+
+<section class="hero">
+<app-breadcrumb
+        [items]="[
+          { label: 'Home', url: '/' },
+          { label: 'Settings', url: '/settings' }
+        ]"
+      ></app-breadcrumb>
+
+      <div class="hero-wrapper">
+        <div class="hero-content">
+          <h1>Settings</h1>
+        </div>
+      </div>
+    </section>
+
     <div class="settings-container">
       <div class="settings-card">
-        <h1>Settings</h1>
-        
         <div class="settings-section">
           <h2>Appearance</h2>
           <div class="setting-item">
