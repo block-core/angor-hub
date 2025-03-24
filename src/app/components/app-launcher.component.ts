@@ -93,7 +93,7 @@ import { CommonModule } from '@angular/common';
       display: flex;
       align-items: center;
       padding: 0.75rem;
-      color: var(--text);
+      color: white;
       text-decoration: none;
       border-radius: 6px;
       transition: all 0.2s cubic-bezier(0.19, 1, 0.22, 1);
@@ -110,7 +110,7 @@ import { CommonModule } from '@angular/common';
       margin-right: 1rem;
       width: 24px;
       text-align: center;
-      color: var(--text);
+      color: white;
       opacity: 0.7;
       transition: all 0.2s cubic-bezier(0.19, 1, 0.22, 1);
     }
