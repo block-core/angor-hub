@@ -265,6 +265,7 @@ import { RelayService } from '../../services/relay.service';
       border: 1px solid var(--border);
       cursor: pointer;
       transition: all 0.2s ease;
+      color: var(--text);
     }
     
     .relay-add-btn:hover:not([disabled]) {
