@@ -33,6 +33,9 @@ import { AsyncPipe } from '@angular/common';
               </div>
             </div>
           </div>
+          <a routerLink="/settings" class="settings-link">
+            <i class="fa-solid fa-gear"></i>
+          </a>
           <button (click)="toggleTheme()" class="theme-toggle">
             {{ (themeService.theme$ | async) === 'light' ? '☀️' : '🌙' }}
           </button>
@@ -64,6 +67,28 @@ import { AsyncPipe } from '@angular/common';
       cursor: pointer;
       font-size: 1.2rem;
       padding: 0.5rem;
+    }
+
+    .nav-links {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+
+    .settings-link {
+      font-size: 1.2rem;
+      padding: 0.5rem;
+      color: var(--header-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      margin-right: 0.5rem;
+      transition: transform 0.2s ease;
+    }
+
+    .settings-link:hover {
+      transform: rotate(20deg);
     }
 
     .modern-footer {
