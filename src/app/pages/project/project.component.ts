@@ -221,6 +221,9 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
         @if (activeTab === 'project') {
           <div class="project-grid">
             <!-- Project Content -->
+             @if (project()?.content) {
+
+             
             <div class="project-content">
               @if (project()?.media?.length) {
               <div class="carousel">
@@ -279,6 +282,7 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
                 <markdown [data]="project()?.content"></markdown>
               </div>
             </div>
+          }
 
             <!-- Project Statistics -->
             <div class="project-sidebar">
