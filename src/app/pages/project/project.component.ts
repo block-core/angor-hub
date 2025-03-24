@@ -1464,7 +1464,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
         } else {
           this.user = new NDKUser({
             pubkey: projectData.details.nostrPubKey,
-            relayUrls: this.relay.relayUrls,
+            relayUrls: this.relay.relayUrls(),
           });
 
           if (!projectData.content) {
@@ -1495,7 +1495,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
             // As soon as we have details, make an NDKUser instance
             this.user = new NDKUser({
               pubkey: projectData!.details.nostrPubKey,
-              relayUrls: this.relay.relayUrls,
+              relayUrls: this.relay.relayUrls(),
             });
 
             // Go fetch the profile

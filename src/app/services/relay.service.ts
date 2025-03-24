@@ -39,7 +39,8 @@ export class RelayService {
   private pool = new SimplePool();
   private ndk: NDK | null = null;
   private isConnected = false;
-  public relayUrls = ['wss://purplepag.es', 'wss://relay.primal.net', 'wss://nos.lol', 'wss://relay.angor.io', 'wss://relay2.angor.io'];
+  public relayUrls = signal<string[]>([]);
+  private defaultRelays = ['wss://purplepag.es', 'wss://relay.primal.net', 'wss://nos.lol', 'wss://relay.angor.io', 'wss://relay2.angor.io'];
 
   public projects = signal<ProjectEvent[]>([]);
   public loading = signal<boolean>(false);
@@ -48,7 +49,41 @@ export class RelayService {
   public projectUpdates = new Subject<NDKEvent>();
 
   constructor() {
+    this.loadRelaysFromStorage();
     this.initializeRelays();
+  }
+
+  private loadRelaysFromStorage(): void {
+    const savedRelays = localStorage.getItem('angor-hub-relays');
+    if (savedRelays) {
+      this.relayUrls.set(JSON.parse(savedRelays));
+    } else {
+      this.relayUrls.set([...this.defaultRelays]);
+    }
+  }
+
+  public getRelayUrls(): string[] {
+    return this.relayUrls();
+  }
+
+  public setRelayUrls(urls: string[]): void {
+    this.relayUrls.set(urls);
+  }
+
+  public saveRelaysToStorage(): void {
+    localStorage.setItem('angor-hub-relays', JSON.stringify(this.relayUrls()));
+  }
+
+  public async reconnectToRelays(): Promise<void> {
+    // Disconnect from current relays
+    this.disconnect();
+    
+    // Reset NDK instance
+    this.ndk = null;
+    this.isConnected = false;
+    
+    // Reinitialize with new relay URLs
+    await this.initializeRelays();
   }
 
   public async ensureConnected(): Promise<NDK> {
@@ -58,7 +93,7 @@ export class RelayService {
 
     if (!this.ndk) {
       this.ndk = new NDK({
-        explicitRelayUrls: this.relayUrls,
+        explicitRelayUrls: this.relayUrls(),
       });
     }
 
@@ -237,6 +272,6 @@ export class RelayService {
       // this.ndk.close();
       this.isConnected = false;
     }
-    this.pool.close(this.relayUrls);
+    this.pool.close(this.relayUrls());
   }
 }

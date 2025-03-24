@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ThemeService } from '../../services/theme.service';
 import { NetworkService } from '../../services/network.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
+import { RelayService } from '../../services/relay.service';
 
 @Component({
   selector: 'app-settings',
@@ -74,8 +75,48 @@ import { BreadcrumbComponent } from '../../components/breadcrumb.component';
           </div>
         </div>
         
+        <div class="settings-section">
+          <h2>Nostr Relays</h2>
+          <div class="setting-item">
+            <label>Manage Relays</label>
+            <div class="relay-list">
+              @for (relay of relayUrls(); track relay) {
+                <div class="relay-item">
+                  <span>{{ relay }}</span>
+                  <button class="relay-remove" (click)="removeRelay(relay)" title="Remove relay">
+                    <i class="fa-solid fa-times"></i>
+                  </button>
+                </div>
+              }
+            </div>
+            
+            <div class="relay-add-container">
+              <input 
+                type="text" 
+                [(ngModel)]="newRelayUrl" 
+                placeholder="wss://relay.example.com"
+                class="relay-input"
+              />
+              <button class="relay-add-btn" (click)="addRelay()" [disabled]="!isValidUrl(newRelayUrl)">
+                <i class="fa-solid fa-plus"></i>
+                Add
+              </button>
+            </div>
+            
+            <div class="relay-actions">
+              <button class="relay-save-btn" (click)="saveAndReloadRelays()">
+                <i class="fa-solid fa-save"></i>
+                Save & Reload
+              </button>
+              @if (relaySaveMessage()) {
+                <div class="relay-save-message">{{ relaySaveMessage() }}</div>
+              }
+            </div>
+          </div>
+        </div>
+        
         <div class="settings-footer">
-          <p>Changes are saved automatically</p>
+          <p>Changes are saved automatically except for relay settings</p>
         </div>
       </div>
     </div>
@@ -143,6 +184,7 @@ import { BreadcrumbComponent } from '../../components/breadcrumb.component';
       border: 1px solid var(--border);
       cursor: pointer;
       transition: all 0.2s ease;
+      color: var(--text);
     }
     
     .theme-option:hover, .network-option:hover {
@@ -151,7 +193,7 @@ import { BreadcrumbComponent } from '../../components/breadcrumb.component';
     
     .theme-option.active, .network-option.active {
       background: var(--accent);
-      color: white;
+      color: var(--background);
       border-color: var(--accent);
     }
     
@@ -161,14 +203,118 @@ import { BreadcrumbComponent } from '../../components/breadcrumb.component';
       color: var(--text-secondary);
       text-align: center;
     }
+
+    /* Relay styles */
+    .relay-list {
+      margin-bottom: 1rem;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .relay-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.75rem;
+      background: var(--input-bg);
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+    }
+    
+    .relay-remove {
+      background: transparent;
+      border: none;
+      color: var(--danger);
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+    }
+    
+    .relay-remove:hover {
+      background: rgba(255, 0, 0, 0.1);
+    }
+    
+    .relay-add-container {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .relay-input {
+      flex: 1;
+      padding: 0.75rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
+    }
+    
+    .relay-add-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .relay-add-btn:hover:not([disabled]) {
+      background: var(--hover-bg);
+    }
+    
+    .relay-add-btn[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .relay-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .relay-save-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      background: var(--accent);
+      border: none;
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .relay-save-btn:hover {
+      background: var(--accent-dark);
+    }
+    
+    .relay-save-message {
+      text-align: center;
+      color: var(--success);
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      border-radius: 4px;
+      background: rgba(0, 255, 0, 0.05);
+    }
   `]
 })
 export class SettingsComponent {
   private themeService = inject(ThemeService);
   private networkService = inject(NetworkService);
+  private relayService = inject(RelayService);
   
   currentTheme = signal<string>('');
   currentNetwork = signal<string>('');
+  relayUrls = signal<string[]>([]);
+  newRelayUrl = '';
+  relaySaveMessage = signal<string>('');
   
   constructor() {
     // Initialize the current theme and network
@@ -177,6 +323,7 @@ export class SettingsComponent {
     });
     
     this.currentNetwork.set(this.networkService.getNetwork());
+    this.relayUrls.set(this.relayService.getRelayUrls());
   }
   
   setTheme(theme: 'light' | 'dark'): void {
@@ -186,5 +333,43 @@ export class SettingsComponent {
   setNetwork(network: string): void {
     this.networkService.setNetwork(network);
     this.currentNetwork.set(network);
+  }
+
+  removeRelay(url: string): void {
+    this.relayUrls.update(urls => urls.filter(relayUrl => relayUrl !== url));
+  }
+
+  addRelay(): void {
+    if (!this.isValidUrl(this.newRelayUrl)) return;
+    
+    // Don't add if already exists
+    if (this.relayUrls().includes(this.newRelayUrl)) {
+      this.relaySaveMessage.set('This relay is already in the list');
+      setTimeout(() => this.relaySaveMessage.set(''), 3000);
+      return;
+    }
+
+    this.relayUrls.update(urls => [...urls, this.newRelayUrl]);
+    this.newRelayUrl = '';
+  }
+
+  async saveAndReloadRelays(): Promise<void> {
+    // Save to relay service
+    this.relayService.setRelayUrls(this.relayUrls());
+    this.relayService.saveRelaysToStorage();
+    
+    // Show saving message
+    this.relaySaveMessage.set('Saving and reconnecting...');
+
+    window.location.reload();
+  }
+
+  isValidUrl(url: string): boolean {
+    try {
+      const urlPattern = /^wss:\/\/.+/;
+      return url.trim() !== '' && urlPattern.test(url);
+    } catch {
+      return false;
+    }
   }
 }
