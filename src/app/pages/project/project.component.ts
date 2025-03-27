@@ -33,6 +33,7 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
   selector: 'app-project',
   standalone: true,
   imports: [
+    RouterModule,
     CommonModule,
     BreadcrumbComponent,
     AgoPipe,
@@ -133,6 +134,12 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
               >{{ isFavorite() ? 'bookmark' : 'bookmark_border' }}</span
             >
 
+            <span
+              [title]="'Report this project'"
+              (click)="reportProject()"
+              class="material-icons report-icon"
+              >report_problem</span
+            >
           </div>
 
           <!-- <h1>{{ project()?.metadata?.name || projectId }}</h1> -->
@@ -703,7 +710,7 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
       .project-about {
         margin: 0;
         font-size: 1.1rem;
-        color: var(--text);
+        color: var (--text);
         opacity: 0.8;
         margin-bottom: 1rem;
       }
@@ -1241,6 +1248,18 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
         }
       }
 
+      .report-icon {
+        align-self: center;
+        align-items: center;
+        cursor: pointer;
+        color: #666;
+
+        &:hover {
+          color: #ff6b6b;
+          transform: scale(1.1);
+        }
+      }
+
       .external-links {
         display: flex;
         gap: 0.75rem;
@@ -1408,6 +1427,10 @@ export class ProjectComponent implements OnInit, OnDestroy {
     }
 
     localStorage.setItem('angor-hub-favorites', JSON.stringify(favorites));
+  }
+
+  reportProject() {
+    this.router.navigate(['/report', this.projectId]);
   }
 
   user: NDKUser | undefined;
