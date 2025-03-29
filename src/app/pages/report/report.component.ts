@@ -90,7 +90,7 @@ import { TitleService } from '../../services/title.service';
         </div>
 
         <div class="actions">
-          <a href="https://github.com/block-core/blockcore-lists/issues/new" 
+          <a href="https://github.com/block-core/blockcore-lists/issues/new?title=Report Problematic Angor Project: {{ projectId }}&body=I would like to report an issue with the project: {{ projectId }}." 
              target="_blank" 
              class="report-button">
             <span class="material-icons">flag</span>
