@@ -114,6 +114,7 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
       </div>
     </section>
 
+    @if(project()) {
     <!-- Add new mobile invest button here -->
     <div class="mobile-invest-button-container">
       <button
@@ -127,6 +128,7 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
         } @else { Invest Now }
       </button>
     </div>
+  }
 
     <div class="container">
       @if (project()) {
