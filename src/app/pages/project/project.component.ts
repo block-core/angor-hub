@@ -85,11 +85,31 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
 
       <div class="hero-wrapper">
         <div class="hero-content">
+
+
           @if (!project() && indexer.loading()) {
           <div class="loading-spinner">
             <div class="spinner"></div>
           </div>
           }
+
+          @if (!project() && !indexer.loading()) {
+          <h1>Project not found... yet</h1>
+          <p class="hero-description">
+          If you recently created a new Angor project, it might take a few minutes 
+          for it to be distributed and indexed on the decentralized infrastructure.
+          </p>
+          <button (click)="reloadPage()" class="cta-button">
+            Retry
+            <span class="arrow">→</span>
+      </button>
+          &nbsp;
+          <a routerLink="/explore" class="blog-button">
+            Explore All Projects
+            <span class="arrow">→</span>
+          </a>
+          }
+
         </div>
       </div>
     </section>
@@ -1305,6 +1325,10 @@ export class ProjectComponent implements OnInit, OnDestroy {
   public bitcoin = inject(BitcoinUtilsService);
   public title = inject(TitleService);
 
+  reloadPage(): void {
+    window.location.reload();
+  }
+
   project = signal<IndexedProject | null>(null);
   projectId: string = '';
 
@@ -1611,11 +1635,15 @@ export class ProjectComponent implements OnInit, OnDestroy {
         // if (projectData.nostrEventId) {
         //   await this.relay.fetchData([projectData.nostrEventId]);
         // }
+      } else {
+        this.noProjectFoundYet = true;
       }
     } catch (error) {
       console.error('Error loading project:', error);
     }
   }
+
+  noProjectFoundYet = false;
 
   trackById(index: number, item: FaqItem) {
     return item.id;
