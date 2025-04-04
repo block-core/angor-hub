@@ -203,6 +203,35 @@
         <div class="tab-content">
           @if (activeTab === 'project') {
             <div class="project-grid">
+              <!-- Project Status Notifications -->
+              @if (isProjectSuccessful()) {
+                <div class="project-status-notification success">
+                  <span class="material-icons status-icon">check_circle</span>
+                  <div class="status-message">
+                    <h3>Project Successfully Funded!</h3>
+                    <p>This project reached its funding goal of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} 
+                      {{ networkService.isMain() ? 'BTC' : 'TBTC' }} 
+                      ({{ getFundingPercentage() }}% funded).
+                    </p>
+                  </div>
+                </div>
+              }
+              
+              @if (isProjectFailed()) {
+                <div class="project-status-notification failure">
+                  <span class="material-icons status-icon">error</span>
+                  <div class="status-message">
+                    <h3>Project Did Not Reach Funding Goal</h3>
+                    <p>This project raised {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }} 
+                      {{ networkService.isMain() ? 'BTC' : 'TBTC' }} 
+                      of its {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} 
+                      {{ networkService.isMain() ? 'BTC' : 'TBTC' }} goal 
+                      ({{ getFundingPercentage() }}% funded).
+                    </p>
+                  </div>
+                </div>
+              }
+              
               <!-- Project Content -->
                @if (project()?.content) {
   

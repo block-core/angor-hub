@@ -405,6 +405,37 @@ export class ProjectComponent implements OnInit, OnDestroy {
     return Date.now() > startDate * 1000;
   }
 
+  // Add new methods to check project status
+  isProjectStarted(): boolean {
+    const startDate = this.project()?.details?.startDate;
+    if (!startDate) return false;
+    return Date.now() >= startDate * 1000;
+  }
+
+  isProjectSuccessful(): boolean {
+    if (!this.isProjectStarted()) return false;
+    
+    const amountInvested = this.project()?.stats?.amountInvested ?? 0;
+    const targetAmount = this.project()?.details?.targetAmount ?? 0;
+    
+    return amountInvested >= targetAmount;
+  }
+
+  isProjectFailed(): boolean {
+    if (!this.isProjectStarted()) return false;
+    
+    const amountInvested = this.project()?.stats?.amountInvested ?? 0;
+    const targetAmount = this.project()?.details?.targetAmount ?? 0;
+    
+    return amountInvested < targetAmount;
+  }
+
+  getFundingPercentage(): number {
+    const amountInvested = this.project()?.stats?.amountInvested ?? 0;
+    const targetAmount = this.project()?.details?.targetAmount ?? 1;
+    return Number(((amountInvested / targetAmount) * 100).toFixed(1));
+  }
+
   openInvestWindow() {
     const url =
       'https://test.angor.io/view/' + this.project()?.projectIdentifier;

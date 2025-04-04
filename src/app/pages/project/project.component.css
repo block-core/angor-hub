@@ -763,3 +763,62 @@
     font-size: 1rem;
     opacity: 0.7;
   }
+
+  /* Add these styles to your existing CSS */
+
+  .project-status-notification {
+    display: flex;
+    align-items: center;
+    padding: 1.25rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .project-status-notification.success {
+    background-color: rgba(76, 175, 80, 0.1);
+    border-left: 4px solid #4CAF50;
+  }
+
+  .project-status-notification.failure {
+    background-color: rgba(244, 67, 54, 0.1);
+    border-left: 4px solid #F44336;
+  }
+
+  .status-icon {
+    font-size: 2rem;
+    margin-right: 1rem;
+  }
+
+  .project-status-notification.success .status-icon {
+    color: #4CAF50;
+  }
+
+  .project-status-notification.failure .status-icon {
+    color: #F44336;
+  }
+
+  .status-message h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .status-message p {
+    margin: 0;
+    color: #555;
+  }
+
+  /* Ensure the notification spans full width in mobile view */
+  @media (max-width: 768px) {
+    .project-status-notification {
+      flex-direction: column;
+      text-align: center;
+    }
+    
+    .status-icon {
+      margin-right: 0;
+      margin-bottom: 0.75rem;
+    }
+  }
