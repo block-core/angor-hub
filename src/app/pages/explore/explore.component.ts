@@ -314,6 +314,39 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!date) return true;
     return Date.now() < date * 1000;
   }
+  
+  isProjectEnded(date: number | undefined): boolean {
+    if (!date) return false;
+    return Date.now() > date * 1000;
+  }
+  
+  isProjectSuccessfullyFunded(project: any): boolean {
+    if (!project.stats?.amountInvested || !project.details?.targetAmount) {
+      return false;
+    }
+    
+    return project.stats.amountInvested >= project.details.targetAmount;
+  }
+  
+  getProjectStatus(project: any): { status: string; color: string; icon: string } {
+    if (!project.details?.startDate) {
+      return { status: 'Unknown', color: 'text-gray-500', icon: 'question-mark' };
+    }
+    
+    if (this.isProjectNotStarted(project.details.startDate)) {
+      return { status: 'Not Started', color: 'text-blue-500', icon: 'hourglass' };
+    }
+    
+    if (this.isProjectEnded(project.details.startDate)) {
+      if (this.isProjectSuccessfullyFunded(project)) {
+        return { status: 'Funded', color: 'text-green-500', icon: 'check-circle' };
+      } else {
+        return { status: 'Failed', color: 'text-red-500', icon: 'x-circle' };
+      }
+    }
+    
+    return { status: 'In Progress', color: 'text-yellow-500', icon: 'arrow-right' };
+  }
 
   async loadMore() {
     // console.log('LoadMore called:', {

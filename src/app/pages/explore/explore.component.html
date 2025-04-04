@@ -47,7 +47,16 @@
                   ? 'url(' + (project.metadata?.['banner'] ?? '') + ')'
                   : 'none'
               "
-            ></div>
+            >
+              <!-- Add status icon overlaying the banner in top right corner -->
+              @if (isProjectEnded(project.details?.startDate)) {
+                @if (isProjectSuccessfullyFunded(project)) {
+                  <span class="material-icons status-icon status-funded">check_circle</span>
+                } @else {
+                  <span class="material-icons status-icon status-failed">cancel</span>
+                }
+              }
+            </div>
   
             <div class="project-content">
               <div
@@ -104,17 +113,7 @@
                     {{ project.details.startDate | ago }}
                   </div>
                 </div>
-                <!-- <div class="info-item">
-                  <div class="info-label">Penalty Days</div>
-                  <div class="info-value">{{ project.details.penaltyDays }}</div>
-                </div> -->
-                <!-- <div class="info-item">
-                  <div class="info-label">Expiry Date</div>
-                  <div class="info-value">
-                    {{ project.details.expiryDate * 1000 | date : 'mediumDate' }}
-                  </div>
-                </div> -->
-  
+                
                 <div class="info-item">
                   <div class="info-label">Investors</div>
                   <div class="info-value">

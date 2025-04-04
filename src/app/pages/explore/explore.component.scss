@@ -39,6 +39,26 @@
     border-radius: 12px 12px 0 0;
     margin: -1px; /* Compensate for any gap */
     padding: 1px; /* Ensure full coverage */
+    position: relative; /* Add this if not already present */
+  }
+
+  .status-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    border-radius: 50%;
+    padding: 2px;
+    background-color: rgba(255, 255, 255, 0.7);
+    z-index: 2;
+  }
+
+  .status-funded {
+    color: #22c55e; /* green-500 */
+  }
+
+  .status-failed {
+    color: #ef4444; /* red-500 */
   }
 
   .project-content {
