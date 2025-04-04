@@ -44,7 +44,7 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
     SafeContentPipe,
   ],
   templateUrl: './project.component.html',
-  styleUrl: './project.component.css',
+  styleUrl: './project.component.scss',
 })
 export class ProjectComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
