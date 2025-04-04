@@ -219,7 +219,7 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
             [class.disabled]="isProjectNotStarted()"
             (click)="!isProjectNotStarted() && openInvestWindow()"
           >
-            @if (isProjectNotStarted()) { Starts
+            @if (isProjectNotStarted()) { Ended
             {{ project()?.details?.startDate ?? 0 | ago }}
             } @else { Invest Now }
           </button>
@@ -1671,8 +1671,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
   isProjectNotStarted(): boolean {
     const startDate = this.project()?.details?.startDate;
-    if (!startDate) return true;
-    return Date.now() < startDate * 1000;
+    if (!startDate) return false;
+    return Date.now() > startDate * 1000;
   }
 
   openInvestWindow() {
