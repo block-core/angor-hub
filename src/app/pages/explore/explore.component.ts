@@ -275,9 +275,9 @@ import { TitleService } from '../../services/title.service';
               </div> -->
               <div class="info-item">
                 @if(isProjectNotStarted(project.details.startDate)) {
-                <div class="info-label">Starts</div>
+                <div class="info-label">Ends</div>
                 } @else {
-                <div class="info-label">Started</div>
+                <div class="info-label">Ended</div>
                 }
                 <div class="info-value">
                   {{ project.details.startDate | ago }}
