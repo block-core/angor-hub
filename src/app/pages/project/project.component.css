@@ -261,6 +261,7 @@
 
   .hero {
     height: 200px;
+    padding: 0 1rem;
   }
 
   .info-stack {
@@ -443,11 +444,13 @@
 
   .project-details-banner {
     min-height: 170px;
-    width: 100%;
+    width: calc(100% - 2rem);
     background-size: cover;
     background-position: center;
     background-color: rgba(0, 0, 0, 0.1);
     border-radius: 12px;
+    margin: 0 1rem;
+    box-sizing: border-box;
   }
 
   .faq-tab,
@@ -774,6 +777,7 @@
     margin-bottom: 1.5rem;
     width: 100%;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
   }
 
   .project-status-notification.success {
