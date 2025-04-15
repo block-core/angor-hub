@@ -39,7 +39,7 @@
         } @else {
         <section class="projects">
           @for (project of indexer.projects(); track project.projectIdentifier; let i = $index) {
-          <div class="project-card" [attr.data-index]="i">
+            <a [routerLink]="['/project', project.projectIdentifier]" class="project-card" [attr.data-index]="i">
             <div
               class="project-banner"
               [style.background-image]="
@@ -146,17 +146,10 @@
                 <div class="progress-bar">
                   <div class="progress-fill" [style.width]="getFundingPercentage(project) + '%'"></div>
                 </div>
-                
-                <a class="view-details-wrapper" [routerLink]="['/project', project.projectIdentifier]">
-                  <button class="view-details-btn">
-                    View Details
-                    <span class="material-icons">chevron_right</span>
-                  </button>
-                </a>
               </div>
               }
             </div>
-          </div>
+          </a>
           }
         </section>
   
