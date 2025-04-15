@@ -138,7 +138,8 @@ import { RelayService } from '../../services/relay.service';
       background: var(--card-bg);
       border-radius: 12px;
       padding: 2rem;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 8px 20px rgba(0, 0, 0, 0.1);
+      transition: box-shadow 0.3s ease;
     }
     
     h1 {
