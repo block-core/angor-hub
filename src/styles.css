@@ -19,6 +19,7 @@
   --card-shadow-rgb: 0, 0, 0;
   --scrollbar: silver;
   --text-secondary : black;
+  --heading-text: #04414c;
 }
 
 [data-theme="dark"] {
@@ -36,6 +37,7 @@
   --card-bg-rgb: 32, 33, 36;
   --card-shadow-rgb: 255, 255, 255;
   --scrollbar: gray;
+  --heading-text : #ffffff;
 }
 
 /* Inter Variable Font */
@@ -184,7 +186,7 @@ footer {
 
 /* Only apply gradient to hero titles on home/explore pages */
 .hero:not(.project-hero) h1 {
-  background: #ffffff;
+  background: var(--heading-text);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-size: 4rem;
@@ -280,7 +282,7 @@ footer {
   display: inline-block;
   font-size: 1.25rem;
   text-transform: uppercase;
-  color: #fffa;
+  color: var(--text-secondary);
   letter-spacing: 2px;
 }
 
