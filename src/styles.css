@@ -5,7 +5,7 @@
 :root {
   --background: #e3edee;
   --text: #000000;
-  --border: #e0e0e0;
+  --border: #000000;
   --header-bg: #cbdde1;
   --header-text: #333333;
   --accent: #086c81;
@@ -148,7 +148,7 @@ footer {
 /* Hero Styles */
 .hero {
   padding: 0 1.5rem 1rem 1.5rem;
-  background: linear-gradient(to bottom, var(--header-bg), var(--background));
+  /* background: linear-gradient(to bottom, var(--header-bg), var(--background)); */
   text-align: center;
   color: var(--text);
 }
@@ -855,19 +855,40 @@ footer {
 .custom-dropdown-toggle {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: var(--surface-card);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  background: #096c81;
+  border: 1px solid var(--accent-dark);
+  border-radius: 8px;
+  color: white;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+
+}
+.custom-dropdown-toggle i.fa-chevron-down {
+  color: #000;
+}
+
+[data-theme="dark"] .custom-dropdown-toggle i.fa-chevron-down {
+  color: var(--accent);
 }
 
 .custom-dropdown-toggle:hover {
+  background: var(--accent-dark);
   border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+[data-theme="dark"] .custom-dropdown-toggle {
+  background: var(--surface-card);
+  border: 1px solid #086c81;
+  color: var(--text);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .custom-dropdown-menu {
@@ -875,72 +896,90 @@ footer {
   top: 100%;
   left: 0;
   margin-top: 0.5rem;
+  padding: 0.4rem;
   background: var(--surface-card);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-width: 180px;
+  border: 1px solid #086c81;
+  border-radius: 10px;
+  box-shadow: 0 6px 25px rgba(8, 108, 129, 0.15);
+  min-width: 200px;
   z-index: 1000;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-10px);
-  transition: all 0.2s ease;
+  transform: translateY(-8px) scale(0.98);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .custom-dropdown.open .custom-dropdown-menu {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 
 .custom-dropdown-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
   color: var(--text);
   cursor: pointer;
   transition: all 0.2s ease;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 4px rgba(24, 120, 183, 0.3);
 }
 
 .custom-dropdown-item:hover {
-  background: var(--accent);
+  background: linear-gradient(45deg, var(--accent), var(--accent-light));
   color: white;
+  cursor: pointer;
 }
 
 .custom-dropdown-item i {
   font-size: 1.1rem;
+  transition: transform 0.2s ease;
 }
 
-.custom-dropdown-item i.fa-bitcoin {
-  transition: color 0.2s ease;
+.custom-dropdown-item:hover i {
+  transform: scale(1.1);
 }
 
 .custom-dropdown-item[data-network="mainnet"] i.fa-bitcoin {
   color: var(--bitcoin-mainnet);
+  filter: brightness(1.1);
 }
 
 .custom-dropdown-item[data-network="testnet"] i.fa-bitcoin {
   color: var(--bitcoin-testnet);
+  filter: brightness(1.1);
 }
 
 .custom-dropdown-toggle i {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   color: var(--accent);
-}
-
-.custom-dropdown-toggle i.fa-bitcoin {
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 [data-network="mainnet"] .custom-dropdown-toggle i.fa-bitcoin {
   color: var(--bitcoin-mainnet);
+  filter: drop-shadow(0 2px 4px rgba(247, 147, 26, 0.2));
 }
 
 [data-network="testnet"] .custom-dropdown-toggle i.fa-bitcoin {
   color: var(--bitcoin-testnet);
+  filter: drop-shadow(0 2px 4px rgba(40, 192, 37, 0.2));
 }
 
 .notice {
   color: var(--warning);
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+  background: rgba(255, 0, 0, 0.1);
+  border-top: 1px solid var(--border);
 }

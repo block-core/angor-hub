@@ -14,7 +14,12 @@ interface BreadcrumbItem {
   template: `
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
-        @for (item of items; track item.url; let last = $last) {
+        @for (item of items; let first = $first; let last = $last; track item.url) {
+          @if (!first) {
+            <li class="breadcrumb-separator">
+              <span class="material-icons">chevron_right</span>
+            </li>
+          }
           <li class="breadcrumb-item">
             @if (!last) {
               <a [routerLink]="item.url" [title]="item.label">{{ item.label }}</a>
@@ -62,10 +67,14 @@ interface BreadcrumbItem {
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-      .breadcrumb-item + .breadcrumb-item::before {
-        content: '/';
+      .breadcrumb-separator {
+        display: inline-flex;
+        align-items: center;
         padding: 0 0.5rem;
-        flex-shrink: 0;
+      }
+      .material-icons {
+        font-size: 20px;
+        line-height: 1;
       }
     `,
   ],
