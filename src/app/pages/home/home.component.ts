@@ -16,7 +16,7 @@ import { TitleService } from '../../services/title.service';
 
       <div class="hero-wrapper">
         <div class="hero-content">
-          <h1>Welcome to <span>Angor Hub</span></h1>
+          <h1>Welcome to Angor Hub</h1>
           <p class="hero-description">
             Your central place for discovering and investing in Bitcoin projects.
             Join a community of innovators and investors shaping the future of finance.
