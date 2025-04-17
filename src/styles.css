@@ -1,5 +1,3 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import '@fortawesome/fontawesome-free/css/all.min.css';
 
 :root {
@@ -72,7 +70,7 @@
   --success: #4caf50;
 }
 
-/* Inter Variable Font */
+
 @font-face {
   font-family: "Inter";
   src: url("/assets/fonts/inter/Inter-VariableFont_opsz,wght.ttf")
@@ -132,12 +130,12 @@ a:hover {
   color: var(--accent-light);
 }
 
-/* Remove the underline animation from all links by default */
+
 a::after {
   display: none;
 }
 
-/* Only apply underline animation to links that explicitly have the class */
+
 a.underline-animation::after {
   display: block;
   content: '';
@@ -225,9 +223,9 @@ nav a:hover {
 }
 
 main {
-  min-height: calc(100vh - 160px);
   padding: 0;
   transition: opacity 0.3s ease;
+  flex-grow: 1;
 }
 
 .container {
@@ -236,73 +234,6 @@ main {
   padding: 0 1.5rem;
 }
 
-footer {
-  background: var(--header-bg);
-  color: var(--header-text);
-  text-align: center;
-  padding: 2rem 1.5rem;
-  margin-top: 4rem;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
-}
-
-/* Improved footer styling */
-.footer-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 2rem;
-  text-align: left;
-}
-
-.footer-column h3 {
-  font-size: 1.25rem;
-  margin-bottom: 1rem;
-  position: relative;
-  padding-bottom: 0.5rem;
-}
-
-.footer-column h3::after {
-  content: '';
-  position: absolute;
-  width: 40px;
-  height: 2px;
-  background: var(--accent);
-  bottom: 0;
-  left: 0;
-  border-radius: 2px;
-}
-
-.footer-column ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.footer-column li {
-  margin-bottom: 0.5rem;
-}
-
-.footer-column a {
-  color: var(--header-text);
-  opacity: 0.8;
-  transition: all 0.2s ease;
-}
-
-.footer-column a:hover {
-  opacity: 1;
-  color: var(--accent);
-}
-
-.copyright {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  font-size: 0.9rem;
-  opacity: 0.7;
-}
-
-/* Hero Styles */
 .hero {
   padding: 2rem 1.5rem 2.5rem;
   background: linear-gradient(180deg, var(--hero-gradient-start) 0%, var(--hero-gradient-end) 100%);
@@ -320,17 +251,7 @@ footer {
   top: -50%;
   left: -50%;
   background: radial-gradient(circle, rgba(8, 108, 129, var(--circle-opacity)) 0%, rgba(8, 108, 129, 0) 70%);
-  animation: rotate 60s linear infinite;
   z-index: 0;
-}
-
-@keyframes rotate {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
 }
 
 @media (max-width: 768px) {
@@ -367,7 +288,7 @@ footer {
   line-height: 1.2;
 }
 
-/* Only apply gradient to hero titles on home/explore pages */
+
 .hero:not(.project-hero) h1 {
   background: linear-gradient(120deg, var(--heading-text) 0%, var(--accent) 100%);
   -webkit-background-clip: text;
@@ -434,7 +355,7 @@ footer {
   }
 }
 
-/* Buttons with improved styling */
+
 .cta-button, .primary-button {
   display: inline-flex;
   align-items: center;
@@ -489,7 +410,7 @@ footer {
   font-size: 1.2rem;
 }
 
-/* Animated arrow for buttons */
+
 .arrow {
   transition: transform 0.3s ease;
   display: inline-block;
@@ -508,7 +429,7 @@ footer {
   }
 }
 
-/* Secondary button style */
+
 .blog-button, .secondary-button {
   display: inline-flex;
   align-items: center;
@@ -531,7 +452,7 @@ footer {
   color: var(--accent);
 }
 
-/* Project card improvements */
+
 .project-card {
   background-color: var(--surface-card);
   border-radius: 16px;
@@ -554,7 +475,7 @@ footer {
   border-color: rgba(8, 108, 129, 0.1);
 }
 
-/* Status indicators with animations */
+
 .status-icon {
   position: absolute;
   top: 12px;
@@ -596,7 +517,7 @@ footer {
   text-shadow: 0 2px 4px rgba(242, 0, 0, 0.3);
 }
 
-/* Improved loading spinner with fade in/out */
+
 .loading-spinner {
   display: flex;
   justify-content: center;
@@ -648,7 +569,7 @@ footer {
   }
 }
 
-/* Responsiveness improvements */
+
 @media (max-width: 1024px) {
   .container {
     padding: 0 1.25rem;
@@ -691,13 +612,13 @@ footer {
   }
 }
 
-/* Material Icons improvements */
+
 .material-icons {
   vertical-align: middle;
   line-height: 1;
 }
 
-/* Project status notifications */
+
 .project-status-notification {
   display: flex;
   gap: 1rem;
@@ -737,7 +658,7 @@ footer {
   line-height: 1.5;
 }
 
-/* Skip to content link for accessibility */
+
 .skip-to-content {
   position: absolute;
   left: -9999px;
@@ -753,7 +674,7 @@ footer {
   outline: none;
 }
 
-/* Dark mode toggle improvements */
+
 .theme-toggle {
   border: none;
   background: none;
@@ -774,7 +695,7 @@ footer {
   transform: rotate(20deg);
 }
 
-/* Improved notifications */
+
 .notify {
   position: fixed;
   bottom: 20px;
@@ -826,4 +747,49 @@ footer {
   padding: 0.5rem 1.25rem;
   background: rgba(255, 0, 0, 0.1);
   border-top: 1px solid var(--border);
+}
+
+/* Initial App Loading Styles */
+#app-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--background); /* Use theme background */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* Ensure it's above everything */
+  opacity: 1;
+  transition: opacity 0.5s ease-out;
+}
+
+#app-loading .spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(8, 108, 129, 0.2); /* Lighter accent color */
+  border-top-color: var(--accent); /* Accent color */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+#app-loading p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Hide loader when app is ready (handled in main.ts) */
+body.app-loaded #app-loading {
+  opacity: 0;
+  pointer-events: none; /* Prevent interaction */
 }

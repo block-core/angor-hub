@@ -76,10 +76,16 @@ import { animate, style, transition, trigger } from '@angular/animations';
         <nav class="main-nav" [class.active]="isMenuOpen()">
           <ul class="nav-list">
             <li class="nav-item">
-              <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link no-underline">Home</a>
+              <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link no-underline">
+                <span class="material-icons nav-icon">home</span>
+                <span>Home</span>
+              </a>
             </li>
             <li class="nav-item">
-              <a routerLink="/explore" routerLinkActive="active" class="nav-link no-underline">Explore</a>
+              <a routerLink="/explore" routerLinkActive="active" class="nav-link no-underline">
+                <span class="material-icons nav-icon">explore</span>
+                <span>Explore</span>
+              </a>
             </li>
             <li class="nav-item">
               <a routerLink="/settings" routerLinkActive="active" class="nav-link no-underline">
@@ -373,6 +379,7 @@ import { animate, style, transition, trigger } from '@angular/animations';
       border: none;
       font-size: 1rem;
       cursor: pointer;
+      gap: 0.5rem;
       
       &:hover, &.active {
         background: rgba(8, 108, 129, 0.08);
@@ -383,7 +390,7 @@ import { animate, style, transition, trigger } from '@angular/animations';
         border-radius: 0;
         padding: 1rem 1.5rem;
         width: 100%;
-        justify-content: space-between;
+        justify-content: flex-start;
       }
     }
     
@@ -541,8 +548,9 @@ import { animate, style, transition, trigger } from '@angular/animations';
     }
     
     .nav-icon {
-      margin-right: 0.35rem;
       font-size: 1.2rem;
+      display: flex;
+      align-items: center;
     }
     
     /* Responsive adjustments */
@@ -581,7 +589,7 @@ export class HeaderComponent implements OnInit {
   public networkService = inject(NetworkService);
   
   isMenuOpen = signal<boolean>(false);
-  isDarkTheme = signal<boolean>(false);
+  isDarkTheme = signal<boolean>(document.documentElement.getAttribute('data-theme') === 'dark');
   expandedDropdown = signal<string | null>(null);
   isScrolled = signal<boolean>(false);
   isScrollingUp = signal<boolean>(false);
@@ -591,19 +599,7 @@ export class HeaderComponent implements OnInit {
   private lastScrollTop = 0;
   
   ngOnInit(): void {
-    // Initialize theme based on user preference or system
-    const savedTheme = localStorage.getItem('angor-theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    if (savedTheme) {
-      this.isDarkTheme.set(savedTheme === 'dark');
-    } else {
-      this.isDarkTheme.set(prefersDark);
-    }
-    
-    this.applyTheme();
-    
-    // Listen for scroll events
+    this.isDarkTheme.set(document.documentElement.getAttribute('data-theme') === 'dark');
     this.checkScrollPosition();
   }
   
@@ -615,14 +611,18 @@ export class HeaderComponent implements OnInit {
   private applyTheme(): void {
     const theme = this.isDarkTheme() ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('angor-theme', theme);
+    try {
+      localStorage.setItem('angor-theme', theme);
+    } catch (e) {
+      console.error('Failed to save theme preference:', e);
+    }
   }
   
   toggleMobileMenu(): void {
     this.isMenuOpen.update(open => !open);
     if (this.isMenuOpen()) {
       document.body.style.overflow = 'hidden';
-      this.isNetworkMenuOpen.set(false); // Close network menu when opening mobile menu
+      this.isNetworkMenuOpen.set(false);
     } else {
       document.body.style.overflow = '';
     }
@@ -632,12 +632,11 @@ export class HeaderComponent implements OnInit {
     event.stopPropagation();
     this.isNetworkMenuOpen.update(open => !open);
     if (this.isNetworkMenuOpen()) {
-      this.expandedDropdown.set(null); // Close other dropdowns
+      this.expandedDropdown.set(null);
     }
   }
   
   switchNetwork(network: 'main' | 'test'): void {
-    // Switch to selected network
     if (network === 'main') {
       this.networkService.switchToMain();
     } else {
@@ -651,7 +650,7 @@ export class HeaderComponent implements OnInit {
     event.stopPropagation();
     this.expandedDropdown.update(current => current === dropdown ? null : dropdown);
     if (this.expandedDropdown()) {
-      this.isNetworkMenuOpen.set(false); // Close network menu when opening dropdown
+      this.isNetworkMenuOpen.set(false);
     }
   }
   
@@ -664,7 +663,6 @@ export class HeaderComponent implements OnInit {
   
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
-    // Close dropdown if clicked outside
     const target = event.target as HTMLElement;
     
     if (this.expandedDropdown()) {
@@ -674,7 +672,6 @@ export class HeaderComponent implements OnInit {
       }
     }
     
-    // Close network menu if clicked outside
     if (this.isNetworkMenuOpen()) {
       const isNetworkClick = target.closest('.network-selector, .network-menu');
       if (!isNetworkClick) {
@@ -691,21 +688,18 @@ export class HeaderComponent implements OnInit {
   private checkScrollPosition(): void {
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     
-    // Check if scrolled
     this.isScrolled.set(scrollTop > 20);
     
-    // Check scroll direction
     if (scrollTop > this.lastScrollTop && scrollTop > 100) {
       this.isScrollingDown.set(true);
       this.isScrollingUp.set(false);
     } else {
       this.isScrollingDown.set(false);
-      this.isScrollingUp.set(scrollTop > 20); // Only show elevation when scrolled
+      this.isScrollingUp.set(scrollTop > 20);
     }
     
     this.lastScrollTop = scrollTop;
     
-    // Close dropdowns on scroll
     this.expandedDropdown.set(null);
     this.isNetworkMenuOpen.set(false);
   }

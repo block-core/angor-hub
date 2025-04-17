@@ -1,67 +1,65 @@
-import { Component } from '@angular/core';
+import { Component, inject, PLATFORM_ID, Inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './components/header.component';
 import { CommonModule } from '@angular/common';
+import { FooterComponent } from './components/footer.component';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common'; // Import DOCUMENT and isPlatformBrowser
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, CommonModule],
+  imports: [RouterOutlet, HeaderComponent, CommonModule, FooterComponent],
   template: `
-    <!-- Accessibility skip link -->
-    <a href="#main-content" class="skip-to-content">Skip to content</a>
-    
-    <app-header></app-header>
-    
-    <main id="main-content">
-      <router-outlet></router-outlet>
-    </main>
-
-    <footer>
-      <div class="footer-content">
-        <div class="footer-column">
-          <h3>About Angor</h3>
-          <ul>
-            <li><a href="https://angor.io">Overview</a></li>
-            <li><a href="https://angor.io/about">Our Mission</a></li>
-            <li><a href="https://angor.io/team">Team</a></li>
-          </ul>
-        </div>
-        
-        <div class="footer-column">
-          <h3>Resources</h3>
-          <ul>
-            <li><a href="https://docs.angor.io">Documentation</a></li>
-            <li><a href="https://blog.angor.io">Blog</a></li>
-            <li><a href="https://angor.io/faq">FAQs</a></li>
-          </ul>
-        </div>
-        
-        <div class="footer-column">
-          <h3>Connect</h3>
-          <ul>
-            <li><a href="https://twitter.com/AngorBTC" target="_blank">Twitter</a></li>
-            <li><a href="https://github.com/block-core/angor" target="_blank">GitHub</a></li>
-            <li><a href="https://discord.gg/example" target="_blank">Discord</a></li>
-          </ul>
-        </div>
-        
-        <div class="footer-column">
-          <h3>Legal</h3>
-          <ul>
-            <li><a href="https://angor.io/terms">Terms of Service</a></li>
-            <li><a href="https://angor.io/privacy">Privacy Policy</a></li>
-          </ul>
-        </div>
-      </div>
-      
-      <div class="copyright">
-        &copy; {{ currentYear }} Angor. All rights reserved.
-      </div>
-    </footer>
+     <a href="#main-content" class="skip-to-content">Skip to content</a>
+     <div id="app-loading">
+      <div class="spinner"></div>
+      <p>Loading Angor Hub...</p>
+    </div>
+    <div class="app-wrapper">
+      <app-header></app-header>
+      <main id="main-content">
+        <router-outlet></router-outlet>
+      </main>
+      <app-footer></app-footer>
+    </div>
   `,
-  styles: []
+  styles: [`
+    :host {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .app-wrapper {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+
+    main {
+      flex-grow: 1; 
+    }
+  `],
 })
 export class AppComponent {
-  currentYear = new Date().getFullYear();
+  title = 'Angor Hub';
+
+  constructor(
+    @Inject(DOCUMENT) private document: Document,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    // Apply initial theme - Note: This runs after initial render, potential FOUC
+    if (isPlatformBrowser(this.platformId)) {
+      try {
+        const savedTheme = localStorage.getItem('angor-theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = savedTheme ? savedTheme : (prefersDark ? 'dark' : 'light');
+        this.document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        console.error('Failed to apply initial theme in AppComponent:', e);
+        // Fallback to light theme if error occurs
+        this.document.documentElement.setAttribute('data-theme', 'light');
+      }
+    }
+  }
 }
