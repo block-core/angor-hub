@@ -66,6 +66,8 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
+
+
     // Listen for profile updates with timestamp check
     this.relay.profileUpdates.subscribe((event) => {
       if (!event) {
@@ -120,7 +122,13 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   favorites: string[] = [];
+  async loadMoreProjects() {
+    await this.indexer.loadMore();
+  }
 
+  trackByProjectIdentifier(index: number, project: any): string {
+    return project.projectIdentifier;
+  }
   async ngOnInit() {
     this.title.setTitle('Explore');
 
