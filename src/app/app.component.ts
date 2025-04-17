@@ -1,27 +1,25 @@
-import { Component, inject, PLATFORM_ID, Inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, OnInit, inject, signal, Inject, PLATFORM_ID } from '@angular/core';
+import { RouterOutlet, Router, NavigationStart, NavigationEnd, NavigationCancel, NavigationError } from '@angular/router';
 import { HeaderComponent } from './components/header.component';
-import { CommonModule } from '@angular/common';
 import { FooterComponent } from './components/footer.component';
-import { DOCUMENT, isPlatformBrowser } from '@angular/common'; // Import DOCUMENT and isPlatformBrowser
+import { CommonModule } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, CommonModule, FooterComponent],
+  imports: [RouterOutlet, HeaderComponent, FooterComponent, CommonModule],
   template: `
-     <a href="#main-content" class="skip-to-content">Skip to content</a>
-     <div id="app-loading">
-      <div class="spinner"></div>
-      <p>Loading Angor Hub...</p>
-    </div>
-    <div class="app-wrapper">
-      <app-header></app-header>
-      <main id="main-content">
-        <router-outlet></router-outlet>
-      </main>
-      <app-footer></app-footer>
-    </div>
+    @if (loading()) {
+      <div class="loading-overlay">
+        <div class="spinner"></div>
+      </div>
+    }
+    <app-header></app-header>
+    <main>
+      <router-outlet></router-outlet>
+    </main>
+    <app-footer></app-footer>
   `,
   styles: [`
     :host {
@@ -39,16 +37,42 @@ import { DOCUMENT, isPlatformBrowser } from '@angular/common'; // Import DOCUMEN
     main {
       flex-grow: 1; 
     }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--background);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
   `],
 })
-export class AppComponent {
-  title = 'Angor Hub';
+export class AppComponent implements OnInit {
+  private router = inject(Router);
+
+  loading = signal(false);
 
   constructor(
     @Inject(DOCUMENT) private document: Document,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
-    // Apply initial theme - Note: This runs after initial render, potential FOUC
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationStart) {
+        this.loading.set(true);
+      } else if (
+        event instanceof NavigationEnd ||
+        event instanceof NavigationCancel ||
+        event instanceof NavigationError
+      ) {
+        setTimeout(() => this.loading.set(false), 100); 
+      }
+    });
+
     if (isPlatformBrowser(this.platformId)) {
       try {
         const savedTheme = localStorage.getItem('angor-theme');
@@ -57,9 +81,10 @@ export class AppComponent {
         this.document.documentElement.setAttribute('data-theme', theme);
       } catch (e) {
         console.error('Failed to apply initial theme in AppComponent:', e);
-        // Fallback to light theme if error occurs
         this.document.documentElement.setAttribute('data-theme', 'light');
       }
     }
   }
+
+  ngOnInit(): void {}
 }
