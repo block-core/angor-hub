@@ -34,10 +34,15 @@ import { AsyncPipe } from '@angular/common';
             </div>
           </div>
           <a routerLink="/settings" class="settings-link">
-            <i class="fa-solid fa-gear"></i>
+            <!-- <i class="fa-solid fa-gear"></i> -->
+            <span class="material-icons">settings</span>
           </a>
           <button (click)="toggleTheme()" class="theme-toggle">
-            {{ (themeService.theme$ | async) === 'light' ? '☀️' : '🌙' }}
+            @if ((themeService.theme$ | async) === 'light') {
+              <span class="material-icons icon-sun">light_mode</span>
+            } @else {
+              <span class="material-icons icon-moon">dark_mode</span>
+            }
           </button>
         </div>
       </nav>
@@ -67,6 +72,24 @@ import { AsyncPipe } from '@angular/common';
       cursor: pointer;
       font-size: 1.2rem;
       padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .theme-toggle .icon-sun {
+      color: var(--header-text);
+    }
+    .theme-toggle .icon-moon {
+      color : #ffffff;
+    }
+    .theme-toggle:hover .icon-sun {
+      color: var(--accent);
+      cursor: pointer;
+    }
+    .theme-toggle:hover .icon-moon {
+      color: var(--accent);
+      cursor: pointer;
     }
 
     .nav-links {
@@ -88,7 +111,9 @@ import { AsyncPipe } from '@angular/common';
     }
 
     .settings-link:hover {
-      transform: rotate(20deg);
+      transform: rotate(90deg);
+      color: var(--accent);
+      cursor: pointer;
     }
 
     .modern-footer {

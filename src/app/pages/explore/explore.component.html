@@ -15,8 +15,8 @@
   
         <div class="hero-wrapper">
           <div class="hero-content">
-            <strong>Explore Projects</strong>
-            <h1 class="hero-subtitle">What's your next investment?</h1>
+            <strong class="hero-explore">Explore Projects</strong>
+            <h1 class="hero-subtitle">What's your next Investment?</h1>
             <p class="hero-description">Check out our projects and find your next investment opportunity.</p>
             @if(networkService.isMain()) {
   
@@ -39,7 +39,7 @@
         } @else {
         <section class="projects">
           @for (project of indexer.projects(); track project.projectIdentifier; let i = $index) {
-          <a [routerLink]="['/project', project.projectIdentifier]" class="project-card" [attr.data-index]="i">
+            <a [routerLink]="['/project', project.projectIdentifier]" class="project-card" [attr.data-index]="i">
             <div
               class="project-banner"
               [style.background-image]="
@@ -59,6 +59,7 @@
             </div>
   
             <div class="project-content">
+              @if (project.details) {
               <div
                 class="project-avatar"
                 [style.background-image]="
@@ -76,33 +77,36 @@
                   {{ project.projectIdentifier }}
                   }
                 </h3>
-  
                 @if (isFavorite(project.projectIdentifier)) {
                 <span class="material-icons favorite-icon favorite">bookmark</span>
                 }
               </div>
+              <div>
+                <div class="project-date-wrapper"><span class="material-icons">schedule</span><span class="date-text">{{ isProjectNotStarted(project.details.startDate) ? 'Ends' : 'Ended' }} {{ project.details.startDate | ago }}</span></div>
+              </div>
   
               <!-- <p>
                 Founder: @if ((project.metadata?.['name'] ?? '') !== '') {
-                {{ project.metadata?.['name'] ?? '' }}
-                } @else {
-                <span class="truncate">{{ project.founderKey }}</span>
-                <small class="loading-profile">Loading profile...</small>
-                }
-              </p> -->
-  
-              @if ((project.metadata?.['about'] ?? '') !== '') {
-              <p class="about">{{ project.metadata?.['about'] ?? '' }}</p>
-              } @else {
-              <p class="about"></p>
-              } @if (project.details) {
-              <div class="project-info">
-                <!-- <div class="info-item">
+                  {{ project.metadata?.['name'] ?? '' }}
+                  } @else {
+                    <span class="truncate">{{ project.founderKey }}</span>
+                    <small class="loading-profile">Loading profile...</small>
+                    }
+                  </p> -->
+                  
+                  @if ((project.metadata?.['about'] ?? '') !== '') {
+                    <p class="about">{{ project.metadata?.['about'] ?? '' }}</p>
+                  } @else {
+                    <p class="about"></p>
+                  } 
+                  
+              <!-- <div class="project-info">
+                <div class="info-item">
                   <div class="info-label">Target Amount</div>
                   <div class="info-value">
                     {{ project.details.targetAmount }} BTC
                   </div>
-                </div> -->
+                </div>
                 <div class="info-item">
                   @if(isProjectNotStarted(project.details.startDate)) {
                   <div class="info-label">Ends</div>
@@ -120,10 +124,12 @@
                     {{ project.stats?.investorCount }}
                   </div>
                 </div>
-              </div>
+              </div> -->
+
               <div class="funding-progress">
                 <div class="progress-stats">
-                  <span>
+                  <div class="investor-wrapper"><span class="material-icons">person</span>{{ project.stats?.investorCount }} Investor<span class="invertor-text"></span></div>
+                  <span class="btc-raised">
                     {{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}
   
                     <!-- {{
@@ -134,9 +140,8 @@
                     /
                     {{ bitcoin.toBTC(project.details.targetAmount) }}
                     <!-- {{ project.details.targetAmount / 100000000 }} -->
-                    {{ networkService.isMain() ? 'BTC' : 'TBTC' }} raised</span
-                  >
-                  <span class="funding-percentage">{{ getFundingPercentage(project) }}%</span>
+                    {{ networkService.isMain() ? 'BTC' : 'TBTC' }} raised
+                  </span>
                 </div>
                 <div class="progress-bar">
                   <div class="progress-fill" [style.width]="getFundingPercentage(project) + '%'"></div>
