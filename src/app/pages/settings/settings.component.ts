@@ -64,7 +64,7 @@ import { TitleService } from '../../services/title.service';
           (click)="setActiveTab('relays')"
         >
           <span class="material-icons">settings_input_antenna</span>
-          <span>Nostr Relays</span>
+          <span>Relays</span>
         </div>
         <div 
           class="sidebar-item" 
