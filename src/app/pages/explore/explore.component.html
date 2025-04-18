@@ -302,18 +302,17 @@
                   
                   <div class="progress-bar">
                     @let fundingPercent = getFundingPercentage(project);
-                    <div class="progress-fill" [style.width]="fundingPercent + '%'">
-                      @if (fundingPercent > 15) {
-                        <span class="percentage">
-                          {{ fundingPercent }}%
-                        </span>
-                      }
+                    @let displayWidth = fundingPercent > 100 ? 100 : fundingPercent;
+                    
+                    <span class="percentage" [class.high-funding]="fundingPercent >= 100">
+                      {{ fundingPercent }}%
+                    </span>
+                    
+                    <div class="progress-fill" 
+                         [style.width]="displayWidth + '%'"
+                         [class.high-funding]="fundingPercent >= 100"
+                         [class.low-funding]="fundingPercent > 0 && fundingPercent < 15">
                     </div>
-                    @if (fundingPercent <= 15) {
-                      <span class="percentage-outside">
-                        {{ fundingPercent }}%
-                      </span>
-                    }
                   </div>
                 </div>
                 

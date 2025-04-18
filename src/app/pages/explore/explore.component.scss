@@ -30,21 +30,18 @@
     border-radius: 12px;
     background: var(--surface-card);
     padding: 0; /* Remove padding from card */
-    transition: var(--transition-bounce);
     box-shadow: var(--card-shadow);
     height: 100%;
     display: flex;
     flex-direction: column;
     border: 1px solid transparent;
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out; /* Faster, simpler transition */
+    will-change: transform; /* GPU hint */
 
     &:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
+      transform: translateY(-4px); /* Reduced movement for faster animation */
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); /* Less intense shadow */
       border-color: var(--accent);
-
-      .project-banner {
-        transform: scale(1.05);
-      }
 
       .action-button {
         transform: translateX(0);
@@ -59,7 +56,6 @@
     background-position: center;
     background-color: rgba(8, 108, 129, 0.1);
     position: relative;
-    transition: transform 0.6s cubic-bezier(0.2, 1, 0.3, 1);
 
     &::after {
       content: '';
@@ -78,7 +74,7 @@
       inset: 0;
       background-color: rgba(0, 0, 0, 0.2);
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.2s ease; /* Faster transition */
       z-index: 1;
     }
 
@@ -161,29 +157,126 @@
   }
   .funding-progress {
     margin: 1rem 0;
+    position: relative;
+    padding-top: 18px; /* Add padding at top to accommodate percentage label */
   }
   .progress-bar {
     width: 100%;
-    height: 12px;
-    background: rgba(8, 108, 129, 0.1);
-    border-radius: 6px;
-    overflow: hidden;
+    height: 12px; /* Slightly reduced height for more elegant look */
+    background: rgba(8, 108, 129, 0.06); /* Lighter background */
+    border-radius: 8px;
+    overflow: visible;
     position: relative;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08); /* Subtle inner shadow */
   }
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--accent-dark), var(--accent-light));
-    border-radius: 6px;
+    background: linear-gradient(90deg, var(--accent-dark), var(--accent));
+    border-radius: 8px;
     position: relative;
+     transition: width 0.3s ease-out;
+    box-shadow: 0 1px 2px rgba(8, 108, 129, 0.2);
+    
+    &::after {
+       position: absolute;
+      right: 0;
+      top: 0;
+      height: 100%;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 0 8px 8px 0;
+    }
+  }
+  .percentage {
+    position: absolute;
+    font-size: 0.9rem;
+    font-weight: 600;
+    top: 18px;
+    right: 0; 
+    color: var(--accent);
+    background: rgba(255, 255, 255, 0.9); 
+    padding: 1px 6px;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    z-index: 5;
+    white-space: nowrap;
+    letter-spacing: 0.01em; /* Slightly improved letter spacing */
+    
+    /* Remove inside/outside distinction - always above */
+    &-inside, &-outside {
+      top: -18px;
+      right: 0;
+    }
+  }
+  .high-funding {
+    .progress-fill {
+      background: linear-gradient(90deg, #0a8c37, #10d659); /* Bright green gradient */
+      box-shadow: 0 1px 4px rgba(12, 188, 76, 0.3);
+    }
+    
+    .percentage {
+      color: #0a8c37; /* Green text */
+      font-weight: 700;
+    }
+  }
+  .low-funding .progress-fill {
+    background: linear-gradient(90deg, var(--accent), var(--accent-light)); /* Use accent color but lighter */
+  }
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+  }
+  .investor-count {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    padding-right: 8px;
-
-    .percentage {
-      font-size: 0.7rem;
+    gap: 0.35rem;
+    
+    .material-icons {
+      color: var(--accent);
+      font-size: 1.25rem;
+    }
+    
+    .count {
+      font-weight: 600;
+      font-size: 1.15rem;
+    }
+    
+    .label {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+  }
+  .amount-raised {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    
+    .btc-amount {
       font-weight: 700;
-      color: white;
+      color: var(--accent);
+      font-size: 1.15rem;
+    }
+    
+    .symbol, .target, .divider {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+    
+    .target {
+      font-weight: 500;
+    }
+  }
+  @media (max-width: 480px) {
+    .progress-bar {
+      height: 10px;
+    }
+    
+    .percentage {
+      font-size: 0.85rem;
+      top: -16px;
+      padding: 0 5px;
     }
   }
   .progress-stats {
@@ -344,7 +437,7 @@
   position: relative;
   padding: 1rem 1.5rem;
   margin-top: 2rem;
-  z-index: 10; // Higher z-index to ensure dropdowns appear above other content
+  z-index: 10;  
 }
 
 .explore-controls-wrapper {
@@ -747,6 +840,18 @@
     .mobile-reset-button, .mobile-results-count {
       width: 100%;
       justify-content: center;
+    }
+  }
+  
+  .progress-bar {
+    height: 10px;
+  }
+  
+  .percentage {
+    font-size: 0.7rem;
+    
+    &-outside {
+      top: -18px;
     }
   }
 }
@@ -1267,21 +1372,9 @@
   justify-content: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   z-index: 2;
-  animation: favoriteAppear 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   
   .material-icons {
     font-size: 1.5rem;
-  }
-}
-
-@keyframes favoriteAppear {
-  0% { 
-    transform: scale(0) rotate(-45deg); 
-    opacity: 0;
-  }
-  100% { 
-    transform: scale(1) rotate(0deg); 
-    opacity: 1;
   }
 }
 
@@ -1437,11 +1530,11 @@
   cursor: pointer;
   transform: translateX(10px);
   opacity: 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s ease, opacity 0.2s ease; /* Faster transitions */
   
   &:hover {
     background: var(--accent-light);
-    transform: translateX(0) scale(1.1);
+    transform: translateX(0);
   }
   
   .material-icons {

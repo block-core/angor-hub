@@ -394,12 +394,18 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       return 0;
     }
 
-    let invested = project.stats.amountInvested; //  / 100000000;
-    let target = project.details.targetAmount; //  / 100000000;
+    let invested = project.stats.amountInvested;
+    let target = project.details.targetAmount;
 
     const percentage = (invested / target) * 100;
+    
+    // Always return at least 0.1% if there's any investment (for visibility)
+    if (percentage > 0 && percentage < 0.1) {
+      return 0.1;
+    }
 
-    return Math.min(Math.round(percentage * 10) / 10, 999.9); // Cap at 999.9% and round to 1 decimal
+    // Return with one decimal place
+    return Math.min(Math.round(percentage * 10) / 10, 999.9);
   }
 
   isProjectNotStarted(date: number | undefined): boolean {
