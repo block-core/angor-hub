@@ -14,185 +14,284 @@
         Find exciting projects building on Bitcoin technology and join the future of decentralized finance.
       </p>
       
-      <div *ngIf="networkService.isMain(); else testnetBadge" class="network-badge">
-        <span class="material-icons">warning</span>
-        <span>Bitcoin Mainnet - Not yet released</span>
-      </div>
-      <ng-template #testnetBadge>
+      @if (networkService.isMain()) {
+        <div class="network-badge">
+          <span class="material-icons">warning</span>
+          <span>Bitcoin Mainnet - Not yet released</span>
+        </div>
+      } @else {
         <div class="network-badge testnet">
           <span class="material-icons">science</span>
           <span>Bitcoin Testnet</span>
         </div>
-      </ng-template>
+      }
     </div>
 
-    <!-- Filter and sorting controls -->
-    <div class="explore-controls">
-      <div class="search-container">
-        <span class="material-icons search-icon">search</span>
-        <input type="text" placeholder="Search projects..." class="search-input">
-      </div>
-      
-      <div class="sort-filter">
-        <button class="filter-button">
-          <span class="material-icons">filter_list</span>
-          <span class="filter-text">Filter</span>
-        </button>
+    <!-- Enhanced responsive search and filters -->
+    <div class="explore-controls-container">
+      <div class="explore-controls-wrapper">
+        <!-- Centered search box with animations -->
+        <div class="search-container">
+          <span class="material-icons search-icon">search</span>
+          <input 
+            type="text" 
+            placeholder="Search projects by name, description or ID..." 
+            class="search-input"
+            [value]="searchTerm()" 
+            (input)="onSearchInput($event)"
+            aria-label="Search projects">
+        </div>
         
-        <button class="sort-button">
-          <span class="material-icons">sort</span>
-          <span class="sort-text">Sort</span>
-        </button>
+        <!-- Filter section with enhanced styling -->
+        <div class="controls-section">
+          <div class="controls-label">Filter by Status</div>
+          <div class="filters-group">
+            <button 
+              class="control-button filter-button" 
+              [class.active]="activeFilter() === 'all'"
+              (click)="setFilter('all')"
+              aria-label="Show all projects">
+              <span class="material-icons">apps</span>
+              <span>All</span>
+            </button>
+            <button 
+              class="control-button filter-button"
+              [class.active]="activeFilter() === 'active'"
+              (click)="setFilter('active')"
+              aria-label="Show active projects">
+              <span class="material-icons">timelapse</span>
+              <span>Active</span>
+            </button>
+            <button 
+              class="control-button filter-button"
+              [class.active]="activeFilter() === 'upcoming'"
+              (click)="setFilter('upcoming')"
+              aria-label="Show upcoming projects">
+              <span class="material-icons">hourglass_top</span>
+              <span>Upcoming</span>
+            </button>
+            <button 
+              class="control-button filter-button"
+              [class.active]="activeFilter() === 'completed'"
+              (click)="setFilter('completed')"
+              aria-label="Show completed projects">
+              <span class="material-icons">flag</span>
+              <span>Completed</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Sort section with enhanced styling -->
+        <div class="controls-section">
+          <div class="controls-label">Sort by</div>
+          <div class="sort-group">
+            <button 
+              class="control-button sort-button"
+              [class.active]="activeSort() === 'default'"
+              (click)="setSort('default')"
+              aria-label="Sort by default order">
+              <span class="material-icons">sort</span>
+              <span>Default</span>
+            </button>
+            <button 
+              class="control-button sort-button"
+              [class.active]="activeSort() === 'funding'"
+              (click)="setSort('funding')"
+              aria-label="Sort by funding percentage">
+              <span class="material-icons">trending_up</span>
+              <span>Funding</span>
+            </button>
+            <button 
+              class="control-button sort-button"
+              [class.active]="activeSort() === 'endDate'"
+              (click)="setSort('endDate')"
+              aria-label="Sort by end date">
+              <span class="material-icons">event</span>
+              <span>End Date</span>
+            </button>
+            <button 
+              class="control-button sort-button"
+              [class.active]="activeSort() === 'investors'"
+              (click)="setSort('investors')"
+              aria-label="Sort by number of investors">
+              <span class="material-icons">people</span>
+              <span>Investors</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Action section that appears when filters are active -->
+        @if (searchTerm() || activeFilter() !== 'all' || activeSort() !== 'default') {
+          <div class="controls-actions">
+            <button class="reset-button" (click)="resetFilters()" aria-label="Reset all filters">
+              <span class="material-icons">refresh</span>
+              <span>Reset Filters</span>
+            </button>
+            <div class="results-count" aria-live="polite">
+              {{ filteredProjects().length }} project{{ filteredProjects().length !== 1 ? 's' : '' }} found
+            </div>
+          </div>
+        }
       </div>
     </div>
   </div>
 </section>
 
 <div class="container">
-  <div *ngIf="indexer.loading() && !indexer.projects().length; else content">
+  @if (indexer.loading() && !filteredProjects().length) {
     <div class="loading-spinner">
       <div class="spinner"></div>
     </div>
-  </div>
-  <ng-template #content>
-    <div *ngIf="indexer.projects().length === 0; else projects">
+  } @else {
+    @if (filteredProjects().length === 0) {
       <div class="empty-state">
         <div class="empty-icon">
-          <span class="material-icons">explore_off</span>
+          <span class="material-icons">search_off</span>
         </div>
-        <h2>No Projects Found</h2>
-        <p>We couldn't find any projects at the moment. Try again later or check your connection.</p>
-        <button class="primary-button" (click)="retryLoadProjects()">
-          <span class="material-icons">refresh</span>
-          Retry
+        <h2>No Projects Match Your Criteria</h2>
+        <p>Try adjusting your search, filter, or sort options, or check back later.</p>
+        <button class="secondary-button" (click)="resetFilters()">
+          <span class="material-icons">clear_all</span>
+          Clear Filters & Search
         </button>
       </div>
-    </div>
-    <ng-template #projects>
+    } @else {
       <section class="projects">
-        <a *ngFor="let project of indexer.projects(); trackBy: trackByProjectIdentifier; let i = index" [routerLink]="['/project', project.projectIdentifier]" class="project-card" [attr.data-index]="i">
-          <div
-            class="project-banner"
-            [style.background-image]="
-              project.metadata?.['banner'] ?? ''
-                ? 'url(' + (project.metadata?.['banner'] ?? '') + ')'
-                : 'none'
-            "
-          >
-            <!-- Add status icon overlaying the banner -->
-            <ng-container *ngIf="isProjectEnded(project.details?.startDate)">
-              <span *ngIf="isProjectSuccessfullyFunded(project)" class="material-icons status-icon status-funded">check_circle</span>
-              <span *ngIf="!isProjectSuccessfullyFunded(project)" class="material-icons status-icon status-failed">cancel</span>
-            </ng-container>
-            
-            <!-- Add favorite badge -->
-            <span *ngIf="isFavorite(project.projectIdentifier)" class="favorite-badge">
-              <span class="material-icons">bookmark</span>
-            </span>
-          </div>
-
-          <div class="project-content">
-            <ng-container *ngIf="project.details">
-              <div
-                class="project-avatar"
-                [style.background-image]="
-                  project.metadata?.['picture'] ?? ''
-                    ? 'url(' + (project.metadata?.['picture'] ?? '') + ')'
-                    : 'none'
-                "
-              ></div>
-
-              <div class="project-header">
-                <h3 class="project-title">
-                  <ng-container *ngIf="(project.metadata?.['name'] ?? '') !== ''">
-                    {{ project.metadata?.['name'] }}
-                  </ng-container>
-                  <ng-container *ngIf="(project.metadata?.['name'] ?? '') === ''">
-                    {{ project.projectIdentifier | slice:0:12 }}...
-                  </ng-container>
-                </h3>
-                
-                <div class="project-date">
-                  <span class="material-icons date-icon">event</span>
-                  <span>{{ isProjectNotStarted(project.details.startDate) ? 'Ends' : 'Ended' }} {{ project.details.startDate | ago }}</span>
-                </div>
-              </div>
+        @for (project of filteredProjects(); track project.projectIdentifier; let i = $index) {
+          <a [routerLink]="['/project', project.projectIdentifier]" class="project-card" [attr.data-index]="i">
+            <div
+              class="project-banner"
+              [style.background-image]="
+                project.metadata?.['banner'] ?? ''
+                  ? 'url(' + (project.metadata?.['banner'] ?? '') + ')'
+                  : 'none'
+              "
+            >
+              @if (isProjectEnded(project.details?.expiryDate)) {
+                @if (isProjectSuccessfullyFunded(project)) {
+                  <span class="material-icons status-icon status-funded">check_circle</span>
+                } @else {
+                  <span class="material-icons status-icon status-failed">cancel</span>
+                }
+              }
               
-              <p class="project-description" *ngIf="(project.metadata?.['about'] ?? '') !== ''">
-                {{ (project.metadata?.['about'] ?? '') | slice:0:100 }}{{ ((project.metadata?.['about'] ?? '').length > 100) ? '...' : '' }}
-              </p>
-              <p class="project-description placeholder" *ngIf="(project.metadata?.['about'] ?? '') === ''">No description available</p>
+              @if (isFavorite(project.projectIdentifier)) {
+                <span class="favorite-badge">
+                  <span class="material-icons">bookmark</span>
+                </span>
+              }
+            </div>
 
-              <div class="funding-progress">
-                <div class="progress-info">
-                  <div class="investor-count">
-                    <span class="material-icons">people</span>
-                    <span class="count">{{ project.stats?.investorCount ?? 0 }}</span>
-                    <span class="label">Investors</span>
+            <div class="project-content">
+              @if (project.details) {
+                <div
+                  class="project-avatar"
+                  [style.background-image]="
+                    project.metadata?.['picture'] ?? ''
+                      ? 'url(' + (project.metadata?.['picture'] ?? '') + ')'
+                      : 'none'
+                  "
+                ></div>
+
+                <div class="project-header">
+                  <h3 class="project-title">
+                    @if ((project.metadata?.['name'] ?? '') !== '') {
+                      {{ project.metadata?.['name'] }}
+                    } @else {
+                      {{ project.projectIdentifier | slice:0:12 }}...
+                    }
+                  </h3>
+                  
+                  <div class="project-date">
+                    <span class="material-icons date-icon">event</span>
+                    <span>{{ isProjectEnded(project.details.expiryDate) ? 'Ended' : 'Ends' }} {{ project.details.expiryDate | ago }}</span>
+                  </div>
+                </div>
+                
+                @if ((project.metadata?.['about'] ?? '') !== '') {
+                  <p class="project-description">
+                    {{ (project.metadata?.['about'] ?? '') | slice:0:100 }}{{ ((project.metadata?.['about'] ?? '').length > 100) ? '...' : '' }}
+                  </p>
+                } @else {
+                  <p class="project-description placeholder">No description available</p>
+                }
+
+                <div class="funding-progress">
+                  <div class="progress-info">
+                    <div class="investor-count">
+                      <span class="material-icons">people</span>
+                      <span class="count">{{ project.stats?.investorCount ?? 0 }}</span>
+                      <span class="label">Investors</span>
+                    </div>
+                    
+                    <div class="amount-raised">
+                      <span class="btc-amount">{{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}</span>
+                      <span class="symbol">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+                      <span class="divider">/</span>
+                      <span class="target">{{ bitcoin.toBTC(project.details.targetAmount) }}</span>
+                    </div>
                   </div>
                   
-                  <div class="amount-raised">
-                    <span class="btc-amount">{{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}</span>
-                    <span class="symbol">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
-                    <span class="divider">/</span>
-                    <span class="target">{{ bitcoin.toBTC(project.details.targetAmount) }}</span>
+                  <div class="progress-bar">
+                    @let fundingPercent = getFundingPercentage(project);
+                    <div class="progress-fill" [style.width]="fundingPercent + '%'">
+                      @if (fundingPercent > 15) {
+                        <span class="percentage">
+                          {{ fundingPercent }}%
+                        </span>
+                      }
+                    </div>
+                    @if (fundingPercent <= 15) {
+                      <span class="percentage-outside">
+                        {{ fundingPercent }}%
+                      </span>
+                    }
                   </div>
                 </div>
                 
-                <div class="progress-bar">
-                  <div class="progress-fill" [style.width]="getFundingPercentage(project) + '%'">
-                    <span class="percentage" *ngIf="getFundingPercentage(project) > 15">
-                      {{ getFundingPercentage(project) }}%
-                    </span>
-                  </div>
-                  <span class="percentage-outside" *ngIf="getFundingPercentage(project) <= 15">
-                    {{ getFundingPercentage(project) }}%
-                  </span>
+                <div class="project-footer">
+                  @if (isProjectNotStarted(project.details.startDate)) {
+                    <div class="tag">
+                      <span class="material-icons">hourglass_top</span>
+                      <span>Upcoming</span>
+                    </div>
+                  } @else if (!isProjectEnded(project.details.expiryDate)) {
+                    <div class="tag active">
+                      <span class="material-icons">timelapse</span>
+                      <span>Active</span>
+                    </div>
+                  } @else {
+                    <div class="tag ended">
+                      <span class="material-icons">flag</span>
+                      <span>Completed</span>
+                    </div>
+                  }
+                  
+                  <button class="action-button">
+                    <span class="material-icons">arrow_forward</span>
+                  </button>
                 </div>
-              </div>
-              
-              <div class="project-footer">
-                <div class="tag" *ngIf="isProjectNotStarted(project.details.startDate)">
-                  <span class="material-icons">hourglass_top</span>
-                  <span>Upcoming</span>
-                </div>
-                <div class="tag active" *ngIf="!isProjectNotStarted(project.details.startDate) && !isProjectEnded(project.details.expiryDate)">
-                  <span class="material-icons">timelapse</span>
-                  <span>Active</span>
-                </div>
-                <div class="tag ended" *ngIf="isProjectEnded(project.details.expiryDate)">
-                  <span class="material-icons">flag</span>
-                  <span>Completed</span>
-                </div>
-                
-                <button class="action-button">
-                  <span class="material-icons">arrow_forward</span>
-                </button>
-              </div>
-            </ng-container>
-          </div>
-        </a>
+              }
+            </div>
+          </a>
+        }
       </section>
 
-      <div *ngIf="!indexer.isComplete(); else allLoaded">
-        <div *ngIf="indexer.loading(); else loadMore">
+      @if (!indexer.isComplete()) {
+        @if (indexer.loading()) {
           <div class="loading-spinner">
             <div class="spinner"></div>
           </div>
-        </div>
-        <ng-template #loadMore>
+        } @else {
           <div class="load-more">
             <button class="primary-button" (click)="loadMoreProjects()">
               <span class="material-icons">expand_more</span>
               Load More Projects
             </button>
           </div>
-        </ng-template>
-
-        <!-- Move trigger after the button -->
+        }
         <div #scrollTrigger class="scroll-trigger"></div>
-      </div>
-      <ng-template #allLoaded>
+      } @else {
         <div class="load-finished">
           <div class="checkmark-container">
             <span class="material-icons checkmark">done_all</span>
@@ -200,7 +299,7 @@
           <h3 class="achievement-title">All Projects Loaded</h3>
           <p class="achievement-subtitle">You've viewed all available projects. Ready to find your next investment?</p>
         </div>
-      </ng-template>
-    </ng-template>
-  </ng-template>
+      }
+    }
+  }
 </div>

@@ -1,4 +1,4 @@
-import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, effect } from '@angular/core';
+import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, effect, signal, computed, Signal } from '@angular/core';
 import { RelayService } from '../../services/relay.service';
 import { IndexerService } from '../../services/indexer.service';
 import { RouterLink } from '@angular/router';
@@ -13,6 +13,10 @@ import { NetworkService } from '../../services/network.service';
 import { UtilsService } from '../../services/utils.service';
 import { BitcoinUtilsService } from '../../services/bitcoin.service';
 import { TitleService } from '../../services/title.service';
+
+// Define type for sort options
+type SortType = 'default' | 'funding' | 'endDate' | 'investors';
+type FilterType = 'all' | 'active' | 'upcoming' | 'completed';
 
 @Component({
   selector: 'app-explore',
@@ -43,6 +47,72 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   public bitcoin = inject(BitcoinUtilsService);
   public title = inject(TitleService);
 
+  // Adding signals for search, filter, and sort functionality
+  searchTerm = signal<string>('');
+  activeFilter = signal<FilterType>('all');
+  activeSort = signal<SortType>('default');
+  
+  // Computed signal for filtered and sorted projects
+  filteredProjects: Signal<any[]> = computed(() => {
+    const projects = this.indexer.projects();
+    const search = this.searchTerm().toLowerCase().trim();
+    const filter = this.activeFilter();
+    const sort = this.activeSort();
+    
+    // First apply filtering
+    let filtered = projects.filter(project => {
+      // Apply search filter
+      if (search) {
+        const name = (project.metadata?.['name'] || '').toLowerCase();
+        const about = (project.metadata?.['about'] || '').toLowerCase();
+        const identifier = project.projectIdentifier.toLowerCase();
+        
+        if (!name.includes(search) && 
+            !about.includes(search) && 
+            !identifier.includes(search)) {
+          return false;
+        }
+      }
+      
+      // Apply status filter
+      if (filter === 'all') {
+        return true;
+      } else if (filter === 'active') {
+        return !this.isProjectNotStarted(project.details?.startDate) && 
+               !this.isProjectEnded(project.details?.expiryDate);
+      } else if (filter === 'upcoming') {
+        return this.isProjectNotStarted(project.details?.startDate);
+      } else if (filter === 'completed') {
+        return this.isProjectEnded(project.details?.expiryDate);
+      }
+      
+      return true;
+    });
+    
+    // Then apply sorting
+    if (sort === 'funding') {
+      filtered = [...filtered].sort((a, b) => {
+        const percentA = this.getFundingPercentage(a);
+        const percentB = this.getFundingPercentage(b);
+        return percentB - percentA; // Sort by funding percentage (descending)
+      });
+    } else if (sort === 'endDate') {
+      filtered = [...filtered].sort((a, b) => {
+        const dateA = a.details?.expiryDate || 0;
+        const dateB = b.details?.expiryDate || 0;
+        return dateA - dateB; // Sort by end date (ascending)
+      });
+    } else if (sort === 'investors') {
+      filtered = [...filtered].sort((a, b) => {
+        const countA = a.stats?.investorCount || 0;
+        const countB = b.stats?.investorCount || 0;
+        return countB - countA; // Sort by investor count (descending)
+      });
+    }
+    
+    return filtered;
+  });
+
   constructor() {
     // Optional: Subscribe to project updates if you need to trigger any UI updates
     effect(() => {
@@ -65,8 +135,6 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
     });
-
-
 
     // Listen for profile updates with timestamp check
     this.relay.profileUpdates.subscribe((event) => {
@@ -118,6 +186,12 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     // Listen for popstate events to detect browser back/forward
     window.addEventListener('popstate', () => {
       this.isBackNavigation = true;
+    });
+
+    // Add effect to log when filter/sort changes
+    effect(() => {
+      console.log(`Filter/Sort changed - Filter: ${this.activeFilter()}, Sort: ${this.activeSort()}, Search: ${this.searchTerm()}`);
+      console.log(`Filtered projects count: ${this.filteredProjects().length}`);
     });
   }
 
@@ -377,13 +451,11 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
         this.isLoadingMore = true;
         console.log('Executing load more');
         await this.indexer.loadMore();
-        // Observe new projects after they're loaded
         this.observeProjects();
         console.log('Load more completed, new project count:', this.indexer.projects().length);
       } finally {
         this.isLoadingMore = false;
 
-        // If there's a queued request, process it
         if (this.loadMoreQueued) {
           this.loadMoreQueued = false;
           console.log('Processing queued load more request');
@@ -396,5 +468,24 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   async retryLoadProjects() {
     await this.indexer.fetchProjects();
     this.observeProjects();
+  }
+
+  setFilter(filter: FilterType): void {
+    this.activeFilter.set(filter);
+  }
+
+  setSort(sort: SortType): void {
+    this.activeSort.set(sort);
+  }
+
+  resetFilters(): void {
+    this.searchTerm.set('');
+    this.activeFilter.set('all');
+    this.activeSort.set('default');
+  }
+
+  onSearchInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.searchTerm.set(input.value);
   }
 }
