@@ -27,109 +27,177 @@
       }
     </div>
 
-    <!-- Enhanced responsive search and filters -->
+    <!-- Compact search and filter controls -->
     <div class="explore-controls-container">
       <div class="explore-controls-wrapper">
-        <!-- Centered search box with animations -->
-        <div class="search-container">
-          <span class="material-icons search-icon">search</span>
-          <input 
-            type="text" 
-            placeholder="Search projects by name, description or ID..." 
-            class="search-input"
-            [value]="searchTerm()" 
-            (input)="onSearchInput($event)"
-            aria-label="Search projects">
-        </div>
-        
-        <!-- Filter section with enhanced styling -->
-        <div class="controls-section">
-          <div class="controls-label">Filter by Status</div>
-          <div class="filters-group">
-            <button 
-              class="control-button filter-button" 
-              [class.active]="activeFilter() === 'all'"
-              (click)="setFilter('all')"
-              aria-label="Show all projects">
-              <span class="material-icons">apps</span>
-              <span>All</span>
-            </button>
-            <button 
-              class="control-button filter-button"
-              [class.active]="activeFilter() === 'active'"
-              (click)="setFilter('active')"
-              aria-label="Show active projects">
-              <span class="material-icons">timelapse</span>
-              <span>Active</span>
-            </button>
-            <button 
-              class="control-button filter-button"
-              [class.active]="activeFilter() === 'upcoming'"
-              (click)="setFilter('upcoming')"
-              aria-label="Show upcoming projects">
-              <span class="material-icons">hourglass_top</span>
-              <span>Upcoming</span>
-            </button>
-            <button 
-              class="control-button filter-button"
-              [class.active]="activeFilter() === 'completed'"
-              (click)="setFilter('completed')"
-              aria-label="Show completed projects">
-              <span class="material-icons">flag</span>
-              <span>Completed</span>
-            </button>
+        <div class="controls-layout">
+          <!-- Search box -->
+          <div class="search-container">
+            <span class="material-icons search-icon">search</span>
+            <input 
+              type="text" 
+              placeholder="Search projects..." 
+              class="search-input"
+              [value]="searchTerm()" 
+              (input)="onSearchInput($event)"
+              aria-label="Search projects">
           </div>
-        </div>
-        
-        <!-- Sort section with enhanced styling -->
-        <div class="controls-section">
-          <div class="controls-label">Sort by</div>
-          <div class="sort-group">
-            <button 
-              class="control-button sort-button"
-              [class.active]="activeSort() === 'default'"
-              (click)="setSort('default')"
-              aria-label="Sort by default order">
-              <span class="material-icons">sort</span>
-              <span>Default</span>
-            </button>
-            <button 
-              class="control-button sort-button"
-              [class.active]="activeSort() === 'funding'"
-              (click)="setSort('funding')"
-              aria-label="Sort by funding percentage">
-              <span class="material-icons">trending_up</span>
-              <span>Funding</span>
-            </button>
-            <button 
-              class="control-button sort-button"
-              [class.active]="activeSort() === 'endDate'"
-              (click)="setSort('endDate')"
-              aria-label="Sort by end date">
-              <span class="material-icons">event</span>
-              <span>End Date</span>
-            </button>
-            <button 
-              class="control-button sort-button"
-              [class.active]="activeSort() === 'investors'"
-              (click)="setSort('investors')"
-              aria-label="Sort by number of investors">
-              <span class="material-icons">people</span>
-              <span>Investors</span>
-            </button>
-          </div>
-        </div>
-        
-        <!-- Action section that appears when filters are active -->
-        @if (searchTerm() || activeFilter() !== 'all' || activeSort() !== 'default') {
-          <div class="controls-actions">
-            <button class="reset-button" (click)="resetFilters()" aria-label="Reset all filters">
-              <span class="material-icons">refresh</span>
-              <span>Reset Filters</span>
-            </button>
-            <div class="results-count" aria-live="polite">
-              {{ filteredProjects().length }} project{{ filteredProjects().length !== 1 ? 's' : '' }} found
+          
+          <!-- Filter and Sort Dropdowns - Desktop Layout -->
+          <div class="filter-sort-container desktop-view">
+            <!-- Filter dropdown -->
+            <div class="dropdown-control filter-dropdown" [class.active]="showFilterDropdown">
+              <button class="dropdown-button" (click)="toggleFilterDropdown($event)">
+                <span class="dropdown-label">Filter: {{ activeFilter() | titlecase }}</span>
+                <span class="material-icons">{{ showFilterDropdown ? 'arrow_drop_up' : 'arrow_drop_down' }}</span>
+              </button>
+              @if (showFilterDropdown) {
+                <div class="dropdown-menu">
+                  <button class="dropdown-item" [class.selected]="activeFilter() === 'all'" (click)="setFilter('all')">
+                    <span class="material-icons">apps</span>
+                    <span>All</span>
+                  </button>
+                  <button class="dropdown-item" [class.selected]="activeFilter() === 'active'" (click)="setFilter('active')">
+                    <span class="material-icons">timelapse</span>
+                    <span>Active</span>
+                  </button>
+                  <button class="dropdown-item" [class.selected]="activeFilter() === 'upcoming'" (click)="setFilter('upcoming')">
+                    <span class="material-icons">hourglass_top</span>
+                    <span>Upcoming</span>
+                  </button>
+                  <button class="dropdown-item" [class.selected]="activeFilter() === 'completed'" (click)="setFilter('completed')">
+                    <span class="material-icons">flag</span>
+                    <span>Completed</span>
+                  </button>
+                </div>
+              }
             </div>
+
+            <!-- Sort dropdown -->
+            <div class="dropdown-control sort-dropdown" [class.active]="showSortDropdown">
+              <button class="dropdown-button" (click)="toggleSortDropdown($event)">
+                <span class="dropdown-label">Sort: {{ activeSort() | titlecase }}</span>
+                <span class="material-icons">{{ showSortDropdown ? 'arrow_drop_up' : 'arrow_drop_down' }}</span>
+              </button>
+              @if (showSortDropdown) {
+                <div class="dropdown-menu">
+                  <button class="dropdown-item" [class.selected]="activeSort() === 'default'" (click)="setSort('default')">
+                    <span class="material-icons">sort</span>
+                    <span>Default</span>
+                  </button>
+                  <button class="dropdown-item" [class.selected]="activeSort() === 'funding'" (click)="setSort('funding')">
+                    <span class="material-icons">trending_up</span>
+                    <span>Funding</span>
+                  </button>
+                  <button class="dropdown-item" [class.selected]="activeSort() === 'endDate'" (click)="setSort('endDate')">
+                    <span class="material-icons">event</span>
+                    <span>End Date</span>
+                  </button>
+                  <button class="dropdown-item" [class.selected]="activeSort() === 'investors'" (click)="setSort('investors')">
+                    <span class="material-icons">people</span>
+                    <span>Investors</span>
+                  </button>
+                </div>
+              }
+            </div>
+            
+            <!-- Reset button -->
+            @if (searchTerm() || activeFilter() !== 'all' || activeSort() !== 'default') {
+              <button class="reset-button" (click)="resetFilters()">
+                <span class="material-icons">refresh</span>
+              </button>
+            }
+          </div>
+          
+          <!-- Mobile Filter/Sort Trigger -->
+          <button class="mobile-filter-trigger" (click)="toggleMobileFilters()" [class.active]="showMobileFilters">
+            <span class="material-icons">{{ showMobileFilters ? 'close' : 'filter_list' }}</span>
+            <span>{{ showMobileFilters ? 'Close' : 'Filters' }}</span>
+          </button>
+        </div>
+        
+        <!-- Mobile Filters Panel -->
+        @if (showMobileFilters) {
+          <div class="mobile-filters-panel">
+            <div class="mobile-filter-group">
+              <h4 class="mobile-filter-heading">Filter by Status</h4>
+              <div class="mobile-filter-options">
+                <button 
+                  class="mobile-filter-button" 
+                  [class.active]="activeFilter() === 'all'"
+                  (click)="setFilter('all')">
+                  <span class="material-icons">apps</span>
+                  <span>All</span>
+                </button>
+                <button 
+                  class="mobile-filter-button" 
+                  [class.active]="activeFilter() === 'active'"
+                  (click)="setFilter('active')">
+                  <span class="material-icons">timelapse</span>
+                  <span>Active</span>
+                </button>
+                <button 
+                  class="mobile-filter-button" 
+                  [class.active]="activeFilter() === 'upcoming'"
+                  (click)="setFilter('upcoming')">
+                  <span class="material-icons">hourglass_top</span>
+                  <span>Upcoming</span>
+                </button>
+                <button 
+                  class="mobile-filter-button" 
+                  [class.active]="activeFilter() === 'completed'"
+                  (click)="setFilter('completed')">
+                  <span class="material-icons">flag</span>
+                  <span>Completed</span>
+                </button>
+              </div>
+            </div>
+            
+            <div class="mobile-filter-group">
+              <h4 class="mobile-filter-heading">Sort by</h4>
+              <div class="mobile-filter-options">
+                <button 
+                  class="mobile-filter-button" 
+                  [class.active]="activeSort() === 'default'"
+                  (click)="setSort('default')">
+                  <span class="material-icons">sort</span>
+                  <span>Default</span>
+                </button>
+                <button 
+                  class="mobile-filter-button" 
+                  [class.active]="activeSort() === 'funding'"
+                  (click)="setSort('funding')">
+                  <span class="material-icons">trending_up</span>
+                  <span>Funding</span>
+                </button>
+                <button 
+                  class="mobile-filter-button" 
+                  [class.active]="activeSort() === 'endDate'"
+                  (click)="setSort('endDate')">
+                  <span class="material-icons">event</span>
+                  <span>End Date</span>
+                </button>
+                <button 
+                  class="mobile-filter-button" 
+                  [class.active]="activeSort() === 'investors'"
+                  (click)="setSort('investors')">
+                  <span class="material-icons">people</span>
+                  <span>Investors</span>
+                </button>
+              </div>
+            </div>
+            
+            @if (searchTerm() || activeFilter() !== 'all' || activeSort() !== 'default') {
+              <div class="mobile-filter-actions">
+                <button class="mobile-reset-button" (click)="resetFilters()">
+                  <span class="material-icons">refresh</span>
+                  <span>Reset Filters</span>
+                </button>
+                <div class="mobile-results-count">
+                  {{ filteredProjects().length }} project{{ filteredProjects().length !== 1 ? 's' : '' }} found
+                </div>
+              </div>
+            }
           </div>
         }
       </div>

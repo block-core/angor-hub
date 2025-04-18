@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { ExploreStateService } from '../../services/explore-state.service';
 import { Router, NavigationEnd } from '@angular/router';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { Location } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { AgoPipe } from '../../pipes/ago.pipe';
@@ -40,6 +40,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   private projectObserver: IntersectionObserver | null = null;
   private isLoadingMore = false;
   private loadMoreQueued = false;
+  private document = inject(DOCUMENT);
 
   public indexer = inject(IndexerService);
   public networkService = inject(NetworkService);
@@ -112,6 +113,11 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     
     return filtered;
   });
+
+  // UI state for dropdowns
+  showFilterDropdown = false;
+  showSortDropdown = false;
+  showMobileFilters = false;
 
   constructor() {
     // Optional: Subscribe to project updates if you need to trigger any UI updates
@@ -272,6 +278,10 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.isLoadingMore = false;
     this.loadMoreQueued = false;
+
+    // Remove any event listeners
+    this.document.removeEventListener('click', this.closeFilterDropdown);
+    this.document.removeEventListener('click', this.closeSortDropdown);
   }
 
   private watchForScrollTrigger() {
@@ -482,6 +492,62 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     this.searchTerm.set('');
     this.activeFilter.set('all');
     this.activeSort.set('default');
+    this.showFilterDropdown = false;
+    this.showSortDropdown = false;
+    this.showMobileFilters = false;
+  }
+
+  toggleFilterDropdown(event: Event): void {
+    event.stopPropagation();
+    this.showFilterDropdown = !this.showFilterDropdown;
+    
+    if (this.showFilterDropdown) {
+      this.showSortDropdown = false;
+      // Add event listener for closing dropdown when clicking outside
+      setTimeout(() => {
+        this.document.addEventListener('click', this.closeFilterDropdown);
+      });
+    } else {
+      this.document.removeEventListener('click', this.closeFilterDropdown);
+    }
+  }
+
+  toggleSortDropdown(event: Event): void {
+    event.stopPropagation();
+    this.showSortDropdown = !this.showSortDropdown;
+    
+    if (this.showSortDropdown) {
+      this.showFilterDropdown = false;
+      // Add event listener for closing dropdown when clicking outside
+      setTimeout(() => {
+        this.document.addEventListener('click', this.closeSortDropdown);
+      });
+    } else {
+      this.document.removeEventListener('click', this.closeSortDropdown);
+    }
+  }
+
+  // Add methods to close dropdowns when clicking outside
+  closeFilterDropdown = () => {
+    this.showFilterDropdown = false;
+    this.document.removeEventListener('click', this.closeFilterDropdown);
+  };
+
+  closeSortDropdown = () => {
+    this.showSortDropdown = false;
+    this.document.removeEventListener('click', this.closeSortDropdown);
+  };
+
+  toggleMobileFilters(): void {
+    this.showMobileFilters = !this.showMobileFilters;
+  }
+
+  onClickOutside(dropdownType: 'filter' | 'sort'): void {
+    if (dropdownType === 'filter') {
+      this.showFilterDropdown = false;
+    } else {
+      this.showSortDropdown = false;
+    }
   }
 
   onSearchInput(event: Event): void {
