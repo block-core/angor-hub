@@ -26,7 +26,7 @@ import { UtilsService } from '../../services/utils.service';
 import { ProfileComponent } from '../../components/profile.component';
 import { BitcoinUtilsService } from '../../services/bitcoin.service';
 import { TitleService } from '../../services/title.service';
-import { MarkdownModule, MarkdownService } from 'ngx-markdown';
+import { MarkdownModule } from 'ngx-markdown';
 import { SafeContentPipe } from '../../pipes/safe-content.pipe';
 
 @Component({
@@ -43,7 +43,6 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
     MarkdownModule,
     SafeContentPipe,
   ],
-  providers: [MarkdownService],
   templateUrl: './project.component.html',
   styleUrl: './project.component.scss',
 })
