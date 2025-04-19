@@ -48,7 +48,7 @@ export class SettingsComponent implements OnInit {
   });
   
   relayUrls = signal<string[]>([]);
-  newRelayUrl = '';
+  newRelayUrl = signal<string>('');
   relaySaveMessage = signal<string>('');
   
   constructor() {
@@ -80,12 +80,13 @@ export class SettingsComponent implements OnInit {
   }
   
   addRelay(): void {
-    if (this.newRelayUrl && this.isValidUrl(this.newRelayUrl)) {
+    const urlToAdd = this.newRelayUrl();
+    if (urlToAdd && this.isValidUrl(urlToAdd)) {
       const urls = [...this.relayUrls()];
-      if (!urls.includes(this.newRelayUrl)) {
-        urls.push(this.newRelayUrl);
+      if (!urls.includes(urlToAdd)) {
+        urls.push(urlToAdd);
         this.relayUrls.set(urls);
-        this.newRelayUrl = '';
+        this.newRelayUrl.set('');
       }
     }
   }
@@ -99,7 +100,7 @@ export class SettingsComponent implements OnInit {
     this.relayUrls.set(this.relayService.getDefaultRelays());
   }
   
-  saveAndReloadRelays(): void {
+  async saveAndReloadRelays(): Promise<void> {
     this.relayService.setRelayUrls(this.relayUrls());
     this.relaySaveMessage.set('Relays updated successfully!');
     
@@ -107,7 +108,7 @@ export class SettingsComponent implements OnInit {
       this.relaySaveMessage.set('');
     }, 3000);
     
-    void this.relayService.reconnectToRelays();
+    await this.relayService.reconnectToRelays();
   }
   
   isValidUrl(url: string): boolean {
