@@ -522,4 +522,9 @@ export class ProjectComponent implements OnInit, OnDestroy {
   formatNpub(pubkey: string): string {
     return pubkey.substring(0, 8) + '...' + pubkey.substring(pubkey.length - 8);
   }
+  
+  openImagePopup(imageUrl: string): void {
+    this.selectedImage = imageUrl;
+    this.showImagePopup = true;
+  }
 }

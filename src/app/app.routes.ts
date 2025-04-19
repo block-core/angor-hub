@@ -1,24 +1,11 @@
 import { Routes } from '@angular/router';
-import { HomeComponent } from './pages/home/home.component';
-import { ExploreComponent } from './pages/explore/explore.component';
-import { ProjectComponent } from './pages/project/project.component';
-import { SettingsComponent } from './pages/settings/settings.component';
 
 export const routes: Routes = [
-  { path: '', component: HomeComponent },
-  { path: 'explore', component: ExploreComponent },
-  {
-    path: 'project/:id',
-    loadComponent: () =>
-      import('./pages/project/project.component').then((m) => m.ProjectComponent),
-    title: 'Project',
-  },
-  {
-    path: 'report/:id',
-    loadComponent: () =>
-      import('./pages/report/report.component').then((m) => m.ReportComponent),
-    title: 'Report Project',
-  },
-  { path: 'settings', component: SettingsComponent },
+  { path: '', loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent) },
+  { path: 'explore', loadComponent: () => import('./pages/explore/explore.component').then(m => m.ExploreComponent) },
+  { path: 'project/:id', loadComponent: () => import('./pages/project/project.component').then(m => m.ProjectComponent) },
+  { path: 'report/:id', loadComponent: () => import('./pages/report/report.component').then(m => m.ReportComponent) },
+  { path: 'settings', loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
   { path: '**', redirectTo: '' }
+  
 ];
