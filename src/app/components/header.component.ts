@@ -4,6 +4,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AppLauncherComponent } from './app-launcher.component';
 import { NetworkService } from '../services/network.service';
 import { animate, style, transition, trigger } from '@angular/animations';
+import { ThemeService } from '../services/theme.service';
 
 @Component({
   selector: 'app-header',
@@ -785,10 +786,11 @@ import { animate, style, transition, trigger } from '@angular/animations';
 })
 export class HeaderComponent implements OnInit {
   public networkService = inject(NetworkService);
+  public themeService = inject(ThemeService);
   private renderer = inject(Renderer2);
 
   isMenuOpen = signal<boolean>(false);
-  isDarkTheme = signal<boolean>(document.documentElement.getAttribute('data-theme') === 'dark');
+  isDarkTheme = signal<boolean>(false);
   isScrolled = signal<boolean>(false);
   isScrollingUp = signal<boolean>(false);
   isScrollingDown = signal<boolean>(false);
@@ -804,26 +806,18 @@ export class HeaderComponent implements OnInit {
         this.renderer.removeClass(document.body, 'mobile-menu-open');
       }
     });
+
+    effect(() => {
+      this.isDarkTheme.set(this.themeService.currentTheme() === 'dark');
+    });
   }
 
   ngOnInit(): void {
-    this.isDarkTheme.set(document.documentElement.getAttribute('data-theme') === 'dark');
     this.checkScrollPosition();
   }
 
   toggleTheme(): void {
-    this.isDarkTheme.update(dark => !dark);
-    this.applyTheme();
-  }
-
-  private applyTheme(): void {
-    const theme = this.isDarkTheme() ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', theme);
-    try {
-      localStorage.setItem('angor-theme', theme);
-    } catch (e) {
-      console.error('Failed to save theme preference:', e);
-    }
+    this.themeService.toggleTheme();
   }
 
   toggleMobileMenu(): void {
