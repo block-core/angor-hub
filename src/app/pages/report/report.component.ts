@@ -191,10 +191,6 @@ import { TitleService } from '../../services/title.service';
       padding: 0 2rem 2rem;
     }
     
-    section {
-      margin: 2rem 0;
-    }
-    
     h1 {
       margin-bottom: 1.5rem;
       color: var(--text);
