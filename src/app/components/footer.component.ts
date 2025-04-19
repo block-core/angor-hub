@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../environment';
 
 @Component({
   selector: 'app-footer',
@@ -14,6 +15,7 @@ import { CommonModule } from '@angular/common';
       </div>
       <div class="copyright">
         &copy; {{ currentYear }} Angor. All rights reserved.
+        <div class="version">Angor Hub v{{ version }}</div>
       </div>
     </footer>
   `,
@@ -63,8 +65,15 @@ import { CommonModule } from '@angular/common';
       max-width: 1200px;
       margin: 0 auto;
     }
+    
+    .version {
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
   `]
 })
 export class FooterComponent {
   currentYear = new Date().getFullYear();
+  version = environment.appVersion;
 }
