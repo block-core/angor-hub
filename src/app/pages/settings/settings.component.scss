@@ -167,7 +167,6 @@
   }
 }
 
-/* Theme Options */
 .theme-options {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -269,9 +268,9 @@
 .theme-name {
   font-weight: 500;
   transition: var(--transition-standard);
+  color: var(--text-secondary);
 }
 
-/* Font Size Control */
 .font-size-control {
   display: flex;
   align-items: center;
@@ -350,7 +349,6 @@
   }
 }
 
-/* Network Options */
 .network-options {
   display: flex;
   flex-direction: column;
@@ -434,7 +432,6 @@
   margin-left: auto;
 }
 
-/* Relay Management */
 .relay-header {
   display: flex;
   align-items: center;
@@ -728,7 +725,6 @@
   border-radius: 4px;
 }
 
-/* About Tab */
 .about-content {
   display: flex;
   flex-direction: column;
