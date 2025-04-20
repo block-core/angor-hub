@@ -1,10 +1,11 @@
 import { Component, HostListener, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-launcher',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
     <div class="app-launcher">
       <a class="logo-link" (click)="toggleAppMenu($event)">
@@ -26,7 +27,7 @@ import { CommonModule } from '@angular/common';
               <span class="app-desc">News and updates</span>
             </div>
           </a>
-          <a href="https://hub.angor.io" class="app-item">
+          <a routerLink="/" class="app-item" (click)="closeMenu()">
             <i class="fa-solid fa-compass"></i>
             <div>
               <span class="app-name">Angor Hub</span>
@@ -161,6 +162,10 @@ export class AppLauncherComponent {
   toggleAppMenu(event: Event) {
     event.preventDefault();
     this.isAppMenuOpen.update(value => !value);
+  }
+
+  closeMenu() {
+    this.isAppMenuOpen.set(false);
   }
 
   @HostListener('document:click', ['$event'])
