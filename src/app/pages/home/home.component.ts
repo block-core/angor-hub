@@ -1,57 +1,191 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal, effect } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import { BlogService, BlogPost } from '../../services/blog.service';
-import { DatePipe } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { TitleService } from '../../services/title.service';
+import { NetworkService } from '../../services/network.service';
+import { BitcoinInfoService } from '../../services/bitcoin-info.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, BreadcrumbComponent, DatePipe],
+  imports: [RouterLink, BreadcrumbComponent, CommonModule, DatePipe],
   template: `
-
-    <section class="hero">
-    <app-breadcrumb [items]="[{ label: 'Home', url: '' }]"></app-breadcrumb>
+    <section class="hero home-hero">
+      <app-breadcrumb [items]="[{ label: 'Home', url: '' }]"></app-breadcrumb>
 
       <div class="hero-wrapper">
         <div class="hero-content">
+          <div class="hero-badge">
+            <span class="material-icons">insights</span>
+            <span>{{ networkService.isMain() ? 'Bitcoin Mainnet' : 'Bitcoin Testnet' }}</span>
+          </div>
+
+          <!-- Optional: Simplified Price Badge - Removed as it might be redundant with stats bar -->
+          <!--
+          <div class="bitcoin-price-badge">
+            <span class="material-icons">currency_bitcoin</span>
+            <div class="price-content">
+              <span class="price-value">{{ '$' + bitcoinInfo.bitcoinPrice() }}</span>
+              <span class="price-change" [class.change-positive]="bitcoinInfo.priceChangePercent()[0] !== '-'"
+                   [class.change-negative]="bitcoinInfo.priceChangePercent()[0] === '-'">
+                <span class="material-icons">
+                  {{ bitcoinInfo.priceChangePercent()[0] !== '-' ? 'arrow_upward' : 'arrow_downward' }}
+                </span>
+                {{ bitcoinInfo.priceChangePercent() }}%
+              </span>
+            </div>
+          </div>
+          -->
+
           <h1>Welcome to Angor Hub</h1>
           <p class="hero-description">
             Your central place for discovering and investing in Bitcoin projects.
             Join a community of innovators and investors shaping the future of finance.
           </p>
-          <a routerLink="/explore" class="cta-button">
-            Explore All Projects
-            <span class="arrow">→</span>
-          </a>
+
+          <div class="hero-actions">
+            <a routerLink="/explore" class="cta-button">
+              Explore Projects
+              <span class="material-icons">arrow_forward</span>
+            </a>
+            <a href="https://angor.io/launch" target="_blank" class="secondary-button">
+              Launch Your Project
+              <span class="material-icons">rocket_launch</span>
+            </a>
+          </div>
+
+          <div class="stats-bar">
+            <div class="stat-item icon-stat-item">
+              <span class="material-icons bitcoin-icon">currency_bitcoin</span>
+            </div>
+            <div class="stat-divider icon-price-divider"></div>
+            <div class="stat-item price-stat-item">
+              @if (bitcoinInfo.bitcoinPrice() !== '0.00') {
+                <div class="stat-value" [class]="{
+                  'price-up': bitcoinInfo.priceDirection() === 'up',
+                  'price-down': bitcoinInfo.priceDirection() === 'down'
+                }">
+                  <span>{{ '$' + bitcoinInfo.bitcoinPrice() }}</span>
+                </div>
+              } @else {
+                <div class="stat-value loading"><div class="shimmer"></div></div>
+              }
+              <div class="stat-label">
+                Price (USD)
+                @if (bitcoinInfo.priceChangePercent() !== '0.00') {
+                  @let change = bitcoinInfo.priceChangePercent();
+                  <span [class]="{
+                    'change-positive': change[0] !== '-', 
+                    'change-negative': change[0] === '-'
+                  }">
+                    ({{ change[0] !== '-' ? '+' : '' }}{{ change }}% 24h)
+                  </span>
+                }
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div class="hero-graphic">
+        <div class="graphic-circle circle-1"></div>
+        <div class="graphic-circle circle-2"></div>
+        <div class="graphic-circle circle-3"></div>
       </div>
     </section>
 
-    <div class="features">
-      <div class="feature-card">
-        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-        </svg>
-        <h2>Discover Projects</h2>
-        <p>Find innovative Bitcoin projects that align with your interests and investment goals.</p>
+    <!-- Redesigned How It Works Section - Horizontal Layout -->
+    <section class="how-it-works-v3">
+      <div class="container">
+        <h2 class="section-title">How Angor Works</h2>
+        <p class="section-subtitle">A streamlined, secure process for decentralized fundraising on Bitcoin.</p>
+
+        <div class="steps-grid">
+          <!-- Step 1 -->
+          <div class="step-card-v3">
+            <div class="step-header">
+              <div class="step-icon-v3">
+                <span class="material-icons">rocket_launch</span>
+              </div>
+              <span class="step-number-v3">1</span>
+            </div>
+            <div class="step-content-v3">
+              <h3>Project Creation</h3>
+              <p>Founders define their vision, funding targets, and clear milestones directly on the platform.</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="step-card-v3">
+             <div class="step-header">
+               <div class="step-icon-v3">
+                 <span class="material-icons">payments</span>
+               </div>
+               <span class="step-number-v3">2</span>
+             </div>
+            <div class="step-content-v3">
+              <h3>Investor Contribution</h3>
+              <p>Supporters securely contribute Bitcoin, knowing funds are managed transparently by smart contracts.</p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="step-card-v3">
+             <div class="step-header">
+               <div class="step-icon-v3">
+                 <span class="material-icons">verified</span>
+               </div>
+               <span class="step-number-v3">3</span>
+             </div>
+            <div class="step-content-v3">
+              <h3>Milestone-Based Release</h3>
+              <p>Funds unlock automatically as projects achieve predefined milestones, ensuring accountability.</p>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="feature-card">
-        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" stroke-linejoin="round" stroke-width="0.2" d="M3.5 12C3.5 7.30558 7.30558 3.5 12 3.5C16.6944 3.5 20.5 7.30558 20.5 12C20.5 16.6944 16.6944 20.5 12 20.5C7.30558 20.5 3.5 16.6944 3.5 12ZM12 1.5C6.20101 1.5 1.5 6.20101 1.5 12C1.5 17.799 6.20101 22.5 12 22.5C17.799 22.5 22.5 17.799 22.5 12C22.5 6.20101 17.799 1.5 12 1.5ZM11 6C11 5.44772 10.5523 5 10 5C9.44772 5 9 5.44772 9 6V7H8C7.44772 7 7 7.44772 7 8C7 8.55228 7.44772 9 8 9V12V15C7.44772 15 7 15.4477 7 16C7 16.5523 7.44772 17 8 17H9V18C9 18.5523 9.44772 19 10 19C10.5523 19 11 18.5523 11 18V17H12V18C12 18.5523 12.4477 19 13 19C13.5523 19 14 18.5523 14 18V17H14.5C16.1569 17 17.5 15.6569 17.5 14C17.5 13.09 17.0949 12.2747 16.4551 11.7245C16.7984 11.2367 17 10.6419 17 10C17 8.34315 15.6569 7 14 7V6C14 5.44772 13.5523 5 13 5C12.4477 5 12 5.44772 12 6V7H11V6ZM13 15H10V13H12H14H14.5C15.0523 13 15.5 13.4477 15.5 14C15.5 14.5523 15.0523 15 14.5 15H13ZM13 9H10V11H12H14C14.5523 11 15 10.5523 15 10C15 9.44772 14.5523 9 14 9H13Z" />
-        </svg>
-        <h2>Invest Securely</h2>
-        <p>Invest in projects with confidence using our secure and transparent platform.</p>
-      </div>
-      <div class="feature-card">
-        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-        <h2>Track Progress</h2>
-        <p>Monitor your investments and stay updated on project developments.</p>
+    </section>
+    <!-- End Redesigned How It Works Section -->
+
+    <div class="features-section">
+      <div class="container">
+        <h2 class="section-title">Platform Benefits</h2>
+
+        <div class="features">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <span class="material-icons">shield</span>
+            </div>
+            <h3>Secure Investment</h3>
+            <p>Your Bitcoin is secured by the blockchain. No third parties hold your funds.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <span class="material-icons">account_balance</span>
+            </div>
+            <h3>Milestone-Based Funding</h3>
+            <p>Projects receive funds only when they reach predetermined milestones.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <span class="material-icons">public</span>
+            </div>
+            <h3>Decentralized</h3>
+            <p>Fully non-custodial platform with no central authority controlling funds.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <span class="material-icons">groups</span>
+            </div>
+            <h3>Community Driven</h3>
+            <p>Join a growing community of Bitcoin innovators and supporters.</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -59,22 +193,24 @@ import { TitleService } from '../../services/title.service';
       <div class="container">
         <h2 class="section-title">Latest from the Blog</h2>
 
-        @if (blogPosts.length > 0) {
+        @if (blogPosts().length > 0) {
           <div class="blog-grid">
-            <a [href]="blogPosts[0].link" class="blog-post featured" target="_blank">
-              <div class="post-image" [style.background-image]="'url(' + (blogPosts[0].image || '/images/default-blog.jpg') + ')'">
+            @let firstPost = blogPosts()[0];
+            <a [href]="firstPost.link" class="blog-post featured no-underline" target="_blank">
+              <div class="post-image" [style.background-image]="'url(' + (firstPost.image || '/assets/images/default-blog.jpg') + ')'">
+                <div class="post-badge">Featured</div>
               </div>
               <div class="post-content">
-                <h3>{{blogPosts[0].title}}</h3>
-                <p class="post-date">{{blogPosts[0].pubDate | date:'mediumDate'}}</p>
-                <p class="post-excerpt">{{blogPosts[0].description}}</p>
+                <h3>{{firstPost.title}}</h3>
+                <p class="post-date">{{firstPost.pubDate | date:'mediumDate'}}</p>
+                <p class="post-excerpt">{{firstPost.description}}</p>
               </div>
             </a>
 
             <div class="blog-posts-secondary">
-              @for (post of blogPosts.slice(1); track post.link) {
-                <a [href]="post.link" class="blog-post" target="_blank">
-                  <div class="post-image" [style.background-image]="'url(' + (post.image || '/images/default-blog.jpg') + ')'">
+              @for (post of blogPosts().slice(1, 4); track post.link) {
+                <a [href]="post.link" class="blog-post no-underline" target="_blank">
+                  <div class="post-image" [style.background-image]="'url(' + (post.image || '/assets/images/default-blog.jpg') + ')'">
                   </div>
                   <div class="post-content">
                     <h4>{{post.title}}</h4>
@@ -85,31 +221,68 @@ import { TitleService } from '../../services/title.service';
             </div>
           </div>
           <div class="blog-cta">
-            <a href="https://blog.angor.io" target="_blank" class="blog-button">
+            <a href="https://blog.angor.io" target="_blank" class="blog-button no-underline">
               Explore the Blog
-              <span class="arrow">→</span>
+              <span class="material-icons">arrow_forward</span>
             </a>
           </div>
         } @else {
-          <div class="loading-spinner">
-            <div class="spinner"></div>
+          <div class="loading-placeholder">
+             <!-- Add shimmer or spinner styles if needed -->
+             <p>Loading blog posts...</p>
           </div>
         }
       </div>
     </section>
+
+    <!-- Redesigned CTA Section V2 -->
+    <section class="cta-section-v2">
+      <div class="cta-background-graphic"></div>
+      <div class="container cta-container">
+        <div class="cta-text">
+          <h2>Ready to Shape the Future of Bitcoin?</h2>
+          <p>Whether you're looking to invest in the next big Bitcoin project or launch your own groundbreaking idea, Angor Hub is your platform.</p>
+        </div>
+        <div class="cta-actions-v2">
+          <a routerLink="/explore" class="cta-button-v2 primary">
+            <span class="material-icons">search</span>
+            Explore Projects
+          </a>
+          <a href="https://angor.io/launch" target="_blank" class="cta-button-v2 secondary">
+             <span class="material-icons">rocket_launch</span>
+            Launch Your Project
+          </a>
+        </div>
+      </div>
+    </section>
+    <!-- End Redesigned CTA Section V2 -->
   `,
-  styles: [`
-
-
-  `]
+  styleUrl: './home.component.scss'
 })
 export class HomeComponent implements OnInit {
   private blogService = inject(BlogService);
   public title = inject(TitleService);
-  blogPosts: BlogPost[] = [];
+  public networkService = inject(NetworkService);
+  public bitcoinInfo = inject(BitcoinInfoService);
 
-  async ngOnInit() {
-    this.title.setTitle('');
-    this.blogPosts = await this.blogService.getLatestPosts();
+  blogPosts = signal<BlogPost[]>([]);
+
+  constructor() {
+    // No effect needed here as template bindings handle updates
+  }
+
+  async ngOnInit(): Promise<void> {
+    this.title.setTitle(''); // Set page title for home
+
+    try {
+      // Fetch blog posts asynchronously
+      const posts = await this.blogService.getLatestPosts();
+      this.blogPosts.set(posts);
+    } catch (error) {
+      console.error('Failed to fetch blog posts:', error);
+      this.blogPosts.set([]); // Set to empty array on error
+    }
+
+    // Bitcoin info fetching is handled within the BitcoinInfoService
   }
 }

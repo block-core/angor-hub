@@ -79,6 +79,10 @@ export class ProjectComponent implements OnInit, OnDestroy {
   currentSlide = 0;
   selectedImage: string | null = null;
 
+  failedBannerImage = signal<boolean>(false);
+  failedProfileImage = signal<boolean>(false);
+  failedMediaImages = signal<Set<string>>(new Set<string>());
+
   async setActiveTab(tabId: string) {
     this.activeTab = tabId;
     if (tabId === 'updates' && this.updates().length === 0) {
@@ -336,23 +340,6 @@ export class ProjectComponent implements OnInit, OnDestroy {
           } else {
             console.warn('Unknown tag:', tag);
           }
-
-          // const update = JSON.parse(event.content);
-          // const id = update.projectIdentifier;
-          // const project = this.indexer
-          //   .projects()
-          //   .find((p) => p.projectIdentifier === id);
-
-          // if (project) {
-          //   // Only update if new data is newer or we don't have existing details
-          //   if (
-          //     !project.details ||
-          //     event.created_at! > project.details_created_at!
-          //   ) {
-          //     project.details = update;
-          //     project.details_created_at = event.created_at;
-          //   }
-          // }
         });
 
         this.subscriptions.push(projectSub, profileSub, contentSub);
@@ -521,5 +508,69 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
   formatNpub(pubkey: string): string {
     return pubkey.substring(0, 8) + '...' + pubkey.substring(pubkey.length - 8);
+  }
+  
+  openImagePopup(imageUrl: string): void {
+    this.selectedImage = imageUrl;
+    this.showImagePopup = true;
+  }
+
+  // Handle banner image load error
+  handleBannerError(): void {
+    this.failedBannerImage.set(true);
+  }
+  
+  // Handle profile image load error
+  handleProfileError(): void {
+    this.failedProfileImage.set(true);
+  }
+  
+  // Handle media image load error
+  handleMediaError(imageUrl: string): void {
+    const failedImages = this.failedMediaImages();
+    failedImages.add(imageUrl);
+    this.failedMediaImages.set(new Set(failedImages));
+  }
+  
+  // Check if media image failed to load
+  hasMediaFailed(imageUrl: string): boolean {
+    return this.failedMediaImages().has(imageUrl);
+  }
+  
+  // Generate a random color based on project identifier
+  getRandomColor(seed: string): string {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    // Select from a curated set of pleasant, vibrant colors
+    const colors = [
+      'rgba(66, 133, 244, 0.85)',  // Blue
+      'rgba(219, 68, 55, 0.85)',   // Red
+      'rgba(244, 160, 0, 0.85)',   // Amber
+      'rgba(15, 157, 88, 0.85)',   // Green
+      'rgba(171, 71, 188, 0.85)',  // Purple
+      'rgba(0, 172, 193, 0.85)',   // Cyan
+      'rgba(255, 112, 67, 0.85)',  // Deep Orange
+      'rgba(3, 169, 244, 0.85)',   // Light Blue
+    ];
+    
+    // Use the hash to pick a color from the array
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  }
+  
+  // Get an initial letter for placeholder
+  getInitial(name: string): string {
+    if (!name || name.trim() === '') {
+      return '#';
+    }
+    return name.trim()[0].toUpperCase();
+  }
+  
+  // Get background style for banner with fallback color
+  getBannerStyle(): string {
+    return this.getRandomColor(this.projectId);
   }
 }

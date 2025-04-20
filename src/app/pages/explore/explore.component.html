@@ -1,177 +1,407 @@
-<!-- <app-breadcrumb
-      [items]="[
-        { label: 'Home', url: '/' },
-        { label: 'Explore', url: '' }
-      ]"
-    ></app-breadcrumb> -->
+<section class="hero explore-hero">
+  <app-breadcrumb
+    [items]="[
+      { label: 'Home', url: '/' },
+      { label: 'Explore', url: '' }
+    ]"
+  ></app-breadcrumb>
 
-    <section class="hero">
-        <app-breadcrumb
-          [items]="[
-            { label: 'Home', url: '/' },
-            { label: 'Explore', url: '' }
-          ]"
-        ></app-breadcrumb>
-  
-        <div class="hero-wrapper">
-          <div class="hero-content">
-            <strong class="hero-explore">Explore Projects</strong>
-            <h1 class="hero-subtitle">What's your next Investment?</h1>
-            <p class="hero-description">Check out our projects and find your next investment opportunity.</p>
-            @if(networkService.isMain()) {
-  
-            <p class="hero-description notice">Notice! Angor is not yet released for Bitcoin mainnet.</p>
-            }
+  <div class="hero-wrapper">
+    <div class="hero-content">
+      <strong class="hero-explore">Discover Innovation</strong>
+      <h1 class="hero-subtitle">Explore Bitcoin Projects</h1>
+      <p class="hero-description">
+        Find exciting projects building on Bitcoin technology and join the future of decentralized finance.
+      </p>
+      
+      @if (networkService.isMain()) {
+        <div class="network-badge">
+          <span class="material-icons">warning</span>
+          <span>Bitcoin Mainnet - Not yet released</span>
+        </div>
+      } @else {
+        <div class="network-badge testnet">
+          <span class="material-icons">science</span>
+          <span>Bitcoin Testnet</span>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- Redesigned controls section with floating search bar -->
+<div class="controls-floating-container">
+  <div class="controls-floating-wrapper">
+    <div class="search-filter-container">
+      <!-- Search with icon inside -->
+      <div class="search-wrapper">
+        <input 
+          type="text" 
+          placeholder="Search projects..." 
+          class="search-input"
+          [value]="searchTerm()" 
+          (input)="onSearchInput($event)"
+          aria-label="Search projects">
+        <span class="material-icons search-icon">search</span>
+        @if (searchTerm()) {
+          <button class="clear-search" (click)="searchTerm.set('')" aria-label="Clear search">
+            <span class="material-icons">close</span>
+          </button>
+        }
+      </div>
+
+      <!-- Mobile toggle button - placed right after search -->
+      <button class="mobile-toggle" (click)="toggleMobileFilters()" [class.active]="showMobileFilters">
+        <span class="material-icons">{{ showMobileFilters ? 'close' : 'tune' }}</span>
+      </button>
+
+      <!-- Controls group with fixed dropdown positioning -->
+      <div class="controls-group">
+        <!-- Filter dropdown with improved positioning -->
+        <div class="control-dropdown" [class.active]="showFilterDropdown">
+          <button #filterBtn class="control-btn filter-btn" (click)="toggleFilterDropdown($event)" aria-label="Filter projects">
+            <span class="material-icons">filter_alt</span>
+            <span class="btn-text">{{ activeFilter() | titlecase }}</span>
+            <span class="material-icons arrow-icon">{{ showFilterDropdown ? 'arrow_drop_up' : 'arrow_drop_down' }}</span>
+          </button>
+          @if (showFilterDropdown) {
+            <div class="dropdown-panel filter-panel animate-in">
+              <div class="panel-header">
+                <h3>Filter Projects</h3>
+                <button class="close-panel" (click)="showFilterDropdown = false">
+                  <span class="material-icons">close</span>
+                </button>
+              </div>
+              <div class="panel-options">
+                <button class="option-btn" [class.selected]="activeFilter() === 'all'" (click)="setFilter('all')">
+                  <span class="material-icons">apps</span>
+                  <span>All Projects</span>
+                </button>
+                <button class="option-btn" [class.selected]="activeFilter() === 'active'" (click)="setFilter('active')">
+                  <span class="material-icons">timelapse</span>
+                  <span>Active</span>
+                </button>
+                <button class="option-btn" [class.selected]="activeFilter() === 'upcoming'" (click)="setFilter('upcoming')">
+                  <span class="material-icons">hourglass_top</span>
+                  <span>Upcoming</span>
+                </button>
+                <button class="option-btn" [class.selected]="activeFilter() === 'completed'" (click)="setFilter('completed')">
+                  <span class="material-icons">flag</span>
+                  <span>Completed</span>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Sort dropdown with improved positioning -->
+        <div class="control-dropdown" [class.active]="showSortDropdown">
+          <button #sortBtn class="control-btn sort-btn" (click)="toggleSortDropdown($event)" aria-label="Sort projects">
+            <span class="material-icons">sort</span>
+            <span class="btn-text">{{ activeSort() | titlecase }}</span>
+            <span class="material-icons arrow-icon">{{ showSortDropdown ? 'arrow_drop_up' : 'arrow_drop_down' }}</span>
+          </button>
+          @if (showSortDropdown) {
+            <div class="dropdown-panel sort-panel animate-in">
+              <div class="panel-header">
+                <h3>Sort Projects</h3>
+                <button class="close-panel" (click)="showSortDropdown = false">
+                  <span class="material-icons">close</span>
+                </button>
+              </div>
+              <div class="panel-options">
+                <button class="option-btn" [class.selected]="activeSort() === 'default'" (click)="setSort('default')">
+                  <span class="material-icons">sort</span>
+                  <span>Default</span>
+                </button>
+                <button class="option-btn" [class.selected]="activeSort() === 'funding'" (click)="setSort('funding')">
+                  <span class="material-icons">trending_up</span>
+                  <span>Funding Progress</span>
+                </button>
+                <button class="option-btn" [class.selected]="activeSort() === 'endDate'" (click)="setSort('endDate')">
+                  <span class="material-icons">event</span>
+                  <span>End Date</span>
+                </button>
+                <button class="option-btn" [class.selected]="activeSort() === 'investors'" (click)="setSort('investors')">
+                  <span class="material-icons">people</span>
+                  <span>Investor Count</span>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Results counter -->
+        <div class="results-counter">
+          {{ filteredProjects().length }} {{ filteredProjects().length === 1 ? 'project' : 'projects' }} loaded
+        </div>
+
+        <!-- Reset button -->
+        @if (searchTerm() || activeFilter() !== 'all' || activeSort() !== 'default') {
+          <button class="reset-btn" (click)="resetFilters()" aria-label="Reset filters">
+            <span class="material-icons">restart_alt</span>
+            <span class="btn-text">Reset</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Mobile filters panel -->
+    @if (showMobileFilters) {
+      <div class="mobile-filters">
+        <div class="mobile-section">
+          <h4 class="mobile-title">Filter by</h4>
+          <div class="mobile-options">
+            <button class="mobile-option" [class.active]="activeFilter() === 'all'" (click)="setFilter('all')">
+              <span class="material-icons">apps</span>
+              <span>All</span>
+            </button>
+            <button class="mobile-option" [class.active]="activeFilter() === 'active'" (click)="setFilter('active')">
+              <span class="material-icons">timelapse</span>
+              <span>Active</span>
+            </button>
+            <button class="mobile-option" [class.active]="activeFilter() === 'upcoming'" (click)="setFilter('upcoming')">
+              <span class="material-icons">hourglass_top</span>
+              <span>Upcoming</span>
+            </button>
+            <button class="mobile-option" [class.active]="activeFilter() === 'completed'" (click)="setFilter('completed')">
+              <span class="material-icons">flag</span>
+              <span>Completed</span>
+            </button>
           </div>
         </div>
-      </section>
-  
-      <div class="container">
-        @if (indexer.loading() && !indexer.projects().length) {
-        <div class="loading-spinner">
-          <div class="spinner"></div>
+
+        <div class="mobile-section">
+          <h4 class="mobile-title">Sort by</h4>
+          <div class="mobile-options">
+            <button class="mobile-option" [class.active]="activeSort() === 'default'" (click)="setSort('default')">
+              <span class="material-icons">sort</span>
+              <span>Default</span>
+            </button>
+            <button class="mobile-option" [class.active]="activeSort() === 'funding'" (click)="setSort('funding')">
+              <span class="material-icons">trending_up</span>
+              <span>Funding</span>
+            </button>
+            <button class="mobile-option" [class.active]="activeSort() === 'endDate'" (click)="setSort('endDate')">
+              <span class="material-icons">event</span>
+              <span>End Date</span>
+            </button>
+            <button class="mobile-option" [class.active]="activeSort() === 'investors'" (click)="setSort('investors')">
+              <span class="material-icons">people</span>
+              <span>Investors</span>
+            </button>
+          </div>
         </div>
-        } @else if (indexer.projects().length === 0) {
-        <div class="text-center">
-          <p>No projects found.</p>
-          <button class="primary-button" (click)="retryLoadProjects()">Retry</button>
+
+        @if (searchTerm() || activeFilter() !== 'all' || activeSort() !== 'default') {
+          <div class="mobile-actions">
+            <button class="mobile-reset" (click)="resetFilters()">
+              <span class="material-icons">restart_alt</span>
+              <span>Reset Filters</span>
+            </button>
+            <div class="mobile-count">{{ filteredProjects().length }} {{ filteredProjects().length === 1 ? 'project' : 'projects' }}</div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Project listing section with enhanced cards -->
+<div class="container projects-container">
+  @if (indexer.loading() && !filteredProjects().length) {
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+    </div>
+  } @else {
+    @if (filteredProjects().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon">
+          <span class="material-icons">search_off</span>
         </div>
-        } @else {
-        <section class="projects">
-          @for (project of indexer.projects(); track project.projectIdentifier; let i = $index) {
-            <a [routerLink]="['/project', project.projectIdentifier]" class="project-card" [attr.data-index]="i">
+        <h2>No Projects Match Your Criteria</h2>
+        <p>Try adjusting your search, filter, or sort options, or check back later.</p>
+        <button class="secondary-button" (click)="resetFilters()">
+          <span class="material-icons">clear_all</span>
+          Clear Filters & Search
+        </button>
+      </div>
+    } @else {
+      <section class="projects">
+        @for (project of filteredProjects(); track project.projectIdentifier; let i = $index) {
+          <a [routerLink]="['/project', project.projectIdentifier]" class="project-card" [attr.data-index]="i">
+            <!-- Enhanced banner section -->
             <div
               class="project-banner"
-              [style.background-image]="
-                project.metadata?.['banner'] ?? ''
-                  ? 'url(' + (project.metadata?.['banner'] ?? '') + ')'
-                  : 'none'
-              "
+              [style.background-image]="shouldShowBannerImage(project) ? 'url(' + project.metadata?.['banner'] + ')' : 'none'"
+              [style.background-color]="!shouldShowBannerImage(project) ? getBannerStyle(project) : ''"
             >
-              <!-- Add status icon overlaying the banner in top right corner -->
-              @if (isProjectEnded(project.details?.startDate)) {
-                @if (isProjectSuccessfullyFunded(project)) {
-                  <span class="material-icons status-icon status-funded">check_circle</span>
-                } @else {
-                  <span class="material-icons status-icon status-failed">cancel</span>
-                }
+              @if (project.metadata?.['banner']) {
+                <img 
+                  [src]="project.metadata?.['banner']" 
+                  style="display: none;"
+                  (error)="handleBannerError(project.projectIdentifier)"
+                  alt=""
+                >
               }
+              
+              <!-- Enhanced project status badge -->
+              <div class="project-status">
+                @if (isProjectEnded(project.details?.expiryDate)) {
+                  @if (isProjectSuccessfullyFunded(project)) {
+                    <div class="status-badge funded">
+                      <span class="material-icons">check_circle</span>
+                      <span class="status-text">Funded</span>
+                    </div>
+                  } @else {
+                    <div class="status-badge failed">
+                      <span class="material-icons">cancel</span>
+                      <span class="status-text">Failed</span>
+                    </div>
+                  }
+                } @else if (isProjectNotStarted(project.details?.startDate)) {
+                  <div class="status-badge upcoming">
+                    <span class="material-icons">schedule</span>
+                    <span class="status-text">Upcoming</span>
+                  </div>
+                } @else {
+                  <div class="status-badge active">
+                    <span class="material-icons">trending_up</span>
+                    <span class="status-text">Active</span>
+                  </div>
+                }
+              </div>
+              
+              @if (isFavorite(project.projectIdentifier)) {
+                <span class="favorite-badge">
+                  <span class="material-icons">bookmark</span>
+                </span>
+              }
+              
+              <!-- Enhanced banner overlay and gradient -->
+              <div class="banner-overlay"></div>
+              <div class="banner-gradient"></div>
             </div>
-  
+
             <div class="project-content">
               @if (project.details) {
-              <div
-                class="project-avatar"
-                [style.background-image]="
-                  project.metadata?.['picture'] ?? ''
-                    ? 'url(' + (project.metadata?.['picture'] ?? '') + ')'
-                    : 'none'
-                "
-              ></div>
-  
-              <div class="project-title-header">
-                <h3>
-                  @if ((project.metadata?.['name'] ?? '') !== '') {
-                  {{ project.metadata?.['name'] }}
-                  } @else {
-                  {{ project.projectIdentifier }}
-                  }
-                </h3>
-                @if (isFavorite(project.projectIdentifier)) {
-                <span class="material-icons favorite-icon favorite">bookmark</span>
-                }
-              </div>
-              <div>
-                <div class="project-date-wrapper"><span class="material-icons">schedule</span><span class="date-text">{{ isProjectNotStarted(project.details.startDate) ? 'Ends' : 'Ended' }} {{ project.details.startDate | ago }}</span></div>
-              </div>
-  
-              <!-- <p>
-                Founder: @if ((project.metadata?.['name'] ?? '') !== '') {
-                  {{ project.metadata?.['name'] ?? '' }}
-                  } @else {
-                    <span class="truncate">{{ project.founderKey }}</span>
-                    <small class="loading-profile">Loading profile...</small>
-                    }
-                  </p> -->
-                  
-                  @if ((project.metadata?.['about'] ?? '') !== '') {
-                    <p class="about">{{ project.metadata?.['about'] ?? '' }}</p>
-                  } @else {
-                    <p class="about"></p>
-                  } 
-                  
-              <!-- <div class="project-info">
-                <div class="info-item">
-                  <div class="info-label">Target Amount</div>
-                  <div class="info-value">
-                    {{ project.details.targetAmount }} BTC
+                <!-- Improved profile avatar positioning and styling -->
+                @if (shouldShowProfileImage(project)) {
+                  <div
+                    class="project-avatar"
+                    [style.background-image]="'url(' + project.metadata?.['picture'] + ')'"
+                  >
+                    <img 
+                      [src]="project.metadata?.['picture']" 
+                      style="display: none;"
+                      (error)="handleProfileError(project.projectIdentifier)"
+                      alt=""
+                    >
                   </div>
-                </div>
-                <div class="info-item">
-                  @if(isProjectNotStarted(project.details.startDate)) {
-                  <div class="info-label">Ends</div>
-                  } @else {
-                  <div class="info-label">Ended</div>
-                  }
-                  <div class="info-value">
-                    {{ project.details.startDate | ago }}
+                } @else {
+                  <div 
+                    class="project-avatar avatar-placeholder" 
+                    [style.background-color]="getRandomColor(project.projectIdentifier)">
+                    {{ getInitial(project.metadata?.['name'] || project.projectIdentifier) }}
+                  </div>
+                }
+
+                <!-- Enhanced project header with better spacing and typography -->
+                <div class="project-header">
+                  <h3 class="project-title">
+                    @if ((project.metadata?.['name'] ?? '') !== '') {
+                      {{ project.metadata?.['name'] }}
+                    } @else {
+                      {{ project.projectIdentifier | slice:0:12 }}...
+                    }
+                  </h3>
+                  
+                  <div class="project-date">
+                    <span class="material-icons date-icon">event</span>
+                    <span>{{ isProjectEnded(project.details.expiryDate) ? 'Ended' : 'Ends' }} {{ project.details.expiryDate | ago }}</span>
                   </div>
                 </div>
                 
-                <div class="info-item">
-                  <div class="info-label">Investors</div>
-                  <div class="info-value">
-                    {{ project.stats?.investorCount }}
+                <!-- Enhanced project description -->
+                @if ((project.metadata?.['about'] ?? '') !== '') {
+                  <p class="project-description">
+                    {{ (project.metadata?.['about'] ?? '') | slice:0:120 }}{{ ((project.metadata?.['about'] ?? '').length > 120) ? '...' : '' }}
+                  </p>
+                } @else {
+                  <p class="project-description placeholder">No description available</p>
+                }
+
+                <!-- Improved funding progress visualization -->
+                <div class="funding-progress">
+                  <div class="progress-stats">
+                    <div class="investor-count">
+                      <span class="material-icons">people</span>
+                      <span class="count">{{ project.stats?.investorCount ?? 0 }}</span>
+                      <span class="label">Investors</span>
+                    </div>
+                    
+                    <div class="amount-raised">
+                      <span class="btc-amount">{{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}</span>
+                      <span class="symbol">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+                      <span class="divider">/</span>
+                      <span class="target">{{ bitcoin.toBTC(project.details.targetAmount) }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="progress-container">
+                    @let fundingPercent = getFundingPercentage(project);
+                    @let displayWidth = fundingPercent > 100 ? 100 : fundingPercent;
+                    
+                    <div class="progress-bar">
+                      <div class="progress-fill" 
+                          [style.width]="displayWidth + '%'"
+                          [class.high-funding]="fundingPercent >= 100"
+                          [class.low-funding]="fundingPercent > 0 && fundingPercent < 15">
+                      </div>
+                    </div>
+                    
+                    <span class="percentage" [class.high-funding]="fundingPercent >= 100">
+                      {{ fundingPercent }}%
+                    </span>
                   </div>
                 </div>
-              </div> -->
-
-              <div class="funding-progress">
-                <div class="progress-stats">
-                  <div class="investor-wrapper"><span class="material-icons">person</span>{{ project.stats?.investorCount }} Investor<span class="invertor-text"></span></div>
-                  <span class="btc-raised">
-                    {{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}
-  
-                    <!-- {{
-                      project.stats?.amountInvested
-                        ? project.stats!.amountInvested / 100000000
-                        : '0'
-                    }} -->
-                    /
-                    {{ bitcoin.toBTC(project.details.targetAmount) }}
-                    <!-- {{ project.details.targetAmount / 100000000 }} -->
-                    {{ networkService.isMain() ? 'BTC' : 'TBTC' }} raised
-                  </span>
+                
+                <!-- Enhanced footer with action button -->
+                <div class="project-footer">
+                  <div class="view-project">
+                    <span class="view-text">View Project</span>
+                    <span class="material-icons">arrow_forward</span>
+                  </div>
                 </div>
-                <div class="progress-bar">
-                  <div class="progress-fill" [style.width]="getFundingPercentage(project) + '%'"></div>
-                </div>
-              </div>
               }
             </div>
           </a>
-          }
-        </section>
-  
-        @if (!indexer.isComplete()) { @if (indexer.loading()) {
-        <div class="loading-spinner">
-          <div class="spinner"></div>
-        </div>
-        } @else {
-        <div class="load-more">
-          <button class="primary-button" (click)="loadMore()">Load More Projects</button>
-        </div>
         }
-  
-        <!-- Move trigger after the button -->
-        <div #scrollTrigger class="scroll-trigger"></div>
+      </section>
+
+      @if (!indexer.isComplete()) {
+        @if (indexer.loading()) {
+          <div class="loading-spinner">
+            <div class="spinner"></div>
+          </div>
         } @else {
+          <div class="load-more">
+            <button class="primary-button" (click)="loadMoreProjects()">
+              <span class="material-icons">expand_more</span>
+              Load More Projects
+            </button>
+          </div>
+        }
+        <div #scrollTrigger class="scroll-trigger"></div>
+      } @else {
         <div class="load-finished">
           <div class="checkmark-container">
-            <i class="fas fa-check checkmark"></i>
+            <span class="material-icons checkmark">done_all</span>
           </div>
-          <h3 class="achievement-title">You Finished!</h3>
-          <p class="achievement-subtitle">You've viewed all available projects. Time to pick your next investment or check back later for new opportunities!</p>
+          <h3 class="achievement-title">All Projects Loaded</h3>
+          <p class="achievement-subtitle">You've viewed all available projects. Ready to find your next investment?</p>
         </div>
-        } }
-      </div>
+      }
+    }
+  }
+</div>

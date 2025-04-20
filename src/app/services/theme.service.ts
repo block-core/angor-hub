@@ -1,35 +1,104 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable, signal, inject, effect } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+
+// Define theme type to include system option
+type ThemeType = 'light' | 'dark' | 'system';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ThemeService {
-  private theme = new BehaviorSubject<'light' | 'dark'>('light');
-  public theme$ = this.theme.asObservable();
-
+  private document = inject(DOCUMENT) as Document;
+  
+  // Updated signal type to include 'system'
+  currentTheme = signal<ThemeType>('light');
+  
+  // Signal to track effective theme (what's actually applied)
+  private effectiveTheme = signal<'light' | 'dark'>('light');
+  
+  // Media query for detecting system preferences
+  private systemPrefersDark?: MediaQueryList;
+  
   constructor() {
     this.initializeTheme();
+    
+    // Set up effect to apply theme whenever it changes
+    effect(() => {
+      this.applyTheme(this.effectiveTheme());
+    });
   }
-
-  private initializeTheme() {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      this.setTheme(savedTheme as 'light' | 'dark');
-    } else {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      this.setTheme(prefersDark ? 'dark' : 'light');
+  
+  private initializeTheme(): void {
+    try {
+      // Set up system preference detection
+      this.systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+      
+      // Add listener for system preference changes
+      this.systemPrefersDark.addEventListener('change', (e) => {
+        if (this.currentTheme() === 'system') {
+          this.updateEffectiveTheme();
+        }
+      });
+      
+      // Get theme from localStorage
+      const savedTheme = localStorage.getItem('angor-theme') as ThemeType | null;
+      
+      if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system')) {
+        this.currentTheme.set(savedTheme);
+      } else {
+        // Default to system if no preference is saved
+        this.currentTheme.set('system');
+      }
+      
+      // Update the effective theme based on current selection
+      this.updateEffectiveTheme();
+      
+    } catch (e) {
+      console.error('Error initializing theme:', e);
+      // Default to light theme if there's an error
+      this.currentTheme.set('light');
+      this.effectiveTheme.set('light');
     }
   }
-
-  setTheme(theme: 'light' | 'dark') {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-    this.theme.next(theme);
+  
+  private updateEffectiveTheme(): void {
+    if (this.currentTheme() === 'system') {
+      // If system theme is selected, determine from system preference
+      const prefersDark = this.systemPrefersDark?.matches ?? false;
+      this.effectiveTheme.set(prefersDark ? 'dark' : 'light');
+    } else {
+      // Otherwise use the explicitly selected theme
+      this.effectiveTheme.set(this.currentTheme() as 'light' | 'dark');
+    }
   }
-
-  toggleTheme() {
-    const current = this.theme.getValue();
-    this.setTheme(current === 'light' ? 'dark' : 'light');
+  
+  toggleTheme(): void {
+    // Toggle between light and dark (skip system in toggle)
+    const newTheme = this.effectiveTheme() === 'light' ? 'dark' : 'light';
+    this.setTheme(newTheme);
+  }
+  
+  setTheme(theme: ThemeType): void {
+    this.currentTheme.set(theme);
+    this.updateEffectiveTheme();
+    
+    try {
+      localStorage.setItem('angor-theme', theme);
+    } catch (e) {
+      console.error('Failed to save theme preference:', e);
+    }
+  }
+  
+  private applyTheme(theme: 'light' | 'dark'): void {
+    this.document.documentElement.setAttribute('data-theme', theme);
+  }
+  
+  isDarkTheme(): boolean {
+    return this.effectiveTheme() === 'dark';
+  }
+  
+  // Method to get the currently visible theme (what user sees)
+  getEffectiveTheme(): 'light' | 'dark' {
+    return this.effectiveTheme();
   }
 }
