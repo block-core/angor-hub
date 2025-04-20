@@ -1,11 +1,11 @@
-import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, effect } from '@angular/core';
+import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, effect, signal, computed, Signal } from '@angular/core';
 import { RelayService } from '../../services/relay.service';
 import { IndexerService } from '../../services/indexer.service';
 import { RouterLink } from '@angular/router';
 import { ExploreStateService } from '../../services/explore-state.service';
 import { Router, NavigationEnd } from '@angular/router';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { Location } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { AgoPipe } from '../../pipes/ago.pipe';
@@ -13,6 +13,10 @@ import { NetworkService } from '../../services/network.service';
 import { UtilsService } from '../../services/utils.service';
 import { BitcoinUtilsService } from '../../services/bitcoin.service';
 import { TitleService } from '../../services/title.service';
+
+// Define type for sort options
+type SortType = 'default' | 'funding' | 'endDate' | 'investors';
+type FilterType = 'all' | 'active' | 'upcoming' | 'completed';
 
 @Component({
   selector: 'app-explore',
@@ -23,6 +27,9 @@ import { TitleService } from '../../services/title.service';
 })
 export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('scrollTrigger') scrollTrigger!: ElementRef;
+  @ViewChild('filterBtn') filterBtn!: ElementRef;
+  @ViewChild('sortBtn') sortBtn!: ElementRef;
+
   private observer: IntersectionObserver | null = null;
   private mutationObserver: MutationObserver | null = null;
   private loadingTimeout: any = null;
@@ -36,12 +43,88 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   private projectObserver: IntersectionObserver | null = null;
   private isLoadingMore = false;
   private loadMoreQueued = false;
+  private document = inject(DOCUMENT);
 
   public indexer = inject(IndexerService);
   public networkService = inject(NetworkService);
   public utils = inject(UtilsService);
   public bitcoin = inject(BitcoinUtilsService);
   public title = inject(TitleService);
+
+  // Adding signals for search, filter, and sort functionality
+  searchTerm = signal<string>('');
+  activeFilter = signal<FilterType>('all');
+  activeSort = signal<SortType>('default');
+  
+  // Add a signal to track failed image loads
+  failedBannerImages = signal<Set<string>>(new Set<string>());
+  failedProfileImages = signal<Set<string>>(new Set<string>());
+
+  // Computed signal for filtered and sorted projects
+  filteredProjects: Signal<any[]> = computed(() => {
+    const projects = this.indexer.projects();
+    const search = this.searchTerm().toLowerCase().trim();
+    const filter = this.activeFilter();
+    const sort = this.activeSort();
+    
+    // First apply filtering
+    let filtered = projects.filter(project => {
+      // Apply search filter
+      if (search) {
+        const name = (project.metadata?.['name'] || '').toLowerCase();
+        const about = (project.metadata?.['about'] || '').toLowerCase();
+        const identifier = project.projectIdentifier.toLowerCase();
+        
+        if (!name.includes(search) && 
+            !about.includes(search) && 
+            !identifier.includes(search)) {
+          return false;
+        }
+      }
+      
+      // Apply status filter
+      if (filter === 'all') {
+        return true;
+      } else if (filter === 'active') {
+        return !this.isProjectNotStarted(project.details?.startDate) && 
+               !this.isProjectEnded(project.details?.expiryDate);
+      } else if (filter === 'upcoming') {
+        return this.isProjectNotStarted(project.details?.startDate);
+      } else if (filter === 'completed') {
+        return this.isProjectEnded(project.details?.expiryDate);
+      }
+      
+      return true;
+    });
+    
+    // Then apply sorting
+    if (sort === 'funding') {
+      filtered = [...filtered].sort((a, b) => {
+        const percentA = this.getFundingPercentage(a);
+        const percentB = this.getFundingPercentage(b);
+        return percentB - percentA; // Sort by funding percentage (descending)
+      });
+    } else if (sort === 'endDate') {
+      filtered = [...filtered].sort((a, b) => {
+        const dateA = a.details?.expiryDate || 0;
+        const dateB = b.details?.expiryDate || 0;
+        return dateA - dateB; // Sort by end date (ascending)
+      });
+    } else if (sort === 'investors') {
+      filtered = [...filtered].sort((a, b) => {
+        const countA = a.stats?.investorCount || 0;
+        const countB = b.stats?.investorCount || 0;
+        return countB - countA; // Sort by investor count (descending)
+      });
+    }
+    
+    return filtered;
+  });
+
+  // UI state for dropdowns
+  showFilterDropdown = false;
+  showSortDropdown = false;
+  showMobileFilters = false;
 
   constructor() {
     // Optional: Subscribe to project updates if you need to trigger any UI updates
@@ -117,10 +200,22 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     window.addEventListener('popstate', () => {
       this.isBackNavigation = true;
     });
+
+    // Add effect to log when filter/sort changes
+    effect(() => {
+      console.log(`Filter/Sort changed - Filter: ${this.activeFilter()}, Sort: ${this.activeSort()}, Search: ${this.searchTerm()}`);
+      console.log(`Filtered projects count: ${this.filteredProjects().length}`);
+    });
   }
 
   favorites: string[] = [];
+  async loadMoreProjects() {
+    await this.indexer.loadMore();
+  }
 
+  trackByProjectIdentifier(index: number, project: any): string {
+    return project.projectIdentifier;
+  }
   async ngOnInit() {
     this.title.setTitle('Explore');
 
@@ -153,6 +248,9 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       this.exploreState.saveState(scrollPosition, this.indexer.getCurrentOffset());
     }, 50);
   }
+
+  @HostListener('window:resize')
+  onResize() {}
 
   ngAfterViewInit() {
     // Watch for DOM changes to detect when scroll trigger is added
@@ -190,6 +288,10 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.isLoadingMore = false;
     this.loadMoreQueued = false;
+
+    // Remove any event listeners
+    this.document.removeEventListener('click', this.closeFilterDropdown);
+    this.document.removeEventListener('click', this.closeSortDropdown);
   }
 
   private watchForScrollTrigger() {
@@ -302,12 +404,18 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       return 0;
     }
 
-    let invested = project.stats.amountInvested; //  / 100000000;
-    let target = project.details.targetAmount; //  / 100000000;
+    let invested = project.stats.amountInvested;
+    let target = project.details.targetAmount;
 
     const percentage = (invested / target) * 100;
+    
+    // Always return at least 0.1% if there's any investment (for visibility)
+    if (percentage > 0 && percentage < 0.1) {
+      return 0.1;
+    }
 
-    return Math.min(Math.round(percentage * 10) / 10, 999.9); // Cap at 999.9% and round to 1 decimal
+    // Return with one decimal place
+    return Math.min(Math.round(percentage * 10) / 10, 999.9);
   }
 
   isProjectNotStarted(date: number | undefined): boolean {
@@ -369,13 +477,11 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
         this.isLoadingMore = true;
         console.log('Executing load more');
         await this.indexer.loadMore();
-        // Observe new projects after they're loaded
         this.observeProjects();
         console.log('Load more completed, new project count:', this.indexer.projects().length);
       } finally {
         this.isLoadingMore = false;
 
-        // If there's a queued request, process it
         if (this.loadMoreQueued) {
           this.loadMoreQueued = false;
           console.log('Processing queued load more request');
@@ -388,5 +494,171 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   async retryLoadProjects() {
     await this.indexer.fetchProjects();
     this.observeProjects();
+  }
+
+  setFilter(filter: FilterType): void {
+    this.activeFilter.set(filter);
+    this.showFilterDropdown = false;
+  }
+
+  setSort(sort: SortType): void {
+    this.activeSort.set(sort);
+    this.showSortDropdown = false;
+  }
+
+  resetFilters(): void {
+    this.searchTerm.set('');
+    this.activeFilter.set('all');
+    this.activeSort.set('default');
+    this.showFilterDropdown = false;
+    this.showSortDropdown = false;
+    this.showMobileFilters = false;
+  }
+
+  toggleFilterDropdown(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Close sort dropdown if open
+    this.showSortDropdown = false;
+    
+    // Toggle filter dropdown
+    this.showFilterDropdown = !this.showFilterDropdown;
+    
+    if (this.showFilterDropdown) {
+      // Add click outside listener to close
+      setTimeout(() => {
+        this.document.addEventListener('click', this.closeFilterDropdown);
+      }, 10);
+    } else {
+      // Remove the listener when closing
+      this.document.removeEventListener('click', this.closeFilterDropdown);
+    }
+  }
+
+  toggleSortDropdown(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Close filter dropdown if open
+    this.showFilterDropdown = false;
+    
+    // Toggle sort dropdown
+    this.showSortDropdown = !this.showSortDropdown;
+    
+    if (this.showSortDropdown) {
+      // Add click outside listener to close
+      setTimeout(() => {
+        this.document.addEventListener('click', this.closeSortDropdown);
+      }, 10);
+    } else {
+      // Remove the listener when closing
+      this.document.removeEventListener('click', this.closeSortDropdown);
+    }
+  }
+
+  // Add methods to close dropdowns when clicking outside
+  closeFilterDropdown = () => {
+    this.showFilterDropdown = false;
+    this.document.removeEventListener('click', this.closeFilterDropdown);
+  };
+
+  closeSortDropdown = () => {
+    this.showSortDropdown = false;
+    this.document.removeEventListener('click', this.closeSortDropdown);
+  };
+
+  toggleMobileFilters(): void {
+    this.showMobileFilters = !this.showMobileFilters;
+  }
+
+  onClickOutside(dropdownType: 'filter' | 'sort'): void {
+    if (dropdownType === 'filter') {
+      this.showFilterDropdown = false;
+    } else {
+      this.showSortDropdown = false;
+    }
+  }
+
+  onSearchInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.searchTerm.set(input.value);
+  }
+
+  // Add methods for generating random colors and getting initials
+  getRandomColor(seed: string): string {
+    // Generate a consistent random color based on the seed (project ID or name)
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    // Select from a curated set of pleasant, vibrant colors
+    const colors = [
+      'rgba(66, 133, 244, 0.85)', // Blue
+      'rgba(219, 68, 55, 0.85)',  // Red
+      'rgba(244, 160, 0, 0.85)',  // Amber
+      'rgba(15, 157, 88, 0.85)',  // Green
+      'rgba(171, 71, 188, 0.85)', // Purple
+      'rgba(0, 172, 193, 0.85)',  // Cyan
+      'rgba(255, 112, 67, 0.85)', // Deep Orange
+      'rgba(3, 169, 244, 0.85)',  // Light Blue
+    ];
+    
+    // Use the hash to pick a color from the array
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  }
+
+  getInitial(name: string): string {
+    if (!name || name.trim() === '') {
+      return '#';
+    }
+    // Get first character, handle non-Latin scripts properly
+    return name.trim()[0].toUpperCase();
+  }
+
+  // Get background style for banner with fallback color
+  getBannerStyle(project: any): string {
+    const bannerUrl = project.metadata?.['banner'] ?? '';
+    if (bannerUrl && !this.hasBannerFailed(project.projectIdentifier)) {
+      return `url(${bannerUrl})`;
+    }
+    // Generate a consistent color based on project identifier
+    return this.getRandomColor(project.projectIdentifier);
+  }
+
+  // Handle banner image load error
+  handleBannerError(projectId: string): void {
+    const failedImages = this.failedBannerImages();
+    failedImages.add(projectId);
+    this.failedBannerImages.set(new Set(failedImages));
+  }
+  
+  // Handle profile image load error
+  handleProfileError(projectId: string): void {
+    const failedImages = this.failedProfileImages();
+    failedImages.add(projectId);
+    this.failedProfileImages.set(new Set(failedImages));
+  }
+  
+  // Check if banner image failed
+  hasBannerFailed(projectId: string): boolean {
+    return this.failedBannerImages().has(projectId);
+  }
+  
+  // Check if profile image failed
+  hasProfileFailed(projectId: string): boolean {
+    return this.failedProfileImages().has(projectId);
+  }
+
+  // Use this to determine if we should show banner image or fallback
+  shouldShowBannerImage(project: any): boolean {
+    return !!project.metadata?.['banner'] && !this.hasBannerFailed(project.projectIdentifier);
+  }
+  
+  // Use this to determine if we should show profile image or fallback
+  shouldShowProfileImage(project: any): boolean {
+    return !!project.metadata?.['picture'] && !this.hasProfileFailed(project.projectIdentifier);
   }
 }
