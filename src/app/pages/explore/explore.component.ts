@@ -27,6 +27,9 @@ type FilterType = 'all' | 'active' | 'upcoming' | 'completed';
 })
 export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('scrollTrigger') scrollTrigger!: ElementRef;
+  @ViewChild('filterBtn') filterBtn!: ElementRef;
+  @ViewChild('sortBtn') sortBtn!: ElementRef;
+
   private observer: IntersectionObserver | null = null;
   private mutationObserver: MutationObserver | null = null;
   private loadingTimeout: any = null;
@@ -245,6 +248,9 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       this.exploreState.saveState(scrollPosition, this.indexer.getCurrentOffset());
     }, 50);
   }
+
+  @HostListener('window:resize')
+  onResize() {}
 
   ngAfterViewInit() {
     // Watch for DOM changes to detect when scroll trigger is added
@@ -492,10 +498,12 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
 
   setFilter(filter: FilterType): void {
     this.activeFilter.set(filter);
+    this.showFilterDropdown = false;
   }
 
   setSort(sort: SortType): void {
     this.activeSort.set(sort);
+    this.showSortDropdown = false;
   }
 
   resetFilters(): void {
@@ -508,31 +516,43 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   toggleFilterDropdown(event: Event): void {
+    event.preventDefault();
     event.stopPropagation();
+    
+    // Close sort dropdown if open
+    this.showSortDropdown = false;
+    
+    // Toggle filter dropdown
     this.showFilterDropdown = !this.showFilterDropdown;
     
     if (this.showFilterDropdown) {
-      this.showSortDropdown = false;
-      // Add event listener for closing dropdown when clicking outside
+      // Add click outside listener to close
       setTimeout(() => {
         this.document.addEventListener('click', this.closeFilterDropdown);
-      });
+      }, 10);
     } else {
+      // Remove the listener when closing
       this.document.removeEventListener('click', this.closeFilterDropdown);
     }
   }
 
   toggleSortDropdown(event: Event): void {
+    event.preventDefault();
     event.stopPropagation();
+    
+    // Close filter dropdown if open
+    this.showFilterDropdown = false;
+    
+    // Toggle sort dropdown
     this.showSortDropdown = !this.showSortDropdown;
     
     if (this.showSortDropdown) {
-      this.showFilterDropdown = false;
-      // Add event listener for closing dropdown when clicking outside
+      // Add click outside listener to close
       setTimeout(() => {
         this.document.addEventListener('click', this.closeSortDropdown);
-      });
+      }, 10);
     } else {
+      // Remove the listener when closing
       this.document.removeEventListener('click', this.closeSortDropdown);
     }
   }
