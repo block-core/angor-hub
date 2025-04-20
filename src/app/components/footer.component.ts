@@ -9,9 +9,9 @@ import { environment } from '../../environment';
   template: `
     <footer>
       <div class="footer-links">
-         <a href="https://angor.io/terms" target="_blank">Terms of Service</a>
+         <a href="https://angor.io/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>
          <span class="link-divider">|</span>
-         <a href="https://angor.io/privacy" target="_blank">Privacy Policy</a>
+         <a href="https://angor.io/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
       </div>
       <div class="copyright">
         &copy; {{ currentYear }} Angor. All rights reserved.

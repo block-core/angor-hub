@@ -182,17 +182,13 @@ import { ThemeService } from '../services/theme.service';
           <div class="mobile-theme-toggle">
             <h4 class="mobile-menu-section-title">Theme</h4>
             <button class="theme-toggle-button" (click)="toggleTheme()">
-              <span class="material-icons">{{ isDarkTheme() ? 'light_mode' : 'dark_mode' }}</span>
+              <span class="material-icons">{{ isDarkTheme() ? 'dark_mode' : 'light_mode' }}</span>
               <span>{{ isDarkTheme() ? 'Switch to Light Mode' : 'Switch to Dark Mode' }}</span>
             </button>
           </div>
 
           <div class="mobile-menu-separator"></div>
 
-          <a href="https://test.angor.io" class="mobile-action-button no-underline" (click)="toggleMobileMenu()">
-            <span class="material-icons">rocket_launch</span>
-            <span>Create Project</span>
-          </a>
         </div>
       </div>
     }

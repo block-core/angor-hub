@@ -13,14 +13,14 @@ import { RouterLink } from '@angular/router';
       </a>
       <div class="app-menu" [class.show]="isAppMenuOpen()">
         <div class="app-menu-content">
-          <a href="https://test.angor.io" class="app-item">
+          <a href="https://test.angor.io" class="app-item" target="_blank" rel="noopener noreferrer">
             <i class="fa-solid fa-rocket"></i>
             <div>
               <span class="app-name">Angor App</span>
               <span class="app-desc">Create and manage funding</span>
             </div>
           </a>
-          <a href="https://blog.angor.io" class="app-item">
+          <a href="https://blog.angor.io" class="app-item" target="_blank" rel="noopener noreferrer">
             <i class="fa-solid fa-newspaper"></i>
             <div>
               <span class="app-name">Angor Blog</span>
@@ -34,21 +34,21 @@ import { RouterLink } from '@angular/router';
               <span class="app-desc">Discover projects to fund</span>
             </div>
           </a>
-          <a href="https://profile.angor.io" class="app-item">
+          <a href="https://profile.angor.io" class="app-item" target="_blank" rel="noopener noreferrer">
             <i class="fa-solid fa-user"></i>
             <div>
               <span class="app-name">Angor Profile</span>
               <span class="app-desc">Manage your project profile</span>
             </div>
           </a>
-          <a href="https://angor.io" class="app-item">
+          <a href="https://angor.io" class="app-item" target="_blank" rel="noopener noreferrer">
             <i class="fa-solid fa-globe"></i>
             <div>
               <span class="app-name">Angor Web</span>
               <span class="app-desc">Learn about Angor Protocol</span>
             </div>
           </a>
-          <a href="https://docs.angor.io" class="app-item">
+          <a href="https://docs.angor.io" class="app-item" target="_blank" rel="noopener noreferrer">
             <i class="fa-solid fa-book"></i>
             <div>
               <span class="app-name">Angor Docs</span>

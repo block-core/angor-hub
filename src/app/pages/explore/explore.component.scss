@@ -29,18 +29,18 @@
     overflow: hidden;
     border-radius: 12px;
     background: var(--surface-card);
-    padding: 0; /* Remove padding from card */
+    padding: 0; 
     box-shadow: var(--card-shadow);
     height: 100%;
     display: flex;
     flex-direction: column;
     border: 1px solid transparent;
-    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out; /* Faster, simpler transition */
-    will-change: transform; /* GPU hint */
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out; 
+    will-change: transform; 
 
     &:hover {
-      transform: translateY(-4px); /* Reduced movement for faster animation */
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); /* Less intense shadow */
+      transform: translateY(-4px); 
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
       border-color: var(--accent);
 
       .action-button {
@@ -74,7 +74,7 @@
       inset: 0;
       background-color: rgba(0, 0, 0, 0.2);
       opacity: 0;
-      transition: opacity 0.2s ease; /* Faster transition */
+      transition: opacity 0.2s ease; 
       z-index: 1;
     }
 
@@ -121,9 +121,9 @@
     flex-direction: column;
   }
   .project-content h3 {
-    margin-top: 0; /* Remove default margin */
-    position: relative; /* Ensure it stays above avatar */
-    z-index: 1; /* Ensure text stays above avatar */
+    margin-top: 0; 
+    position: relative; 
+    z-index: 1; 
   }
   .project-avatar {
     width: 80px;
@@ -158,16 +158,16 @@
   .funding-progress {
     margin: 1rem 0;
     position: relative;
-    padding-top: 18px; /* Add padding at top to accommodate percentage label */
+    padding-top: 18px; 
   }
   .progress-bar {
     width: 100%;
-    height: 12px; /* Slightly reduced height for more elegant look */
-    background: rgba(8, 108, 129, 0.06); /* Lighter background */
+    height: 12px;
+    background: rgba(8, 108, 129, 0.06);
     border-radius: 8px;
     overflow: visible;
     position: relative;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08); /* Subtle inner shadow */
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
   }
   .progress-fill {
     height: 100%;
@@ -200,9 +200,8 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     z-index: 5;
     white-space: nowrap;
-    letter-spacing: 0.01em; /* Slightly improved letter spacing */
+    letter-spacing: 0.01em;
     
-    /* Remove inside/outside distinction - always above */
     &-inside, &-outside {
       top: -18px;
       right: 0;
@@ -210,17 +209,17 @@
   }
   .high-funding {
     .progress-fill {
-      background: linear-gradient(90deg, #0a8c37, #10d659); /* Bright green gradient */
+      background: linear-gradient(90deg, #0a8c37, #10d659);
       box-shadow: 0 1px 4px rgba(12, 188, 76, 0.3);
     }
     
     .percentage {
-      color: #0a8c37; /* Green text */
+      color: #0a8c37;
       font-weight: 700;
     }
   }
   .low-funding .progress-fill {
-    background: linear-gradient(90deg, var(--accent), var(--accent-light)); /* Use accent color but lighter */
+    background: linear-gradient(90deg, var(--accent), var(--accent-light)); 
   }
   .progress-info {
     display: flex;
@@ -432,7 +431,6 @@
   }
 }
 
-// Redesigned compact search and filter layout
 .explore-controls-container {
   position: relative;
   padding: 1rem 1.5rem;
@@ -501,7 +499,6 @@
   }
 }
 
-// Filter and Sort Dropdowns - Desktop
 .filter-sort-container {
   display: flex;
   gap: 0.75rem;
@@ -510,7 +507,7 @@
 
 .dropdown-control {
   position: relative;
-  z-index: 1000; // Very high z-index to ensure dropdowns stay on top
+  z-index: 1000; 
   
   &.active .dropdown-button {
     border-color: var(--accent);
@@ -544,11 +541,11 @@
 }
 
 .dropdown-label {
-  white-space: nowrap;  /* Prevent text from wrapping to next line */
-  overflow: hidden;     /* Hide any overflow */
-  text-overflow: ellipsis; /* Show ellipsis for overflowing text */
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis;
   display: inline-block;
-  max-width: 150px;     /* Control maximum width */
+  max-width: 150px;
 }
 
 .dropdown-menu {
@@ -560,7 +557,7 @@
   border-radius: 10px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   padding: 0.5rem;
-  z-index: 1001; // Higher than dropdown-control
+  z-index: 1001;
   animation: dropdownFadeIn 0.2s ease;
   border: 1px solid var(--border);
   
@@ -576,7 +573,6 @@
   }
 }
 
-// Make sure projects container has a lower z-index
 .container {
   position: relative;
   z-index: 5;
@@ -640,14 +636,12 @@
   }
 }
 
-// Hide desktop view on mobile
 @media (max-width: 768px) {
   .desktop-view {
     display: none;
   }
 }
 
-// Mobile filter trigger
 .mobile-filter-trigger {
   display: none;
   align-items: center;
@@ -680,7 +674,6 @@
   }
 }
 
-// Mobile filter panel
 .mobile-filters-panel {
   margin-top: 1rem;
   padding-top: 1rem;
@@ -793,7 +786,6 @@
   border-radius: 8px;
 }
 
-// Responsive adjustments
 @media (max-width: 480px) {
   .explore-controls-container {
     padding: 0.75rem;
@@ -856,7 +848,6 @@
   }
 }
 
-// Fix search container centering issues
 .search-container {
   position: relative;
   width: 80%;
@@ -925,7 +916,6 @@
   }
 }
 
-// Media queries for ensuring responsiveness
 @media (max-width: 600px) {
   .search-input {
     padding: 1rem 3rem;
@@ -1170,7 +1160,6 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-// Enhanced responsive design
 @media (max-width: 1024px) {
   .explore-controls-wrapper {
     padding: 1.5rem;
@@ -1336,7 +1325,6 @@
   }
 }
 
-/* Projects Grid */
 .projects {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -1390,6 +1378,7 @@
     line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
@@ -1415,6 +1404,7 @@
   margin-bottom: 1.5rem;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   flex-grow: 1;
@@ -1530,7 +1520,7 @@
   cursor: pointer;
   transform: translateX(10px);
   opacity: 0;
-  transition: transform 0.2s ease, opacity 0.2s ease; /* Faster transitions */
+  transition: transform 0.2s ease, opacity 0.2s ease;  
   
   &:hover {
     background: var(--accent-light);

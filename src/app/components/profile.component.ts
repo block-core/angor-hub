@@ -13,17 +13,17 @@ import { NDKUserProfile } from '@nostr-dev-kit/ndk';
       }
       @if (profile()!.displayName) {
         <div>
-          <a [href]="link()">{{ profile()!.displayName }}</a>
+          <a [href]="link()" target="_blank" rel="noopener noreferrer">{{ profile()!.displayName }}</a>
         </div>
       } @else {
         <div>
-          <a [href]="link()">{{ profile()!.name }}</a>
+          <a [href]="link()" target="_blank" rel="noopener noreferrer">{{ profile()!.name }}</a>
         </div>
       }
     } @else {
       <div>
         <span class="material-icons">person</span>
-        <a [href]="link()">{{ npub() }}</a>
+        <a [href]="link()" target="_blank" rel="noopener noreferrer">{{ npub() }}</a>
       </div>
     }
   `,
