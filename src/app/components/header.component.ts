@@ -80,6 +80,9 @@ import { ThemeService } from '../services/theme.service';
           </div>
         </div>
         
+
+        
+        <div class="header-right">
         <nav class="main-nav desktop-only">
           <ul class="nav-list">
             <li class="nav-item">
@@ -102,15 +105,8 @@ import { ThemeService } from '../services/theme.service';
             </li>
           </ul>
         </nav>
-        
-        <div class="header-right">
-          <a href="https://test.angor.io" class="action-button no-underline desktop-only">
-            <span class="button-text">Create Project</span>
-            <span class="material-icons">rocket_launch</span>
-          </a>
-          
           <button class="theme-toggle desktop-only" (click)="toggleTheme()" aria-label="Toggle theme">
-            <span class="material-icons">{{ isDarkTheme() ? 'light_mode' : 'dark_mode' }}</span>
+            <span class="material-icons">{{ isDarkTheme() ? 'dark_mode' : 'light_mode' }}</span>
           </button>
           
           <button class="mobile-menu-toggle mobile-only" (click)="toggleMobileMenu()" aria-label="Toggle mobile menu">
