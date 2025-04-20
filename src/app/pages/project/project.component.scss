@@ -1818,6 +1818,32 @@
   white-space: pre-wrap;
 }
 
+// Avatar placeholder styles
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 2.5rem;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  cursor: default;
+}
+
+// Media placeholder styles
+.media-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  .material-icons {
+    font-size: 3rem;
+    color: rgba(255, 255, 255, 0.7);
+  }
+}
+
 // Make site responsive
 @media (max-width: 768px) {
   .container {

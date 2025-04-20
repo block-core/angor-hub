@@ -50,6 +50,11 @@
         }
       </div>
 
+      <!-- Mobile toggle button - placed right after search -->
+      <button class="mobile-toggle" (click)="toggleMobileFilters()" [class.active]="showMobileFilters">
+        <span class="material-icons">{{ showMobileFilters ? 'close' : 'tune' }}</span>
+      </button>
+
       <!-- Controls group with fixed dropdown positioning -->
       <div class="controls-group">
         <!-- Filter dropdown with improved positioning -->
@@ -128,7 +133,7 @@
 
         <!-- Results counter -->
         <div class="results-counter">
-          {{ filteredProjects().length }} {{ filteredProjects().length === 1 ? 'project' : 'projects' }}
+          {{ filteredProjects().length }} {{ filteredProjects().length === 1 ? 'project' : 'projects' }} loaded
         </div>
 
         <!-- Reset button -->
@@ -139,11 +144,6 @@
           </button>
         }
       </div>
-
-      <!-- Mobile toggle button -->
-      <button class="mobile-toggle" (click)="toggleMobileFilters()" [class.active]="showMobileFilters">
-        <span class="material-icons">{{ showMobileFilters ? 'close' : 'tune' }}</span>
-      </button>
     </div>
 
     <!-- Mobile filters panel -->

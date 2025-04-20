@@ -10,11 +10,23 @@
   <div
     class="banner-image"
     [ngStyle]="{
-      'background-image': project()?.metadata?.banner
+      'background-image': project()?.metadata?.banner && !failedBannerImage()
         ? 'url(' + project()?.metadata?.banner + ')'
-        : 'none'
+        : 'none',
+      'background-color': failedBannerImage() || !project()?.metadata?.banner
+        ? getBannerStyle()
+        : 'transparent'
     }"
-  ></div>
+  >
+    @if (project()?.metadata?.banner) {
+      <img 
+        [src]="project()?.metadata?.banner" 
+        style="display: none;"
+        (error)="handleBannerError()"
+        alt=""
+      >
+    }
+  </div>
 </section>
 
 <div class="container">
@@ -48,7 +60,7 @@
 
   @if (project()) {
     <div class="project-header">
-      @if (project()?.metadata?.['picture']) {
+      @if (project()?.metadata?.['picture'] && !failedProfileImage()) {
         <img
           #projectImage
           [src]="project()?.metadata?.['picture']"
@@ -56,7 +68,16 @@
           alt="Project logo"
           (click)="showImagePopup = true; selectedImage = project()?.metadata?.['picture'] ?? null"
           loading="eager"
+          (error)="handleProfileError()"
         />
+      } @else {
+        <div 
+          class="project-logo avatar-placeholder" 
+          [style.background-color]="getRandomColor(projectId)"
+          (click)="showImagePopup = false"
+        >
+          {{ getInitial(project()?.metadata?.['name'] || projectId) }}
+        </div>
       }
       
       <div class="project-title-container">
@@ -275,12 +296,23 @@
                     @for (item of project()?.media; track item.url) {
                       @if (item.type === 'image') {
                         <div class="carousel-slide">
-                          <img
-                            [src]="item.url"
-                            alt="Project media"
-                            loading="lazy"
-                            (click)="showImagePopup = true; selectedImage = item.url"
-                          />
+                          @if (!hasMediaFailed(item.url)) {
+                            <img
+                              [src]="item.url"
+                              alt="Project media"
+                              loading="lazy"
+                              (click)="showImagePopup = true; selectedImage = item.url"
+                              (error)="handleMediaError(item.url)"
+                            />
+                          } @else {
+                            <div 
+                              class="media-placeholder"
+                              [style.background-color]="getRandomColor(item.url)"
+                              (click)="showImagePopup = false"
+                            >
+                              <span class="material-icons">broken_image</span>
+                            </div>
+                          }
                         </div>
                       }
                     }
