@@ -401,6 +401,98 @@
   }
 }
 
+.tabs-container {
+  display: flex;
+  margin-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--border);
+  position: relative;
+  overflow-x: auto;
+  scrollbar-width: none; // Firefox
+  width: 100%;
+  background: var(--surface-card);
+  border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+
+  &::-webkit-scrollbar {
+    display: none; // Chrome, Safari, Edge
+  }
+}
+
+.tab-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  flex: 1;
+  text-align: center;
+  letter-spacing: 0.01em;
+  min-height: 60px;
+  
+  .tab-icon {
+    font-size: 1.2rem;
+    transition: transform 0.2s ease;
+  }
+  
+  .tab-label {
+    transition: opacity 0.2s ease;
+  }
+  
+  &:hover {
+    color: var(--accent);
+    background-color: rgba(0, 0, 0, 0.02);
+    
+    .tab-icon {
+      transform: scale(1.1);
+    }
+  }
+
+  &.active {
+    color: var(--accent);
+    font-weight: 600;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 3px 3px 0 0;
+      box-shadow: 0 -1px 5px rgba(var(--accent-rgb), 0.3);
+    }
+    
+    .tab-icon {
+      transform: scale(1.15);
+    }
+  }
+
+  // Mobile optimization
+  @media (max-width: 576px) {
+    padding: 0.75rem 0.5rem;
+    min-height: 56px;
+    
+    .tab-icon {
+      font-size: 1.5rem; // Larger icon for better visibility
+      margin-bottom: 0;
+    }
+    
+    .tab-label {
+      display: none; // Hide text completely on mobile
+    }
+  }
+}
+
 .update-card,
 .comment-card {
   background: var(--surface-card);
@@ -1367,12 +1459,12 @@
 // Tabs container
 .tabs-container {
   display: flex;
-  gap: var(--spacing-xs);
   margin-bottom: var(--spacing-md);
   border-bottom: 1px solid var(--border);
   position: relative;
   overflow-x: auto;
   scrollbar-width: none; // Firefox
+  width: 100%;
 
   &::-webkit-scrollbar {
     display: none; // Chrome, Safari, Edge
@@ -1383,6 +1475,7 @@
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   padding: var(--spacing-sm) var(--spacing-md);
   background: transparent;
@@ -1392,14 +1485,18 @@
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
-  transition: color var(--transition-speed) ease;
-
+  transition: all var(--transition-speed) ease;
+  flex: 1;
+  text-align: center;
+  
   &:hover {
     color: var(--text);
+    background-color: rgba(0, 0, 0, 0.02);
   }
 
   &.active {
     color: var(--accent);
+    font-weight: 600;
 
     &::after {
       content: '';
@@ -1407,8 +1504,9 @@
       bottom: -1px;
       left: 0;
       width: 100%;
-      height: 2px;
+      height: 3px;
       background: var(--accent);
+      border-radius: 2px 2px 0 0;
     }
   }
 
