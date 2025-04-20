@@ -53,6 +53,10 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   activeFilter = signal<FilterType>('all');
   activeSort = signal<SortType>('default');
   
+  // Add a signal to track failed image loads
+  failedBannerImages = signal<Set<string>>(new Set<string>());
+  failedProfileImages = signal<Set<string>>(new Set<string>());
+
   // Computed signal for filtered and sorted projects
   filteredProjects: Signal<any[]> = computed(() => {
     const projects = this.indexer.projects();
@@ -559,5 +563,82 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   onSearchInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.searchTerm.set(input.value);
+  }
+
+  // Add methods for generating random colors and getting initials
+  getRandomColor(seed: string): string {
+    // Generate a consistent random color based on the seed (project ID or name)
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    // Select from a curated set of pleasant, vibrant colors
+    const colors = [
+      'rgba(66, 133, 244, 0.85)', // Blue
+      'rgba(219, 68, 55, 0.85)',  // Red
+      'rgba(244, 160, 0, 0.85)',  // Amber
+      'rgba(15, 157, 88, 0.85)',  // Green
+      'rgba(171, 71, 188, 0.85)', // Purple
+      'rgba(0, 172, 193, 0.85)',  // Cyan
+      'rgba(255, 112, 67, 0.85)', // Deep Orange
+      'rgba(3, 169, 244, 0.85)',  // Light Blue
+    ];
+    
+    // Use the hash to pick a color from the array
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  }
+
+  getInitial(name: string): string {
+    if (!name || name.trim() === '') {
+      return '#';
+    }
+    // Get first character, handle non-Latin scripts properly
+    return name.trim()[0].toUpperCase();
+  }
+
+  // Get background style for banner with fallback color
+  getBannerStyle(project: any): string {
+    const bannerUrl = project.metadata?.['banner'] ?? '';
+    if (bannerUrl && !this.hasBannerFailed(project.projectIdentifier)) {
+      return `url(${bannerUrl})`;
+    }
+    // Generate a consistent color based on project identifier
+    return this.getRandomColor(project.projectIdentifier);
+  }
+
+  // Handle banner image load error
+  handleBannerError(projectId: string): void {
+    const failedImages = this.failedBannerImages();
+    failedImages.add(projectId);
+    this.failedBannerImages.set(new Set(failedImages));
+  }
+  
+  // Handle profile image load error
+  handleProfileError(projectId: string): void {
+    const failedImages = this.failedProfileImages();
+    failedImages.add(projectId);
+    this.failedProfileImages.set(new Set(failedImages));
+  }
+  
+  // Check if banner image failed
+  hasBannerFailed(projectId: string): boolean {
+    return this.failedBannerImages().has(projectId);
+  }
+  
+  // Check if profile image failed
+  hasProfileFailed(projectId: string): boolean {
+    return this.failedProfileImages().has(projectId);
+  }
+
+  // Use this to determine if we should show banner image or fallback
+  shouldShowBannerImage(project: any): boolean {
+    return !!project.metadata?.['banner'] && !this.hasBannerFailed(project.projectIdentifier);
+  }
+  
+  // Use this to determine if we should show profile image or fallback
+  shouldShowProfileImage(project: any): boolean {
+    return !!project.metadata?.['picture'] && !this.hasProfileFailed(project.projectIdentifier);
   }
 }

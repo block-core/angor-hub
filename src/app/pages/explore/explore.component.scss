@@ -139,6 +139,16 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     z-index: 3;
   }
+  .avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.8rem;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    background-size: cover !important; /* Override background-size for consistency */
+  }
   .project-info {
     margin-top: 1rem;
     display: grid;

@@ -229,12 +229,18 @@
           <a [routerLink]="['/project', project.projectIdentifier]" class="project-card" [attr.data-index]="i">
             <div
               class="project-banner"
-              [style.background-image]="
-                project.metadata?.['banner'] ?? ''
-                  ? 'url(' + (project.metadata?.['banner'] ?? '') + ')'
-                  : 'none'
-              "
+              [style.background-image]="shouldShowBannerImage(project) ? 'url(' + project.metadata?.['banner'] + ')' : 'none'"
+              [style.background-color]="!shouldShowBannerImage(project) ? getBannerStyle(project) : ''"
             >
+              @if (project.metadata?.['banner']) {
+                <img 
+                  [src]="project.metadata?.['banner']" 
+                  style="display: none;"
+                  (error)="handleBannerError(project.projectIdentifier)"
+                  alt=""
+                >
+              }
+              
               @if (isProjectEnded(project.details?.expiryDate)) {
                 @if (isProjectSuccessfullyFunded(project)) {
                   <span class="material-icons status-icon status-funded">check_circle</span>
@@ -252,14 +258,25 @@
 
             <div class="project-content">
               @if (project.details) {
-                <div
-                  class="project-avatar"
-                  [style.background-image]="
-                    project.metadata?.['picture'] ?? ''
-                      ? 'url(' + (project.metadata?.['picture'] ?? '') + ')'
-                      : 'none'
-                  "
-                ></div>
+                @if (shouldShowProfileImage(project)) {
+                  <div
+                    class="project-avatar"
+                    [style.background-image]="'url(' + project.metadata?.['picture'] + ')'"
+                  >
+                    <img 
+                      [src]="project.metadata?.['picture']" 
+                      style="display: none;"
+                      (error)="handleProfileError(project.projectIdentifier)"
+                      alt=""
+                    >
+                  </div>
+                } @else {
+                  <div 
+                    class="project-avatar avatar-placeholder" 
+                    [style.background-color]="getRandomColor(project.projectIdentifier)">
+                    {{ getInitial(project.metadata?.['name'] || project.projectIdentifier) }}
+                  </div>
+                }
 
                 <div class="project-header">
                   <h3 class="project-title">
