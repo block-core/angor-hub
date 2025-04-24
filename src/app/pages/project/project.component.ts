@@ -424,8 +424,17 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   openInvestWindow() {
-    const url =
-      'https://test.angor.io/view/' + this.project()?.projectIdentifier;
+    const projectId = this.project()?.projectIdentifier;
+    if (!projectId) {
+      console.error('Project identifier is missing.');
+      return;
+    }
+
+    const baseUrl = this.networkService.isMain()
+      ? 'https://beta.angor.io/'
+      : 'https://test.angor.io/';
+      
+    const url = `${baseUrl}view/${projectId}`;
     window.open(url, '_blank');
   }
 

@@ -214,56 +214,92 @@
       </button>
     </div>
     
-    <!-- Stats Dashboard -->
-    <div class="stats-dashboard">
+     <div class="stats-dashboard">
+      <!-- Funding Card -->
       <div class="stats-card funding-card" [style.--progress-percentage]="getFundingPercentage() + '%'">
         <div class="stats-icon">
           <span class="material-icons">campaign</span>
         </div>
         <div class="stats-content">
-          <div class="stats-title">Total Raised</div>
-          <div class="stats-value">{{ bitcoin.toBTC((project()?.stats?.amountInvested ?? 0)) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}</div>
+          <div class="stats-header">
+            <div class="stats-title">Total Raised</div>
+            <div class="stats-badge" [class.success]="getFundingPercentage() >= 100">
+              {{ getFundingPercentage() }}% of goal
+            </div>
+          </div>
+          <div class="stats-value">
+            {{ bitcoin.toBTC((project()?.stats?.amountInvested ?? 0)) }}
+            <span class="currency">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+          </div>
           <div class="stats-progress">
             <div class="stats-progress-bar"></div>
-            <div class="stats-progress-label">{{ getFundingPercentage() }}% of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}</div>
+            <div class="stats-progress-label">
+              Target: {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
+            </div>
           </div>
         </div>
       </div>
       
+      <!-- Investors Card -->
       <div class="stats-card investors-card">
         <div class="stats-icon">
           <span class="material-icons">people</span>
         </div>
         <div class="stats-content">
-          <div class="stats-title">Total Investors</div>
-          <div class="stats-value">{{ project()?.stats?.investorCount }}</div>
+          <div class="stats-header">
+            <div class="stats-title">Total Investors</div>
+          </div>
+          <div class="stats-value">
+            {{ project()?.stats?.investorCount || '0' }}
+            @if (project()?.stats?.investorCount) {
+              <span class="stats-trend positive">
+                <span class="material-icons">trending_up</span>
+              </span>
+            }
+          </div>
         </div>
       </div>
       
+      <!-- Spent Card -->
       <div class="stats-card spent-card" [style.--progress-percentage]="getSpentPercentage() + '%'">
         <div class="stats-icon">
           <span class="material-icons">account_balance_wallet</span>
         </div>
         <div class="stats-content">
-          <div class="stats-title">Founder Spent</div>
-          <div class="stats-value">{{ bitcoin.toBTC((project()?.stats?.amountSpentSoFarByFounder ?? 0)) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}</div>
+          <div class="stats-header">
+            <div class="stats-title">Founder Spent</div>
+            <div class="stats-badge">
+              {{ getSpentPercentage() }}% of funds
+            </div>
+          </div>
+          <div class="stats-value">
+            {{ bitcoin.toBTC((project()?.stats?.amountSpentSoFarByFounder ?? 0)) }}
+            <span class="currency">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+          </div>
           <div class="stats-progress">
             <div class="stats-progress-bar"></div>
-            <div class="stats-progress-label">{{ getSpentPercentage() }}% of raised funds</div>
           </div>
         </div>
       </div>
       
+      <!-- Penalties Card -->
       <div class="stats-card penalties-card" [style.--progress-percentage]="getPenaltiesPercentage() + '%'">
         <div class="stats-icon">
           <span class="material-icons">trending_down</span>
         </div>
         <div class="stats-content">
-          <div class="stats-title">Withdrawn by Investors</div>
-          <div class="stats-value">{{ bitcoin.toBTC((project()?.stats?.amountInPenalties ?? 0)) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}</div>
+          <div class="stats-header">
+            <div class="stats-title">Withdrawn by Investors</div>
+            <div class="stats-badge">
+              {{ project()?.stats?.countInPenalties || '0' }} investors
+            </div>
+          </div>
+          <div class="stats-value">
+            {{ bitcoin.toBTC((project()?.stats?.amountInPenalties ?? 0)) }}
+            <span class="currency">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+          </div>
           <div class="stats-progress">
             <div class="stats-progress-bar"></div>
-            <div class="stats-progress-label">{{ project()?.stats?.countInPenalties }} investors ({{ getPenaltiesPercentage() }}%)</div>
           </div>
         </div>
       </div>
