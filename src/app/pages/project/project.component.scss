@@ -532,11 +532,14 @@
 }
 
 .update-content,
-.comment-content {
-  font-size: 1.1rem;
+.comment-content,
+.faq-answer {
+  font-size: 1.05rem;
   line-height: 1.6;
-  color: var(--text);
   white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 .update-content .embedded-image {
