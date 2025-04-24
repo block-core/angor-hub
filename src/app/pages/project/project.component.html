@@ -185,14 +185,16 @@
       <div class="invest-button-container desktop-only">
         <button
           class="invest-button"
-          [disabled]="isProjectNotStarted()"
-          [class.disabled]="isProjectNotStarted()"
-          (click)="!isProjectNotStarted() && openInvestWindow()"
+          [disabled]="!canInvest()"
+          [class.disabled]="!canInvest()"
+          (click)="canInvest() && openInvestWindow()"
         >
-          @if (isProjectNotStarted()) { 
-            Starts {{ project()?.details?.startDate ?? 0 | ago }}
-          } @else { 
-            Invest Now 
+          @if (isProjectEnded()) {
+            Ended {{ project()?.details?.expiryDate ?? 0 | ago }}
+          } @else if (isProjectNotStarted()) {
+            Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest Now) <!-- Allow investment before start -->
+          } @else {
+            Invest Now
           }
         </button>
       </div>
@@ -202,15 +204,17 @@
     <div class="invest-button-container mobile-only">
       <button
         class="invest-button"
-        [disabled]="isProjectNotStarted()"
-        [class.disabled]="isProjectNotStarted()"
-        (click)="!isProjectNotStarted() && openInvestWindow()"
+        [disabled]="!canInvest()"
+        [class.disabled]="!canInvest()"
+        (click)="canInvest() && openInvestWindow()"
       >
-        @if (isProjectNotStarted()) { 
-          Starts {{ project()?.details?.startDate ?? 0 | ago }}
-        } @else { 
-          Invest Now 
-        }
+         @if (isProjectEnded()) {
+            Ended {{ project()?.details?.expiryDate ?? 0 | ago }}
+          } @else if (isProjectNotStarted()) {
+            Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest Now) <!-- Allow investment before start -->
+          } @else {
+            Invest Now
+          }
       </button>
     </div>
     
@@ -408,11 +412,35 @@
               <h3>Project Details</h3>
               <div class="detail-item">
                 <div class="detail-label">Start Date</div>
-                <div class="detail-value">{{ formatDate(project()?.details?.startDate) }}</div>
+                <div class="detail-value">
+                  {{ formatDate(project()?.details?.startDate) }}
+                  @if (project()?.details?.startDate) {
+                    <span class="relative-time">
+                      @if (isProjectNotStarted()) {
+                        (Starts {{ project()?.details?.startDate ?? 0 | ago }})
+                      } @else {
+                        (Started {{ project()?.details?.startDate ?? 0 | ago }})
+                      }
+                    </span>
+                  }
+                </div>
               </div>
               <div class="detail-item">
                 <div class="detail-label">Expiry Date</div>
-                <div class="detail-value">{{ formatDate(project()?.details?.expiryDate) }}</div>
+                <div class="detail-value">
+                  {{ formatDate(project()?.details?.expiryDate) }}
+                   @if (project()?.details?.expiryDate) {
+                    <span class="relative-time">
+                      @if (isProjectEnded()) {
+                        (Ended {{ project()?.details?.expiryDate ?? 0 | ago }})
+                      } @else {
+                        ({{ getRemainingTimeText(project()?.details?.expiryDate) }})
+                      }
+                    </span>
+                  } @else {
+                     <span class="relative-time">(No expiry date)</span>
+                  }
+                </div>
               </div>
               <div class="detail-item">
                 <div class="detail-label">Penalty Days</div>

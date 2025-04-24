@@ -237,17 +237,22 @@
               [style.background-color]="!shouldShowBannerImage(project) ? getBannerStyle(project) : ''"
             >
               @if (project.metadata?.['banner']) {
-                <img 
-                  [src]="project.metadata?.['banner']" 
+                <img
+                  [src]="project.metadata?.['banner']"
                   style="display: none;"
                   (error)="handleBannerError(project.projectIdentifier)"
                   alt=""
                 >
               }
-              
-              <!-- Enhanced project status badge -->
+
+              <!-- Corrected project status badge logic -->
               <div class="project-status">
-                @if (isProjectEnded(project.details?.expiryDate)) {
+                @if (isProjectNotStarted(project.details?.startDate)) {
+                  <div class="status-badge upcoming">
+                    <span class="material-icons">schedule</span>
+                    <span class="status-text">Upcoming</span>
+                  </div>
+                } @else if (isProjectEnded(project.details?.expiryDate)) {
                   @if (isProjectSuccessfullyFunded(project)) {
                     <div class="status-badge funded">
                       <span class="material-icons">check_circle</span>
@@ -259,25 +264,20 @@
                       <span class="status-text">Failed</span>
                     </div>
                   }
-                } @else if (isProjectNotStarted(project.details?.startDate)) {
-                  <div class="status-badge upcoming">
-                    <span class="material-icons">schedule</span>
-                    <span class="status-text">Upcoming</span>
-                  </div>
                 } @else {
                   <div class="status-badge active">
                     <span class="material-icons">trending_up</span>
-                    <span class="status-text">Active</span>
+                    <span class="status-text">Active</span> <!-- Changed from 'In Progress' to 'Active' for consistency -->
                   </div>
                 }
               </div>
-              
+
               @if (isFavorite(project.projectIdentifier)) {
                 <span class="favorite-badge">
                   <span class="material-icons">bookmark</span>
                 </span>
               }
-              
+
               <!-- Enhanced banner overlay and gradient -->
               <div class="banner-overlay"></div>
               <div class="banner-gradient"></div>
@@ -291,16 +291,16 @@
                     class="project-avatar"
                     [style.background-image]="'url(' + project.metadata?.['picture'] + ')'"
                   >
-                    <img 
-                      [src]="project.metadata?.['picture']" 
+                    <img
+                      [src]="project.metadata?.['picture']"
                       style="display: none;"
                       (error)="handleProfileError(project.projectIdentifier)"
                       alt=""
                     >
                   </div>
                 } @else {
-                  <div 
-                    class="project-avatar avatar-placeholder" 
+                  <div
+                    class="project-avatar avatar-placeholder"
                     [style.background-color]="getRandomColor(project.projectIdentifier)">
                     {{ getInitial(project.metadata?.['name'] || project.projectIdentifier) }}
                   </div>
@@ -315,13 +315,20 @@
                       {{ project.projectIdentifier | slice:0:12 }}...
                     }
                   </h3>
-                  
+
                   <div class="project-date">
                     <span class="material-icons date-icon">event</span>
-                    <span>{{ isProjectEnded(project.details.expiryDate) ? 'Ended' : 'Ends' }} {{ project.details.expiryDate | ago }}</span>
+                    <!-- Updated date display logic -->
+                    @if (isProjectNotStarted(project.details.startDate)) {
+                      <span>Starts {{ project.details.startDate | ago }} ({{ formatDate(project.details.startDate) }})</span>
+                    } @else if (isProjectEnded(project.details.expiryDate)) {
+                      <span>Ended {{ project.details.expiryDate | ago }} ({{ formatDate(project.details.expiryDate) }})</span>
+                    } @else {
+                      <span>{{ getRemainingTimeText(project.details.expiryDate) }} ({{ formatDate(project.details.expiryDate) }})</span>
+                    }
                   </div>
                 </div>
-                
+
                 <!-- Enhanced project description -->
                 @if ((project.metadata?.['about'] ?? '') !== '') {
                   <p class="project-description">
@@ -339,7 +346,7 @@
                       <span class="count">{{ project.stats?.investorCount ?? 0 }}</span>
                       <span class="label">Investors</span>
                     </div>
-                    
+
                     <div class="amount-raised">
                       <span class="btc-amount">{{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}</span>
                       <span class="symbol">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
@@ -347,25 +354,25 @@
                       <span class="target">{{ bitcoin.toBTC(project.details.targetAmount) }}</span>
                     </div>
                   </div>
-                  
+
                   <div class="progress-container">
                     @let fundingPercent = getFundingPercentage(project);
                     @let displayWidth = fundingPercent > 100 ? 100 : fundingPercent;
-                    
+
                     <div class="progress-bar">
-                      <div class="progress-fill" 
-                          [style.width]="displayWidth + '%'"
+                      <div class="progress-fill"
+                          [style.width]="(displayWidth ?? 0) + '%'"
                           [class.high-funding]="fundingPercent >= 100"
                           [class.low-funding]="fundingPercent > 0 && fundingPercent < 15">
                       </div>
                     </div>
-                    
+
                     <span class="percentage" [class.high-funding]="fundingPercent >= 100">
                       {{ fundingPercent }}%
                     </span>
                   </div>
                 </div>
-                
+
                 <!-- Enhanced footer with action button -->
                 <div class="project-footer">
                   <div class="view-project">

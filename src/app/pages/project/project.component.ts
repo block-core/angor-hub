@@ -389,7 +389,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
   isProjectNotStarted(): boolean {
     const startDate = this.project()?.details?.startDate;
     if (!startDate) return false;
-    return Date.now() > startDate * 1000;
+    return Date.now() < startDate * 1000; // Corrected logic: true if current time is BEFORE start date
   }
 
   // Add new methods to check project status
@@ -399,8 +399,14 @@ export class ProjectComponent implements OnInit, OnDestroy {
     return Date.now() >= startDate * 1000;
   }
 
+  isProjectEnded(): boolean {
+    const expiryDate = this.project()?.details?.expiryDate;
+    if (!expiryDate) return false;
+    return Date.now() > expiryDate * 1000;
+  }
+
   isProjectSuccessful(): boolean {
-    if (!this.isProjectStarted()) return false;
+    if (!this.isProjectEnded()) return false; // Only check success/failure after the project ends
     
     const amountInvested = this.project()?.stats?.amountInvested ?? 0;
     const targetAmount = this.project()?.details?.targetAmount ?? 0;
@@ -409,12 +415,69 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   isProjectFailed(): boolean {
-    if (!this.isProjectStarted()) return false;
+    if (!this.isProjectEnded()) return false; // Only check success/failure after the project ends
     
     const amountInvested = this.project()?.stats?.amountInvested ?? 0;
     const targetAmount = this.project()?.details?.targetAmount ?? 0;
     
     return amountInvested < targetAmount;
+  }
+
+  /**
+   * Determines if investment is currently possible (project has not ended).
+   */
+  canInvest(): boolean {
+    return !this.isProjectEnded();
+  }
+
+  /**
+   * Calculates the remaining time until the expiry date and returns a human-readable string.
+   * Returns 'Ending soon' if the date is invalid or very close.
+   */
+  getRemainingTimeText(expiryDate: number | undefined): string {
+    if (!expiryDate) return 'Ending soon';
+    
+    const now = Date.now();
+    const expiryMillis = expiryDate * 1000;
+    const diffMillis = expiryMillis - now;
+
+    if (diffMillis <= 0) {
+      return 'Ended'; // Should ideally be handled by isProjectEnded, but good fallback
+    }
+
+    const diffSeconds = Math.floor(diffMillis / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    const diffWeeks = Math.floor(diffDays / 7);
+    const diffMonths = Math.floor(diffDays / 30); // Approximate months
+
+    if (diffDays < 1) {
+      if (diffHours > 1) {
+        return `Ends in ${diffHours} hours`;
+      } else if (diffHours === 1) {
+        return `Ends in 1 hour`;
+      } else if (diffMinutes > 1) {
+         return `Ends in ${diffMinutes} minutes`;
+      } else {
+        return 'Ending soon';
+      }
+    } else if (diffDays === 1) {
+      return '1 day remaining';
+    } else if (diffDays < 7) {
+      return `${diffDays} days remaining`;
+    } else if (diffWeeks === 1) {
+      return 'About a week remaining';
+    } else if (diffWeeks < 4) {
+      return `About ${diffWeeks} weeks remaining`;
+    } else if (diffMonths === 1) {
+      return 'About a month remaining';
+    } else if (diffMonths < 12) {
+      return `About ${diffMonths} months remaining`;
+    } else {
+      const diffYears = Math.floor(diffMonths / 12);
+      return diffYears === 1 ? 'About a year remaining' : `About ${diffYears} years remaining`;
+    }
   }
 
   getFundingPercentage(): number {
