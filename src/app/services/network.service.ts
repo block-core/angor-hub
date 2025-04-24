@@ -4,13 +4,17 @@ import { Injectable, signal } from '@angular/core';
   providedIn: 'root'
 })
 export class NetworkService {
-  private currentNetwork = signal<'main' | 'test'>('test'); // Default to testnet
-  
+  private currentNetwork = signal<'main' | 'test'>('main'); // Default to mainnet
+
   constructor() {
-    // Initialize network from local storage if available
+    // Initialize network from local storage if available, otherwise default to mainnet
     const savedNetwork = localStorage.getItem('angor-network');
     if (savedNetwork === 'main' || savedNetwork === 'test') {
       this.currentNetwork.set(savedNetwork);
+    } else {
+      // If no valid network is saved, explicitly set to main and save it
+      this.currentNetwork.set('main');
+      localStorage.setItem('angor-network', 'main');
     }
   }
 
