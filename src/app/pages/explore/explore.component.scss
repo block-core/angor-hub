@@ -37,7 +37,7 @@
   background: rgba(242, 0, 0, 0.12);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  color: var(--warning);
+  color: var(--bitcoin-mainnet);
   font-weight: 700;
   font-size: 1.05rem;
   margin: 1.5rem auto 0;
@@ -66,7 +66,7 @@
   
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(242, 0, 0, 0.3),
+    box-shadow: 0 12px 32px rgba(237, 111, 1, 0.653),
                 inset 0 0 0 1.5px rgba(255, 255, 255, 0.2),
                 inset 0 -3px 12px rgba(255, 255, 255, 0.1);
                 
