@@ -5,6 +5,16 @@ import { NetworkService } from './network.service';
 import { DenyService } from './deny.service';
 import { ExternalIdentity } from '../models/models';
 
+export interface IndexerConfig {
+  mainnet: IndexerEntry[];
+  testnet: IndexerEntry[];
+}
+
+export interface IndexerEntry {
+  url: string;
+  isPrimary: boolean;
+}
+
 export interface IndexedProject {
   founderKey: string;
   nostrEventId: string;
@@ -24,10 +34,10 @@ export interface IndexedProject {
   content?: string;
   content_created_at: number | undefined;
 
-  members?: string[];
+  members?: string[]; // Array of member public keys
   members_created_at: number | undefined;
 
-  media?: any[];
+  media?: any[]; // Array of media objects
   media_created_at: number | undefined;
 
   externalIdentities?: ExternalIdentity[];
@@ -98,6 +108,12 @@ export class IndexerService {
   public projects = signal<IndexedProject[]>([]);
   public error = signal<string | null>(null);
   private network = inject(NetworkService);
+  
+  // Add signals for indexer configuration
+  public indexers = signal<IndexerConfig>({
+    mainnet: [{ url: 'https://explorer.angor.io/', isPrimary: true }],
+    testnet: [{ url: 'https://tbtc.indexer.angor.io/', isPrimary: true }]
+  });
 
   constructor() {
     // Subscribe to both profile and project updates
@@ -109,10 +125,143 @@ export class IndexerService {
       this.updateProjectDetails(update);
     });
 
-    if (this.network.isMain()) {
-      this.indexerUrl = 'https://explorer.angor.io/';
-    } else {
-      this.indexerUrl = 'https://tbtc.indexer.angor.io/';
+    // Load saved indexers from localStorage
+    this.loadIndexerConfig();
+    
+    // Set the active indexer URL based on the current network
+    this.updateActiveIndexer();
+  }
+  
+  private loadIndexerConfig(): void {
+    const savedConfig = localStorage.getItem('angor-indexers');
+    if (savedConfig) {
+      try {
+        const config = JSON.parse(savedConfig) as IndexerConfig;
+        this.indexers.set(config);
+      } catch (error) {
+        console.error('Failed to parse saved indexer config', error);
+        // Keep default config if parsing fails
+      }
+    }
+  }
+  
+  saveIndexerConfig(): void {
+    localStorage.setItem('angor-indexers', JSON.stringify(this.indexers()));
+    this.updateActiveIndexer();
+  }
+  
+  getIndexerConfig(): IndexerConfig {
+    return this.indexers();
+  }
+  
+  getDefaultIndexerConfig(): IndexerConfig {
+    return {
+      mainnet: [{ url: 'https://explorer.angor.io/', isPrimary: true }],
+      testnet: [{ url: 'https://tbtc.indexer.angor.io/', isPrimary: true }]
+    };
+  }
+  
+  resetToDefaultIndexers(): void {
+    this.indexers.set(this.getDefaultIndexerConfig());
+    this.saveIndexerConfig();
+  }
+  
+  setIndexerConfig(config: IndexerConfig): void {
+    this.indexers.set(config);
+    this.saveIndexerConfig();
+  }
+  
+  getPrimaryIndexerUrl(isMainnet: boolean): string {
+    const config = this.indexers();
+    const networkIndexers = isMainnet ? config.mainnet : config.testnet;
+    const primary = networkIndexers.find(indexer => indexer.isPrimary);
+    return primary ? primary.url : networkIndexers[0]?.url || 
+      (isMainnet ? 'https://explorer.angor.io/' : 'https://tbtc.indexer.angor.io/');
+  }
+  
+  updateActiveIndexer(): void {
+    const isMain = this.network.isMain();
+    this.indexerUrl = this.getPrimaryIndexerUrl(isMain);
+    
+    // Reset projects when indexer changes
+    this.resetProjects();
+  }
+  
+  setPrimaryIndexer(url: string, isMainnet: boolean): void {
+    this.indexers.update(config => {
+      const networkKey = isMainnet ? 'mainnet' : 'testnet';
+      return {
+        ...config,
+        [networkKey]: config[networkKey].map(indexer => ({
+          ...indexer,
+          isPrimary: indexer.url === url
+        }))
+      };
+    });
+    this.saveIndexerConfig();
+  }
+  
+  addIndexer(url: string, isMainnet: boolean): boolean {
+    // Normalize URL format (ensure ending with slash)
+    let normalizedUrl = url;
+    if (!normalizedUrl.endsWith('/')) {
+      normalizedUrl += '/';
+    }
+    
+    // Check if indexer already exists
+    const networkKey = isMainnet ? 'mainnet' : 'testnet';
+    const exists = this.indexers()[networkKey].some(indexer => indexer.url === normalizedUrl);
+    
+    if (exists) {
+      return false;
+    }
+    
+    // Add new indexer
+    this.indexers.update(config => {
+      const networkIndexers = config[networkKey];
+      const isPrimary = networkIndexers.length === 0;
+      
+      return {
+        ...config,
+        [networkKey]: [...networkIndexers, { url: normalizedUrl, isPrimary }]
+      };
+    });
+    
+    this.saveIndexerConfig();
+    return true;
+  }
+  
+  removeIndexer(url: string, isMainnet: boolean): void {
+    const networkKey = isMainnet ? 'mainnet' : 'testnet';
+    
+    this.indexers.update(config => {
+      // Remove the indexer
+      const filteredIndexers = config[networkKey].filter(indexer => indexer.url !== url);
+      
+      // If we removed the primary indexer, make the first remaining one primary
+      if (filteredIndexers.length > 0 && !filteredIndexers.some(i => i.isPrimary)) {
+        filteredIndexers[0].isPrimary = true;
+      }
+      
+      return {
+        ...config,
+        [networkKey]: filteredIndexers
+      };
+    });
+    
+    this.saveIndexerConfig();
+  }
+  
+  async testIndexerConnection(url: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${url}api/stats/heartbeat`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
+      return response.ok;
+    } catch {
+      return false;
     }
   }
 

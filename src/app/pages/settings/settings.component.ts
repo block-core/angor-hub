@@ -5,11 +5,12 @@ import { TitleService } from '../../services/title.service';
 import { NetworkService } from '../../services/network.service';
 import { ThemeService } from '../../services/theme.service';
 import { RelayService } from '../../services/relay.service';
+import { IndexerService, IndexerConfig, IndexerEntry } from '../../services/indexer.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { environment } from '../../../environment';
 
-type SettingsTab = 'appearance' | 'network' | 'relays' | 'about';
+type SettingsTab = 'appearance' | 'network' | 'relays' | 'indexers' | 'about';
 
 @Component({
   selector: 'app-settings',
@@ -34,6 +35,7 @@ export class SettingsComponent implements OnInit {
   public networkService = inject(NetworkService);
   public themeService = inject(ThemeService);
   public relayService = inject(RelayService);
+  public indexerService = inject(IndexerService);
   
   appVersion = environment.appVersion || '1.0.0';
    
@@ -51,6 +53,14 @@ export class SettingsComponent implements OnInit {
   newRelayUrl = signal<string>('');
   relaySaveMessage = signal<string>('');
   
+  // Add signals for indexer management
+  indexerConfig = signal<IndexerConfig>(this.indexerService.getIndexerConfig());
+  newMainnetIndexerUrl = signal<string>('');
+  newTestnetIndexerUrl = signal<string>('');
+  indexerSaveMessage = signal<string>('');
+  indexerTestingUrl = signal<string | null>(null);
+  indexerTestResult = signal<boolean | null>(null);
+  
   constructor() {
     this.updateRelayUrls();
   }
@@ -61,6 +71,14 @@ export class SettingsComponent implements OnInit {
   
   setActiveTab(tab: SettingsTab): void {
     this.activeTab.set(tab);
+    
+    // Reset messages and test results when changing tabs
+    if (tab === 'indexers') {
+      this.indexerSaveMessage.set('');
+      this.indexerTestResult.set(null);
+    } else if (tab === 'relays') {
+      this.relaySaveMessage.set('');
+    }
   }
   
   setTheme(theme: 'light' | 'dark' | 'system'): void {
@@ -113,5 +131,80 @@ export class SettingsComponent implements OnInit {
   
   isValidUrl(url: string): boolean {
     return url.startsWith('wss://') && url.length > 8;
+  }
+  
+  // Indexer Management Methods
+  
+  getMainnetIndexers(): IndexerEntry[] {
+    return this.indexerConfig().mainnet;
+  }
+  
+  getTestnetIndexers(): IndexerEntry[] {
+    return this.indexerConfig().testnet;
+  }
+  
+  addIndexer(isMainnet: boolean): void {
+    const urlToAdd = isMainnet ? this.newMainnetIndexerUrl().trim() : this.newTestnetIndexerUrl().trim();
+    
+    if (urlToAdd && this.isValidIndexerUrl(urlToAdd)) {
+      if (this.indexerService.addIndexer(urlToAdd, isMainnet)) {
+        this.indexerConfig.set(this.indexerService.getIndexerConfig());
+        
+        // Only clear the URL field that was used
+        if (isMainnet) {
+          this.newMainnetIndexerUrl.set('');
+        } else {
+          this.newTestnetIndexerUrl.set('');
+        }
+        
+        this.indexerSaveMessage.set('');
+      } else {
+        this.indexerSaveMessage.set('This indexer URL already exists');
+      }
+    }
+  }
+  
+  removeIndexer(url: string, isMainnet: boolean): void {
+    this.indexerService.removeIndexer(url, isMainnet);
+    this.indexerConfig.set(this.indexerService.getIndexerConfig());
+    this.indexerSaveMessage.set('');
+  }
+  
+  setPrimaryIndexer(url: string, isMainnet: boolean): void {
+    this.indexerService.setPrimaryIndexer(url, isMainnet);
+    this.indexerConfig.set(this.indexerService.getIndexerConfig());
+    this.indexerSaveMessage.set('');
+  }
+  
+  resetToDefaultIndexers(): void {
+    this.indexerService.resetToDefaultIndexers();
+    this.indexerConfig.set(this.indexerService.getIndexerConfig());
+    this.indexerSaveMessage.set('Reset to default indexers');
+  }
+  
+  async saveAndApplyIndexers(): Promise<void> {
+    this.indexerService.saveIndexerConfig();
+    this.indexerSaveMessage.set('Indexer settings saved and applied');
+    
+    setTimeout(() => {
+      this.indexerSaveMessage.set('');
+    }, 3000);
+  }
+  
+  async testIndexerConnection(url: string): Promise<void> {
+    this.indexerTestingUrl.set(url);
+    this.indexerTestResult.set(null);
+    
+    const result = await this.indexerService.testIndexerConnection(url);
+    this.indexerTestResult.set(result);
+    
+    setTimeout(() => {
+      this.indexerTestResult.set(null);
+      this.indexerTestingUrl.set(null);
+    }, 3000);
+  }
+  
+  isValidIndexerUrl(url: string): boolean {
+    return (url.startsWith('http://') || url.startsWith('https://')) && url.length > 10;
   }
 }
