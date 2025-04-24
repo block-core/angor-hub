@@ -110,7 +110,7 @@ export class IndexerService {
     });
 
     if (this.network.isMain()) {
-      this.indexerUrl = 'https://btc.indexer.angor.io/';
+      this.indexerUrl = 'https://explorer.angor.io/';
     } else {
       this.indexerUrl = 'https://tbtc.indexer.angor.io/';
     }
