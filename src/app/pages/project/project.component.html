@@ -118,14 +118,12 @@
               </p>
             </div>
           </div>
-        }
-        
-        @if (isProjectFailed()) {
+        } @else if (isProjectFailed()) { <!-- Use @else if to avoid showing both -->
           <div class="project-status-notification failure">
             <span class="material-icons status-icon">error</span>
             <div class="status-message">
               <h3>Project Did Not Reach Funding Goal</h3>
-              <p>This project raised {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }} 
+              <p>This project ended after raising {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }} 
                 {{ networkService.isMain() ? 'BTC' : 'TBTC' }} 
                 of its {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} 
                 {{ networkService.isMain() ? 'BTC' : 'TBTC' }} goal 

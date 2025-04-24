@@ -245,31 +245,13 @@
                 >
               }
 
-              <!-- Corrected project status badge logic -->
+              <!-- Corrected project status badge logic using getProjectStatus -->
+              @let statusInfo = getProjectStatus(project);
               <div class="project-status">
-                @if (isProjectNotStarted(project.details?.startDate)) {
-                  <div class="status-badge upcoming">
-                    <span class="material-icons">schedule</span>
-                    <span class="status-text">Upcoming</span>
-                  </div>
-                } @else if (isProjectEnded(project.details?.expiryDate)) {
-                  @if (isProjectSuccessfullyFunded(project)) {
-                    <div class="status-badge funded">
-                      <span class="material-icons">check_circle</span>
-                      <span class="status-text">Funded</span>
-                    </div>
-                  } @else {
-                    <div class="status-badge failed">
-                      <span class="material-icons">cancel</span>
-                      <span class="status-text">Failed</span>
-                    </div>
-                  }
-                } @else {
-                  <div class="status-badge active">
-                    <span class="material-icons">trending_up</span>
-                    <span class="status-text">Active</span> <!-- Changed from 'In Progress' to 'Active' for consistency -->
-                  </div>
-                }
+                <div class="status-badge {{ statusInfo.class }}">
+                  <span class="material-icons">{{ statusInfo.icon }}</span>
+                  <span class="status-text">{{ statusInfo.status }}</span>
+                </div>
               </div>
 
               @if (isFavorite(project.projectIdentifier)) {

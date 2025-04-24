@@ -439,11 +439,14 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   
   isProjectSuccessfullyFunded(project: any): boolean {
-    if (!project.stats?.amountInvested || !project.details?.targetAmount) {
-      return false;
-    }
+    // Success is defined as reaching the target amount.
+    const amountInvested = project.stats?.amountInvested ?? 0;
+    const targetAmount = project.details?.targetAmount ?? 0;
     
-    return project.stats.amountInvested >= project.details.targetAmount;
+    // Avoid division by zero or considering success if target is 0
+    if (targetAmount === 0) return false; 
+    
+    return amountInvested >= targetAmount;
   }
 
   /**
@@ -496,24 +499,32 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
   
-  getProjectStatus(project: any): { status: string; color: string; icon: string } {
-    if (!project.details?.startDate) {
-      return { status: 'Unknown', color: 'text-gray-500', icon: 'question-mark' };
+  getProjectStatus(project: any): { status: string; color: string; icon: string; class: string } {
+    const startDate = project.details?.startDate;
+    const expiryDate = project.details?.expiryDate;
+    
+    if (!startDate) {
+      // If no start date, treat as upcoming or unknown
+      return { status: 'Upcoming', color: 'text-blue-500', icon: 'schedule', class: 'upcoming' };
     }
     
-    if (this.isProjectNotStarted(project.details.startDate)) {
-      return { status: 'Not Started', color: 'text-blue-500', icon: 'hourglass' };
+    if (this.isProjectNotStarted(startDate)) {
+      return { status: 'Upcoming', color: 'text-blue-500', icon: 'schedule', class: 'upcoming' };
     }
     
-    if (this.isProjectEnded(project.details.startDate)) {
-      if (this.isProjectSuccessfullyFunded(project)) {
-        return { status: 'Funded', color: 'text-green-500', icon: 'check-circle' };
-      } else {
-        return { status: 'Failed', color: 'text-red-500', icon: 'x-circle' };
-      }
+    // Check for success first, as it can happen before the end date
+    if (this.isProjectSuccessfullyFunded(project)) {
+      return { status: 'Funded', color: 'text-green-500', icon: 'check_circle', class: 'funded' };
     }
     
-    return { status: 'In Progress', color: 'text-yellow-500', icon: 'arrow-right' };
+    // If not yet successful, check if it has ended
+    if (this.isProjectEnded(expiryDate)) {
+      // If ended and not successful, it failed
+      return { status: 'Failed', color: 'text-red-500', icon: 'cancel', class: 'failed' };
+    }
+    
+    // If started, not ended, and not yet successful, it's active
+    return { status: 'Active', color: 'text-yellow-500', icon: 'trending_up', class: 'active' };
   }
 
   async loadMore() {

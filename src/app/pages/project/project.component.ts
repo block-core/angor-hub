@@ -406,28 +406,34 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   isProjectSuccessful(): boolean {
-    if (!this.isProjectEnded()) return false; // Only check success/failure after the project ends
-    
+    // A project is successful if it has reached its funding target, regardless of whether it has ended.
     const amountInvested = this.project()?.stats?.amountInvested ?? 0;
     const targetAmount = this.project()?.details?.targetAmount ?? 0;
+    
+    // Avoid division by zero or considering success if target is 0
+    if (targetAmount === 0) return false; 
     
     return amountInvested >= targetAmount;
   }
 
   isProjectFailed(): boolean {
-    if (!this.isProjectEnded()) return false; // Only check success/failure after the project ends
+    // A project is considered failed only if it has ended AND did not reach its target.
+    if (!this.isProjectEnded()) return false; 
     
     const amountInvested = this.project()?.stats?.amountInvested ?? 0;
     const targetAmount = this.project()?.details?.targetAmount ?? 0;
+    
+    // Avoid division by zero or considering failure if target is 0
+    if (targetAmount === 0) return true; // If target is 0 and ended, it's technically failed to raise anything.
     
     return amountInvested < targetAmount;
   }
 
   /**
-   * Determines if investment is currently possible (project has not ended).
+   * Determines if investment is currently possible (project has not ended AND not yet successful).
    */
   canInvest(): boolean {
-    return !this.isProjectEnded();
+    return !this.isProjectEnded() && !this.isProjectSuccessful();
   }
 
   /**
