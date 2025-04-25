@@ -17,7 +17,6 @@ type SettingsTab = 'appearance' | 'network' | 'relays' | 'indexers' | 'about';
   standalone: true,
   imports: [CommonModule, FormsModule, BreadcrumbComponent],
   templateUrl: './settings.component.html',
-  styleUrl: './settings.component.scss',
   animations: [
     trigger('fadeInOut', [
       transition(':enter', [

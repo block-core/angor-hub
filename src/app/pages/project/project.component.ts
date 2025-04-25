@@ -45,7 +45,6 @@ import { DenyService } from '../../services/deny.service';
     SafeContentPipe,
   ],
   templateUrl: './project.component.html',
-  styleUrl: './project.component.scss',
 })
 export class ProjectComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
@@ -647,23 +646,19 @@ export class ProjectComponent implements OnInit, OnDestroy {
     return this.failedMediaImages().has(imageUrl);
   }
   
-  // Generate a random color based on project identifier
+  // Generate a random color based on project identifier using Angor brand colors
   getRandomColor(seed: string): string {
     let hash = 0;
     for (let i = 0; i < seed.length; i++) {
       hash = seed.charCodeAt(i) + ((hash << 5) - hash);
     }
     
-    // Select from a curated set of pleasant, vibrant colors
+    // Angor Brand Colors
     const colors = [
-      'rgba(66, 133, 244, 0.85)',  // Blue
-      'rgba(219, 68, 55, 0.85)',   // Red
-      'rgba(244, 160, 0, 0.85)',   // Amber
-      'rgba(15, 157, 88, 0.85)',   // Green
-      'rgba(171, 71, 188, 0.85)',  // Purple
-      'rgba(0, 172, 193, 0.85)',   // Cyan
-      'rgba(255, 112, 67, 0.85)',  // Deep Orange
-      'rgba(3, 169, 244, 0.85)',   // Light Blue
+      '#022229', // Very Dark Teal
+      '#086c81', // Dark Cyan
+      '#cbdde1', // Light Steel Green - Use a slightly darker version for better contrast as background
+      '#b8c9cd'  // Slightly darker Light Steel Green
     ];
     
     // Use the hash to pick a color from the array
@@ -672,7 +667,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
   
   // Get an initial letter for placeholder
-  getInitial(name: string): string {
+  getInitial(name: string | undefined | null): string {
     if (!name || name.trim() === '') {
       return '#';
     }

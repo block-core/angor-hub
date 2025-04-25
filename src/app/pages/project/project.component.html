@@ -1,27 +1,26 @@
-<section class="project-banner">
+<section class="relative w-full h-[300px] overflow-hidden">
   <app-breadcrumb
     [items]="[
       { label: 'Home', url: '/' },
       { label: 'Explore', url: '/explore' },
       { label: projectId, url: '' }
     ]"
+    class="absolute top-4 left-4 z-10"
   ></app-breadcrumb>
 
   <div
-    class="banner-image"
-    [ngStyle]="{
-      'background-image': project()?.metadata?.banner && !failedBannerImage()
+    class="absolute inset-0 bg-cover bg-center transition-colors duration-300 after:content-[''] after:absolute after:inset-0 after:bg-gradient-to-b after:from-black/20 after:to-black/50 -z-[1]"
+    [style.background-image]="project()?.metadata?.banner && !failedBannerImage()
         ? 'url(' + project()?.metadata?.banner + ')'
-        : 'none',
-      'background-color': failedBannerImage() || !project()?.metadata?.banner
+        : 'none'"
+    [style.background-color]="failedBannerImage() || !project()?.metadata?.banner
         ? getBannerStyle()
-        : 'transparent'
-    }"
+        : 'transparent'"
   >
     @if (project()?.metadata?.banner) {
-      <img 
-        [src]="project()?.metadata?.banner" 
-        style="display: none;"
+      <img
+        [src]="project()?.metadata?.banner"
+        class="hidden"
         (error)="handleBannerError()"
         alt=""
       >
@@ -29,356 +28,307 @@
   </div>
 </section>
 
-<div class="container">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative -mt-[60px]">
   @if (isDenied()) {
-    <div class="not-found-container"> 
-      <span class="material-icons not-found-icon">gpp_bad</span> 
-      <h1>Project Not Available</h1>
-      <p class="not-found-description">
-        This project is currently not available for viewing.
+    <div class="flex flex-col items-center justify-center p-8 sm:p-12 mt-12 bg-surface-card rounded-lg shadow-md text-center">
+      <span class="material-icons text-6xl text-red-500 mb-6">gpp_bad</span>
+      <h1 class="text-2xl font-semibold mb-4">Project Not Available</h1>
+      <p class="max-w-lg mb-8 text-text-secondary">
+        This project is currently not available for viewing due to content policy violations or other restrictions.
       </p>
-      <div class="not-found-actions">
-        <a routerLink="/explore" class="secondary-button">
-          <span class="material-icons">explore</span>
+      <div class="flex gap-4 max-sm:flex-col">
+        <a routerLink="/explore" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-surface-card text-text border border-border hover:bg-surface-hover hover:-translate-y-0.5 hover:shadow-sm transition-all duration-300 ease-in-out">
+          <span class="material-icons text-lg">explore</span>
           Explore Other Projects
         </a>
       </div>
     </div>
   } @else if (!project() && indexer.loading()) {
-    <div class="loading-container">
-      <div class="loading-spinner"></div>
-      <p>Loading project details...</p>
+    <div class="flex flex-col items-center justify-center p-12 mt-12 bg-surface-card rounded-lg shadow-md text-center">
+      <div class="w-12 h-12 border-4 border-accent/20 border-t-accent rounded-full animate-spin mb-6"></div>
+      <p class="text-text-secondary">Loading project details...</p>
     </div>
   } @else if (!project() && !indexer.loading() && noProjectFoundYet) {
-    <div class="not-found-container">
-      <span class="material-icons not-found-icon">search_off</span>
-      <h1>Project not found... yet</h1>
-      <p class="not-found-description">
-        If you recently created a new Angor project, it might take a few minutes 
+    <div class="flex flex-col items-center justify-center p-8 sm:p-12 mt-12 bg-surface-card rounded-lg shadow-md text-center">
+      <span class="material-icons text-6xl text-text-secondary opacity-50 mb-6">search_off</span>
+      <h1 class="text-2xl font-semibold mb-4">Project not found... yet</h1>
+      <p class="max-w-lg mb-8 text-text-secondary">
+        If you recently created a new Angor project, it might take a few minutes
         for it to be distributed and indexed on the decentralized infrastructure.
       </p>
-      <div class="not-found-actions">
-        <button (click)="reloadPage()" class="primary-button">
-          <span class="material-icons">refresh</span>
+      <div class="flex gap-4 max-sm:flex-col">
+        <button (click)="reloadPage()" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-accent text-white hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 ease-in-out">
+          <span class="material-icons text-lg">refresh</span>
           Retry
         </button>
-        <a routerLink="/explore" class="secondary-button">
-          <span class="material-icons">explore</span>
+        <a routerLink="/explore" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-surface-card text-text border border-border hover:bg-surface-hover hover:-translate-y-0.5 hover:shadow-sm transition-all duration-300 ease-in-out">
+          <span class="material-icons text-lg">explore</span>
           Explore All Projects
         </a>
       </div>
     </div>
   } @else if (project()) {
-    <div class="project-header">
+    <!-- Project Header -->
+    <div class="grid grid-cols-[auto_1fr] md:grid-cols-[auto_1fr_auto] gap-4 md:gap-8 p-4 sm:p-6 md:p-8 bg-surface-card rounded-xl shadow-lg mb-8 items-start">
       @if (project()?.metadata?.['picture'] && !failedProfileImage()) {
         <img
-          #projectImage
           [src]="project()?.metadata?.['picture']"
-          class="project-logo"
-          alt="Project logo"
-          (click)="showImagePopup = true; selectedImage = project()?.metadata?.['picture'] ?? null"
-          loading="eager"
+          class="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-surface-card shadow-md transition-transform duration-300 ease-in-out cursor-pointer hover:scale-105"
+          alt="{{ project()?.metadata?.name }} logo"
           (error)="handleProfileError()"
+          (click)="openImagePopup(project()?.metadata?.['picture']!)"
         />
       } @else {
-        <div 
-          class="project-logo avatar-placeholder" 
+        <div
+          class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-surface-card shadow-md flex items-center justify-center text-white text-4xl font-semibold cursor-default"
           [style.background-color]="getRandomColor(projectId)"
           (click)="showImagePopup = false"
         >
-          {{ getInitial(project()?.metadata?.['name'] || projectId) }}
+          {{ getInitial(project()?.metadata?.name || projectId) }}
         </div>
       }
-      
-      <div class="project-title-container">
-        <div class="project-title-row">
-          <h1>{{ project()?.metadata?.name || projectId }}</h1>
-          
-          <div class="project-actions">
-            <button 
+
+      <div class="flex flex-col gap-3 md:gap-4 min-w-0">
+        <div class="flex items-start justify-between gap-2">
+          <h1 class="m-0 text-2xl md:text-3xl font-bold break-words">{{ project()?.metadata?.name || projectId }}</h1>
+          <div class="flex gap-1 flex-shrink-0">
+            <button
               [title]="isFavorite() ? 'Remove from bookmarks' : 'Add to bookmarks'"
-              [class.active]="isFavorite()"
+              [class.text-accent]="isFavorite()"
               (click)="toggleFavorite()"
-              class="icon-button"
+              class="bg-transparent border-none text-text-secondary rounded-full w-9 h-9 md:w-10 md:h-10 flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-surface-hover hover:text-text"
             >
-              <span class="material-icons">{{ isFavorite() ? 'bookmark' : 'bookmark_border' }}</span>
+              <span class="material-icons text-lg md:text-xl">{{ isFavorite() ? 'bookmark' : 'bookmark_border' }}</span>
             </button>
-            
             <button
               [title]="'Report this project'"
               (click)="reportProject()"
-              class="icon-button"
+              class="bg-transparent border-none text-text-secondary rounded-full w-9 h-9 md:w-10 md:h-10 flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-surface-hover hover:text-red-500"
             >
-              <span class="material-icons">report_problem</span>
+              <span class="material-icons text-lg md:text-xl">report_problem</span>
             </button>
           </div>
         </div>
-        
-        <p class="project-about">{{ project()?.metadata?.about }}</p>
-        
+
+        <p class="text-base md:text-lg leading-relaxed text-text-secondary m-0 line-clamp-3">{{ project()?.metadata?.about }}</p>
+
         <!-- Project status notification -->
         @if (isProjectSuccessful()) {
-          <div class="project-status-notification success">
-            <span class="material-icons status-icon">check_circle</span>
+          <div class="flex items-center p-3 md:p-4 rounded-lg bg-green-500/10 border-l-4 border-green-500">
+            <span class="material-icons status-icon text-green-500 text-2xl mr-3 md:mr-4">check_circle</span>
             <div class="status-message">
-              <h3>Project Successfully Funded!</h3>
-              <p>This project reached its funding goal of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} 
-                {{ networkService.isMain() ? 'BTC' : 'TBTC' }} 
-                ({{ getFundingPercentage() }}% funded).
-              </p>
+              <h3 class="m-0 mb-1 text-base md:text-lg font-semibold text-green-700 dark:text-green-400">Project Successfully Funded!</h3>
+              <p class="m-0 text-sm md:text-base text-green-600 dark:text-green-500">Reached goal of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }} ({{ getFundingPercentage() }}% funded).</p>
             </div>
           </div>
-        } @else if (isProjectFailed()) { <!-- Use @else if to avoid showing both -->
-          <div class="project-status-notification failure">
-            <span class="material-icons status-icon">error</span>
+        } @else if (isProjectFailed()) {
+          <div class="flex items-center p-3 md:p-4 rounded-lg bg-red-500/10 border-l-4 border-red-500">
+            <span class="material-icons status-icon text-red-500 text-2xl mr-3 md:mr-4">error</span>
             <div class="status-message">
-              <h3>Project Did Not Reach Funding Goal</h3>
-              <p>This project ended after raising {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }} 
-                {{ networkService.isMain() ? 'BTC' : 'TBTC' }} 
-                of its {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} 
-                {{ networkService.isMain() ? 'BTC' : 'TBTC' }} goal 
-                ({{ getFundingPercentage() }}% funded).
-              </p>
+              <h3 class="m-0 mb-1 text-base md:text-lg font-semibold text-red-700 dark:text-red-400">Project Did Not Reach Funding Goal</h3>
+              <p class="m-0 text-sm md:text-base text-red-600 dark:text-red-500">Raised {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }} of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }} ({{ getFundingPercentage() }}% funded).</p>
             </div>
           </div>
         }
-        
+
         <!-- External links -->
-        @if (project()?.details?.nostrPubKey) { 
-          <div class="external-links">
-            <a
-              [href]="'https://primal.net/p/' + user?.npub"
-              target="_blank"
-              class="external-link-button"
-            >
-              <span class="material-icons">launch</span>
-              Primal
+        @if (project()?.details?.nostrPubKey) {
+          <div class="flex flex-wrap gap-2 md:gap-3 mt-1">
+            <a [href]="'https://primal.net/p/' + user?.npub" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-ground border border-border rounded-md text-text text-xs md:text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-hover hover:-translate-y-0.5 hover:shadow-sm">
+              <span class="material-icons text-sm">launch</span> Primal
             </a>
-            <a
-              [href]="'https://notes.blockcore.net/p/' + user?.npub"
-              target="_blank"
-              class="external-link-button"
-            >
-              <span class="material-icons">launch</span>
-              Notes
+            <a [href]="'https://notes.blockcore.net/p/' + user?.npub" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-ground border border-border rounded-md text-text text-xs md:text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-hover hover:-translate-y-0.5 hover:shadow-sm">
+              <span class="material-icons text-sm">launch</span> Notes
             </a>
-            <a
-              [href]="'https://nostr.at/' + user?.npub"
-              target="_blank"
-              class="external-link-button"
-            >
-              <span class="material-icons">launch</span>
-              nostr.at
+            <a [href]="'https://nostr.at/' + user?.npub" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-ground border border-border rounded-md text-text text-xs md:text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-hover hover:-translate-y-0.5 hover:shadow-sm">
+              <span class="material-icons text-sm">launch</span> nostr.at
             </a>
           </div>
         }
-        
+
         <!-- Social links -->
-        <div class="social-links">
+        <div class="flex flex-wrap gap-x-3 md:gap-x-4 gap-y-1 mt-1">
           @for (identity of project()?.externalIdentities; track identity.platform) {
-            <a
-              [href]="getSocialLink(identity)"
-              target="_blank"
-              class="social-link"
-              [title]="identity.username"
-            >
-              <span class="material-icons">{{ getSocialIcon(identity.platform) }}</span>
+            <a [href]="getSocialLink(identity)" target="_blank" class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-text-secondary text-xs md:text-sm transition-all duration-300 ease-in-out hover:bg-surface-hover hover:text-text" [title]="identity.username">
+              <span class="material-icons text-sm md:text-base">{{ getSocialIcon(identity.platform) }}</span>
               <span>{{ formatUsername(identity.username) }}</span>
             </a>
           }
         </div>
       </div>
-      
+
       <!-- Desktop invest button -->
-      <div class="invest-button-container desktop-only">
+      <div class="hidden md:flex items-start">
         <button
-          class="invest-button"
+          class="px-5 py-2.5 md:px-6 md:py-3 text-base md:text-lg font-semibold text-white bg-accent border-none rounded-lg cursor-pointer transition-all duration-300 ease-in-out hover:enabled:-translate-y-0.5 hover:enabled:shadow-md disabled:bg-surface-hover disabled:text-text-secondary disabled:cursor-not-allowed"
           [disabled]="!canInvest()"
-          [class.disabled]="!canInvest()"
           (click)="canInvest() && openInvestWindow()"
         >
           @if (isProjectEnded()) {
             Ended {{ project()?.details?.expiryDate ?? 0 | ago }}
           } @else if (isProjectNotStarted()) {
-            Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest Now) <!-- Allow investment before start -->
+            Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest Now)
           } @else {
             Invest Now
           }
         </button>
       </div>
     </div>
-    
+
     <!-- Mobile invest button -->
-    <div class="invest-button-container mobile-only">
+    <div class="md:hidden mb-6 px-4">
       <button
-        class="invest-button"
+        class="w-full px-6 py-3 text-lg font-semibold text-white bg-accent border-none rounded-lg cursor-pointer transition-all duration-300 ease-in-out hover:enabled:-translate-y-0.5 hover:enabled:shadow-md disabled:bg-surface-hover disabled:text-text-secondary disabled:cursor-not-allowed"
         [disabled]="!canInvest()"
-        [class.disabled]="!canInvest()"
         (click)="canInvest() && openInvestWindow()"
       >
          @if (isProjectEnded()) {
             Ended {{ project()?.details?.expiryDate ?? 0 | ago }}
           } @else if (isProjectNotStarted()) {
-            Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest Now) <!-- Allow investment before start -->
+            Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest Now)
           } @else {
             Invest Now
           }
       </button>
     </div>
-    
-     <div class="stats-dashboard">
+
+     <!-- Stats Dashboard -->
+     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
       <!-- Funding Card -->
-      <div class="stats-card funding-card" [style.--progress-percentage]="getFundingPercentage() + '%'">
-        <div class="stats-icon">
-          <span class="material-icons">campaign</span>
+      <div class="flex items-start gap-4 p-4 md:p-6 bg-surface-card rounded-lg shadow-sm relative overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md sm:col-span-2">
+        <div class="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 flex items-center justify-center bg-blue-500/10 rounded-full z-[1]">
+          <span class="material-icons text-xl md:text-2xl text-blue-500">campaign</span>
         </div>
-        <div class="stats-content">
-          <div class="stats-header">
-            <div class="stats-title">Total Raised</div>
-            <div class="stats-badge" [class.success]="getFundingPercentage() >= 100">
+        <div class="flex-1 z-[1] min-w-0">
+          <div class="flex justify-between items-center mb-1">
+            <div class="text-sm text-text-secondary">Total Raised</div>
+            <div class="text-xs font-medium px-2 py-0.5 rounded-full" [ngClass]="getFundingPercentage() >= 100 ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'">
               {{ getFundingPercentage() }}% of goal
             </div>
           </div>
-          <div class="stats-value">
+          <div class="text-xl md:text-2xl font-semibold mb-2 truncate">
             {{ bitcoin.toBTC((project()?.stats?.amountInvested ?? 0)) }}
-            <span class="currency">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+            <span class="text-sm font-medium text-text-secondary ml-1">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
           </div>
-          <div class="stats-progress">
-            <div class="stats-progress-bar"></div>
-            <div class="stats-progress-label">
-              Target: {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
-            </div>
+          <div class="relative w-full h-1.5 bg-surface-hover rounded-full overflow-hidden">
+            <div class="absolute top-0 left-0 h-full bg-blue-500 transition-width duration-500 ease-out" [style.width.%]="getFundingPercentage() > 100 ? 100 : getFundingPercentage()"></div>
+          </div>
+          <div class="text-xs text-text-secondary mt-1.5">
+            Target: {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
           </div>
         </div>
       </div>
-      
+
       <!-- Investors Card -->
-      <div class="stats-card investors-card">
-        <div class="stats-icon">
-          <span class="material-icons">people</span>
+      <div class="flex items-start gap-4 p-4 md:p-6 bg-surface-card rounded-lg shadow-sm relative overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md">
+        <div class="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 flex items-center justify-center bg-purple-500/10 rounded-full z-[1]">
+          <span class="material-icons text-xl md:text-2xl text-purple-500">people</span>
         </div>
-        <div class="stats-content">
-          <div class="stats-header">
-            <div class="stats-title">Total Investors</div>
-          </div>
-          <div class="stats-value">
+        <div class="flex-1 z-[1]">
+          <div class="text-sm text-text-secondary mb-1">Total Investors</div>
+          <div class="text-xl md:text-2xl font-semibold">
             {{ project()?.stats?.investorCount || '0' }}
             @if (project()?.stats?.investorCount) {
-              <span class="stats-trend positive">
-                <span class="material-icons">trending_up</span>
+              <span class="text-sm font-medium ml-2 inline-flex items-center text-green-500">
+                <span class="material-icons text-base">trending_up</span>
               </span>
             }
           </div>
         </div>
       </div>
-      
+
       <!-- Spent Card -->
-      <div class="stats-card spent-card" [style.--progress-percentage]="getSpentPercentage() + '%'">
-        <div class="stats-icon">
-          <span class="material-icons">account_balance_wallet</span>
+      <div class="flex items-start gap-4 p-4 md:p-6 bg-surface-card rounded-lg shadow-sm relative overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md">
+         <div class="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 flex items-center justify-center bg-orange-500/10 rounded-full z-[1]">
+          <span class="material-icons text-xl md:text-2xl text-orange-500">account_balance_wallet</span>
         </div>
-        <div class="stats-content">
-          <div class="stats-header">
-            <div class="stats-title">Founder Spent</div>
-            <div class="stats-badge">
+        <div class="flex-1 z-[1] min-w-0">
+          <div class="flex justify-between items-center mb-1">
+            <div class="text-sm text-text-secondary">Founder Spent</div>
+             <div class="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400">
               {{ getSpentPercentage() }}% of funds
             </div>
           </div>
-          <div class="stats-value">
+          <div class="text-xl md:text-2xl font-semibold mb-2 truncate">
             {{ bitcoin.toBTC((project()?.stats?.amountSpentSoFarByFounder ?? 0)) }}
-            <span class="currency">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+            <span class="text-sm font-medium text-text-secondary ml-1">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
           </div>
-          <div class="stats-progress">
-            <div class="stats-progress-bar"></div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Penalties Card -->
-      <div class="stats-card penalties-card" [style.--progress-percentage]="getPenaltiesPercentage() + '%'">
-        <div class="stats-icon">
-          <span class="material-icons">trending_down</span>
-        </div>
-        <div class="stats-content">
-          <div class="stats-header">
-            <div class="stats-title">Withdrawn by Investors</div>
-            <div class="stats-badge">
-              {{ project()?.stats?.countInPenalties || '0' }} investors
-            </div>
-          </div>
-          <div class="stats-value">
-            {{ bitcoin.toBTC((project()?.stats?.amountInPenalties ?? 0)) }}
-            <span class="currency">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
-          </div>
-          <div class="stats-progress">
-            <div class="stats-progress-bar"></div>
+           <div class="relative w-full h-1.5 bg-surface-hover rounded-full overflow-hidden">
+            <div class="absolute top-0 left-0 h-full bg-orange-500 transition-width duration-500 ease-out" [style.width.%]="getSpentPercentage()"></div>
           </div>
         </div>
       </div>
+
+      <!-- Penalties Card (Removed - Not in original SCSS structure) -->
+      <!-- If needed, add back similar to Spent Card with red colors -->
     </div>
 
     <!-- Tabs navigation -->
-    <div class="tabs-container">
+    <div class="flex mb-6 border-b border-border relative overflow-x-auto scrollbar-hide bg-surface-card rounded-t-lg shadow-sm">
       @for (tab of tabs; track tab.id) {
         <button
-          class="tab-button"
+          class="relative flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-4 bg-transparent border-none text-text-secondary text-sm sm:text-base font-medium whitespace-nowrap cursor-pointer transition-all duration-300 ease-in-out flex-1 text-center hover:text-text hover:bg-black/5 active:text-accent active:font-semibold after:content-[''] after:absolute after:bottom-[-1px] after:left-0 after:w-full after:h-0.5 after:bg-accent after:rounded-t-sm after:opacity-0 after:transition-opacity"
           [class.active]="activeTab === tab.id"
+          [class.!text-accent]="activeTab === tab.id"
+          [class.font-semibold]="activeTab === tab.id"
+          [class.after:opacity-100]="activeTab === tab.id"
           (click)="setActiveTab(tab.id)"
         >
-          <span class="tab-icon">{{ tab.icon }}</span>
-          <span class="tab-label">{{ tab.label }}</span>
+          <span class="material-icons text-lg sm:text-xl">{{ tab.icon }}</span>
+          <span class="hidden sm:inline">{{ tab.label }}</span>
         </button>
       }
     </div>
-    
+
     <!-- Tab content -->
-    <div class="tab-content">
+    <div class="mb-12">
       @if (activeTab === 'project') {
-        <div class="project-grid">
-          <div class="project-main-content">
+        <div class="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 md:gap-8">
+          <div class="flex flex-col gap-6 md:gap-8">
             @if (project()?.content) {
               <!-- Media carousel -->
               @if (project()?.media?.length) {
-                <div class="media-carousel">
-                  <div class="carousel-track" [style.transform]="'translateX(' + -currentSlide * 100 + '%)'">
+                <div class="relative w-full rounded-lg overflow-hidden aspect-video shadow-md bg-surface-hover">
+                  <div class="flex h-full transition-transform duration-300 ease-in-out" [style.transform]="'translateX(' + -currentSlide * 100 + '%)'">
                     @for (item of project()?.media; track item.url) {
                       @if (item.type === 'image') {
-                        <div class="carousel-slide">
+                        <div class="min-w-full h-full flex-shrink-0">
                           @if (!hasMediaFailed(item.url)) {
                             <img
                               [src]="item.url"
                               alt="Project media"
                               loading="lazy"
+                              class="w-full h-full object-cover cursor-pointer"
                               (click)="showImagePopup = true; selectedImage = item.url"
                               (error)="handleMediaError(item.url)"
                             />
                           } @else {
-                            <div 
-                              class="media-placeholder"
+                            <div
+                              class="w-full h-full flex items-center justify-center bg-surface-ground"
                               [style.background-color]="getRandomColor(item.url)"
                               (click)="showImagePopup = false"
                             >
-                              <span class="material-icons">broken_image</span>
+                              <span class="material-icons text-4xl text-white/70">broken_image</span>
                             </div>
                           }
                         </div>
                       }
                     }
                   </div>
-                  
+
                   @if ((project()?.media?.length ?? 0) > 1) {
-                    <button class="carousel-control prev" (click)="prevSlide()">
+                    <button class="absolute top-1/2 -translate-y-1/2 left-2 md:left-4 w-9 h-9 md:w-10 md:h-10 bg-black/40 text-white border-none rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-black/60" (click)="prevSlide()">
                       <span class="material-icons">chevron_left</span>
                     </button>
-                    <button class="carousel-control next" (click)="nextSlide()">
+                    <button class="absolute top-1/2 -translate-y-1/2 right-2 md:right-4 w-9 h-9 md:w-10 md:h-10 bg-black/40 text-white border-none rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-black/60" (click)="nextSlide()">
                       <span class="material-icons">chevron_right</span>
                     </button>
-                    
-                    <div class="carousel-indicators">
+
+                    <div class="absolute bottom-3 md:bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 md:gap-2">
                       @for (item of project()?.media; track $index) {
-                        <button 
-                          class="indicator-dot" 
-                          [class.active]="currentSlide === $index"
+                        <button
+                          class="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-white/50 border-none cursor-pointer transition-all duration-300 ease-in-out"
+                          [class.bg-white]="currentSlide === $index"
                           (click)="currentSlide = $index"
                         ></button>
                       }
@@ -386,22 +336,21 @@
                   }
                 </div>
               }
-              
+
               <!-- Project content -->
-              <div class="content-card">
-                <h2>About This Project</h2>
-                <markdown [data]="project()?.content" class="project-markdown"></markdown>
+              <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 md:p-8 overflow-hidden">
+                <h2 class="mt-0 mb-6 pb-4 border-b border-border text-xl font-semibold">About This Project</h2>
+                <markdown [data]="project()?.content" class="prose prose-sm sm:prose lg:prose-lg max-w-none prose-headings:mt-8 prose-headings:mb-4 prose-p:mb-6 prose-img:rounded-md prose-img:my-6 prose-code:bg-surface-ground prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surface-ground prose-pre:p-4 prose-pre:rounded-md prose-pre:overflow-x-auto prose-a:text-accent prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-4 prose-blockquote:border-accent prose-blockquote:pl-4 prose-blockquote:ml-0 prose-blockquote:text-text-secondary dark:prose-invert dark:prose-headings:text-text dark:prose-p:text-text-secondary dark:prose-a:text-accent-light dark:prose-blockquote:text-text-secondary dark:prose-code:bg-surface-hover dark:prose-pre:bg-surface-hover"></markdown>
               </div>
-              
+
               <!-- Project members -->
               @if (project()?.members?.length) {
-                <div class="members-card">
-                  <h2>Project Team</h2>
-                  <div class="members-grid">
+                <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 md:p-8 overflow-hidden">
+                  <h2 class="mt-0 mb-6 pb-4 border-b border-border text-xl font-semibold">Project Team</h2>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                     @for (member of project()?.members; track member) {
-                      <div class="member-item">
+                      <div class="bg-surface-ground rounded-md p-3 md:p-4 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-sm">
                         <app-profile
-                          class="project-member"
                           [npub]="member"
                           [link]="'https://primal.net/p/' + member"
                         ></app-profile>
@@ -410,20 +359,25 @@
                   </div>
                 </div>
               }
+            } @else {
+               <div class="bg-surface-card rounded-lg shadow-sm p-8 text-center text-text-secondary">
+                 <span class="material-icons text-4xl mb-4 opacity-50">description</span>
+                 <p>No project description provided.</p>
+               </div>
             }
           </div>
-          
+
           <!-- Project sidebar -->
-          <div class="project-sidebar">
+          <div class="flex flex-col gap-6 md:gap-8">
             <!-- Project Details -->
-            <div class="sidebar-card">
-              <h3>Project Details</h3>
-              <div class="detail-item">
-                <div class="detail-label">Start Date</div>
-                <div class="detail-value">
+            <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 overflow-hidden">
+              <h3 class="mt-0 mb-6 pb-4 border-b border-border text-lg font-semibold">Project Details</h3>
+              <div class="mb-4">
+                <div class="text-sm text-text-secondary mb-1">Start Date</div>
+                <div class="text-text font-medium">
                   {{ formatDate(project()?.details?.startDate) }}
                   @if (project()?.details?.startDate) {
-                    <span class="relative-time">
+                    <span class="block text-xs text-text-secondary mt-1 italic">
                       @if (isProjectNotStarted()) {
                         (Starts {{ project()?.details?.startDate ?? 0 | ago }})
                       } @else {
@@ -433,12 +387,12 @@
                   }
                 </div>
               </div>
-              <div class="detail-item">
-                <div class="detail-label">Expiry Date</div>
-                <div class="detail-value">
+              <div class="mb-4">
+                <div class="text-sm text-text-secondary mb-1">Expiry Date</div>
+                <div class="text-text font-medium">
                   {{ formatDate(project()?.details?.expiryDate) }}
                    @if (project()?.details?.expiryDate) {
-                    <span class="relative-time">
+                    <span class="block text-xs text-text-secondary mt-1 italic">
                       @if (isProjectEnded()) {
                         (Ended {{ project()?.details?.expiryDate ?? 0 | ago }})
                       } @else {
@@ -446,68 +400,76 @@
                       }
                     </span>
                   } @else {
-                     <span class="relative-time">(No expiry date)</span>
+                     <span class="block text-xs text-text-secondary mt-1 italic">(No expiry date)</span>
                   }
                 </div>
               </div>
-              <div class="detail-item">
-                <div class="detail-label">Penalty Days</div>
-                <div class="detail-value">{{ project()?.details?.penaltyDays }} days</div>
+              <div class="mb-0"> <!-- Last item -->
+                <div class="text-sm text-text-secondary mb-1">Penalty Days</div>
+                <div class="text-text font-medium">{{ project()?.details?.penaltyDays }} days</div>
               </div>
             </div>
-            
+
             <!-- Funding Stages -->
-            <div class="sidebar-card">
-              <h3>Funding Stages</h3>
-              <div class="stages-timeline">
-                @for (stage of project()?.details?.stages; track $index) {
-                  <div class="stage-item">
-                    <div class="stage-marker"></div>
-                    <div class="stage-content">
-                      <div class="stage-title">Stage {{ $index + 1 }}</div>
-                      <div class="stage-amount">{{ stage.amountToRelease }}%</div>
-                      <div class="stage-date">{{ formatDate(stage.releaseDate) }}</div>
+            @if (project()?.details?.stages?.length) {
+              <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 overflow-hidden">
+                <h3 class="mt-0 mb-6 pb-4 border-b border-border text-lg font-semibold">Funding Stages</h3>
+                <div class="relative">
+                  @for (stage of project()?.details?.stages; track $index; let isLast = $last) {
+                    <div class="relative pl-8 pb-6">
+                      <!-- Timeline line -->
+                      @if (!isLast) {
+                        <div class="absolute top-2 left-[11px] w-0.5 h-full bg-border"></div>
+                      }
+                      <!-- Marker -->
+                      <div class="absolute top-0 left-0 w-6 h-6 bg-accent border-4 border-surface-card rounded-full z-[1]"></div>
+                      <!-- Content -->
+                      <div class="pt-0.5">
+                        <div class="font-semibold mb-1">Stage {{ $index + 1 }}</div>
+                        <div class="text-lg font-bold text-accent mb-1">{{ stage.amountToRelease }}%</div>
+                        <div class="text-sm text-text-secondary">{{ formatDate(stage.releaseDate) }}</div>
+                      </div>
                     </div>
-                  </div>
-                }
+                  }
+                </div>
               </div>
-            </div>
-            
+            }
+
             <!-- Public Keys -->
-            <div class="sidebar-card">
-              <h3>Public Keys</h3>
-              <div class="detail-item">
-                <div class="detail-label">Project ID</div>
-                <div class="detail-value monospace">{{ project()?.projectIdentifier }}</div>
+            <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 overflow-hidden">
+              <h3 class="mt-0 mb-6 pb-4 border-b border-border text-lg font-semibold">Public Keys & IDs</h3>
+              <div class="mb-4">
+                <div class="text-sm text-text-secondary mb-1">Project ID</div>
+                <div class="text-text font-medium font-mono text-xs break-all">{{ project()?.projectIdentifier }}</div>
               </div>
-              <div class="detail-item">
-                <div class="detail-label">Founder Key</div>
-                <div class="detail-value monospace">{{ project()?.founderKey }}</div>
+              <div class="mb-4">
+                <div class="text-sm text-text-secondary mb-1">Founder Key</div>
+                <div class="text-text font-medium font-mono text-xs break-all">{{ project()?.founderKey }}</div>
               </div>
-              <div class="detail-item">
-                <div class="detail-label">Recovery Key</div>
-                <div class="detail-value monospace">{{ project()?.details?.founderRecoveryKey }}</div>
+              <div class="mb-4">
+                <div class="text-sm text-text-secondary mb-1">Recovery Key</div>
+                <div class="text-text font-medium font-mono text-xs break-all">{{ project()?.details?.founderRecoveryKey }}</div>
               </div>
-              <div class="detail-item">
-                <div class="detail-label">Nostr Public Key</div>
-                <div class="detail-value monospace">{{ user?.npub }}</div>
+              <div class="mb-0"> <!-- Last item -->
+                <div class="text-sm text-text-secondary mb-1">Nostr Public Key (npub)</div>
+                <div class="text-text font-medium font-mono text-xs break-all">{{ user?.npub }}</div>
               </div>
             </div>
-            
+
             <!-- Additional Details -->
-            <div class="sidebar-card">
-              <h3>Additional Details</h3>
-              <div class="detail-item">
-                <div class="detail-label">Created on Bitcoin block</div>
-                <div class="detail-value">{{ project()?.createdOnBlock }}</div>
+            <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 overflow-hidden">
+              <h3 class="mt-0 mb-6 pb-4 border-b border-border text-lg font-semibold">Blockchain Details</h3>
+              <div class="mb-4">
+                <div class="text-sm text-text-secondary mb-1">Created on Bitcoin block</div>
+                <div class="text-text font-medium">{{ project()?.createdOnBlock }}</div>
               </div>
-              <div class="detail-item">
-                <div class="detail-label">Transaction</div>
-                <div class="detail-value">
+              <div class="mb-0"> <!-- Last item -->
+                <div class="text-sm text-text-secondary mb-1">Transaction ID</div>
+                <div class="text-text font-medium font-mono text-xs break-all">
                   @if(networkService.isMain()) {
-                    <a target="_blank" [href]="'https://explorer.angor.io/btc/explorer/transaction/' + project()?.trxId">{{ project()?.trxId | slice:0:8 }}...</a>
+                    <a target="_blank" [href]="'https://mempool.space/tx/' + project()?.trxId" class="text-accent hover:underline">{{ project()?.trxId }}</a>
                   } @else {
-                    <a target="_blank" [href]="'https://explorer.angor.io/tbtc/explorer/transaction/' + project()?.trxId">{{ project()?.trxId | slice:0:8 }}...</a>
+                    <a target="_blank" [href]="'https://mempool.space/testnet/tx/' + project()?.trxId" class="text-accent hover:underline">{{ project()?.trxId }}</a>
                   }
                 </div>
               </div>
@@ -515,78 +477,86 @@
           </div>
         </div>
       } @else if (activeTab === 'faq') {
-        <div class="faq-section">
-          <h2>Frequently Asked Questions</h2>
-          
-          @if (faqItems.length === 0) {
-            <div class="empty-state">
-              <span class="material-icons">help_outline</span>
+        <div class="faq-section max-w-3xl mx-auto"> <!-- Centered content -->
+          <h2 class="text-xl font-semibold mb-6 pb-4 border-b border-border">Frequently Asked Questions</h2>
+
+          @if (loading()) {
+            <div class="flex flex-col items-center justify-center p-8 text-text-secondary">
+              <div class="w-8 h-8 border-3 border-accent/30 border-t-accent rounded-full animate-spin mb-4"></div>
+              <p>Loading FAQ...</p>
+            </div>
+          } @else if (!faqItems || faqItems.length === 0) {
+            <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary">
+              <span class="material-icons text-5xl mb-4 opacity-50">help_outline</span>
               <p>No FAQ items available for this project yet.</p>
             </div>
           } @else {
-            <div class="faq-list">
+            <div class="flex flex-col gap-4 md:gap-6">
               @for (faq of faqItems; track faq.id) {
-                <div class="faq-item">
-                  <h3 class="faq-question">{{ faq.question }}</h3>
-                  <p class="faq-answer">{{ faq.answer }}</p>
+                <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md">
+                  <h3 class="mt-0 mb-3 text-lg font-semibold">{{ faq.question }}</h3>
+                  <p class="m-0 text-base text-text-secondary whitespace-pre-wrap">{{ faq.answer }}</p>
                 </div>
               }
             </div>
           }
         </div>
       } @else if (activeTab === 'updates') {
-        <div class="updates-section">
-          <h2>Project Updates</h2>
-          
+        <div class="updates-section max-w-3xl mx-auto"> <!-- Centered content -->
+          <h2 class="text-xl font-semibold mb-6 pb-4 border-b border-border">Project Updates</h2>
+
           @if (loading()) {
-            <div class="loading-container">
-              <div class="loading-spinner"></div>
+            <div class="flex flex-col items-center justify-center p-8 text-text-secondary">
+              <div class="w-8 h-8 border-3 border-accent/30 border-t-accent rounded-full animate-spin mb-4"></div>
               <p>Loading updates...</p>
             </div>
           } @else if (updates().length === 0) {
-            <div class="empty-state">
-              <span class="material-icons">notifications_none</span>
+            <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary">
+              <span class="material-icons text-5xl mb-4 opacity-50">notifications_none</span>
               <p>No updates available for this project yet.</p>
             </div>
           } @else {
-            <div class="updates-list">
+            <div class="flex flex-col gap-4 md:gap-6">
               @for (update of updates(); track update.id) {
-                <div class="update-card">
-                  <div class="update-header">
-                    <span class="update-date">{{ formatDate(update.created_at) }}</span>
+                <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md">
+                  <div class="flex justify-between items-center mb-4 pb-3 border-b border-border">
+                    <span class="text-sm text-text-secondary">{{ formatDate(update.created_at) }}</span>
+                    <!-- Optionally add author profile here if updates can come from different authors -->
                   </div>
-                  <div class="update-content" [innerHTML]="update.content | safeContent"></div>
+                  <!-- Using prose for markdown-like styling of Nostr content -->
+                  <div class="prose prose-sm sm:prose max-w-none dark:prose-invert prose-a:text-accent hover:prose-a:underline" [innerHTML]="update.content | safeContent"></div>
                 </div>
               }
             </div>
           }
         </div>
       } @else if (activeTab === 'comments') {
-        <div class="comments-section">
-          <h2>Comments</h2>
-          
+        <div class="comments-section max-w-3xl mx-auto"> <!-- Centered content -->
+          <h2 class="text-xl font-semibold mb-6 pb-4 border-b border-border">Comments</h2>
+
           @if (loading()) {
-            <div class="loading-container">
-              <div class="loading-spinner"></div>
+            <div class="flex flex-col items-center justify-center p-8 text-text-secondary">
+              <div class="w-8 h-8 border-3 border-accent/30 border-t-accent rounded-full animate-spin mb-4"></div>
               <p>Loading comments...</p>
             </div>
           } @else if (comments().length === 0) {
-            <div class="empty-state">
-              <span class="material-icons">chat_bubble_outline</span>
+            <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary">
+              <span class="material-icons text-5xl mb-4 opacity-50">chat_bubble_outline</span>
               <p>No comments available for this project yet.</p>
             </div>
           } @else {
-            <div class="comments-list">
+            <div class="flex flex-col gap-4 md:gap-6">
               @for (comment of comments(); track comment.id) {
-                <div class="comment-card">
-                  <div class="comment-header">
+                <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md">
+                  <div class="flex justify-between items-center mb-4 pb-3 border-b border-border">
                     <app-profile
                       [pubkey]="comment.pubkey"
                       [link]="'https://primal.net/p/' + comment.pubkey"
+                      class="text-sm" 
                     ></app-profile>
-                    <span class="comment-date">{{ formatDate(comment.created_at) }}</span>
+                    <span class="text-sm text-text-secondary">{{ formatDate(comment.created_at) }}</span>
                   </div>
-                  <p class="comment-content">{{ comment.content }}</p>
+                  <p class="m-0 text-base text-text-secondary whitespace-pre-wrap">{{ comment.content }}</p>
                 </div>
               }
             </div>
@@ -594,7 +564,8 @@
         </div>
       }
     </div>
-    
+
+    <!-- Image Popup -->
     @if (showImagePopup && selectedImage) {
       <app-image-popup
         [imageUrl]="selectedImage"

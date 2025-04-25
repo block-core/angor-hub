@@ -1,4 +1,4 @@
-<section class="hero settings-hero">
+<section class="hero relative py-6 px-4 bg-gradient-to-b from-header-bg to-background text-center">
     <app-breadcrumb
       [items]="[
         { label: 'Home', url: '/' },
@@ -8,101 +8,109 @@
 
     <div class="hero-wrapper">
       <div class="hero-content">
-        <h1>Settings</h1>
-        <p class="hero-description">Customize your Angor Hub experience</p>
+        <h1 class="text-3xl md:text-4xl font-bold mb-2">Settings</h1>
+        <p class="text-lg text-text-secondary mb-0">Customize your Angor Hub experience</p>
       </div>
     </div>
   </section>
 
-  <div class="settings-container">
-    <div class="settings-sidebar">
+  <div class="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-4 md:gap-8 max-w-7xl mx-auto my-8 px-4 md:px-8">
+    <div class="flex flex-row flex-wrap md:flex-col gap-2 h-fit rounded-xl bg-surface-card p-4 shadow-md">
       <div 
-        class="sidebar-item" 
-        [class.active]="activeTab() === 'appearance'" 
+        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text hover:bg-surface-hover hover:text-accent flex-1 md:flex-none justify-center md:justify-start" 
+        [class.bg-accent]="activeTab() === 'appearance'" 
+        [class.text-white]="activeTab() === 'appearance'" 
         (click)="setActiveTab('appearance')"
       >
-        <span class="material-icons">palette</span>
-        <span>Appearance</span>
+        <span class="material-icons text-text-secondary transition duration-200 ease-in-out" [class.text-white]="activeTab() === 'appearance'">palette</span>
+        <span class="hidden md:inline">Appearance</span>
       </div>
       <div 
-        class="sidebar-item" 
-        [class.active]="activeTab() === 'network'" 
+        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text hover:bg-surface-hover hover:text-accent flex-1 md:flex-none justify-center md:justify-start" 
+        [class.bg-accent]="activeTab() === 'network'" 
+        [class.text-white]="activeTab() === 'network'" 
         (click)="setActiveTab('network')"
       >
-        <span class="material-icons">public</span>
-        <span>Network</span>
+        <span class="material-icons text-text-secondary transition duration-200 ease-in-out" [class.text-white]="activeTab() === 'network'">public</span>
+        <span class="hidden md:inline">Network</span>
       </div>
       <div 
-        class="sidebar-item" 
-        [class.active]="activeTab() === 'relays'" 
+        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text hover:bg-surface-hover hover:text-accent flex-1 md:flex-none justify-center md:justify-start" 
+        [class.bg-accent]="activeTab() === 'relays'" 
+        [class.text-white]="activeTab() === 'relays'" 
         (click)="setActiveTab('relays')"
       >
-        <span class="material-icons">settings_input_antenna</span>
-        <span>Relays</span>
+        <span class="material-icons text-text-secondary transition duration-200 ease-in-out" [class.text-white]="activeTab() === 'relays'">settings_input_antenna</span>
+        <span class="hidden md:inline">Relays</span>
       </div>
       <div 
-        class="sidebar-item" 
-        [class.active]="activeTab() === 'indexers'" 
+        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text hover:bg-surface-hover hover:text-accent flex-1 md:flex-none justify-center md:justify-start" 
+        [class.bg-accent]="activeTab() === 'indexers'" 
+        [class.text-white]="activeTab() === 'indexers'" 
         (click)="setActiveTab('indexers')"
       >
-        <span class="material-icons">storage</span>
-        <span>Indexers</span>
+        <span class="material-icons text-text-secondary transition duration-200 ease-in-out" [class.text-white]="activeTab() === 'indexers'">storage</span>
+        <span class="hidden md:inline">Indexers</span>
       </div>
       <div 
-        class="sidebar-item" 
-        [class.active]="activeTab() === 'about'" 
+        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text hover:bg-surface-hover hover:text-accent flex-1 md:flex-none justify-center md:justify-start" 
+        [class.bg-accent]="activeTab() === 'about'" 
+        [class.text-white]="activeTab() === 'about'" 
         (click)="setActiveTab('about')"
       >
-        <span class="material-icons">info</span>
-        <span>About</span>
+        <span class="material-icons text-text-secondary transition duration-200 ease-in-out" [class.text-white]="activeTab() === 'about'">info</span>
+        <span class="hidden md:inline">About</span>
       </div>
     </div>
     
-    <div class="settings-content" [@fadeInOut]>
+    <div class="flex flex-col gap-6" [@fadeInOut]>
       <!-- Appearance Tab -->
       @if (activeTab() === 'appearance') {
-        <div class="settings-card">
-          <h2>
-            <span class="material-icons">palette</span>
+        <div class="bg-surface-card rounded-xl p-6 shadow-md">
+          <h2 class="flex items-center gap-3 mt-0 mb-6 text-2xl font-semibold text-text">
+            <span class="material-icons text-accent text-3xl">palette</span>
             Appearance
           </h2>
           
-          <div class="setting-group">
-            <label class="setting-label">Theme</label>
-            <p class="setting-description">Choose your preferred theme mode</p>
+          <div class="py-5 border-b border-border last:border-b-0 last:pb-0">
+            <label class="block text-lg font-semibold mb-2 text-text">Theme</label>
+            <p class="text-text-secondary mb-5 text-sm leading-normal">Choose your preferred theme mode</p>
             
-            <div class="theme-options">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <button 
-                class="theme-option" 
-                [class.active]="currentTheme() === 'light'"
+                class="flex flex-col items-center gap-3 p-5 rounded-lg bg-surface-hover border-2 border-transparent cursor-pointer transition duration-200 ease-in-out hover:-translate-y-1 hover:shadow-lg" 
+                [class.border-accent]="currentTheme() === 'light'"
+                [class.bg-accent]="currentTheme() === 'light'"
                 (click)="setTheme('light')"
               >
-                <div class="theme-preview light">
-                  <span class="material-icons">light_mode</span>
+                <div class="w-16 h-16 rounded-full flex items-center justify-center transition duration-200 ease-in-out bg-white">
+                  <span class="material-icons text-3xl text-yellow-500">light_mode</span>
                 </div>
-                <span class="theme-name">Light</span>
+                <span class="font-medium transition duration-200 ease-in-out text-text-secondary" [class.text-accent]="currentTheme() === 'light'" [class.font-semibold]="currentTheme() === 'light'">Light</span>
               </button>
               
               <button 
-                class="theme-option" 
-                [class.active]="currentTheme() === 'dark'"
+                class="flex flex-col items-center gap-3 p-5 rounded-lg bg-surface-hover border-2 border-transparent cursor-pointer transition duration-200 ease-in-out hover:-translate-y-1 hover:shadow-lg" 
+                [class.border-accent]="currentTheme() === 'dark'"
+                [class.bg-accent]="currentTheme() === 'dark'"
                 (click)="setTheme('dark')"
               >
-                <div class="theme-preview dark">
-                  <span class="material-icons">dark_mode</span>
+                <div class="w-16 h-16 rounded-full flex items-center justify-center transition duration-200 ease-in-out bg-gray-800">
+                  <span class="material-icons text-3xl text-yellow-400">dark_mode</span>
                 </div>
-                <span class="theme-name">Dark</span>
+                <span class="font-medium transition duration-200 ease-in-out text-text-secondary" [class.text-accent]="currentTheme() === 'dark'" [class.font-semibold]="currentTheme() === 'dark'">Dark</span>
               </button>
               
               <button 
-                class="theme-option" 
-                [class.active]="currentTheme() === 'system'"
+                class="flex flex-col items-center gap-3 p-5 rounded-lg bg-surface-hover border-2 border-transparent cursor-pointer transition duration-200 ease-in-out hover:-translate-y-1 hover:shadow-lg" 
+                [class.border-accent]="currentTheme() === 'system'"
+                [class.bg-accent]="currentTheme() === 'system'"
                 (click)="setTheme('system')"
               >
-                <div class="theme-preview system">
-                  <span class="material-icons">devices</span>
+                <div class="w-16 h-16 rounded-full flex items-center justify-center transition duration-200 ease-in-out bg-gradient-to-br from-white from-50% to-gray-800 to-50%">
+                  <span class="material-icons text-3xl text-blue-500">devices</span>
                 </div>
-                <span class="theme-name">System</span>
+                <span class="font-medium transition duration-200 ease-in-out text-text-secondary" [class.text-accent]="currentTheme() === 'system'" [class.font-semibold]="currentTheme() === 'system'">System</span>
               </button>
             </div>
           </div>
@@ -111,50 +119,52 @@
 
       <!-- Network Tab -->
       @if (activeTab() === 'network') {
-        <div class="settings-card">
-          <h2>
-            <span class="material-icons">public</span>
+        <div class="bg-surface-card rounded-xl p-6 shadow-md">
+          <h2 class="flex items-center gap-3 mt-0 mb-6 text-2xl font-semibold text-text">
+            <span class="material-icons text-accent text-3xl">public</span>
             Network
           </h2>
           
-          <div class="setting-group">
-            <label class="setting-label">Bitcoin Network</label>
-            <p class="setting-description">Select which Bitcoin network to use</p>
+          <div class="py-5 border-b border-border last:border-b-0 last:pb-0">
+            <label class="block text-lg font-semibold mb-2 text-text">Bitcoin Network</label>
+            <p class="text-text-secondary mb-5 text-sm leading-normal">Select which Bitcoin network to use</p>
             
-            <div class="network-options">
+            <div class="flex flex-col gap-4">
               <button 
-                class="network-option" 
-                [class.active]="currentNetwork() === 'main'"
+                class="flex items-center gap-4 p-4 rounded-lg bg-surface-hover border border-border cursor-pointer transition duration-200 ease-in-out text-left w-full hover:-translate-y-0.5 hover:shadow-md" 
+                [class.border-accent]="currentNetwork() === 'main'"
+                [class.bg-accent]="currentNetwork() === 'main'"
                 (click)="setNetwork('main')"
                 [attr.aria-pressed]="currentNetwork() === 'main'"
               >
-                <div class="network-icon mainnet">
-                  <span class="material-icons">currency_bitcoin</span>
+                <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-orange-500/10 text-bitcoin-mainnet">
+                  <span class="material-icons text-3xl">currency_bitcoin</span>
                 </div>
-                <div class="network-info">
-                  <span class="network-name">Mainnet</span>
-                  <span class="network-desc">Live Bitcoin network with real value</span>
+                <div class="flex-1">
+                  <span class="block font-semibold mb-1 text-text">Mainnet</span>
+                  <span class="text-sm text-text-secondary">Live Bitcoin network with real value</span>
                 </div>
                 @if (currentNetwork() === 'main') {
-                  <span class="material-icons check-icon">check_circle</span>
+                  <span class="material-icons text-accent ml-auto">check_circle</span>
                 }
               </button>
               
               <button 
-                class="network-option" 
-                [class.active]="currentNetwork() === 'test'"
+                class="flex items-center gap-4 p-4 rounded-lg bg-surface-hover border border-border cursor-pointer transition duration-200 ease-in-out text-left w-full hover:-translate-y-0.5 hover:shadow-md" 
+                [class.border-accent]="currentNetwork() === 'test'"
+                [class.bg-accent]="currentNetwork() === 'test'"
                 (click)="setNetwork('test')"
                 [attr.aria-pressed]="currentNetwork() === 'test'"
               >
-                <div class="network-icon testnet">
-                  <span class="material-icons">science</span>
+                <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-green-500/10 text-bitcoin-testnet">
+                  <span class="material-icons text-3xl">science</span>
                 </div>
-                <div class="network-info">
-                  <span class="network-name">Testnet</span>
-                  <span class="network-desc">Testing network with no real value</span>
+                <div class="flex-1">
+                  <span class="block font-semibold mb-1 text-text">Testnet</span>
+                  <span class="text-sm text-text-secondary">Testing network with no real value</span>
                 </div>
                 @if (currentNetwork() === 'test') {
-                  <span class="material-icons check-icon">check_circle</span>
+                  <span class="material-icons text-accent ml-auto">check_circle</span>
                 }
               </button>
             </div>
@@ -164,79 +174,79 @@
 
       <!-- Relays Tab -->
       @if (activeTab() === 'relays') {
-        <div class="settings-card">
-          <h2>
-            <span class="material-icons">settings_input_antenna</span>
+        <div class="bg-surface-card rounded-xl p-6 shadow-md">
+          <h2 class="flex items-center gap-3 mt-0 mb-6 text-2xl font-semibold text-text">
+            <span class="material-icons text-accent text-3xl">settings_input_antenna</span>
             Nostr Relays
           </h2>
           
-          <div class="setting-group">
-            <label class="setting-label">Manage Relays</label>
-            <p class="setting-description">Configure which Nostr relays to connect to</p>
+          <div class="py-5 border-b border-border last:border-b-0 last:pb-0">
+            <label class="block text-lg font-semibold mb-2 text-text">Manage Relays</label>
+            <p class="text-text-secondary mb-5 text-sm leading-normal">Configure which Nostr relays to connect to</p>
             
-            <div class="relay-header">
-              <span class="relay-count">{{ relayUrls().length }} relays connected</span>
-              <button class="relay-reset-btn" (click)="resetToDefaultRelays()">
-                <span class="material-icons">restart_alt</span>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-text-secondary text-sm">{{ relayUrls().length }} relays connected</span>
+              <button class="flex items-center gap-2 bg-none border-none text-sm text-accent cursor-pointer p-2 rounded transition duration-200 ease-in-out hover:bg-accent/10" (click)="resetToDefaultRelays()">
+                <span class="material-icons text-lg">restart_alt</span>
                 Reset to defaults
               </button>
             </div>
             
-            <div class="relay-list">
+            <div class="max-h-72 overflow-y-auto mb-6 border border-border rounded-lg bg-surface-hover">
               @if (relayUrls().length === 0) {
-                <div class="empty-state">
-                  <span class="material-icons">signal_wifi_off</span>
+                <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary min-h-[120px]">
+                  <span class="material-icons text-4xl mb-4 opacity-50">signal_wifi_off</span>
                   <p>No relays configured. Add a relay or reset to defaults.</p>
                 </div>
               }
               
               @for (relay of relayUrls(); track relay) {
-                <div class="relay-item" [@fadeInOut]>
-                  <div class="relay-details">
-                    <span class="material-icons relay-icon">wifi</span>
-                    <span class="relay-url">{{ relay }}</span>
+                <div class="flex items-center justify-between py-3 px-4 border-b border-border last:border-b-0" [@fadeInOut]>
+                  <div class="flex items-center gap-3 min-w-0">
+                    <span class="material-icons text-accent flex-shrink-0">wifi</span>
+                    <span class="break-all font-mono text-sm text-text truncate">{{ relay }}</span>
                   </div>
-                  <button class="relay-remove" (click)="removeRelay(relay)" title="Remove relay">
+                  <button class="bg-none border-none text-text-secondary w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition duration-200 ease-in-out flex-shrink-0 hover:bg-red-500/10 hover:text-warning" (click)="removeRelay(relay)" title="Remove relay">
                     <span class="material-icons">close</span>
                   </button>
                 </div>
               }
             </div>
             
-            <div class="relay-add-container">
-              <div class="input-group">
-                <div class="relay-input-wrapper">
-                  <span class="material-icons input-icon">add_link</span>
+            <div class="mb-3 w-full">
+              <div class="flex rounded-lg overflow-hidden shadow-sm border border-border transition duration-300 ease-in-out w-full flex-nowrap relative focus-within:border-accent focus-within:shadow-md">
+                <div class="flex-1 relative min-w-0">
+                  <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none z-[1]">add_link</span>
                   <input 
                     type="text" 
                     [(ngModel)]="newRelayUrl" 
                     placeholder="wss://relay.example.com"
-                    class="relay-input"
-                    [class.invalid]="newRelayUrl() && !isValidUrl(newRelayUrl())"
+                    class="w-full h-11 py-0 pr-4 pl-10 border-none bg-surface-hover text-text font-mono transition duration-200 ease-in-out text-ellipsis rounded-l-lg relative z-[1] focus:outline-none focus:bg-surface-card"
+                    [class.bg-red-500]="newRelayUrl() && !isValidUrl(newRelayUrl())"
                     (keyup.enter)="addRelay()"
                   />
                 </div>
                 <button 
-                  class="relay-add-btn" 
+                  class="flex items-center justify-center gap-2 px-4 md:px-6 h-11 border-none bg-gradient-to-br from-accent to-accent-dark text-white font-medium text-sm tracking-wide cursor-pointer transition duration-300 ease-in-out whitespace-nowrap flex-shrink-0 min-w-[100px] md:min-w-[120px] outline-none relative overflow-hidden rounded-r-lg z-[2] shadow-sm hover:enabled:bg-gradient-to-br hover:enabled:from-accent-light hover:enabled:to-accent hover:enabled:shadow-lg hover:enabled:shadow-accent/20 active:enabled:bg-gradient-to-br active:enabled:from-accent-dark active:enabled:to-accent active:enabled:translate-y-px focus-visible:ring-2 focus-visible:ring-accent/50 disabled:cursor-not-allowed disabled:bg-gray-400" 
                   [disabled]="!newRelayUrl() || !isValidUrl(newRelayUrl())"
                   (click)="addRelay()"
                 >
-                  <span class="material-icons">add_circle</span>
+                  <span class="material-icons text-lg mr-0.5">add_circle</span>
                   <span>Add</span>
                 </button>
               </div>
             </div>
             
             @if (newRelayUrl() && !isValidUrl(newRelayUrl())) {
-              <div class="error-message" [@fadeInOut]>
-                <span class="material-icons">error</span>
+              <div class="flex items-center gap-2 text-warning text-sm mb-4" [@fadeInOut]>
+                <span class="material-icons text-lg">error</span>
                 Must be a valid WebSocket URL (wss://)
               </div>
             }
             
-            <div class="relay-save-container">
+            <div class="text-center mt-4">
               <button 
-                class="relay-save-btn" 
+                class="flex items-center justify-center gap-2 w-full max-w-xs mx-auto py-3.5 px-6 rounded-lg border-none bg-accent text-white font-medium cursor-pointer transition duration-200 ease-out hover:enabled:bg-accent-light hover:enabled:-translate-y-0.5 hover:enabled:scale-105 hover:enabled:shadow-lg hover:enabled:shadow-accent/25 disabled:opacity-50 disabled:cursor-not-allowed" 
                 [disabled]="relayUrls().length === 0"
                 (click)="saveAndReloadRelays()"
               >
@@ -245,7 +255,7 @@
               </button>
               
               @if (relaySaveMessage()) {
-                <div class="save-message" [@fadeInOut]>
+                <div class="mt-4 text-success text-sm p-2 bg-green-500/10 rounded" [@fadeInOut]>
                   {{ relaySaveMessage() }}
                 </div>
               }
@@ -256,101 +266,104 @@
 
       <!-- Indexers Tab -->
       @if (activeTab() === 'indexers') {
-        <div class="settings-card">
-          <h2>
-            <span class="material-icons">storage</span>
+        <div class="bg-surface-card rounded-xl p-6 shadow-md">
+          <h2 class="flex items-center gap-3 mt-0 mb-6 text-2xl font-semibold text-text">
+            <span class="material-icons text-accent text-3xl">storage</span>
             Indexers
           </h2>
           
-          <div class="setting-group">
-            <label class="setting-label">Manage Indexers</label>
-            <p class="setting-description">Configure indexer endpoints for project data retrieval</p>
+          <div class="py-5 border-b border-border last:border-b-0 last:pb-0">
+            <label class="block text-lg font-semibold mb-2 text-text">Manage Indexers</label>
+            <p class="text-text-secondary mb-5 text-sm leading-normal">Configure indexer endpoints for project data retrieval</p>
             
-            <div class="indexers-header">
-              <button class="indexers-reset-btn" (click)="resetToDefaultIndexers()">
-                <span class="material-icons">restart_alt</span>
+            <div class="flex items-center justify-end mb-4">
+              <button class="flex items-center gap-2 bg-none border-none text-sm text-accent cursor-pointer p-2 rounded transition duration-200 ease-in-out hover:bg-accent/10" (click)="resetToDefaultIndexers()">
+                <span class="material-icons text-lg">restart_alt</span>
                 Reset to defaults
               </button>
             </div>
             
             <!-- Mainnet Indexers -->
-            <div class="indexers-network-section">
-              <h3 class="indexers-network-title">
-                <span class="material-icons mainnet-icon">currency_bitcoin</span>
+            <div class="mb-8 pb-6 border-b border-border last:border-b-0 last:mb-4">
+              <h3 class="flex items-center gap-2 text-lg mt-2 mb-4 font-semibold">
+                <span class="material-icons text-xl text-bitcoin-mainnet">currency_bitcoin</span>
                 Mainnet Indexers
               </h3>
               
-              <div class="indexers-list">
+              <div class="max-h-72 overflow-y-auto mb-6 border border-border rounded-lg bg-surface-hover">
                 @if (getMainnetIndexers().length === 0) {
-                  <div class="empty-state">
-                    <span class="material-icons">dns_disabled</span>
+                  <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary min-h-[100px]">
+                    <span class="material-icons text-4xl mb-4 opacity-50">dns_disabled</span>
                     <p>No mainnet indexers configured. Add an indexer or reset to defaults.</p>
                   </div>
                 }
                 
                 @for (indexer of getMainnetIndexers(); track indexer.url) {
-                  <div class="indexer-item" [@fadeInOut]>
-                    <div class="indexer-content">
-                      <div class="indexer-details">
-                        <div class="indexer-icon-container">
-                          <span class="material-icons indexer-icon">dns</span>
+                  <div class="flex flex-col py-3 px-4 border-b border-border last:border-b-0" [@fadeInOut]>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center w-full gap-2">
+                      <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <div class="relative flex items-center justify-center w-8 h-8 flex-shrink-0">
+                          <span class="material-icons text-accent indexer-icon">dns</span>
                           @if (indexer.isPrimary) {
-                            <span class="primary-badge" title="Primary Indexer">
-                              <span class="material-icons">star</span>
+                            <span class="absolute -top-1 -right-1 bg-surface-card rounded-full w-5 h-5 flex items-center justify-center shadow" title="Primary Indexer">
+                              <span class="material-icons text-sm text-yellow-500">star</span>
                             </span>
                           }
                         </div>
-                        <span class="indexer-url">{{ indexer.url }}</span>
+                        <span class="break-all font-mono text-sm text-text flex-1 min-w-0 pr-4 truncate">{{ indexer.url }}</span>
                       </div>
-                      <div class="indexer-actions">
-                        @if (indexerTestingUrl() === indexer.url) {
-                          <span class="indexer-testing">
-                            <div class="loading-spinner"></div>
+                      <div class="flex items-center gap-2 flex-shrink-0 w-full md:w-auto justify-end">
+                        @if (indexerTestingUrl() === indexer.url && indexerTestResult() === null) {
+                          <span class="text-sm text-text-secondary inline-flex items-center gap-2 px-2">
+                            <div class="w-4 h-4 border-2 border-accent/20 border-t-accent rounded-full animate-spin"></div>
                             Testing...
                           </span>
-                        } @else if (indexerTestingUrl() !== indexer.url && indexerTestResult() !== null) {
                         } @else {
                           <button 
-                            class="indexer-action-btn indexer-test"
+                            class="bg-none border-none w-9 h-9 rounded-md flex items-center justify-center cursor-pointer transition duration-200 ease-in-out flex-shrink-0 text-text-secondary hover:bg-blue-500/10 hover:text-blue-600"
                             (click)="testIndexerConnection(indexer.url)" 
                             title="Test connection"
+                            [disabled]="indexerTestingUrl() !== null"
                           >
-                            <span class="material-icons">network_check</span>
+                            <span class="material-icons text-lg">network_check</span>
                           </button>
                         }
                         
                         @if (!indexer.isPrimary) {
                           <button 
-                            class="indexer-action-btn indexer-primary" 
+                            class="bg-none border-none w-9 h-9 rounded-md flex items-center justify-center cursor-pointer transition duration-200 ease-in-out flex-shrink-0 text-text-secondary hover:bg-yellow-500/10 hover:text-yellow-600" 
                             (click)="setPrimaryIndexer(indexer.url, true)" 
                             title="Make primary"
                           >
-                            <span class="material-icons">star_outline</span>
+                            <span class="material-icons text-lg">star_outline</span>
                           </button>
                         }
                         
                         @if (getMainnetIndexers().length > 1) {
                           <button 
-                            class="indexer-action-btn indexer-remove" 
+                            class="bg-none border-none w-9 h-9 rounded-md flex items-center justify-center cursor-pointer transition duration-200 ease-in-out flex-shrink-0 text-text-secondary hover:bg-red-500/10 hover:text-warning" 
                             (click)="removeIndexer(indexer.url, true)" 
                             title="Remove indexer"
                           >
-                            <span class="material-icons">close</span>
+                            <span class="material-icons text-lg">close</span>
                           </button>
                         }
                       </div>
                     </div>
                     
                     @if (indexerTestingUrl() === indexer.url && indexerTestResult() !== null) {
-                      <div class="indexer-test-result" [@fadeInOut]>
+                      <div class="mt-2 text-sm p-3 rounded-md bg-surface-card border-l-4" 
+                           [class.border-success]="indexerTestResult()" 
+                           [class.border-warning]="!indexerTestResult()" 
+                           [@fadeInOut]>
                         @if (indexerTestResult()) {
-                          <span class="test-success">
-                            <span class="material-icons">check_circle</span>
+                          <span class="text-success flex items-center gap-2">
+                            <span class="material-icons text-success">check_circle</span>
                             Connection successful
                           </span>
                         } @else {
-                          <span class="test-failed">
-                            <span class="material-icons">error</span>
+                          <span class="text-warning flex items-center gap-2">
+                            <span class="material-icons text-warning">error</span>
                             Connection failed
                           </span>
                         }
@@ -360,116 +373,119 @@
                 }
               </div>
               
-              <div class="indexer-add-container">
-                <div class="input-group">
-                  <div class="relay-input-wrapper">
-                    <span class="material-icons input-icon">add_link</span>
+              <div class="mb-4 w-full">
+                <div class="flex rounded-lg overflow-hidden shadow-sm border border-border transition duration-300 ease-in-out w-full flex-nowrap relative focus-within:border-accent focus-within:shadow-md">
+                  <div class="flex-1 relative min-w-0">
+                    <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none z-[1]">add_link</span>
                     <input 
                       type="text" 
                       [(ngModel)]="newMainnetIndexerUrl" 
                       placeholder="https://explorer.example.com/"
-                      class="relay-input"
-                      [class.invalid]="newMainnetIndexerUrl() && !isValidIndexerUrl(newMainnetIndexerUrl())"
+                      class="w-full h-11 py-0 pr-4 pl-10 border-none bg-surface-hover text-text font-mono transition duration-200 ease-in-out text-ellipsis rounded-l-lg relative z-[1] focus:outline-none focus:bg-surface-card"
+                      [class.bg-red-500]="newMainnetIndexerUrl() && !isValidIndexerUrl(newMainnetIndexerUrl())"
                       (keyup.enter)="addIndexer(true)"
                     />
                   </div>
                   <button 
-                    class="relay-add-btn" 
+                    class="flex items-center justify-center gap-2 px-4 md:px-6 h-11 border-none bg-gradient-to-br from-accent to-accent-dark text-white font-medium text-sm tracking-wide cursor-pointer transition duration-300 ease-in-out whitespace-nowrap flex-shrink-0 min-w-[100px] md:min-w-[120px] outline-none relative overflow-hidden rounded-r-lg z-[2] shadow-sm hover:enabled:bg-gradient-to-br hover:enabled:from-accent-light hover:enabled:to-accent hover:enabled:shadow-lg hover:enabled:shadow-accent/20 active:enabled:bg-gradient-to-br active:enabled:from-accent-dark active:enabled:to-accent active:enabled:translate-y-px focus-visible:ring-2 focus-visible:ring-accent/50 disabled:cursor-not-allowed disabled:bg-gray-400" 
                     [disabled]="!newMainnetIndexerUrl() || !isValidIndexerUrl(newMainnetIndexerUrl())"
                     (click)="addIndexer(true)"
                   >
-                    <span class="material-icons">add_circle</span>
+                    <span class="material-icons text-lg mr-0.5">add_circle</span>
                     <span>Add</span>
                   </button>
                 </div>
               </div>
               
               @if (newMainnetIndexerUrl() && !isValidIndexerUrl(newMainnetIndexerUrl())) {
-                <div class="error-message" [@fadeInOut]>
-                  <span class="material-icons">error</span>
+                <div class="flex items-center gap-2 text-warning text-sm mb-4" [@fadeInOut]>
+                  <span class="material-icons text-lg">error</span>
                   Must be a valid HTTP/HTTPS URL
                 </div>
               }
             </div>
             
             <!-- Testnet Indexers -->
-            <div class="indexers-network-section">
-              <h3 class="indexers-network-title">
-                <span class="material-icons testnet-icon">science</span>
+            <div class="mb-8 pb-6 border-b border-border last:border-b-0 last:mb-4">
+              <h3 class="flex items-center gap-2 text-lg mt-2 mb-4 font-semibold">
+                <span class="material-icons text-xl text-bitcoin-testnet">science</span>
                 Testnet Indexers
               </h3>
               
-              <div class="indexers-list">
+              <div class="max-h-72 overflow-y-auto mb-6 border border-border rounded-lg bg-surface-hover">
                 @if (getTestnetIndexers().length === 0) {
-                  <div class="empty-state">
-                    <span class="material-icons">dns_disabled</span>
+                  <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary min-h-[100px]">
+                    <span class="material-icons text-4xl mb-4 opacity-50">dns_disabled</span>
                     <p>No testnet indexers configured. Add an indexer or reset to defaults.</p>
                   </div>
                 }
                 
                 @for (indexer of getTestnetIndexers(); track indexer.url) {
-                  <div class="indexer-item" [@fadeInOut]>
-                    <div class="indexer-content">
-                      <div class="indexer-details">
-                        <div class="indexer-icon-container">
-                          <span class="material-icons indexer-icon">dns</span>
+                  <div class="flex flex-col py-3 px-4 border-b border-border last:border-b-0" [@fadeInOut]>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center w-full gap-2">
+                      <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <div class="relative flex items-center justify-center w-8 h-8 flex-shrink-0">
+                          <span class="material-icons text-accent indexer-icon">dns</span>
                           @if (indexer.isPrimary) {
-                            <span class="primary-badge" title="Primary Indexer">
-                              <span class="material-icons">star</span>
+                            <span class="absolute -top-1 -right-1 bg-surface-card rounded-full w-5 h-5 flex items-center justify-center shadow" title="Primary Indexer">
+                              <span class="material-icons text-sm text-yellow-500">star</span>
                             </span>
                           }
                         </div>
-                        <span class="indexer-url">{{ indexer.url }}</span>
+                        <span class="break-all font-mono text-sm text-text flex-1 min-w-0 pr-4 truncate">{{ indexer.url }}</span>
                       </div>
-                      <div class="indexer-actions">
-                        @if (indexerTestingUrl() === indexer.url) {
-                          <span class="indexer-testing">
-                            <div class="loading-spinner"></div>
+                      <div class="flex items-center gap-2 flex-shrink-0 w-full md:w-auto justify-end">
+                         @if (indexerTestingUrl() === indexer.url && indexerTestResult() === null) {
+                          <span class="text-sm text-text-secondary inline-flex items-center gap-2 px-2">
+                            <div class="w-4 h-4 border-2 border-accent/20 border-t-accent rounded-full animate-spin"></div>
                             Testing...
                           </span>
-                        } @else if (indexerTestingUrl() !== indexer.url && indexerTestResult() !== null) {
                         } @else {
                           <button 
-                            class="indexer-action-btn indexer-test" 
+                            class="bg-none border-none w-9 h-9 rounded-md flex items-center justify-center cursor-pointer transition duration-200 ease-in-out flex-shrink-0 text-text-secondary hover:bg-blue-500/10 hover:text-blue-600" 
                             (click)="testIndexerConnection(indexer.url)" 
                             title="Test connection"
+                            [disabled]="indexerTestingUrl() !== null"
                           >
-                            <span class="material-icons">network_check</span>
+                            <span class="material-icons text-lg">network_check</span>
                           </button>
                         }
                         
                         @if (!indexer.isPrimary) {
                           <button 
-                            class="indexer-action-btn indexer-primary" 
+                            class="bg-none border-none w-9 h-9 rounded-md flex items-center justify-center cursor-pointer transition duration-200 ease-in-out flex-shrink-0 text-text-secondary hover:bg-yellow-500/10 hover:text-yellow-600" 
                             (click)="setPrimaryIndexer(indexer.url, false)" 
                             title="Make primary"
                           >
-                            <span class="material-icons">star_outline</span>
+                            <span class="material-icons text-lg">star_outline</span>
                           </button>
                         }
                         
                         @if (getTestnetIndexers().length > 1) {
                           <button 
-                            class="indexer-action-btn indexer-remove" 
+                            class="bg-none border-none w-9 h-9 rounded-md flex items-center justify-center cursor-pointer transition duration-200 ease-in-out flex-shrink-0 text-text-secondary hover:bg-red-500/10 hover:text-warning" 
                             (click)="removeIndexer(indexer.url, false)" 
                             title="Remove indexer"
                           >
-                            <span class="material-icons">close</span>
+                            <span class="material-icons text-lg">close</span>
                           </button>
                         }
                       </div>
                     </div>
                     
                     @if (indexerTestingUrl() === indexer.url && indexerTestResult() !== null) {
-                      <div class="indexer-test-result" [@fadeInOut]>
+                      <div class="mt-2 text-sm p-3 rounded-md bg-surface-card border-l-4" 
+                           [class.border-success]="indexerTestResult()" 
+                           [class.border-warning]="!indexerTestResult()" 
+                           [@fadeInOut]>
                         @if (indexerTestResult()) {
-                          <span class="test-success">
-                            <span class="material-icons">check_circle</span>
+                          <span class="text-success flex items-center gap-2">
+                            <span class="material-icons text-success">check_circle</span>
                             Connection successful
                           </span>
                         } @else {
-                          <span class="test-failed">
-                            <span class="material-icons">error</span>
+                          <span class="text-warning flex items-center gap-2">
+                            <span class="material-icons text-warning">error</span>
                             Connection failed
                           </span>
                         }
@@ -479,41 +495,41 @@
                 }
               </div>
               
-              <div class="indexer-add-container">
-                <div class="input-group">
-                  <div class="relay-input-wrapper">
-                    <span class="material-icons input-icon">add_link</span>
+              <div class="mb-4 w-full">
+                <div class="flex rounded-lg overflow-hidden shadow-sm border border-border transition duration-300 ease-in-out w-full flex-nowrap relative focus-within:border-accent focus-within:shadow-md">
+                  <div class="flex-1 relative min-w-0">
+                    <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none z-[1]">add_link</span>
                     <input 
                       type="text" 
                       [(ngModel)]="newTestnetIndexerUrl" 
                       placeholder="https://tbtc.indexer.example.com/"
-                      class="relay-input"
-                      [class.invalid]="newTestnetIndexerUrl() && !isValidIndexerUrl(newTestnetIndexerUrl())"
+                      class="w-full h-11 py-0 pr-4 pl-10 border-none bg-surface-hover text-text font-mono transition duration-200 ease-in-out text-ellipsis rounded-l-lg relative z-[1] focus:outline-none focus:bg-surface-card"
+                      [class.bg-red-500]="newTestnetIndexerUrl() && !isValidIndexerUrl(newTestnetIndexerUrl())"
                       (keyup.enter)="addIndexer(false)"
                     />
                   </div>
                   <button 
-                    class="relay-add-btn" 
+                    class="flex items-center justify-center gap-2 px-4 md:px-6 h-11 border-none bg-gradient-to-br from-accent to-accent-dark text-white font-medium text-sm tracking-wide cursor-pointer transition duration-300 ease-in-out whitespace-nowrap flex-shrink-0 min-w-[100px] md:min-w-[120px] outline-none relative overflow-hidden rounded-r-lg z-[2] shadow-sm hover:enabled:bg-gradient-to-br hover:enabled:from-accent-light hover:enabled:to-accent hover:enabled:shadow-lg hover:enabled:shadow-accent/20 active:enabled:bg-gradient-to-br active:enabled:from-accent-dark active:enabled:to-accent active:enabled:translate-y-px focus-visible:ring-2 focus-visible:ring-accent/50 disabled:cursor-not-allowed disabled:bg-gray-400" 
                     [disabled]="!newTestnetIndexerUrl() || !isValidIndexerUrl(newTestnetIndexerUrl())"
                     (click)="addIndexer(false)"
                   >
-                    <span class="material-icons">add_circle</span>
+                    <span class="material-icons text-lg mr-0.5">add_circle</span>
                     <span>Add</span>
                   </button>
                 </div>
               </div>
               
               @if (newTestnetIndexerUrl() && !isValidIndexerUrl(newTestnetIndexerUrl())) {
-                <div class="error-message" [@fadeInOut]>
-                  <span class="material-icons">error</span>
+                <div class="flex items-center gap-2 text-warning text-sm mb-4" [@fadeInOut]>
+                  <span class="material-icons text-lg">error</span>
                   Must be a valid HTTP/HTTPS URL
                 </div>
               }
             </div>
             
-            <div class="indexer-save-container">
+            <div class="text-center mt-6 pt-4 border-t border-dashed border-border">
               <button 
-                class="relay-save-btn" 
+                class="flex items-center justify-center gap-2 w-full max-w-xs mx-auto py-3.5 px-6 rounded-lg border-none bg-accent text-white font-medium cursor-pointer transition duration-200 ease-out hover:enabled:bg-accent-light hover:enabled:-translate-y-0.5 hover:enabled:scale-105 hover:enabled:shadow-lg hover:enabled:shadow-accent/25 disabled:opacity-50 disabled:cursor-not-allowed" 
                 (click)="saveAndApplyIndexers()"
               >
                 <span class="material-icons">save</span>
@@ -521,7 +537,12 @@
               </button>
               
               @if (indexerSaveMessage()) {
-                <div class="save-message" [@fadeInOut]>
+                <div class="mt-4 text-sm p-2 rounded" 
+                     [class.text-success]="!indexerSaveMessage().startsWith('This indexer')"
+                     [class.bg-green-500]="!indexerSaveMessage().startsWith('This indexer')"
+                     [class.text-warning]="indexerSaveMessage().startsWith('This indexer')"
+                     [class.bg-yellow-500]="indexerSaveMessage().startsWith('This indexer')"
+                     [@fadeInOut]>
                   {{ indexerSaveMessage() }}
                 </div>
               }
@@ -532,42 +553,42 @@
       
       <!-- About Tab -->
       @if (activeTab() === 'about') {
-        <div class="settings-card">
-          <h2>
-            <span class="material-icons">info</span>
+        <div class="bg-surface-card rounded-xl p-6 shadow-md">
+          <h2 class="flex items-center gap-3 mt-0 mb-6 text-2xl font-semibold text-text">
+            <span class="material-icons text-accent text-3xl">info</span>
             About Angor Hub
           </h2>
           
-          <div class="about-content">
-            <div class="logo-container">
-              <img src="/images/logo-text.svg" alt="Angor Logo" class="about-logo" />
+          <div class="flex flex-col items-center text-center">
+            <div class="mb-6">
+              <img src="/images/logo-text.svg" alt="Angor Logo" class="w-32 h-32 object-contain" />
             </div>
             
-            <div class="version-info">
-              <p class="version">Version {{ appVersion }}</p>
+            <div class="mb-6">
+              <p class="text-xl font-semibold text-text m-0 mb-1">Version {{ appVersion }}</p>
              </div>
             
-            <div class="about-description">
-              <p>Angor Hub is an explorer for Bitcoin fundraising projects built on the Angor protocol. It provides a way to discover and track Bitcoin funding opportunities.</p>
+            <div class="mb-8 max-w-2xl">
+              <p class="leading-relaxed text-text-secondary">Angor Hub is an explorer for Bitcoin fundraising projects built on the Angor protocol. It provides a way to discover and track Bitcoin funding opportunities.</p>
             </div>
             
-            <div class="links-section">
-              <h3>Resources</h3>
-              <div class="resource-links">
-                <a href="https://angor.io" target="_blank" rel="noopener" class="resource-link">
-                  <span class="material-icons">home</span>
+            <div class="w-full">
+              <h3 class="text-lg mb-4 text-text relative inline-block font-semibold">Resources</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <a href="https://angor.io" target="_blank" rel="noopener" class="flex items-center gap-3 p-4 text-text bg-surface-hover rounded-lg transition duration-200 ease-in-out no-underline hover:-translate-y-0.5 hover:bg-accent/10 hover:shadow-md">
+                  <span class="material-icons text-accent">home</span>
                   <span>Official Website</span>
                 </a>
-                <a href="https://docs.angor.io" target="_blank" rel="noopener" class="resource-link">
-                  <span class="material-icons">description</span>
+                <a href="https://docs.angor.io" target="_blank" rel="noopener" class="flex items-center gap-3 p-4 text-text bg-surface-hover rounded-lg transition duration-200 ease-in-out no-underline hover:-translate-y-0.5 hover:bg-accent/10 hover:shadow-md">
+                  <span class="material-icons text-accent">description</span>
                   <span>Documentation</span>
                 </a>
-                <a href="https://github.com/block-core/angor" target="_blank" rel="noopener" class="resource-link">
-                  <span class="material-icons">code</span>
+                <a href="https://github.com/block-core/angor" target="_blank" rel="noopener" class="flex items-center gap-3 p-4 text-text bg-surface-hover rounded-lg transition duration-200 ease-in-out no-underline hover:-translate-y-0.5 hover:bg-accent/10 hover:shadow-md">
+                  <span class="material-icons text-accent">code</span>
                   <span>Source Code</span>
                 </a>
-                <a href="https://blog.angor.io" target="_blank" rel="noopener" class="resource-link">
-                  <span class="material-icons">article</span>
+                <a href="https://blog.angor.io" target="_blank" rel="noopener" class="flex items-center gap-3 p-4 text-text bg-surface-hover rounded-lg transition duration-200 ease-in-out no-underline hover:-translate-y-0.5 hover:bg-accent/10 hover:shadow-md">
+                  <span class="material-icons text-accent">article</span>
                   <span>Blog</span>
                 </a>
               </div>

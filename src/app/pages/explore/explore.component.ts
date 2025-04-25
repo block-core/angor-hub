@@ -1,6 +1,11 @@
 import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, effect, signal, computed, Signal } from '@angular/core';
 import { RelayService } from '../../services/relay.service';
-import { IndexerService } from '../../services/indexer.service';
+import { IndexedProject, IndexerService } from '../../services/indexer.service';
+import { NetworkService } from '../../services/network.service';
+import { BitcoinUtilsService } from '../../services/bitcoin.service';
+import { UtilsService } from '../../services/utils.service';
+import { TitleService } from '../../services/title.service';
+import { DenyService } from '../../services/deny.service';
 import { RouterLink } from '@angular/router';
 import { ExploreStateService } from '../../services/explore-state.service';
 import { Router, NavigationEnd } from '@angular/router';
@@ -9,11 +14,8 @@ import { CommonModule, DOCUMENT } from '@angular/common';
 import { Location } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { AgoPipe } from '../../pipes/ago.pipe';
-import { NetworkService } from '../../services/network.service';
-import { UtilsService } from '../../services/utils.service';
-import { BitcoinUtilsService } from '../../services/bitcoin.service';
-import { TitleService } from '../../services/title.service';
 import { formatDate } from '@angular/common'; // Import formatDate
+import { TitleCasePipe } from '@angular/common'; // Import TitleCasePipe if used in template
 
 // Define type for sort options
 type SortType = 'default' | 'funding' | 'endDate' | 'investors';
@@ -22,9 +24,8 @@ type FilterType = 'all' | 'active' | 'upcoming' | 'completed';
 @Component({
   selector: 'app-explore',
   standalone: true,
-  imports: [RouterLink, BreadcrumbComponent, CommonModule, AgoPipe],
+  imports: [RouterLink, BreadcrumbComponent, CommonModule, AgoPipe, TitleCasePipe], // Add TitleCasePipe
   templateUrl: './explore.component.html',
-  styleUrl: './explore.component.scss',
 })
 export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('scrollTrigger') scrollTrigger!: ElementRef;
@@ -48,9 +49,10 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public indexer = inject(IndexerService);
   public networkService = inject(NetworkService);
-  public utils = inject(UtilsService);
   public bitcoin = inject(BitcoinUtilsService);
-  public title = inject(TitleService);
+  private utils = inject(UtilsService);
+  private title = inject(TitleService);
+  private denyService = inject(DenyService);
 
   // Adding signals for search, filter, and sort functionality
   searchTerm = signal<string>('');
@@ -656,24 +658,20 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     this.searchTerm.set(input.value);
   }
 
-  // Add methods for generating random colors and getting initials
+  // Generate a random color based on project identifier using Angor brand colors
   getRandomColor(seed: string): string {
-    // Generate a consistent random color based on the seed (project ID or name)
     let hash = 0;
+    if (!seed) return '#cbdde1'; // Default color if seed is undefined
+
     for (let i = 0; i < seed.length; i++) {
       hash = seed.charCodeAt(i) + ((hash << 5) - hash);
     }
     
-    // Select from a curated set of pleasant, vibrant colors
+    // Angor Brand Colors
     const colors = [
-      'rgba(66, 133, 244, 0.85)', // Blue
-      'rgba(219, 68, 55, 0.85)',  // Red
-      'rgba(244, 160, 0, 0.85)',  // Amber
-      'rgba(15, 157, 88, 0.85)',  // Green
-      'rgba(171, 71, 188, 0.85)', // Purple
-      'rgba(0, 172, 193, 0.85)',  // Cyan
-      'rgba(255, 112, 67, 0.85)', // Deep Orange
-      'rgba(3, 169, 244, 0.85)',  // Light Blue
+      '#022229', // Very Dark Teal
+      '#086c81', // Dark Cyan
+      '#b8c9cd'  // Slightly darker Light Steel Green
     ];
     
     // Use the hash to pick a color from the array
@@ -681,21 +679,16 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     return colors[index];
   }
 
-  getInitial(name: string): string {
+  // Get an initial letter for placeholder
+  getInitial(name: string | undefined | null): string {
     if (!name || name.trim() === '') {
       return '#';
     }
-    // Get first character, handle non-Latin scripts properly
     return name.trim()[0].toUpperCase();
   }
 
   // Get background style for banner with fallback color
-  getBannerStyle(project: any): string {
-    const bannerUrl = project.metadata?.['banner'] ?? '';
-    if (bannerUrl && !this.hasBannerFailed(project.projectIdentifier)) {
-      return `url(${bannerUrl})`;
-    }
-    // Generate a consistent color based on project identifier
+  getBannerStyle(project: IndexedProject): string {
     return this.getRandomColor(project.projectIdentifier);
   }
 
