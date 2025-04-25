@@ -30,14 +30,26 @@
 </section>
 
 <div class="container">
-  @if (!project() && indexer.loading()) {
+  @if (isDenied()) {
+    <div class="not-found-container"> 
+      <span class="material-icons not-found-icon">gpp_bad</span> 
+      <h1>Project Not Available</h1>
+      <p class="not-found-description">
+        This project is currently not available for viewing.
+      </p>
+      <div class="not-found-actions">
+        <a routerLink="/explore" class="secondary-button">
+          <span class="material-icons">explore</span>
+          Explore Other Projects
+        </a>
+      </div>
+    </div>
+  } @else if (!project() && indexer.loading()) {
     <div class="loading-container">
       <div class="loading-spinner"></div>
       <p>Loading project details...</p>
     </div>
-  }
-
-  @if (!project() && !indexer.loading()) {
+  } @else if (!project() && !indexer.loading() && noProjectFoundYet) {
     <div class="not-found-container">
       <span class="material-icons not-found-icon">search_off</span>
       <h1>Project not found... yet</h1>
@@ -56,9 +68,7 @@
         </a>
       </div>
     </div>
-  }
-
-  @if (project()) {
+  } @else if (project()) {
     <div class="project-header">
       @if (project()?.metadata?.['picture'] && !failedProfileImage()) {
         <img

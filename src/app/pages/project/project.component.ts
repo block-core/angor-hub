@@ -28,6 +28,7 @@ import { BitcoinUtilsService } from '../../services/bitcoin.service';
 import { TitleService } from '../../services/title.service';
 import { MarkdownModule } from 'ngx-markdown';
 import { SafeContentPipe } from '../../pipes/safe-content.pipe';
+import { DenyService } from '../../services/deny.service';
 
 @Component({
   selector: 'app-project',
@@ -56,6 +57,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
   public utils = inject(UtilsService);
   public bitcoin = inject(BitcoinUtilsService);
   public title = inject(TitleService);
+  private denyService = inject(DenyService);
 
   reloadPage(): void {
     window.location.reload();
@@ -63,6 +65,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
   project = signal<IndexedProject | null>(null);
   projectId: string = '';
+  isDenied = signal<boolean>(false);
 
   tabs = [
     { id: 'project', label: 'Project', icon: '📋' },
@@ -220,14 +223,35 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
     this.projectId = id;
 
+    // Load deny list first
+    await this.denyService.loadDenyList();
+
+    // Check if the project is denied
+    if (await this.denyService.isEventDenied(this.projectId)) {
+      this.isDenied.set(true);
+      this.project.set(null); // Ensure project is null
+      this.title.setTitle('Project Not Available');
+      console.warn(`Access denied for project: ${this.projectId}`);
+      return; // Stop further processing
+    }
+
     // 1. First try to get from existing projects cache
     let projectData: IndexedProject | undefined | null =
       this.indexer.getProject(id);
 
     try {
-      // 2. If not in cache, fetch from Indexer API
+      // 2. If not in cache, fetch from Indexer API (fetchProject now also checks deny list)
       if (!projectData) {
         projectData = await this.indexer.fetchProject(id);
+      }
+
+      // Check again if fetched data is denied (belt and suspenders)
+      if (projectData && await this.denyService.isEventDenied(projectData.projectIdentifier)) {
+          this.isDenied.set(true);
+          this.project.set(null);
+          this.title.setTitle('Project Not Available');
+          console.warn(`Access denied for project after fetch: ${this.projectId}`);
+          return;
       }
 
       if (projectData) {
@@ -355,10 +379,18 @@ export class ProjectComponent implements OnInit, OnDestroy {
         //   await this.relay.fetchData([projectData.nostrEventId]);
         // }
       } else {
-        this.noProjectFoundYet = true;
+        // If projectData is null and not denied, it means it wasn't found
+        if (!this.isDenied()) {
+           this.noProjectFoundYet = true;
+           this.title.setTitle('Project Not Found');
+        }
       }
     } catch (error) {
       console.error('Error loading project:', error);
+       if (!this.isDenied()) { // Only set not found if not denied
+          this.noProjectFoundYet = true;
+          this.title.setTitle('Error Loading Project');
+       }
     }
   }
 
@@ -448,7 +480,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
     const diffMillis = expiryMillis - now;
 
     if (diffMillis <= 0) {
-      return 'Ended'; // Should ideally be handled by isProjectEnded, but good fallback
+      return 'Ended'; 
     }
 
     const diffSeconds = Math.floor(diffMillis / 1000);
@@ -456,7 +488,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
     const diffHours = Math.floor(diffMinutes / 60);
     const diffDays = Math.floor(diffHours / 24);
     const diffWeeks = Math.floor(diffDays / 7);
-    const diffMonths = Math.floor(diffDays / 30); // Approximate months
+    const diffMonths = Math.floor(diffDays / 30);
 
     if (diffDays < 1) {
       if (diffHours > 1) {

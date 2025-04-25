@@ -130,6 +130,9 @@ export class IndexerService {
     
     // Set the active indexer URL based on the current network
     this.updateActiveIndexer();
+
+    // Ensure deny list is loaded initially
+    this.denyService.loadDenyList();
   }
   
   private loadIndexerConfig(): void {
@@ -336,6 +339,7 @@ export class IndexerService {
     }
 
     try {
+      // Ensure deny list is loaded before fetching
       await this.denyService.loadDenyList();
 
       this.loading.set(true);
@@ -373,46 +377,66 @@ export class IndexerService {
       >(url);
 
       if (Array.isArray(response) && response.length > 0) {
-        // Filter out denied projects
+        // Filter out denied projects BEFORE processing
         const filteredResponse: IndexedProject[] = [];
-  
         for (const item of response) {
+          // Use await here as isEventDenied is now async
           const isDenied = await this.denyService.isEventDenied(item.projectIdentifier);
           if (!isDenied) {
             filteredResponse.push(item);
           }
         }
       
-        if (this.offset === -1000) {
-          this.totalItems = parseInt(headers.get('pagination-total') || '0');
-          this.offset = Math.max(0, this.totalItems - limit - limit);
-        } else {
-          const nextOffset = this.offset - this.LIMIT;
-          this.offset = nextOffset;
+        if (filteredResponse.length === 0 && response.length > 0) {
+           console.log(`All ${response.length} fetched projects were denied.`);
         }
 
-        // Merge new projects with existing ones, avoiding duplicates
-        this.projects.update((existing) => {
-          const merged = [...existing];
+        if (filteredResponse.length > 0) {
+          if (this.offset === -1000) {
+            this.totalItems = parseInt(headers.get('pagination-total') || '0');
+            // Adjust offset calculation based on potentially filtered items
+            // This might need refinement depending on how totalItems relates to non-denied items
+            this.offset = Math.max(0, this.totalItems - limit - limit); 
+          } else {
+            const nextOffset = this.offset - this.LIMIT;
+            this.offset = nextOffset;
+          }
 
-          filteredResponse.forEach((newProject) => {
-            const existingIndex = merged.findIndex(
-              (p) => p.projectIdentifier === newProject.projectIdentifier
-            );
-            if (existingIndex === -1) {
-              merged.push(newProject);
-            }
+          // Merge new projects with existing ones, avoiding duplicates
+          this.projects.update((existing) => {
+            const merged = [...existing];
+            const existingIds = new Set(existing.map(p => p.projectIdentifier));
+
+            filteredResponse.forEach((newProject) => {
+              if (!existingIds.has(newProject.projectIdentifier)) {
+                merged.push(newProject);
+                existingIds.add(newProject.projectIdentifier); // Add to set to prevent duplicates within the batch
+              }
+            });
+
+            return merged;
           });
 
-          return merged;
-        });
+          const eventIds = filteredResponse.map((project) => project.nostrEventId);
 
-        const eventIds = filteredResponse.map((project) => project.nostrEventId);
-        // const eventIds = filteredResponse.map((project) => project.nostrEventId);
-
-        if (eventIds.length > 0) {
-          this.relay.fetchListData(eventIds);
+          if (eventIds.length > 0) {
+            this.relay.fetchListData(eventIds);
+          }
+        } else {
+           // If all fetched items were filtered out, still need to adjust offset or mark as complete
+           if (this.offset === -1000) {
+              this.totalItems = parseInt(headers.get('pagination-total') || '0');
+              this.offset = Math.max(0, this.totalItems - limit - limit);
+           } else {
+              const nextOffset = this.offset - this.LIMIT;
+              this.offset = nextOffset;
+           }
+           // If offset becomes negative after adjustment, we might be done
+           if (this.offset < 0) {
+              this.totalProjectsFetched = true;
+           }
         }
+
       } else {
         this.totalProjectsFetched = true;
       }
@@ -490,15 +514,29 @@ export class IndexerService {
   }
 
   async fetchProject(id: string): Promise<IndexedProject | null> {
+    // Check deny list first
+    await this.denyService.loadDenyList();
+    if (await this.denyService.isEventDenied(id)) {
+      this.error.set(`Project ${id} is not available.`);
+      return null;
+    }
+
     try {
       this.loading.set(true);
       const project = await this.fetchJson<IndexedProject>(
         `${this.indexerUrl}api/query/Angor/projects/${id}`
       );
-      if (project) {
+      if (project && project.data) {
+        // Check again after fetching, just in case
+        if (await this.denyService.isEventDenied(project.data.projectIdentifier)) {
+           this.error.set(`Project ${id} is not available.`);
+           return null;
+        }
+        
         // TODO: VERIFY IF THIS ACTUALLY WORKS, it relies on FOUNDERKEY which is not nostr pub key.
         // Fetch profile in an array of one
-        this.relay.fetchProfile([project.data.founderKey]);
+        // It seems profile fetching is handled later based on details, keep that logic.
+        // this.relay.fetchProfile([project.data.founderKey]); // Reconsider if founderKey is the right key
       }
 
       return project.data;
