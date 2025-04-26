@@ -65,10 +65,11 @@
     }
 
     <div class="flex flex-col gap-2 md:gap-3 min-w-0">
-      <div class="flex items-start justify-between gap-2">
-        <h1 class="m-0 text-xl md:text-3xl font-bold break-words mr-2">{{ project()?.metadata?.name || projectId }}</h1>
-
-        <div class="flex gap-1 flex-shrink-0">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+        <h1 class="m-0 text-xl md:text-3xl font-bold break-words min-w-0 mr-2 order-1 sm:order-none truncate">
+          {{ project()?.metadata?.name || projectId }}
+        </h1>
+        <div class="flex gap-1 flex-shrink-0 order-2 sm:order-none self-end sm:self-start">
           <button [title]="isFavorite() ? 'Remove from bookmarks' : 'Add to bookmarks'" [class.text-accent]="isFavorite()" (click)="toggleFavorite()" class="bg-transparent border-none text-text-secondary rounded-full w-9 h-9 md:w-10 md:h-10 flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-surface-hover hover:text-text">
             <span class="material-icons text-lg md:text-xl">{{ isFavorite() ? "bookmark" : "bookmark_border" }}</span>
           </button>
@@ -78,37 +79,39 @@
         </div>
       </div>
 
-      <p class="text-sm md:text-base leading-relaxed text-text-secondary m-0 line-clamp-3">{{ project()?.metadata?.about }}</p>
+      <p class="text-sm md:text-base leading-relaxed text-text-secondary m-0 line-clamp-3 order-3 sm:order-none">{{ project()?.metadata?.about }}</p>
 
       @if (isProjectSuccessful()) {
-      <div class="flex items-center p-3 md:p-4 rounded-lg bg-green-500/10 border-green-500">
-        <span class="material-icons status-icon text-green-500 text-2xl mr-3 md:mr-4">check_circle</span>
-        <div class="status-message">
+      <div class="flex items-center p-3 md:p-4 rounded-lg bg-green-500/10 border border-green-500/30 order-4 sm:order-none">
+        <span class="material-icons status-icon text-green-500 text-2xl mr-3 md:mr-4 flex-shrink-0">check_circle</span>
+        <div class="status-message min-w-0">
           <h3 class="m-0 mb-1 text-base md:text-lg font-semibold text-green-700 dark:text-green-400">Project Successfully Funded!</h3>
-          <p class="m-0 text-sm md:text-base text-green-600 dark:text-green-500">Reached goal of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? "BTC" : "TBTC" }} ({{ getFundingPercentage() }}% funded).</p>
+          <p class="m-0 text-sm md:text-base text-green-600 dark:text-green-500 break-words">Reached goal of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? "BTC" : "TBTC" }} ({{ getFundingPercentage() }}% funded).</p>
         </div>
       </div>
       } @else if (isProjectFailed()) {
-      <div class="flex items-center p-3 md:p-4 rounded-lg bg-red-500/10 border-red-500">
-        <span class="material-icons status-icon text-red-500 text-2xl mr-3 md:mr-4">error</span>
-        <div class="status-message">
+      <div class="flex items-center p-3 md:p-4 rounded-lg bg-red-500/10 border border-red-500/30 order-4 sm:order-none">
+        <span class="material-icons status-icon text-red-500 text-2xl mr-3 md:mr-4 flex-shrink-0">error</span>
+        <div class="status-message min-w-0">
           <h3 class="m-0 mb-1 text-base md:text-lg font-semibold text-red-700 dark:text-red-400">Project Did Not Reach Funding Goal</h3>
-          <p class="m-0 text-sm md:text-base text-red-600 dark:text-red-500">Raised {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }} of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? "BTC" : "TBTC" }} ({{ getFundingPercentage() }}% funded).</p>
+          <p class="m-0 text-sm md:text-base text-red-600 dark:text-red-500 break-words">Raised {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }} of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? "BTC" : "TBTC" }} ({{ getFundingPercentage() }}% funded).</p>
         </div>
-      </div>
-      } @if (project()?.details?.nostrPubKey) {
-      <div class="flex flex-wrap gap-2 md:gap-3 mt-1">
-        <a [href]="'https://primal.net/p/' + user?.npub" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-ground border border-border rounded-md text-text text-xs md:text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-hover hover:shadow-sm"> <span class="material-icons text-sm">launch</span> Primal </a>
-        <a [href]="'https://notes.blockcore.net/p/' + user?.npub" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-ground border border-border rounded-md text-text text-xs md:text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-hover hover:shadow-sm"> <span class="material-icons text-sm">launch</span> Notes </a>
-        <a [href]="'https://nostr.at/' + user?.npub" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-ground border border-border rounded-md text-text text-xs md:text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-hover hover:shadow-sm"> <span class="material-icons text-sm">launch</span> nostr.at </a>
       </div>
       }
 
-      <div class="flex flex-wrap gap-x-3 md:gap-x-4 gap-y-1 mt-1">
+      @if (project()?.details?.nostrPubKey && user?.npub) {
+      <div class="flex flex-wrap gap-2 md:gap-3 mt-2 order-5 sm:order-none">
+        <a [href]="'https://primal.net/p/' + user?.npub" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-hover rounded-md text-text text-xs md:text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-ground hover:shadow-sm"> <span class="material-icons text-sm">open_in_new</span> Primal </a>
+        <a [href]="'https://notes.blockcore.net/p/' + user?.npub" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-hover rounded-md text-text text-xs md:text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-ground hover:shadow-sm"> <span class="material-icons text-sm">open_in_new</span> Notes </a>
+        <a [href]="'https://nostr.at/' + user?.npub" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-hover rounded-md text-text text-xs md:text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-ground hover:shadow-sm"> <span class="material-icons text-sm">open_in_new</span> nostr.at </a>
+      </div>
+      }
+
+      <div class="flex flex-wrap gap-x-3 md:gap-x-4 gap-y-1 mt-2 order-6 sm:order-none">
         @for (identity of project()?.externalIdentities; track identity.platform) {
         <a [href]="getSocialLink(identity)" target="_blank" class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-text-secondary text-xs md:text-sm transition-all duration-300 ease-in-out hover:bg-surface-hover hover:text-text" [title]="identity.username">
           <span class="material-icons text-sm md:text-base">{{ getSocialIcon(identity.platform) }}</span>
-          <span>{{ formatUsername(identity.username) }}</span>
+          <span class="truncate max-w-[100px] sm:max-w-[150px]">{{ formatUsername(identity.username) }}</span>
         </a>
         }
       </div>
@@ -277,30 +280,59 @@
           <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-5 overflow-hidden">
             <h3 class="mt-0 mb-5 pb-3 border-b border-border text-lg font-semibold">Project Details</h3>
 
-            <div class="mb-4">
-              <div class="text-sm text-text-secondary mb-1">Start Date</div>
-              <div class="text-text font-medium">
-                {{ formatDate(project()?.details?.startDate) }}
-                @if (project()?.details?.startDate) {
-                <span class="block text-xs text-text-secondary mt-1 italic"> @if (isProjectNotStarted()) { (Starts {{ project()?.details?.startDate ?? 0 | ago }}) } @else { (Started {{ project()?.details?.startDate ?? 0 | ago }}) } </span>
-                }
-              </div>
-            </div>
-            <div class="mb-4">
-              <div class="text-sm text-text-secondary mb-1">Expiry Date</div>
-              <div class="text-text font-medium">
-                {{ formatDate(project()?.details?.expiryDate) }}
-                @if (project()?.details?.expiryDate) {
-                <span class="block text-xs text-text-secondary mt-1 italic"> @if (isProjectEnded()) { (Ended {{ project()?.details?.expiryDate ?? 0 | ago }}) } @else { ({{ getRemainingTimeText(project()?.details?.expiryDate) }}) } </span>
-                } @else {
-                <span class="block text-xs text-text-secondary mt-1 italic">(No expiry date)</span>
-                }
-              </div>
-            </div>
-            <div class="mb-0">
-              <div class="text-sm text-text-secondary mb-1">Penalty Days</div>
-              <div class="text-text font-medium">{{ project()?.details?.penaltyDays }} days</div>
-            </div>
+            <ul class="space-y-4">
+              <li class="flex items-start gap-3">
+                <span class="material-icons text-xl text-accent mt-0.5 flex-shrink-0">event_available</span>
+                <div>
+                  <div class="text-sm text-text-secondary">Start Date</div>
+                  <div class="text-text font-medium">
+                    {{ formatDate(project()?.details?.startDate) }}
+                    @if (project()?.details?.startDate) {
+                    <span class="block text-xs text-text-secondary mt-0.5 italic">
+                      @if (isProjectNotStarted()) { (Starts {{ project()?.details?.startDate ?? 0 | ago }}) }
+                      @else { (Started {{ project()?.details?.startDate ?? 0 | ago }}) }
+                    </span>
+                    }
+                  </div>
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="material-icons text-xl text-accent mt-0.5 flex-shrink-0">timer</span>
+                <div>
+                  <div class="text-sm text-text-secondary">Expiry Date</div>
+                  <div class="text-text font-medium">
+                    {{ formatDate(project()?.details?.expiryDate) }}
+                    @if (project()?.details?.expiryDate) {
+                    <span class="block text-xs text-text-secondary mt-0.5 italic">
+                      @if (isProjectEnded()) { (Ended {{ project()?.details?.expiryDate ?? 0 | ago }}) }
+                      @else { ({{ getRemainingTimeText(project()?.details?.expiryDate) }}) }
+                    </span>
+                    } @else {
+                    <span class="block text-xs text-text-secondary mt-0.5 italic">(No expiry date)</span>
+                    }
+                  </div>
+                </div>
+              </li>
+              @if (projectDuration()) {
+              <li class="flex items-start gap-3">
+                <span class="material-icons text-xl text-accent mt-0.5 flex-shrink-0">date_range</span>
+                <div>
+                  <div class="text-sm text-text-secondary">Project Duration</div>
+                  <div class="text-text font-medium">
+                    {{ projectDuration() }}
+                  </div>
+                </div>
+              </li>
+              }
+              <li class="flex items-start gap-3">
+                <span class="material-icons text-xl text-accent mt-0.5 flex-shrink-0">gavel</span>
+                <div>
+                  <div class="text-sm text-text-secondary">Penalty Period</div>
+                  <div class="text-text font-medium">{{ project()?.details?.penaltyDays }} days</div>
+                  <div class="text-xs text-text-secondary mt-0.5 italic">(Investor withdrawal penalty window after expiry)</div>
+                </div>
+              </li>
+            </ul>
           </div>
 
           @if (project()?.details?.stages?.length) {

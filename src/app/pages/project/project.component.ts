@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
   IndexedProject,
@@ -92,6 +92,38 @@ export class ProjectComponent implements OnInit, OnDestroy {
   failedBannerImage = signal<boolean>(false);
   failedProfileImage = signal<boolean>(false);
   failedMediaImages = signal<Set<string>>(new Set<string>());
+
+  public projectDuration = computed(() => {
+    const start = this.project()?.details?.startDate;
+    const end = this.project()?.details?.expiryDate;
+
+    if (!start || !end || end <= start) {
+      return null; // Not calculable or invalid dates
+    }
+
+    const startDate = new Date(start * 1000);
+    const endDate = new Date(end * 1000);
+    const diffMillis = endDate.getTime() - startDate.getTime();
+
+    const diffDays = Math.floor(diffMillis / (1000 * 60 * 60 * 24));
+    const diffMonths = Math.floor(diffDays / 30.44); // Average days in month
+    const diffYears = Math.floor(diffDays / 365.25); // Account for leap years
+
+    if (diffYears >= 1) {
+      const remainingMonths = Math.floor((diffDays % 365.25) / 30.44);
+      let durationStr = `${diffYears} year${diffYears > 1 ? 's' : ''}`;
+      if (remainingMonths > 0) {
+        durationStr += ` ${remainingMonths} month${remainingMonths > 1 ? 's' : ''}`;
+      }
+      return durationStr;
+    } else if (diffMonths >= 1) {
+      return `${diffMonths} month${diffMonths > 1 ? 's' : ''}`;
+    } else if (diffDays >= 1) {
+      return `${diffDays} day${diffDays > 1 ? 's' : ''}`;
+    } else {
+      return 'Less than a day'; // Should ideally not happen with valid start/end
+    }
+  });
 
   async setActiveTab(tabId: string) {
     this.activeTab = tabId;
