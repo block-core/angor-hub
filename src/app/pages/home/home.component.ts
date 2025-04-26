@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal, effect, WritableSignal } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common'; // Import DatePipe
+import { CommonModule, DatePipe } from '@angular/common'; 
 import { RouterLink } from '@angular/router';
 import { NetworkService } from '../../services/network.service';
 import { BitcoinInfoService } from '../../services/bitcoin-info.service';
@@ -9,9 +9,9 @@ import { TitleService } from '../../services/title.service';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, DatePipe], // Add DatePipe to imports
+  imports: [CommonModule, RouterLink, DatePipe], 
   templateUrl: './home.component.html',
-  providers: [DatePipe] // Provide DatePipe
+  providers: [DatePipe] 
 })
 export class HomeComponent implements OnInit {
   networkService = inject(NetworkService);
@@ -22,9 +22,9 @@ export class HomeComponent implements OnInit {
   datePipe = inject(DatePipe); 
 
   blogPosts: WritableSignal<BlogPost[]> = signal([]);
-  // Remove totalProjects signal if not used
-  // totalProjects = signal<number | null>(null);
-  currentDate = new Date(); // Add property for current date
+  
+  
+  currentDate = new Date(); 
 
   constructor() {
   }
@@ -36,12 +36,12 @@ export class HomeComponent implements OnInit {
 
   async loadBlogPosts() {
     try {
-      // Assuming fetchBlogPosts exists, otherwise use getLatestPosts
-      const posts = await this.blogService.getLatestPosts(); // Use getLatestPosts if fetchBlogPosts doesn't exist
+      
+      const posts = await this.blogService.getLatestPosts(); 
       this.blogPosts.set(posts);
     } catch (error) {
       console.error('Error loading blog posts:', error);
-      this.blogPosts.set([]); // Set to empty array on error
+      this.blogPosts.set([]); 
     }
   }
 }

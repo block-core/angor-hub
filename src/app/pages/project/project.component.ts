@@ -67,17 +67,17 @@ export class ProjectComponent implements OnInit, OnDestroy {
   isDenied = signal<boolean>(false);
 
   tabs = [
-    { id: 'project', label: 'Project', icon: 'description' }, // Changed icon
-    { id: 'faq', label: 'FAQ', icon: 'help_outline' }, // Changed icon
-    { id: 'updates', label: 'Updates', icon: 'campaign' }, // Changed icon
-    { id: 'comments', label: 'Comments', icon: 'chat_bubble_outline' }, // Changed icon
+    { id: 'project', label: 'Project', icon: 'description' },
+    { id: 'faq', label: 'FAQ', icon: 'help_outline' },
+    { id: 'updates', label: 'Updates', icon: 'campaign' },
+    { id: 'comments', label: 'Comments', icon: 'chat_bubble_outline' },
   ];
   activeTab = 'project';
   updates = signal<NDKEvent[]>([]);
   comments = signal<NDKEvent[]>([]);
-  faqItems = signal<FaqItem[]>([]); // Changed to signal
+  faqItems = signal<FaqItem[]>([]);
 
-  // Loading and Error Signals for Tabs
+ 
   loadingUpdates = signal<boolean>(false);
   loadingComments = signal<boolean>(false);
   loadingFaq = signal<boolean>(false);
@@ -110,14 +110,14 @@ export class ProjectComponent implements OnInit, OnDestroy {
     if (!this.project()?.details?.nostrPubKey) return;
 
     this.loadingFaq.set(true);
-    this.errorFaq.set(null); // Reset error before fetching
+    this.errorFaq.set(null);
     try {
       const ndk = await this.relay.ensureConnected();
       const filter = {
         kinds: [NDKKind.AppSpecificData],
         authors: [this.project()!.details!.nostrPubKey],
         '#d': ['angor:faq'],
-        limit: 1, // Fetch only the latest FAQ event
+        limit: 1,
       };
 
       const event = await ndk.fetchEvent(filter);
@@ -129,7 +129,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
             this.faqItems.set(parsedFaq);
           } else {
             console.warn('FAQ content is not an array:', parsedFaq);
-            this.faqItems.set([]); // Set to empty if format is wrong
+            this.faqItems.set([]);
             this.errorFaq.set('Invalid FAQ format received.');
           }
         } catch (parseError) {
@@ -138,7 +138,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
           this.errorFaq.set('Failed to parse FAQ data.');
         }
       } else {
-        this.faqItems.set([]); // Set empty if no event found
+        this.faqItems.set([]);
       }
     } catch (error) {
       console.error('Error fetching FAQ:', error);
@@ -156,14 +156,14 @@ export class ProjectComponent implements OnInit, OnDestroy {
     try {
       const ndk = await this.relay.ensureConnected();
       const filter = {
-        kinds: [1], // Kind 1 for short text notes (updates)
+        kinds: [1],
         authors: [this.project()!.details!.nostrPubKey],
-        '#t': ['angor-update'], // Optional: Add a tag for specific updates? Or rely on author?
+        '#t': ['angor-update'],
         limit: 50,
       };
 
       const events = await ndk.fetchEvents(filter);
-      // Sort events by creation time, newest first
+     
       const sortedEvents = Array.from(events).sort((a, b) => (b.created_at ?? 0) - (a.created_at ?? 0));
       this.updates.set(sortedEvents);
     } catch (error) {
@@ -181,16 +181,16 @@ export class ProjectComponent implements OnInit, OnDestroy {
     this.errorComments.set(null);
     try {
       const ndk = await this.relay.ensureConnected();
-      // Fetch events replying to the project's pubkey OR tagging the project event ID
+     
       const filter = {
-        kinds: [1], // Kind 1 for short text notes (comments)
-        '#p': [this.project()!.details!.nostrPubKey], // Replies to the project owner
-        // '#e': [this.project()?.nostrEventId], // Optionally include replies to the project event itself
+        kinds: [1],
+        '#p': [this.project()!.details!.nostrPubKey],
+       
         limit: 50,
       };
 
       const events = await ndk.fetchEvents(filter);
-      // Sort events by creation time, newest first
+     
       const sortedEvents = Array.from(events).sort((a, b) => (b.created_at ?? 0) - (a.created_at ?? 0));
       this.comments.set(sortedEvents);
     } catch (error) {
@@ -201,7 +201,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Add to component class:
+ 
   isFavorite() {
     const favorites = JSON.parse(
       localStorage.getItem('angor-hub-favorites') || '[]'
@@ -255,29 +255,29 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
     this.projectId = id;
 
-    // Load deny list first
+   
     await this.denyService.loadDenyList();
 
-    // Check if the project is denied
+   
     if (await this.denyService.isEventDenied(this.projectId)) {
       this.isDenied.set(true);
-      this.project.set(null); // Ensure project is null
+      this.project.set(null);
       this.title.setTitle('Project Not Available');
       console.warn(`Access denied for project: ${this.projectId}`);
-      return; // Stop further processing
+      return;
     }
 
-    // 1. First try to get from existing projects cache
+   
     let projectData: IndexedProject | undefined | null =
       this.indexer.getProject(id);
 
     try {
-      // 2. If not in cache, fetch from Indexer API (fetchProject now also checks deny list)
+     
       if (!projectData) {
         projectData = await this.indexer.fetchProject(id);
       }
 
-      // Check again if fetched data is denied (belt and suspenders)
+     
       if (projectData && await this.denyService.isEventDenied(projectData.projectIdentifier)) {
           this.isDenied.set(true);
           this.project.set(null);
@@ -288,10 +288,10 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
       if (projectData) {
         console.log('Project Data:  ', projectData);
-        // Set initial project data
+       
         this.project.set(projectData);
 
-        // Go get the stats data.
+       
         if (!projectData.stats) {
           this.indexer
             .fetchProjectStats(id)
@@ -301,9 +301,9 @@ export class ProjectComponent implements OnInit, OnDestroy {
         }
 
         if (!projectData.details) {
-          // Go fetch data.
+         
           this.relay.fetchData([projectData.nostrEventId]);
-          // Go get the details data.
+         
         } else {
           this.user = new NDKUser({
             pubkey: projectData.details.nostrPubKey,
@@ -315,7 +315,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
           }
         }
 
-        // 3. Subscribe to project updates from relay with timestamp check
+       
         const projectSub = this.relay.projectUpdates.subscribe((event) => {
           if (!event) {
             return;
@@ -335,18 +335,18 @@ export class ProjectComponent implements OnInit, OnDestroy {
             this.projectEvent = event;
             projectData!.details = details;
 
-            // As soon as we have details, make an NDKUser instance
+           
             this.user = new NDKUser({
               pubkey: projectData!.details.nostrPubKey,
               relayUrls: this.relay.relayUrls(),
             });
 
-            // Go fetch the profile
+           
             this.relay.fetchProfile([details.nostrPubKey]);
           }
         });
 
-        // 4. Subscribe to profile updates from relay with timestamp check
+       
         const profileSub = this.relay.profileUpdates.subscribe((event) => {
           if (!event) {
             return;
@@ -406,12 +406,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
           this.title.setTitle(this.project()?.metadata?.name);
         }
 
-        // 5. Fetch project details from relay
-        // if (projectData.nostrEventId) {
-        //   await this.relay.fetchData([projectData.nostrEventId]);
-        // }
       } else {
-        // If projectData is null and not denied, it means it wasn't found
+       
         if (!this.isDenied()) {
            this.noProjectFoundYet = true;
            this.title.setTitle('Project Not Found');
@@ -419,7 +415,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
       }
     } catch (error) {
       console.error('Error loading project:', error);
-       if (!this.isDenied()) { // Only set not found if not denied
+       if (!this.isDenied()) {
           this.noProjectFoundYet = true;
           this.title.setTitle('Error Loading Project');
        }
@@ -433,15 +429,15 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    // Clean up subscriptions
+   
     this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.subscriptions = [];
 
-    // Clear signals
+   
     this.project.set(null);
   }
 
-  // Re-add the formatDate method
+ 
   formatDate(timestamp: number | undefined): string {
     if (!timestamp) return 'N/A';
     return new Date(timestamp * 1000).toLocaleDateString('en-US', {
@@ -454,10 +450,10 @@ export class ProjectComponent implements OnInit, OnDestroy {
   isProjectNotStarted(): boolean {
     const startDate = this.project()?.details?.startDate;
     if (!startDate) return false;
-    return Date.now() < startDate * 1000; // Corrected logic: true if current time is BEFORE start date
+    return Date.now() < startDate * 1000;
   }
 
-  // Add new methods to check project status
+ 
   isProjectStarted(): boolean {
     const startDate = this.project()?.details?.startDate;
     if (!startDate) return false;
@@ -471,25 +467,25 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   isProjectSuccessful(): boolean {
-    // A project is successful if it has reached its funding target, regardless of whether it has ended.
+   
     const amountInvested = this.project()?.stats?.amountInvested ?? 0;
     const targetAmount = this.project()?.details?.targetAmount ?? 0;
     
-    // Avoid division by zero or considering success if target is 0
+   
     if (targetAmount === 0) return false; 
     
     return amountInvested >= targetAmount;
   }
 
   isProjectFailed(): boolean {
-    // A project is considered failed only if it has ended AND did not reach its target.
+   
     if (!this.isProjectEnded()) return false; 
     
     const amountInvested = this.project()?.stats?.amountInvested ?? 0;
     const targetAmount = this.project()?.details?.targetAmount ?? 0;
     
-    // Avoid division by zero or considering failure if target is 0
-    if (targetAmount === 0) return true; // If target is 0 and ended, it's technically failed to raise anything.
+   
+    if (targetAmount === 0) return true;
     
     return amountInvested < targetAmount;
   }
@@ -501,10 +497,6 @@ export class ProjectComponent implements OnInit, OnDestroy {
     return !this.isProjectEnded() && !this.isProjectSuccessful();
   }
 
-  /**
-   * Calculates the remaining time until the expiry date and returns a human-readable string.
-   * Returns 'Ending soon' if the date is invalid or very close.
-   */
   getRemainingTimeText(expiryDate: number | undefined): string {
     if (!expiryDate) return 'Ending soon';
     
@@ -586,12 +578,10 @@ export class ProjectComponent implements OnInit, OnDestroy {
     return Number(((penalties / invested) * 100).toFixed(1));
   }
 
-  // externalIdentities = signal<ExternalIdentity[]>([]);
-
   getSocialIcon(platform: string): string {
     const icons: { [key: string]: string } = {
       github: 'code',
-      twitter: 'flutter_dash', // X icon
+      twitter: 'flutter_dash',
       facebook: 'facebook',
       telegram: 'telegram',
       instagram: 'photo_camera',
@@ -615,7 +605,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
       instagram: 'https://instagram.com/',
       linkedin: 'https://linkedin.com/in/',
       youtube: 'https://youtube.com/@',
-      mastodon: '', // Will use full username as it contains domain
+      mastodon: '',
       twitch: 'https://twitch.tv/',
       discord: 'https://discord.com/users/',
       email: 'mailto:',
@@ -630,7 +620,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   formatUsername(username: string): string {
-    // Remove domain parts for mastodon usernames
+   
     if (username.includes('@')) {
       return '@' + username.split('@')[1];
     }
@@ -658,49 +648,42 @@ export class ProjectComponent implements OnInit, OnDestroy {
     this.showImagePopup = true;
   }
 
-  // Handle banner image load error
   handleBannerError(): void {
     this.failedBannerImage.set(true);
   }
-  
-  // Handle profile image load error
+
   handleProfileError(): void {
     this.failedProfileImage.set(true);
   }
-  
-  // Handle media image load error
+
   handleMediaError(imageUrl: string): void {
     const failedImages = this.failedMediaImages();
     failedImages.add(imageUrl);
     this.failedMediaImages.set(new Set(failedImages));
   }
-  
-  // Check if media image failed to load
+
   hasMediaFailed(imageUrl: string): boolean {
     return this.failedMediaImages().has(imageUrl);
   }
-  
-  // Generate a random color based on project identifier using Angor brand colors
+
   getRandomColor(seed: string): string {
     let hash = 0;
     for (let i = 0; i < seed.length; i++) {
       hash = seed.charCodeAt(i) + ((hash << 5) - hash);
     }
-    
-    // Angor Brand Colors
+     
     const colors = [
-      '#022229', // Very Dark Teal
-      '#086c81', // Dark Cyan
-      '#cbdde1', // Light Steel Green - Use a slightly darker version for better contrast as background
-      '#b8c9cd'  // Slightly darker Light Steel Green
+      '#022229',
+      '#086c81',
+      '#cbdde1',
+      '#b8c9cd' 
     ];
     
-    // Use the hash to pick a color from the array
     const index = Math.abs(hash) % colors.length;
     return colors[index];
   }
   
-  // Get an initial letter for placeholder
+ 
   getInitial(name: string | undefined | null): string {
     if (!name || name.trim() === '') {
       return '#';
@@ -708,7 +691,6 @@ export class ProjectComponent implements OnInit, OnDestroy {
     return name.trim()[0].toUpperCase();
   }
   
-  // Get background style for banner with fallback color
   getBannerStyle(): string {
     return this.getRandomColor(this.projectId);
   }

@@ -2,60 +2,100 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Define CSS variables for colors */
-:root { /* Dark Theme Defaults */
-  --accent: #086c81; /* Dark Cyan */
-  --accent-light: #0ab6d9; /* Lighter Cyan */
-  --accent-dark: #022229; /* Very Dark Teal */
-  --text: #cbdde1; /* Light Steel Green */
-  --text-secondary: #a8b8bc; /* Muted Light Steel Green */
-  --surface-card: #043a4a; /* Darker Teal */
-  --surface-ground: #022229; /* Very Dark Teal */
-  --surface-hover: #065366; /* Mid Teal */
-  --border: #2a5f6a; /* Desaturated Teal */
-  --header-bg: #086c81; /* Dark Cyan */
-  --header-text: #cbdde1; /* Light Steel Green */
+:root { 
+  --accent: #086c81; 
+  --accent-light: #0ab6d9; 
+  --accent-dark: #022229; 
+  --text: #cbdde1; 
+  --text-secondary: #a8b8bc; 
+  --surface-card: #043a4a; 
+  --surface-ground: #022229; 
+  --surface-hover: #065366; 
+  --border: #2a5f6a; 
+  --header-bg: #086c81; 
+  --header-text: #cbdde1; 
   --bitcoin-mainnet: #f7931a;
   --bitcoin-testnet: #28c025;
   --warning: #f20000;
   --success: #0f9d58;
-  --background: var(--surface-ground); /* Alias for convenience */
+  --background: var(--surface-ground); 
 }
 
 html[data-theme="light"] {
-  /* Light Theme Overrides */
-  /* Keep accent colors consistent or redefine if needed */
-  /* --accent: #086c81; */
-  /* --accent-light: #0ab6d9; */
-  /* --accent-dark: #022229; */
-  --text: #022229; /* Very Dark Teal */
-  --text-secondary: #547c85; /* Muted Dark Cyan */
-  --surface-card: #ffffff; /* White */
-  --surface-ground: #f8fafa; /* Very Light Cyan Tint */
-  --surface-hover: #eef4f5; /* Light Cyan Tint */
-  --border: #cbdde1; /* Light Steel Green */
-  --header-bg: #ffffff; /* White */
-  --header-text: #022229; /* Very Dark Teal */
-  /* Keep functional colors consistent */
-  /* --bitcoin-mainnet: #f7931a; */
-  /* --bitcoin-testnet: #28c025; */
-  /* --warning: #f20000; */
-  /* --success: #0f9d58; */
-  --background: var(--surface-ground); /* Alias for convenience */
+  --text: #022229; 
+  --text-secondary: #547c85; 
+  --surface-card: #ffffff; 
+  --surface-ground: #f8fafa; 
+  --surface-hover: #eef4f5; 
+  --border: #cbdde1; 
+  --header-bg: #ffffff; 
+  --header-text: #022229; 
+  --background: var(--surface-ground); 
 }
 
 body {
-  background-color: var(--background); /* Use CSS variable for background */
-  color: var(--text); /* Use CSS variable for text */
-  font-family: 'Inter', sans-serif; /* Apply base font */
+  background-color: var(--background); 
+  color: var(--text); 
+  font-family: 'Inter', sans-serif; 
 }
 
-/* Add other minimal global styles here */
-/* Add scrollbar-hide styles if using the plugin without CSS */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+:root {
+  --scrollbar-thumb-color: rgba(0, 0, 0, 0.15); 
+  --scrollbar-thumb-hover-color: rgba(0, 0, 0, 0.3);
+  --scrollbar-track-color: transparent; 
+  --scrollbar-size: 6px; 
 }
-.scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+
+html.dark {
+  --scrollbar-thumb-color: rgba(255, 255, 255, 0.1); 
+  --scrollbar-thumb-hover-color: rgba(255, 255, 255, 0.25);
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+body::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+body::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-color); 
+  border-radius: var(--scrollbar-size);
+  margin: 2px; 
+}
+
+body::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb-color);
+  border-radius: var(--scrollbar-size);
+  
+  border: none;
+   
+  opacity: 0; 
+  transition: opacity 0.3s ease-out;
+}
+
+body:hover::-webkit-scrollbar-thumb {
+  opacity: 1;
+  transition-duration: 0.1s; 
+}
+
+body.scrolling::-webkit-scrollbar-thumb {
+  opacity: 1;
+  transition-duration: 0.1s; 
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover-color);
+}
+
+html { 
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
+   
+}
+
+body.mobile-menu-open {
+  overflow: hidden;
 }

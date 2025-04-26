@@ -1,55 +1,84 @@
-import { Component, OnInit, inject, Inject, PLATFORM_ID } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, inject, Renderer2, HostListener, OnDestroy, Inject } from '@angular/core';
+import { RouterOutlet, ChildrenOutletContexts } from '@angular/router'; 
 import { HeaderComponent } from './components/header.component';
 import { FooterComponent } from './components/footer.component';
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { DOCUMENT } from '@angular/common';
+import { ThemeService } from './services/theme.service';
+import { trigger, transition, style, query, animate, group } from '@angular/animations';
+
+const routeTransitionAnimations = trigger('routeAnimations', [
+  transition('* <=> *', [
+    style({ position: 'relative' }),
+    query(':enter, :leave', [
+      style({
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        opacity: 1,
+      })
+    ], { optional: true }),
+    query(':enter', [
+      style({ opacity: 0, transform: 'translateY(20px)' }) 
+    ], { optional: true }),
+    group([
+      query(':leave', [
+        animate('400ms ease-in-out', style({ opacity: 0, transform: 'translateY(-10px)' })) 
+      ], { optional: true }),
+      query(':enter', [
+        animate('400ms ease-in-out', style({ opacity: 1, transform: 'translateY(0)' })) 
+      ], { optional: true })
+    ])
+  ])
+]);
+
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet, HeaderComponent, FooterComponent],
   template: `
-    <app-header></app-header>
-    <main>
-      <router-outlet></router-outlet>
-    </main>
-    <app-footer></app-footer>
+    <div class="flex flex-col min-h-screen bg-surface-ground text-text">
+      <app-header></app-header>
+      <main class="flex-grow relative" [@routeAnimations]="getRouteAnimationData()"> 
+        <router-outlet></router-outlet>
+      </main>
+      <app-footer></app-footer>
+    </div>
   `,
-  styles: [`
-    :host {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    .app-wrapper {
-      display: flex;
-      flex-direction: column;
-      flex-grow: 1;
-    }
-
-    main {
-      flex-grow: 1;
-    }
-  `],
+  animations: [routeTransitionAnimations]
 })
-export class AppComponent implements OnInit {
-  constructor(
-    @Inject(DOCUMENT) private document: Document,
-    @Inject(PLATFORM_ID) private platformId: Object
-  ) {
-    if (isPlatformBrowser(this.platformId)) {
-      try {
-        const savedTheme = localStorage.getItem('angor-theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const theme = savedTheme ? savedTheme : (prefersDark ? 'dark' : 'light');
-        this.document.documentElement.setAttribute('data-theme', theme);
-      } catch (e) {
-        console.error('Failed to apply initial theme in AppComponent:', e);
-        this.document.documentElement.setAttribute('data-theme', 'light');
-      }
-    }
+export class AppComponent implements OnDestroy {
+  title = 'angor-hub';
+  private renderer = inject(Renderer2);
+  private document = inject(DOCUMENT);
+  private themeService = inject(ThemeService);
+  private contexts = inject(ChildrenOutletContexts);  
+  private scrollTimeout: any = null;
+
+  constructor() {
+   }
+
+   getRouteAnimationData() {
+    return this.contexts.getContext('primary')?.route?.snapshot?.data?.['animation'];
   }
 
-  ngOnInit(): void {}
+  @HostListener('window:scroll', [])
+  onWindowScroll() {
+    this.renderer.addClass(this.document.body, 'scrolling');
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout);
+    }
+    this.scrollTimeout = setTimeout(() => {
+      this.renderer.removeClass(this.document.body, 'scrolling');
+      this.scrollTimeout = null;
+    }, 1500);
+  }
+
+  ngOnDestroy() {
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout);
+    }
+    this.renderer.removeClass(this.document.body, 'scrolling');
+  }
 }
