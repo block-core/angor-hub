@@ -13,7 +13,13 @@ export class BitcoinUtilsService {
    * @param decimals Number of decimal places (default 8)
    * @returns String representation of BTC amount
    */
-  toBTC(satoshis: number | string, decimals: number = 8): string {
+  toBTC(satoshis: number | string | undefined | null, decimals: number = 8): string {
+    // Add validation for null, undefined, or non-numeric input
+    if (satoshis === null || satoshis === undefined || isNaN(Number(satoshis))) {
+      // console.warn('Invalid input provided to toBTC:', satoshis);
+      return '0'; // Return '0' for invalid inputs
+    }
+    
     try {
       const amount = new Big(satoshis);
       const fixed = amount.div(this.SATOSHIS_PER_BTC).toFixed(decimals);

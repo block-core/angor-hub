@@ -1,74 +1,72 @@
 <!-- Hero Section -->
-<section class="relative bg-gradient-to-b from-surface-ground to-surface-card/50 overflow-hidden pt-16 pb-20 md:pt-24 md:pb-28">
-  <div class="absolute inset-0 opacity-[0.03] pointer-events-none">
-    <!-- Subtle background pattern or graphic if desired -->
-  </div>
-  <div class="container mx-auto px-4 relative z-10 text-center">
-    <app-breadcrumb [items]="[{ label: 'Home', url: '' }]" class="mb-6 justify-center"></app-breadcrumb>
+<section class="relative bg-surface-ground overflow-hidden pt-16 pb-20 md:pt-24 md:pb-28">
+  <div class="container mx-auto px-4 relative z-10">
 
-    <div class="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full bg-accent/10 text-accent border border-accent/20 text-sm font-medium">
-      <span class="material-icons text-base">insights</span>
-      <span>{{ networkService.isMain() ? 'Bitcoin Mainnet' : 'Bitcoin Testnet' }}</span>
-    </div>
+    <div class="text-center">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full bg-accent/10 text-accent border border-accent/20 text-sm font-medium">
+        <span class="material-icons text-base">insights</span>
+        <span>{{ networkService.isMain() ? 'Bitcoin Mainnet' : 'Bitcoin Testnet' }}</span>
+      </div>
 
-    <h1 class="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-text via-accent to-accent bg-clip-text text-transparent">
-      Welcome to Angor Hub
-    </h1>
-    <p class="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto mb-10">
-      Your central place for discovering and investing in Bitcoin projects. Join a community of innovators and investors shaping the future of finance.
-    </p>
+      <h1 class="text-4xl md:text-6xl font-bold mb-6 text-text">
+        Welcome to Angor Hub
+      </h1>
+      <p class="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto mb-10">
+        Your central place for discovering and investing in Bitcoin projects. Join a community of innovators and investors shaping the future of finance.
+      </p>
 
-    <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-      <a routerLink="/explore" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold bg-accent text-white shadow-md hover:bg-accent-light hover:-translate-y-0.5 transition-all duration-300 ease-in-out">
-        Explore Projects
-        <span class="material-icons text-lg">arrow_forward</span>
-      </a>
-      <a href="https://angor.io/launch" target="_blank" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold bg-surface-card text-text border border-border shadow-sm hover:bg-surface-hover hover:-translate-y-0.5 transition-all duration-300 ease-in-out">
-        Launch Your Project
-        <span class="material-icons text-lg">rocket_launch</span>
-      </a>
-    </div>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+        <a routerLink="/explore" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold bg-accent text-white shadow-md hover:bg-accent-light hover:-translate-y-0.5 transition-all duration-300 ease-in-out">
+          Explore Projects
+          <span class="material-icons text-lg">arrow_forward</span>
+        </a>
+        <a href="https://angor.io/launch" target="_blank" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold bg-surface-card text-text border border-border shadow-sm hover:bg-surface-hover hover:-translate-y-0.5 transition-all duration-300 ease-in-out">
+          Launch Your Project
+          <span class="material-icons text-lg">rocket_launch</span>
+        </a>
+      </div>
 
-    <!-- Stats Bar -->
-    <div class="max-w-3xl mx-auto bg-surface-card/80 backdrop-blur-md rounded-xl shadow-lg border border-border p-4 sm:p-6">
-      <div class="flex flex-col sm:flex-row items-center justify-around gap-4 sm:gap-8">
-        <div class="flex items-center gap-3 sm:gap-4">
-          <span class="material-icons text-4xl sm:text-5xl text-bitcoin-mainnet">currency_bitcoin</span>
-          <div class="text-left">
-            @if (bitcoinInfo.bitcoinPrice() !== '0.00') {
-              <div class="text-xl sm:text-2xl font-bold text-text" [class]="{
-                'text-green-500': bitcoinInfo.priceDirection() === 'up',
-                'text-red-500': bitcoinInfo.priceDirection() === 'down'
-              }">
-                ${{ bitcoinInfo.bitcoinPrice() }}
-              </div>
-            } @else {
-              <div class="h-7 w-28 bg-surface-hover rounded animate-pulse"></div>
-            }
-            <div class="text-xs sm:text-sm text-text-secondary">
-              Price (USD)
-              @if (bitcoinInfo.priceChangePercent() !== '0.00') {
-                @let change = bitcoinInfo.priceChangePercent();
-                <span class="ml-1 font-medium" [class]="{
-                  'text-green-600 dark:text-green-400': change[0] !== '-',
-                  'text-red-600 dark:text-red-400': change[0] === '-'
+      <!-- Stats Bar -->
+      <div class="max-w-3xl mx-auto bg-surface-card/80 backdrop-blur-md rounded-xl shadow-lg border border-border p-4 sm:p-6">
+        <div class="flex flex-col sm:flex-row items-center justify-around gap-4 sm:gap-8">
+          <div class="flex items-center gap-3 sm:gap-4">
+            <span class="material-icons text-4xl sm:text-5xl text-bitcoin-mainnet">currency_bitcoin</span>
+            <div class="text-left">
+              @if (bitcoinInfo.bitcoinPrice() !== '0.00') {
+                <div class="text-xl sm:text-2xl font-bold text-text" [class]="{
+                  'text-green-500': bitcoinInfo.priceDirection() === 'up',
+                  'text-red-500': bitcoinInfo.priceDirection() === 'down'
                 }">
-                  ({{ change[0] !== '-' ? '+' : '' }}{{ change }}% 24h)
-                </span>
+                  ${{ bitcoinInfo.bitcoinPrice() }}
+                </div>
               } @else {
-                <span class="ml-1 h-4 w-16 inline-block bg-surface-hover rounded animate-pulse"></span>
+                <div class="h-7 w-28 bg-surface-hover rounded animate-pulse"></div>
               }
+              <div class="text-xs sm:text-sm text-text-secondary">
+                Price (USD)
+                @if (bitcoinInfo.priceChangePercent() !== '0.00') {
+                  @let change = bitcoinInfo.priceChangePercent();
+                  <span class="ml-1 font-medium" [class]="{
+                    'text-green-600 dark:text-green-400': change[0] !== '-',
+                    'text-red-600 dark:text-red-400': change[0] === '-'
+                  }">
+                    ({{ change[0] !== '-' ? '+' : '' }}{{ change }}% 24h)
+                  </span>
+                } @else {
+                  <span class="ml-1 h-4 w-16 inline-block bg-surface-hover rounded animate-pulse"></span>
+                }
+              </div>
             </div>
           </div>
+          <!-- Add more stats here if needed, e.g., Total Raised, Projects Funded -->
+          <!-- Example:
+          <div class="hidden sm:block w-px h-12 bg-border"></div>
+          <div class="text-center">
+            <div class="text-xl sm:text-2xl font-bold text-accent">10.5 BTC</div>
+            <div class="text-xs sm:text-sm text-text-secondary">Total Raised</div>
+          </div>
+          -->
         </div>
-        <!-- Add more stats here if needed, e.g., Total Raised, Projects Funded -->
-        <!-- Example:
-        <div class="hidden sm:block w-px h-12 bg-border"></div>
-        <div class="text-center">
-          <div class="text-xl sm:text-2xl font-bold text-accent">10.5 BTC</div>
-          <div class="text-xs sm:text-sm text-text-secondary">Total Raised</div>
-        </div>
-        -->
       </div>
     </div>
   </div>
@@ -84,7 +82,6 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 max-w-6xl mx-auto relative">
       <!-- Connecting lines (Desktop only) -->
       <div class="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 bg-border -translate-y-1/2 -mt-8"></div>
-      <div class="hidden md:block absolute top-1/2 left-1/3 right-1/3 h-0.5 bg-gradient-to-r from-border via-accent to-border -translate-y-1/2 -mt-8"></div>
 
       <!-- Step 1 -->
       <div class="relative text-center p-6 bg-surface-card rounded-xl shadow-md border border-border transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
@@ -165,13 +162,12 @@
         @let firstPost = blogPosts()[0];
         <a [href]="firstPost.link" target="_blank" class="group block bg-surface-card rounded-xl shadow-md border border-border overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
           <div class="h-64 sm:h-80 bg-cover bg-center relative transition-transform duration-500 group-hover:scale-105" [style.background-image]="'url(' + (firstPost.image || '/assets/images/default-blog.jpg') + ')'">
-            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+            <div class="absolute inset-0 bg-black/40"></div>
             <div class="absolute top-4 left-4 px-3 py-1 bg-accent text-white text-xs font-semibold rounded">Featured</div>
           </div>
           <div class="p-6">
-            <h3 class="text-xl font-semibold mb-2 group-hover:text-accent transition-colors">{{firstPost.title}}</h3>
-            <p class="text-sm text-text-secondary mb-4">{{firstPost.pubDate | date:'mediumDate'}}</p>
-            <p class="text-text-secondary line-clamp-3">{{firstPost.description}}</p>
+            <h3 class="text-xl font-semibold mb-2 group-hover:text-accent transition-colors line-clamp-2">{{firstPost.title}}</h3>
+            <p class="text-sm text-text-secondary mt-1">{{firstPost.pubDate | date:'mediumDate'}}</p> <!-- Added date, adjust if needed -->
           </div>
         </a>
 
@@ -204,7 +200,7 @@
 </section>
 
 <!-- CTA Section -->
-<section class="py-16 md:py-24 bg-gradient-to-br from-accent-dark via-accent to-accent-light text-white">
+<section class="py-16 md:py-24 bg-accent text-white">
   <div class="container mx-auto px-4 text-center">
     <h2 class="text-3xl md:text-4xl font-bold mb-4">Ready to Shape the Future of Bitcoin?</h2>
     <p class="text-lg md:text-xl opacity-90 max-w-3xl mx-auto mb-10">

@@ -10,7 +10,13 @@ import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { environment } from '../../../environment';
 
-type SettingsTab = 'appearance' | 'network' | 'relays' | 'indexers' | 'about';
+type SettingsTabId = 'appearance' | 'network' | 'relays' | 'indexers' | 'about';
+
+interface SettingsTab {
+  id: SettingsTabId;
+  label: string;
+  icon: string;
+}
 
 @Component({
   selector: 'app-settings',
@@ -37,9 +43,17 @@ export class SettingsComponent implements OnInit {
   public indexerService = inject(IndexerService);
   
   appVersion = environment.appVersion || '1.0.0';
-   
-  activeTab = signal<SettingsTab>('appearance');
-  
+
+  activeTab = signal<SettingsTabId>('appearance');
+
+  settingsTabs: SettingsTab[] = [
+    { id: 'appearance', label: 'Appearance', icon: 'palette' },
+    { id: 'network', label: 'Network', icon: 'public' },
+    { id: 'relays', label: 'Relays', icon: 'settings_input_antenna' },
+    { id: 'indexers', label: 'Indexers', icon: 'storage' },
+    { id: 'about', label: 'About', icon: 'info' }
+  ];
+
   currentTheme = computed(() => {
     return this.themeService.currentTheme();
   });
@@ -62,20 +76,23 @@ export class SettingsComponent implements OnInit {
   
   constructor() {
     this.updateRelayUrls();
+    // Initialize indexer config signal
+    this.indexerConfig.set(this.indexerService.getIndexerConfig());
   }
   
   ngOnInit(): void {
     this.title.setTitle('Settings');
   }
   
-  setActiveTab(tab: SettingsTab): void {
-    this.activeTab.set(tab);
+  setActiveTab(tabId: SettingsTabId): void {
+    this.activeTab.set(tabId);
     
     // Reset messages and test results when changing tabs
-    if (tab === 'indexers') {
+    if (tabId === 'indexers') {
       this.indexerSaveMessage.set('');
       this.indexerTestResult.set(null);
-    } else if (tab === 'relays') {
+      this.indexerTestingUrl.set(null); // Also reset testing URL
+    } else if (tabId === 'relays') {
       this.relaySaveMessage.set('');
     }
   }
@@ -204,6 +221,7 @@ export class SettingsComponent implements OnInit {
   }
   
   isValidIndexerUrl(url: string): boolean {
-    return (url.startsWith('http://') || url.startsWith('https://')) && url.length > 10;
+    // Allow both http and https, ensure it's not just the protocol
+    return (url.startsWith('http://') || url.startsWith('https://')) && url.length > (url.startsWith('https://') ? 8 : 7);
   }
 }

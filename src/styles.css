@@ -2,8 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Keep minimal essential base styles if needed */
-/* Example: Define CSS variables used by Tailwind config */
+/* Define CSS variables for colors */
 :root { /* Dark Theme Defaults */
   --accent: #086c81; /* Dark Cyan */
   --accent-light: #0ab6d9; /* Lighter Cyan */
@@ -20,10 +19,12 @@
   --bitcoin-testnet: #28c025;
   --warning: #f20000;
   --success: #0f9d58;
+  --background: var(--surface-ground); /* Alias for convenience */
 }
 
 html[data-theme="light"] {
-  /* Keep accent colors consistent */
+  /* Light Theme Overrides */
+  /* Keep accent colors consistent or redefine if needed */
   /* --accent: #086c81; */
   /* --accent-light: #0ab6d9; */
   /* --accent-dark: #022229; */
@@ -40,12 +41,21 @@ html[data-theme="light"] {
   /* --bitcoin-testnet: #28c025; */
   /* --warning: #f20000; */
   /* --success: #0f9d58; */
+  --background: var(--surface-ground); /* Alias for convenience */
 }
 
 body {
-  background-color: var(--surface-ground);
-  color: var(--text);
+  background-color: var(--background); /* Use CSS variable for background */
+  color: var(--text); /* Use CSS variable for text */
   font-family: 'Inter', sans-serif; /* Apply base font */
 }
 
 /* Add other minimal global styles here */
+/* Add scrollbar-hide styles if using the plugin without CSS */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

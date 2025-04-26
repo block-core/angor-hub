@@ -67,17 +67,25 @@ export class ProjectComponent implements OnInit, OnDestroy {
   isDenied = signal<boolean>(false);
 
   tabs = [
-    { id: 'project', label: 'Project', icon: '📋' },
-    { id: 'faq', label: 'FAQ', icon: '❓' },
-    { id: 'updates', label: 'Updates', icon: '📢' },
-    { id: 'comments', label: 'Comments', icon: '💬' },
+    { id: 'project', label: 'Project', icon: 'description' }, // Changed icon
+    { id: 'faq', label: 'FAQ', icon: 'help_outline' }, // Changed icon
+    { id: 'updates', label: 'Updates', icon: 'campaign' }, // Changed icon
+    { id: 'comments', label: 'Comments', icon: 'chat_bubble_outline' }, // Changed icon
   ];
   activeTab = 'project';
-  updates = signal<any[]>([]);
-  comments = signal<any[]>([]);
-  loading = signal<boolean>(false);
+  updates = signal<NDKEvent[]>([]);
+  comments = signal<NDKEvent[]>([]);
+  faqItems = signal<FaqItem[]>([]); // Changed to signal
+
+  // Loading and Error Signals for Tabs
+  loadingUpdates = signal<boolean>(false);
+  loadingComments = signal<boolean>(false);
+  loadingFaq = signal<boolean>(false);
+  errorUpdates = signal<string | null>(null);
+  errorComments = signal<string | null>(null);
+  errorFaq = signal<string | null>(null);
+
   showImagePopup = false;
-  faqItems: FaqItem[] = [];
   currentSlide = 0;
   selectedImage: string | null = null;
 
@@ -87,84 +95,109 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
   async setActiveTab(tabId: string) {
     this.activeTab = tabId;
-    if (tabId === 'updates' && this.updates().length === 0) {
+    if (tabId === 'updates' && this.updates().length === 0 && !this.loadingUpdates() && !this.errorUpdates()) {
       this.fetchUpdates();
     }
-    if (tabId === 'comments' && this.comments().length === 0) {
+    if (tabId === 'comments' && this.comments().length === 0 && !this.loadingComments() && !this.errorComments()) {
       this.fetchComments();
     }
-    if (tabId === 'faq') {
-      this.faqItems = await this.fetchFaq();
+    if (tabId === 'faq' && this.faqItems().length === 0 && !this.loadingFaq() && !this.errorFaq()) {
+      this.fetchFaq();
     }
   }
 
   async fetchFaq() {
     if (!this.project()?.details?.nostrPubKey) return;
 
-    this.loading.set(true);
+    this.loadingFaq.set(true);
+    this.errorFaq.set(null); // Reset error before fetching
     try {
       const ndk = await this.relay.ensureConnected();
       const filter = {
         kinds: [NDKKind.AppSpecificData],
         authors: [this.project()!.details!.nostrPubKey],
         '#d': ['angor:faq'],
-        limit: 50,
+        limit: 1, // Fetch only the latest FAQ event
       };
 
       const event = await ndk.fetchEvent(filter);
 
-      if (event) {
-        return JSON.parse(event.content);
+      if (event && event.content) {
+        try {
+          const parsedFaq = JSON.parse(event.content);
+          if (Array.isArray(parsedFaq)) {
+            this.faqItems.set(parsedFaq);
+          } else {
+            console.warn('FAQ content is not an array:', parsedFaq);
+            this.faqItems.set([]); // Set to empty if format is wrong
+            this.errorFaq.set('Invalid FAQ format received.');
+          }
+        } catch (parseError) {
+          console.error('Error parsing FAQ content:', parseError);
+          this.faqItems.set([]);
+          this.errorFaq.set('Failed to parse FAQ data.');
+        }
+      } else {
+        this.faqItems.set([]); // Set empty if no event found
       }
-      return null;
-
-      // this.updates.set(Array.from(events));
     } catch (error) {
-      console.error('Error fetching updates:', error);
+      console.error('Error fetching FAQ:', error);
+      this.errorFaq.set('Could not load FAQ. Please try again later.');
     } finally {
-      this.loading.set(false);
+      this.loadingFaq.set(false);
     }
   }
 
   async fetchUpdates() {
     if (!this.project()?.details?.nostrPubKey) return;
 
-    this.loading.set(true);
+    this.loadingUpdates.set(true);
+    this.errorUpdates.set(null);
     try {
       const ndk = await this.relay.ensureConnected();
       const filter = {
-        kinds: [1],
+        kinds: [1], // Kind 1 for short text notes (updates)
         authors: [this.project()!.details!.nostrPubKey],
+        '#t': ['angor-update'], // Optional: Add a tag for specific updates? Or rely on author?
         limit: 50,
       };
 
       const events = await ndk.fetchEvents(filter);
-      this.updates.set(Array.from(events));
+      // Sort events by creation time, newest first
+      const sortedEvents = Array.from(events).sort((a, b) => (b.created_at ?? 0) - (a.created_at ?? 0));
+      this.updates.set(sortedEvents);
     } catch (error) {
       console.error('Error fetching updates:', error);
+      this.errorUpdates.set('Could not load updates. Please try again later.');
     } finally {
-      this.loading.set(false);
+      this.loadingUpdates.set(false);
     }
   }
 
   async fetchComments() {
     if (!this.project()?.details?.nostrPubKey) return;
 
-    this.loading.set(true);
+    this.loadingComments.set(true);
+    this.errorComments.set(null);
     try {
       const ndk = await this.relay.ensureConnected();
+      // Fetch events replying to the project's pubkey OR tagging the project event ID
       const filter = {
-        kinds: [1],
-        '#p': [this.project()!.details!.nostrPubKey],
+        kinds: [1], // Kind 1 for short text notes (comments)
+        '#p': [this.project()!.details!.nostrPubKey], // Replies to the project owner
+        // '#e': [this.project()?.nostrEventId], // Optionally include replies to the project event itself
         limit: 50,
       };
 
       const events = await ndk.fetchEvents(filter);
-      this.comments.set(Array.from(events));
+      // Sort events by creation time, newest first
+      const sortedEvents = Array.from(events).sort((a, b) => (b.created_at ?? 0) - (a.created_at ?? 0));
+      this.comments.set(sortedEvents);
     } catch (error) {
       console.error('Error fetching comments:', error);
+      this.errorComments.set('Could not load comments. Please try again later.');
     } finally {
-      this.loading.set(false);
+      this.loadingComments.set(false);
     }
   }
 
@@ -408,6 +441,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
     this.project.set(null);
   }
 
+  // Re-add the formatDate method
   formatDate(timestamp: number | undefined): string {
     if (!timestamp) return 'N/A';
     return new Date(timestamp * 1000).toLocaleDateString('en-US', {

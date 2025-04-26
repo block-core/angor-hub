@@ -1,15 +1,15 @@
-<section class="container mx-auto px-4 pt-8 pb-12 text-center relative">
+<section class="container mx-auto px-4 pt-8 pb-12 relative"> 
   <app-breadcrumb
     [items]="[
       { label: 'Home', url: '/' },
       { label: 'Explore', url: '' }
     ]"
-    class="mb-4 justify-center"
+    class="mb-4" 
   ></app-breadcrumb>
 
-  <div class="relative z-10">
+  <div class="relative z-10 text-center"> <!-- Added wrapper for centered content -->
     <strong class="text-accent font-semibold text-lg mb-2 block">Discover Innovation</strong>
-    <h1 class="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-text via-accent to-accent bg-clip-text text-transparent">Explore Bitcoin Projects</h1>
+    <h1 class="text-4xl md:text-5xl font-bold mb-4 text-text">Explore Bitcoin Projects</h1>
     <p class="text-lg text-text-secondary max-w-2xl mx-auto mb-6">
       Find exciting projects building on Bitcoin technology and join the future of decentralized finance.
     </p>
@@ -219,7 +219,7 @@
               @if (project.metadata?.['banner']) {
                 <img [src]="project.metadata?.['banner']" class="hidden" (error)="handleBannerError(project.projectIdentifier)" alt="">
               }
-              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+              <div class="absolute inset-0 bg-black/40"></div>
 
               <!-- Status Badge -->
               @let statusInfo = getProjectStatus(project);
@@ -274,11 +274,22 @@
                 <div class="flex items-center gap-1.5 text-xs text-text-secondary mb-3">
                   <span class="material-icons text-sm text-accent">event</span>
                   @if (isProjectNotStarted(project.details?.startDate)) {
-                    <span>Starts {{ project.details!.startDate | ago }}</span>
+                    <!-- Add check for project.details before accessing startDate -->
+                    @if (project.details) {
+                      <span>Starts {{ project.details.startDate | ago }}</span>
+                    }
                   } @else if (isProjectEnded(project.details?.expiryDate)) {
-                    <span>Ended {{ project.details!.expiryDate | ago }}</span>
+                    <!-- Add check for project.details before accessing expiryDate -->
+                    @if (project.details) {
+                      <span>Ended {{ project.details.expiryDate | ago }}</span>
+                    }
                   } @else {
-                    <span>{{ getRemainingTimeText(project.details?.expiryDate) }}</span>
+                    <!-- Add check for project.details before accessing expiryDate -->
+                    @if (project.details) {
+                      <span>{{ getRemainingTimeText(project.details.expiryDate) }}</span>
+                    } @else {
+                      <span>Ongoing</span> <!-- Fallback if details are missing -->
+                    }
                   }
                 </div>
 
@@ -298,19 +309,19 @@
                       <span class="font-medium text-text">{{ project.stats?.investorCount ?? 0 }}</span> Investors
                     </div>
                     <div class="text-text-secondary">
-                      <span class="font-medium text-text">{{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}</span> / {{ bitcoin.toBTC(project.details?.targetAmount) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
+                      <!-- Add check for project.details before accessing targetAmount -->
+                      <span class="font-medium text-text">{{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}</span> / {{ bitcoin.toBTC(project.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                     </div>
                   </div>
                   @let fundingPercent = getFundingPercentage(project);
                   @let displayWidth = fundingPercent > 100 ? 100 : fundingPercent;
                   <div class="relative h-2 bg-surface-hover rounded-full overflow-hidden">
-                    <div class="absolute top-0 left-0 h-full rounded-full bg-gradient-to-r from-accent-dark to-accent transition-all duration-500 ease-out"
+                    <div class="absolute top-0 left-0 h-full rounded-full bg-accent transition-all duration-500 ease-out"
                          [style.width.%]="displayWidth"
-                         [class.from-green-600]="fundingPercent >= 100"
-                         [class.to-green-400]="fundingPercent >= 100">
+                         [class.bg-success]="fundingPercent >= 100">
                     </div>
                     <span class="absolute top-0 right-2 -mt-5 text-xs font-bold"
-                          [class.text-green-400]="fundingPercent >= 100"
+                          [class.text-success]="fundingPercent >= 100"
                           [class.text-accent]="fundingPercent < 100">
                       {{ fundingPercent }}%
                     </span>

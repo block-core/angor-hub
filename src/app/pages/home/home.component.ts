@@ -10,8 +10,8 @@ import { BitcoinInfoService } from '../../services/bitcoin-info.service';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, BreadcrumbComponent, CommonModule, DatePipe],
-  templateUrl: './home.component.html', // Keep templateUrl
+  imports: [RouterLink, CommonModule, DatePipe],
+  templateUrl: './home.component.html', 
 })
 export class HomeComponent implements OnInit {
   private blogService = inject(BlogService);

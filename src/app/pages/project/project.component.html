@@ -1,15 +1,14 @@
-<section class="relative w-full h-[300px] overflow-hidden">
-  <app-breadcrumb
-    [items]="[
-      { label: 'Home', url: '/' },
-      { label: 'Explore', url: '/explore' },
-      { label: projectId, url: '' }
-    ]"
-    class="absolute top-4 left-4 z-10"
-  ></app-breadcrumb>
-
+<section class="relative w-full h-[250px] md:h-[300px] overflow-hidden"> <!-- Adjusted height -->
+     <app-breadcrumb
+      [items]="[
+        { label: 'Home', url: '/' },
+        { label: 'Explore', url: '' }
+      ]"
+      class="mb-4" 
+    ></app-breadcrumb>
+  <!-- Banner content remains here -->
   <div
-    class="absolute inset-0 bg-cover bg-center transition-colors duration-300 after:content-[''] after:absolute after:inset-0 after:bg-gradient-to-b after:from-black/20 after:to-black/50 -z-[1]"
+    class="absolute inset-0 bg-cover bg-center transition-colors duration-300 after:content-[''] after:absolute after:inset-0 after:bg-black/30"
     [style.background-image]="project()?.metadata?.banner && !failedBannerImage()
         ? 'url(' + project()?.metadata?.banner + ')'
         : 'none'"
@@ -28,7 +27,7 @@
   </div>
 </section>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative -mt-[60px]">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative -mt-[70px] md:-mt-[80px]"> <!-- Adjusted negative margin -->
   @if (isDenied()) {
     <div class="flex flex-col items-center justify-center p-8 sm:p-12 mt-12 bg-surface-card rounded-lg shadow-md text-center">
       <span class="material-icons text-6xl text-red-500 mb-6">gpp_bad</span>
@@ -69,7 +68,7 @@
     </div>
   } @else if (project()) {
     <!-- Project Header -->
-    <div class="grid grid-cols-[auto_1fr] md:grid-cols-[auto_1fr_auto] gap-4 md:gap-8 p-4 sm:p-6 md:p-8 bg-surface-card rounded-xl shadow-lg mb-8 items-start">
+    <div class="grid grid-cols-[auto_1fr] md:grid-cols-[auto_1fr_auto] gap-4 md:gap-6 p-4 sm:p-6 bg-surface-card rounded-xl shadow-lg mb-8 items-start"> <!-- Adjusted gap/padding -->
       @if (project()?.metadata?.['picture'] && !failedProfileImage()) {
         <img
           [src]="project()?.metadata?.['picture']"
@@ -88,9 +87,9 @@
         </div>
       }
 
-      <div class="flex flex-col gap-3 md:gap-4 min-w-0">
+      <div class="flex flex-col gap-2 md:gap-3 min-w-0"> <!-- Adjusted gap -->
         <div class="flex items-start justify-between gap-2">
-          <h1 class="m-0 text-2xl md:text-3xl font-bold break-words">{{ project()?.metadata?.name || projectId }}</h1>
+          <h1 class="m-0 text-xl md:text-3xl font-bold break-words mr-2">{{ project()?.metadata?.name || projectId }}</h1> <!-- Adjusted size/margin -->
           <div class="flex gap-1 flex-shrink-0">
             <button
               [title]="isFavorite() ? 'Remove from bookmarks' : 'Add to bookmarks'"
@@ -110,7 +109,7 @@
           </div>
         </div>
 
-        <p class="text-base md:text-lg leading-relaxed text-text-secondary m-0 line-clamp-3">{{ project()?.metadata?.about }}</p>
+        <p class="text-sm md:text-base leading-relaxed text-text-secondary m-0 line-clamp-3">{{ project()?.metadata?.about }}</p> <!-- Adjusted size -->
 
         <!-- Project status notification -->
         @if (isProjectSuccessful()) {
@@ -195,7 +194,7 @@
      <!-- Stats Dashboard -->
      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
       <!-- Funding Card -->
-      <div class="flex items-start gap-4 p-4 md:p-6 bg-surface-card rounded-lg shadow-sm relative overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md sm:col-span-2">
+      <div class="flex items-start gap-4 p-4 bg-surface-card rounded-lg shadow-sm relative overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md sm:col-span-2"> <!-- Adjusted padding -->
         <div class="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 flex items-center justify-center bg-blue-500/10 rounded-full z-[1]">
           <span class="material-icons text-xl md:text-2xl text-blue-500">campaign</span>
         </div>
@@ -211,7 +210,7 @@
             <span class="text-sm font-medium text-text-secondary ml-1">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
           </div>
           <div class="relative w-full h-1.5 bg-surface-hover rounded-full overflow-hidden">
-            <div class="absolute top-0 left-0 h-full bg-blue-500 transition-width duration-500 ease-out" [style.width.%]="getFundingPercentage() > 100 ? 100 : getFundingPercentage()"></div>
+            <div class="absolute top-0 left-0 h-full bg-accent transition-width duration-500 ease-out" [style.width.%]="getFundingPercentage() > 100 ? 100 : getFundingPercentage()"></div> <!-- Removed gradient -->
           </div>
           <div class="text-xs text-text-secondary mt-1.5">
             Target: {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
@@ -220,7 +219,7 @@
       </div>
 
       <!-- Investors Card -->
-      <div class="flex items-start gap-4 p-4 md:p-6 bg-surface-card rounded-lg shadow-sm relative overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md">
+      <div class="flex items-start gap-4 p-4 bg-surface-card rounded-lg shadow-sm relative overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md"> <!-- Adjusted padding -->
         <div class="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 flex items-center justify-center bg-purple-500/10 rounded-full z-[1]">
           <span class="material-icons text-xl md:text-2xl text-purple-500">people</span>
         </div>
@@ -238,7 +237,7 @@
       </div>
 
       <!-- Spent Card -->
-      <div class="flex items-start gap-4 p-4 md:p-6 bg-surface-card rounded-lg shadow-sm relative overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md">
+      <div class="flex items-start gap-4 p-4 bg-surface-card rounded-lg shadow-sm relative overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md"> <!-- Adjusted padding -->
          <div class="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 flex items-center justify-center bg-orange-500/10 rounded-full z-[1]">
           <span class="material-icons text-xl md:text-2xl text-orange-500">account_balance_wallet</span>
         </div>
@@ -254,124 +253,121 @@
             <span class="text-sm font-medium text-text-secondary ml-1">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
           </div>
            <div class="relative w-full h-1.5 bg-surface-hover rounded-full overflow-hidden">
-            <div class="absolute top-0 left-0 h-full bg-orange-500 transition-width duration-500 ease-out" [style.width.%]="getSpentPercentage()"></div>
+            <div class="absolute top-0 left-0 h-full bg-orange-500 transition-width duration-500 ease-out" [style.width.%]="getSpentPercentage()"></div> <!-- Solid color -->
           </div>
         </div>
       </div>
-
-      <!-- Penalties Card (Removed - Not in original SCSS structure) -->
-      <!-- If needed, add back similar to Spent Card with red colors -->
     </div>
 
-    <!-- Tabs navigation -->
-    <div class="flex mb-6 border-b border-border relative overflow-x-auto scrollbar-hide bg-surface-card rounded-t-lg shadow-sm">
-      @for (tab of tabs; track tab.id) {
-        <button
-          class="relative flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-4 bg-transparent border-none text-text-secondary text-sm sm:text-base font-medium whitespace-nowrap cursor-pointer transition-all duration-300 ease-in-out flex-1 text-center hover:text-text hover:bg-black/5 active:text-accent active:font-semibold after:content-[''] after:absolute after:bottom-[-1px] after:left-0 after:w-full after:h-0.5 after:bg-accent after:rounded-t-sm after:opacity-0 after:transition-opacity"
-          [class.active]="activeTab === tab.id"
-          [class.!text-accent]="activeTab === tab.id"
-          [class.font-semibold]="activeTab === tab.id"
-          [class.after:opacity-100]="activeTab === tab.id"
-          (click)="setActiveTab(tab.id)"
-        >
-          <span class="material-icons text-lg sm:text-xl">{{ tab.icon }}</span>
-          <span class="hidden sm:inline">{{ tab.label }}</span>
-        </button>
-      }
-    </div>
+    <!-- New Layout: Vertical Tabs + Content Area -->
+    <div class="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-4 md:gap-8 mb-12">
+      <!-- Vertical Tabs Navigation -->
+      <div class="flex flex-row flex-wrap md:flex-col gap-2 h-fit rounded-xl bg-surface-card p-4 shadow-md">
+        @for (tab of tabs; track tab.id) {
+          <div
+            class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text hover:bg-surface-hover hover:text-accent flex-1 md:flex-none justify-center md:justify-start"
+            [class.bg-accent]="activeTab === tab.id"
+            [class.text-white]="activeTab === tab.id"
+            (click)="setActiveTab(tab.id)"
+          >
+            <span class="material-icons text-text-secondary transition duration-200 ease-in-out" [class.text-white]="activeTab === tab.id">{{ tab.icon }}</span>
+            <span class="hidden md:inline">{{ tab.label }}</span>
+          </div>
+        }
+      </div>
 
-    <!-- Tab content -->
-    <div class="mb-12">
-      @if (activeTab === 'project') {
-        <div class="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 md:gap-8">
-          <div class="flex flex-col gap-6 md:gap-8">
-            @if (project()?.content) {
-              <!-- Media carousel -->
-              @if (project()?.media?.length) {
-                <div class="relative w-full rounded-lg overflow-hidden aspect-video shadow-md bg-surface-hover">
-                  <div class="flex h-full transition-transform duration-300 ease-in-out" [style.transform]="'translateX(' + -currentSlide * 100 + '%)'">
-                    @for (item of project()?.media; track item.url) {
-                      @if (item.type === 'image') {
-                        <div class="min-w-full h-full flex-shrink-0">
-                          @if (!hasMediaFailed(item.url)) {
-                            <img
-                              [src]="item.url"
-                              alt="Project media"
-                              loading="lazy"
-                              class="w-full h-full object-cover cursor-pointer"
-                              (click)="showImagePopup = true; selectedImage = item.url"
-                              (error)="handleMediaError(item.url)"
-                            />
-                          } @else {
-                            <div
-                              class="w-full h-full flex items-center justify-center bg-surface-ground"
-                              [style.background-color]="getRandomColor(item.url)"
-                              (click)="showImagePopup = false"
-                            >
-                              <span class="material-icons text-4xl text-white/70">broken_image</span>
-                            </div>
-                          }
-                        </div>
-                      }
-                    }
-                  </div>
-
-                  @if ((project()?.media?.length ?? 0) > 1) {
-                    <button class="absolute top-1/2 -translate-y-1/2 left-2 md:left-4 w-9 h-9 md:w-10 md:h-10 bg-black/40 text-white border-none rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-black/60" (click)="prevSlide()">
-                      <span class="material-icons">chevron_left</span>
-                    </button>
-                    <button class="absolute top-1/2 -translate-y-1/2 right-2 md:right-4 w-9 h-9 md:w-10 md:h-10 bg-black/40 text-white border-none rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-black/60" (click)="nextSlide()">
-                      <span class="material-icons">chevron_right</span>
-                    </button>
-
-                    <div class="absolute bottom-3 md:bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 md:gap-2">
-                      @for (item of project()?.media; track $index) {
-                        <button
-                          class="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-white/50 border-none cursor-pointer transition-all duration-300 ease-in-out"
-                          [class.bg-white]="currentSlide === $index"
-                          (click)="currentSlide = $index"
-                        ></button>
+      <!-- Tab content -->
+      <div class="flex flex-col gap-6"> <!-- Added container for content -->
+        @if (activeTab === 'project') {
+          <div class="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 md:gap-8">
+            <div class="flex flex-col gap-6 md:gap-8">
+              @if (project()?.content) {
+                <!-- Media carousel -->
+                @if (project()?.media?.length) {
+                  <div class="relative w-full rounded-lg overflow-hidden aspect-video shadow-md bg-surface-hover">
+                    <div class="flex h-full transition-transform duration-300 ease-in-out" [style.transform]="'translateX(' + -currentSlide * 100 + '%)'">
+                      @for (item of project()?.media; track item.url) {
+                        @if (item.type === 'image') {
+                          <div class="min-w-full h-full flex-shrink-0">
+                            @if (!hasMediaFailed(item.url)) {
+                              <img
+                                [src]="item.url"
+                                alt="Project media"
+                                loading="lazy"
+                                class="w-full h-full object-cover cursor-pointer"
+                                (click)="showImagePopup = true; selectedImage = item.url"
+                                (error)="handleMediaError(item.url)"
+                              />
+                            } @else {
+                              <div
+                                class="w-full h-full flex items-center justify-center bg-surface-ground"
+                                [style.background-color]="getRandomColor(item.url)"
+                                (click)="showImagePopup = false"
+                              >
+                                <span class="material-icons text-4xl text-white/70">broken_image</span>
+                              </div>
+                            }
+                          </div>
+                        }
                       }
                     </div>
-                  }
-                </div>
-              }
 
-              <!-- Project content -->
-              <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 md:p-8 overflow-hidden">
-                <h2 class="mt-0 mb-6 pb-4 border-b border-border text-xl font-semibold">About This Project</h2>
-                <markdown [data]="project()?.content" class="prose prose-sm sm:prose lg:prose-lg max-w-none prose-headings:mt-8 prose-headings:mb-4 prose-p:mb-6 prose-img:rounded-md prose-img:my-6 prose-code:bg-surface-ground prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surface-ground prose-pre:p-4 prose-pre:rounded-md prose-pre:overflow-x-auto prose-a:text-accent prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-4 prose-blockquote:border-accent prose-blockquote:pl-4 prose-blockquote:ml-0 prose-blockquote:text-text-secondary dark:prose-invert dark:prose-headings:text-text dark:prose-p:text-text-secondary dark:prose-a:text-accent-light dark:prose-blockquote:text-text-secondary dark:prose-code:bg-surface-hover dark:prose-pre:bg-surface-hover"></markdown>
-              </div>
+                    @if ((project()?.media?.length ?? 0) > 1) {
+                      <button class="absolute top-1/2 -translate-y-1/2 left-2 md:left-4 w-9 h-9 md:w-10 md:h-10 bg-black/40 text-white border-none rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-black/60" (click)="prevSlide()">
+                        <span class="material-icons">chevron_left</span>
+                      </button>
+                      <button class="absolute top-1/2 -translate-y-1/2 right-2 md:right-4 w-9 h-9 md:w-10 md:h-10 bg-black/40 text-white border-none rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-black/60" (click)="nextSlide()">
+                        <span class="material-icons">chevron_right</span>
+                      </button>
 
-              <!-- Project members -->
-              @if (project()?.members?.length) {
-                <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 md:p-8 overflow-hidden">
-                  <h2 class="mt-0 mb-6 pb-4 border-b border-border text-xl font-semibold">Project Team</h2>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                    @for (member of project()?.members; track member) {
-                      <div class="bg-surface-ground rounded-md p-3 md:p-4 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-sm">
-                        <app-profile
-                          [npub]="member"
-                          [link]="'https://primal.net/p/' + member"
-                        ></app-profile>
+                      <div class="absolute bottom-3 md:bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 md:gap-2">
+                        @for (item of project()?.media; track $index) {
+                          <button
+                            class="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-white/50 border-none cursor-pointer transition-all duration-300 ease-in-out"
+                            [class.bg-white]="currentSlide === $index"
+                            (click)="currentSlide = $index"
+                          ></button>
+                        }
                       </div>
                     }
                   </div>
-                </div>
-              }
-            } @else {
-               <div class="bg-surface-card rounded-lg shadow-sm p-8 text-center text-text-secondary">
-                 <span class="material-icons text-4xl mb-4 opacity-50">description</span>
-                 <p>No project description provided.</p>
-               </div>
-            }
-          </div>
+                }
 
-          <!-- Project sidebar -->
-          <div class="flex flex-col gap-6 md:gap-8">
-            <!-- Project Details -->
-            <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 overflow-hidden">
-              <h3 class="mt-0 mb-6 pb-4 border-b border-border text-lg font-semibold">Project Details</h3>
+                <!-- Project content -->
+                <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 overflow-hidden"> <!-- Adjusted padding -->
+                  <h2 class="mt-0 mb-5 pb-3 border-b border-border text-xl font-semibold">About This Project</h2> <!-- Adjusted margin/padding -->
+                  <markdown [data]="project()?.content" class="prose prose-sm sm:prose max-w-none prose-headings:mt-6 prose-headings:mb-3 prose-p:mb-4 prose-img:rounded-md prose-img:my-5 prose-code:bg-surface-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surface-hover prose-pre:p-4 prose-pre:rounded-md prose-pre:overflow-x-auto prose-a:text-accent prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-4 prose-blockquote:border-accent prose-blockquote:pl-4 prose-blockquote:ml-0 prose-blockquote:text-text-secondary dark:prose-invert dark:prose-headings:text-text dark:prose-p:text-text-secondary dark:prose-a:text-accent-light dark:prose-blockquote:text-text-secondary dark:prose-code:bg-surface-ground dark:prose-pre:bg-surface-ground"></markdown> <!-- Adjusted prose styles and theme colors -->
+                </div>
+
+                <!-- Project members -->
+                @if (project()?.members?.length) {
+                  <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 overflow-hidden"> <!-- Adjusted padding -->
+                    <h2 class="mt-0 mb-5 pb-3 border-b border-border text-xl font-semibold">Project Team</h2> <!-- Adjusted margin/padding -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"> <!-- Adjusted gap -->
+                      @for (member of project()?.members; track member) {
+                        <div class="bg-surface-ground rounded-md p-3 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-sm"> <!-- Adjusted padding -->
+                          <app-profile
+                            [npub]="member"
+                            [link]="'https://primal.net/p/' + member"
+                          ></app-profile>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              } @else {
+                 <div class="bg-surface-card rounded-lg shadow-sm p-8 text-center text-text-secondary">
+                   <span class="material-icons text-4xl mb-4 opacity-50">description</span>
+                   <p>No project description provided.</p>
+                 </div>
+              }
+            </div>
+
+            <!-- Project sidebar -->
+            <div class="flex flex-col gap-6 md:gap-8">
+              <!-- Project Details -->
+              <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-5 overflow-hidden"> <!-- Adjusted padding -->
+              <h3 class="mt-0 mb-5 pb-3 border-b border-border text-lg font-semibold">Project Details</h3> <!-- Adjusted margin/padding -->
               <div class="mb-4">
                 <div class="text-sm text-text-secondary mb-1">Start Date</div>
                 <div class="text-text font-medium">
@@ -380,6 +376,7 @@
                     <span class="block text-xs text-text-secondary mt-1 italic">
                       @if (isProjectNotStarted()) {
                         (Starts {{ project()?.details?.startDate ?? 0 | ago }})
+
                       } @else {
                         (Started {{ project()?.details?.startDate ?? 0 | ago }})
                       }
@@ -412,8 +409,8 @@
 
             <!-- Funding Stages -->
             @if (project()?.details?.stages?.length) {
-              <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 overflow-hidden">
-                <h3 class="mt-0 mb-6 pb-4 border-b border-border text-lg font-semibold">Funding Stages</h3>
+              <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-5 overflow-hidden"> <!-- Adjusted padding -->
+                <h3 class="mt-0 mb-5 pb-3 border-b border-border text-lg font-semibold">Funding Stages</h3> <!-- Adjusted margin/padding -->
                 <div class="relative">
                   @for (stage of project()?.details?.stages; track $index; let isLast = $last) {
                     <div class="relative pl-8 pb-6">
@@ -436,8 +433,8 @@
             }
 
             <!-- Public Keys -->
-            <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 overflow-hidden">
-              <h3 class="mt-0 mb-6 pb-4 border-b border-border text-lg font-semibold">Public Keys & IDs</h3>
+            <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-5 overflow-hidden"> <!-- Adjusted padding -->
+              <h3 class="mt-0 mb-5 pb-3 border-b border-border text-lg font-semibold">Public Keys & IDs</h3> <!-- Adjusted margin/padding -->
               <div class="mb-4">
                 <div class="text-sm text-text-secondary mb-1">Project ID</div>
                 <div class="text-text font-medium font-mono text-xs break-all">{{ project()?.projectIdentifier }}</div>
@@ -457,8 +454,8 @@
             </div>
 
             <!-- Additional Details -->
-            <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 overflow-hidden">
-              <h3 class="mt-0 mb-6 pb-4 border-b border-border text-lg font-semibold">Blockchain Details</h3>
+            <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-5 overflow-hidden"> <!-- Adjusted padding -->
+              <h3 class="mt-0 mb-5 pb-3 border-b border-border text-lg font-semibold">Blockchain Details</h3> <!-- Adjusted margin/padding -->
               <div class="mb-4">
                 <div class="text-sm text-text-secondary mb-1">Created on Bitcoin block</div>
                 <div class="text-text font-medium">{{ project()?.createdOnBlock }}</div>
@@ -474,27 +471,37 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </div> <!-- END Project Right Column (Sidebar) -->
+        </div> <!-- END Project Inner Grid -->
       } @else if (activeTab === 'faq') {
         <div class="faq-section max-w-3xl mx-auto"> <!-- Centered content -->
           <h2 class="text-xl font-semibold mb-6 pb-4 border-b border-border">Frequently Asked Questions</h2>
 
-          @if (loading()) {
+          @if (loadingFaq()) {
             <div class="flex flex-col items-center justify-center p-8 text-text-secondary">
               <div class="w-8 h-8 border-3 border-accent/30 border-t-accent rounded-full animate-spin mb-4"></div>
               <p>Loading FAQ...</p>
             </div>
-          } @else if (!faqItems || faqItems.length === 0) {
-            <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary">
+          } @else if (errorFaq()) {
+            <div class="flex flex-col items-center justify-center p-8 text-center text-warning bg-red-500/5 rounded-lg">
+              <span class="material-icons text-5xl mb-4 opacity-80">error_outline</span>
+              <p>{{ errorFaq() }}</p>
+              <button (click)="fetchFaq()" class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent text-white hover:-translate-y-0.5 hover:shadow-sm transition-all duration-300 ease-in-out">
+                <span class="material-icons text-lg">refresh</span>
+                Retry
+              </button>
+            </div>
+          } @else if (faqItems().length === 0) {
+            <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary bg-surface-card rounded-lg shadow-sm">
               <span class="material-icons text-5xl mb-4 opacity-50">help_outline</span>
               <p>No FAQ items available for this project yet.</p>
             </div>
           } @else {
             <div class="flex flex-col gap-4 md:gap-6">
-              @for (faq of faqItems; track faq.id) {
+              @for (faq of faqItems(); track faq.id) {
                 <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md">
                   <h3 class="mt-0 mb-3 text-lg font-semibold">{{ faq.question }}</h3>
+                  <!-- Use markdown pipe if answer can contain markdown, otherwise keep as is -->
                   <p class="m-0 text-base text-text-secondary whitespace-pre-wrap">{{ faq.answer }}</p>
                 </div>
               }
@@ -505,14 +512,23 @@
         <div class="updates-section max-w-3xl mx-auto"> <!-- Centered content -->
           <h2 class="text-xl font-semibold mb-6 pb-4 border-b border-border">Project Updates</h2>
 
-          @if (loading()) {
+          @if (loadingUpdates()) {
             <div class="flex flex-col items-center justify-center p-8 text-text-secondary">
               <div class="w-8 h-8 border-3 border-accent/30 border-t-accent rounded-full animate-spin mb-4"></div>
               <p>Loading updates...</p>
             </div>
+          } @else if (errorUpdates()) {
+            <div class="flex flex-col items-center justify-center p-8 text-center text-warning bg-red-500/5 rounded-lg">
+              <span class="material-icons text-5xl mb-4 opacity-80">error_outline</span>
+              <p>{{ errorUpdates() }}</p>
+               <button (click)="fetchUpdates()" class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent text-white hover:-translate-y-0.5 hover:shadow-sm transition-all duration-300 ease-in-out">
+                <span class="material-icons text-lg">refresh</span>
+                Retry
+              </button>
+            </div>
           } @else if (updates().length === 0) {
-            <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary">
-              <span class="material-icons text-5xl mb-4 opacity-50">notifications_none</span>
+            <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary bg-surface-card rounded-lg shadow-sm">
+              <span class="material-icons text-5xl mb-4 opacity-50">campaign</span> <!-- Changed icon -->
               <p>No updates available for this project yet.</p>
             </div>
           } @else {
@@ -520,11 +536,16 @@
               @for (update of updates(); track update.id) {
                 <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md">
                   <div class="flex justify-between items-center mb-4 pb-3 border-b border-border">
-                    <span class="text-sm text-text-secondary">{{ formatDate(update.created_at) }}</span>
-                    <!-- Optionally add author profile here if updates can come from different authors -->
+                    <!-- Assuming updates are from the project owner -->
+                     <app-profile
+                      [pubkey]="update.pubkey"
+                      [link]="'https://primal.net/p/' + update.pubkey"
+                      class="text-sm"
+                    ></app-profile>
+                    <span class="text-sm text-text-secondary flex-shrink-0 ml-4">{{ update.created_at ?? 0 | ago }}</span>
                   </div>
                   <!-- Using prose for markdown-like styling of Nostr content -->
-                  <div class="prose prose-sm sm:prose max-w-none dark:prose-invert prose-a:text-accent hover:prose-a:underline" [innerHTML]="update.content | safeContent"></div>
+                  <div class="prose prose-sm sm:prose max-w-none dark:prose-invert prose-a:text-accent hover:prose-a:underline prose-img:rounded-md prose-img:max-h-80 prose-img:mx-auto" [innerHTML]="update.content | safeContent"></div>
                 </div>
               }
             </div>
@@ -534,44 +555,56 @@
         <div class="comments-section max-w-3xl mx-auto"> <!-- Centered content -->
           <h2 class="text-xl font-semibold mb-6 pb-4 border-b border-border">Comments</h2>
 
-          @if (loading()) {
+          @if (loadingComments()) {
             <div class="flex flex-col items-center justify-center p-8 text-text-secondary">
               <div class="w-8 h-8 border-3 border-accent/30 border-t-accent rounded-full animate-spin mb-4"></div>
               <p>Loading comments...</p>
             </div>
+          } @else if (errorComments()) {
+            <div class="flex flex-col items-center justify-center p-8 text-center text-warning bg-red-500/5 rounded-lg">
+              <span class="material-icons text-5xl mb-4 opacity-80">error_outline</span>
+              <p>{{ errorComments() }}</p>
+               <button (click)="fetchComments()" class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent text-white hover:-translate-y-0.5 hover:shadow-sm transition-all duration-300 ease-in-out">
+                <span class="material-icons text-lg">refresh</span>
+                Retry
+              </button>
+            </div>
           } @else if (comments().length === 0) {
-            <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary">
+            <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary bg-surface-card rounded-lg shadow-sm">
               <span class="material-icons text-5xl mb-4 opacity-50">chat_bubble_outline</span>
-              <p>No comments available for this project yet.</p>
+              <p>No comments available for this project yet. Be the first to comment!</p> <!-- Encouragement -->
             </div>
           } @else {
             <div class="flex flex-col gap-4 md:gap-6">
               @for (comment of comments(); track comment.id) {
                 <div class="bg-surface-card rounded-lg shadow-sm p-4 sm:p-6 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md">
-                  <div class="flex justify-between items-center mb-4 pb-3 border-b border-border">
+                  <div class="flex justify-between items-start mb-3 pb-3 border-b border-border gap-4"> <!-- Use items-start for alignment -->
                     <app-profile
                       [pubkey]="comment.pubkey"
                       [link]="'https://primal.net/p/' + comment.pubkey"
-                      class="text-sm" 
+                      class="text-sm flex-grow min-w-0" 
                     ></app-profile>
-                    <span class="text-sm text-text-secondary">{{ formatDate(comment.created_at) }}</span>
+                    <span class="text-sm text-text-secondary flex-shrink-0 whitespace-nowrap">{{ comment.created_at ?? 0 | ago }}</span>
                   </div>
-                  <p class="m-0 text-base text-text-secondary whitespace-pre-wrap">{{ comment.content }}</p>
+                  <!-- Using prose for basic styling, adjust as needed -->
+                  <div class="prose prose-sm sm:prose max-w-none dark:prose-invert prose-a:text-accent hover:prose-a:underline" [innerHTML]="comment.content | safeContent"></div>
                 </div>
               }
             </div>
           }
-        </div>
-      }
-    </div>
-
-    <!-- Image Popup -->
-    @if (showImagePopup && selectedImage) {
-      <app-image-popup
+          </div> <!-- Closes comments-section div -->
+        }
+      </div> <!-- Closes Tab content container -->
+    </div> <!-- Closes grid -->
+  
+      <!-- Image Popup -->
+      @if (showImagePopup && selectedImage) {
+        <app-image-popup
         [imageUrl]="selectedImage"
         altText="Project media"
         (close)="showImagePopup = false; selectedImage = null"
       ></app-image-popup>
     }
   }
-</div>
+
+</div> <!-- Closes the max-w-7xl container -->
