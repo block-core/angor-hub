@@ -68,16 +68,32 @@
       <h1 class="m-0 text-xl md:text-3xl font-bold break-words min-w-0 mr-2 truncate">
         {{ project()?.metadata?.name || projectId }}
       </h1>
-      <div class="flex gap-1 flex-shrink-0 self-start mt-1">
-        <button [title]="isFavorite() ? 'Remove from bookmarks' : 'Add to bookmarks'" [class.text-accent]="isFavorite()" (click)="toggleFavorite()" class="bg-transparent border-none text-text-secondary rounded-full w-9 h-9 md:w-10 md:h-10 flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-surface-hover hover:text-text">
-          <span class="material-icons text-lg md:text-xl">{{ isFavorite() ? "bookmark" : "bookmark_border" }}</span>
+      <div class="flex gap-2 flex-shrink-0 self-start mt-2">
+        <button 
+          [title]="isFavorite() ? 'Remove from bookmarks' : 'Add to bookmarks'" 
+          (click)="toggleFavorite()" 
+          class="flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-full cursor-pointer transition-all duration-300 ease-in-out bg-surface-hover hover:bg-surface-ground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface-card"
+          [class.focus:ring-yellow-500]="isFavorite()"
+          [class.focus:ring-blue-500]="!isFavorite()"
+          [attr.aria-pressed]="isFavorite()">
+          <span 
+            class="material-icons text-lg md:text-xl transition-colors duration-300"
+            [class.text-yellow-500]="isFavorite()"
+            [class.text-text-secondary]="!isFavorite()">
+            {{ isFavorite() ? "bookmark" : "bookmark_border" }}
+          </span>
         </button>
-        <button [title]="'Report this project'" (click)="reportProject()" class="bg-transparent border-none text-text-secondary rounded-full w-9 h-9 md:w-10 md:h-10 flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-surface-hover hover:text-red-500">
-          <span class="material-icons text-lg md:text-xl">report_problem</span>
+        <button 
+          [title]="'Report this project'" 
+          (click)="reportProject()" 
+          class="flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-full cursor-pointer transition-all duration-300 ease-in-out bg-surface-hover hover:bg-surface-ground focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface-card">
+          <span class="material-icons text-lg md:text-xl text-yellow-500/80 hover:text-yellow-600 transition-colors duration-300">
+            report_problem
+          </span>
         </button>
       </div>
 
-      <p class="text-sm md:text-base leading-relaxed text-text-secondary m-0 line-clamp-3 mt-1">{{ project()?.metadata?.about }}</p>
+      <p class="text-sm md:text-base leading-relaxed text-text-secondary m-0 line-clamp-3 mt-2">{{ project()?.metadata?.about }}</p>
 
       @if (isProjectSuccessful()) {
       <div class="flex items-center p-3 md:p-4 rounded-lg bg-green-500/10 border border-green-500/30 mt-3">
