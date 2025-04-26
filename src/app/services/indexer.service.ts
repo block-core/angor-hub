@@ -34,10 +34,10 @@ export interface IndexedProject {
   content?: string;
   content_created_at: number | undefined;
 
-  members?: string[]; // Array of member public keys
+  members?: string[];
   members_created_at: number | undefined;
 
-  media?: any[]; // Array of media objects
+  media?: any[];
   media_created_at: number | undefined;
 
   externalIdentities?: ExternalIdentity[];
@@ -76,19 +76,19 @@ export interface AddressBalance {
 export interface Transaction {
   id: string;
   hex?: string;
-  // Add more transaction properties as needed
+ 
 }
 
 export interface Block {
   hash: string;
   height: number;
-  // Add more block properties as needed
+ 
 }
 
 export interface NetworkStats {
   connections: number;
   blockHeight: number;
-  // Add more stats properties as needed
+ 
 }
 
 @Injectable({
@@ -97,7 +97,7 @@ export interface NetworkStats {
 export class IndexerService {
   private readonly LIMIT = 6;
   private indexerUrl = 'https://tbtc.indexer.angor.io/';
-  private offset = -1000; // Change back to simple number
+  private offset = -1000;
   private totalItems = 0;
   private totalProjectsFetched = false;
   private relay = inject(RelayService);
@@ -109,14 +109,18 @@ export class IndexerService {
   public error = signal<string | null>(null);
   private network = inject(NetworkService);
   
-  // Add signals for indexer configuration
+ 
   public indexers = signal<IndexerConfig>({
-    mainnet: [{ url: 'https://explorer.angor.io/', isPrimary: true }],
+    mainnet: [
+      { url: 'https://indexer.angor.io/', isPrimary: true },
+      { url: 'https://fulcrum.angor.online/', isPrimary: false },
+      { url: 'https://electrs.angor.online/', isPrimary: false }
+    ],
     testnet: [{ url: 'https://tbtc.indexer.angor.io/', isPrimary: true }]
   });
 
   constructor() {
-    // Subscribe to both profile and project updates
+   
     this.relay.profileUpdates.subscribe((update) => {
       this.updateProjectMetadata(update);
     });
@@ -125,13 +129,13 @@ export class IndexerService {
       this.updateProjectDetails(update);
     });
 
-    // Load saved indexers from localStorage
+   
     this.loadIndexerConfig();
     
-    // Set the active indexer URL based on the current network
+   
     this.updateActiveIndexer();
 
-    // Ensure deny list is loaded initially
+   
     this.denyService.loadDenyList();
   }
   
@@ -143,7 +147,7 @@ export class IndexerService {
         this.indexers.set(config);
       } catch (error) {
         console.error('Failed to parse saved indexer config', error);
-        // Keep default config if parsing fails
+       
       }
     }
   }
@@ -159,11 +163,15 @@ export class IndexerService {
   
   getDefaultIndexerConfig(): IndexerConfig {
     return {
-      mainnet: [{ url: 'https://explorer.angor.io/', isPrimary: true }],
+      mainnet: [
+        { url: 'https://indexer.angor.io/', isPrimary: false },
+        { url: 'https://fulcrum.angor.online/', isPrimary: true },
+        { url: 'https://electrs.angor.online/', isPrimary: false }
+      ],
       testnet: [{ url: 'https://tbtc.indexer.angor.io/', isPrimary: true }]
     };
   }
-  
+
   resetToDefaultIndexers(): void {
     this.indexers.set(this.getDefaultIndexerConfig());
     this.saveIndexerConfig();
@@ -178,15 +186,15 @@ export class IndexerService {
     const config = this.indexers();
     const networkIndexers = isMainnet ? config.mainnet : config.testnet;
     const primary = networkIndexers.find(indexer => indexer.isPrimary);
-    return primary ? primary.url : networkIndexers[0]?.url || 
-      (isMainnet ? 'https://explorer.angor.io/' : 'https://tbtc.indexer.angor.io/');
+    return primary ? primary.url : networkIndexers[0]?.url ||
+      (isMainnet ? 'https://indexer.angor.io/' : 'https://tbtc.indexer.angor.io/');
   }
   
   updateActiveIndexer(): void {
     const isMain = this.network.isMain();
     this.indexerUrl = this.getPrimaryIndexerUrl(isMain);
     
-    // Reset projects when indexer changes
+   
     this.resetProjects();
   }
   
@@ -205,13 +213,13 @@ export class IndexerService {
   }
   
   addIndexer(url: string, isMainnet: boolean): boolean {
-    // Normalize URL format (ensure ending with slash)
+   
     let normalizedUrl = url;
     if (!normalizedUrl.endsWith('/')) {
       normalizedUrl += '/';
     }
     
-    // Check if indexer already exists
+   
     const networkKey = isMainnet ? 'mainnet' : 'testnet';
     const exists = this.indexers()[networkKey].some(indexer => indexer.url === normalizedUrl);
     
@@ -219,7 +227,7 @@ export class IndexerService {
       return false;
     }
     
-    // Add new indexer
+   
     this.indexers.update(config => {
       const networkIndexers = config[networkKey];
       const isPrimary = networkIndexers.length === 0;
@@ -238,10 +246,10 @@ export class IndexerService {
     const networkKey = isMainnet ? 'mainnet' : 'testnet';
     
     this.indexers.update(config => {
-      // Remove the indexer
+     
       const filteredIndexers = config[networkKey].filter(indexer => indexer.url !== url);
       
-      // If we removed the primary indexer, make the first remaining one primary
+     
       if (filteredIndexers.length > 0 && !filteredIndexers.some(i => i.isPrimary)) {
         filteredIndexers[0].isPrimary = true;
       }
@@ -260,7 +268,7 @@ export class IndexerService {
       const response = await fetch(`${url}api/stats/heartbeat`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(5000) // 5 second timeout
+        signal: AbortSignal.timeout(5000)
       });
       return response.ok;
     } catch {
@@ -288,7 +296,7 @@ export class IndexerService {
     this.projects.update((projects) =>
       projects.map((project) => {
         if (project.founderKey === pubkey) {
-          // Only update if the new event is newer than existing metadata
+         
           if (
             !project.metadata_created_at ||
             event.created_at! > project.metadata_created_at
@@ -309,7 +317,7 @@ export class IndexerService {
     this.projects.update((projects) =>
       projects.map((project) => {
         if (project.projectIdentifier === details.projectIdentifier) {
-          // Only update if the new event is newer than existing details
+         
           if (
             !project.details_created_at ||
             details.created_at > project.details_created_at
@@ -339,14 +347,14 @@ export class IndexerService {
     }
 
     try {
-      // Ensure deny list is loaded before fetching
+     
       await this.denyService.loadDenyList();
 
       this.loading.set(true);
       this.error.set(null);
       let limit = this.LIMIT;
 
-      // If the next offset is negative, substract that from the limit.
+     
       if (this.offset !== -1000 && this.offset < 0) {
         limit = this.LIMIT + this.offset;
         console.log('LIMIT SUBSTRACTED:', limit);
@@ -354,7 +362,7 @@ export class IndexerService {
         this.totalProjectsFetched = true;
       }
 
-      // When there is no new page to fetch, we should not make a request.
+     
       if (limit == 0) {
         this.loading.set(false);
         return;
@@ -370,17 +378,17 @@ export class IndexerService {
       const url = `${
         this.indexerUrl
       }api/query/Angor/projects?${params.toString()}`;
-      // console.log('Fetching:', url);
+     
 
       const { data: response, headers } = await this.fetchJson<
         IndexedProject[]
       >(url);
 
       if (Array.isArray(response) && response.length > 0) {
-        // Filter out denied projects BEFORE processing
+       
         const filteredResponse: IndexedProject[] = [];
         for (const item of response) {
-          // Use await here as isEventDenied is now async
+         
           const isDenied = await this.denyService.isEventDenied(item.projectIdentifier);
           if (!isDenied) {
             filteredResponse.push(item);
@@ -394,15 +402,15 @@ export class IndexerService {
         if (filteredResponse.length > 0) {
           if (this.offset === -1000) {
             this.totalItems = parseInt(headers.get('pagination-total') || '0');
-            // Adjust offset calculation based on potentially filtered items
-            // This might need refinement depending on how totalItems relates to non-denied items
+           
+           
             this.offset = Math.max(0, this.totalItems - limit - limit); 
           } else {
             const nextOffset = this.offset - this.LIMIT;
             this.offset = nextOffset;
           }
 
-          // Merge new projects with existing ones, avoiding duplicates
+         
           this.projects.update((existing) => {
             const merged = [...existing];
             const existingIds = new Set(existing.map(p => p.projectIdentifier));
@@ -410,7 +418,7 @@ export class IndexerService {
             filteredResponse.forEach((newProject) => {
               if (!existingIds.has(newProject.projectIdentifier)) {
                 merged.push(newProject);
-                existingIds.add(newProject.projectIdentifier); // Add to set to prevent duplicates within the batch
+                existingIds.add(newProject.projectIdentifier);
               }
             });
 
@@ -423,7 +431,7 @@ export class IndexerService {
             this.relay.fetchListData(eventIds);
           }
         } else {
-           // If all fetched items were filtered out, still need to adjust offset or mark as complete
+          
            if (this.offset === -1000) {
               this.totalItems = parseInt(headers.get('pagination-total') || '0');
               this.offset = Math.max(0, this.totalItems - limit - limit);
@@ -431,7 +439,7 @@ export class IndexerService {
               const nextOffset = this.offset - this.LIMIT;
               this.offset = nextOffset;
            }
-           // If offset becomes negative after adjustment, we might be done
+          
            if (this.offset < 0) {
               this.totalProjectsFetched = true;
            }
@@ -450,52 +458,11 @@ export class IndexerService {
     }
   }
 
-  // async getProjects() {
-  //   try {
-  //     await this.denyService.loadDenyList();
-
-  //     // Initial request to get total count
-  //     const response = await fetch(
-  //       `${this.indexerUrl}api/query/Angor/projects`
-  //     );
-  //     const total = parseInt(
-  //       response.headers.get('pagination-total') || '0',
-  //       this.LIMIT
-  //     );
-
-  //     let currentOffset = 0;
-  //     const allProjects: IndexedProject[] = [];
-
-  //     // Continue fetching while there are more items
-  //     while (currentOffset < total) {
-  //       const batch = await this.fetchProjectsBatch(
-  //         currentOffset,
-  //         this.pageSize
-  //       );
-  //       if (!batch || batch.length === 0) break;
-
-  //       // Filter out denied projects
-  //       const filteredBatch = batch.filter(
-  //         project => !this.denyService.isEventDenied(project.nostrEventId)
-  //       );
-
-  //       allProjects.push(...filteredBatch);
-  //       currentOffset += this.pageSize;
-  //     }
-
-  //     this.projects.set(allProjects);
-  //     return allProjects;
-  //   } catch (error) {
-  //     console.error('Error fetching projects:', error);
-  //     throw error;
-  //   }
-  // }
-
   private async fetchProjectsBatch(offset: number, limit: number) {
     console.log('fetchProjectsBatch');
-    // If the offset is lower than limit, it means we have reached the last page.
-    // At this time, we MUST make sure to not get more than the offset as limit, or
-    // there will be duplicate entries.
+   
+   
+   
     if (offset < limit) {
       console.log('LIMIT HIGHER THAN OFFSET!!', offset, limit);
       limit = offset;
@@ -514,7 +481,7 @@ export class IndexerService {
   }
 
   async fetchProject(id: string): Promise<IndexedProject | null> {
-    // Check deny list first
+   
     await this.denyService.loadDenyList();
     if (await this.denyService.isEventDenied(id)) {
       this.error.set(`Project ${id} is not available.`);
@@ -527,16 +494,16 @@ export class IndexerService {
         `${this.indexerUrl}api/query/Angor/projects/${id}`
       );
       if (project && project.data) {
-        // Check again after fetching, just in case
+       
         if (await this.denyService.isEventDenied(project.data.projectIdentifier)) {
            this.error.set(`Project ${id} is not available.`);
            return null;
         }
         
-        // TODO: VERIFY IF THIS ACTUALLY WORKS, it relies on FOUNDERKEY which is not nostr pub key.
-        // Fetch profile in an array of one
-        // It seems profile fetching is handled later based on details, keep that logic.
-        // this.relay.fetchProfile([project.data.founderKey]); // Reconsider if founderKey is the right key
+       
+       
+       
+       
       }
 
       return project.data;
@@ -554,11 +521,11 @@ export class IndexerService {
     try {
       this.loading.set(true);
       const url = `${this.indexerUrl}api/query/Angor/projects/${id}/stats`;
-      // console.log('Fetching project stats:', url);
+     
 
       const stats = (await this.fetchJson<ProjectStats>(url)).data;
 
-      // Convert amounts from satoshis to BTC
+     
       stats.amountInvested = stats.amountInvested;
       stats.amountSpentSoFarByFounder = stats.amountSpentSoFarByFounder;
       stats.amountInPenalties = stats.amountInPenalties;

@@ -113,11 +113,11 @@
                 (click)="setTheme('system')"
                 aria-label="Select System Theme"
               >
-                <div class="w-14 h-14 rounded-full flex items-center justify-center transition duration-200 ease-in-out bg-gradient-to-br from-white via-gray-100 to-gray-800 border border-border shadow-inner"> <!-- Adjusted system theme icon bg -->
+                <div class="w-14 h-14 rounded-full flex items-center justify-center transition duration-200 ease-in-out bg-surface-hover border border-border shadow-inner"> <!-- Removed gradient, added bg-surface-hover -->
                   <span class="material-icons text-3xl text-text-secondary">desktop_windows</span>
                 </div>
                 <span class="font-medium transition duration-200 ease-in-out text-text" [class.text-accent]="currentTheme() === 'system'" [class.font-semibold]="currentTheme() === 'system'">System</span>
-                </button>
+              </button>
               </div>
             </div>
           </div> <!-- Close bg-surface-card for appearance tab -->
