@@ -722,4 +722,103 @@ export class ProjectComponent implements OnInit, OnDestroy {
   getBannerStyle(): string {
     return this.getRandomColor(this.projectId);
   }
+
+  isStageCompleted(stageIndex: number): boolean {
+    const stage = this.project()?.details?.stages?.[stageIndex];
+    if (!stage) return false;
+    
+    return Date.now() > stage.releaseDate * 1000;
+  }
+  
+  isCurrentStage(stageIndex: number): boolean {
+    const stages = this.project()?.details?.stages;
+    if (!stages || !stages.length) return false;
+
+    // If it's the last stage and completed, it's not current
+    if (stageIndex === stages.length - 1 && this.isStageCompleted(stageIndex)) {
+      return false;
+    }
+    
+    // If this stage is not completed but the previous one is (or this is the first stage)
+    if (!this.isStageCompleted(stageIndex) && (stageIndex === 0 || this.isStageCompleted(stageIndex - 1))) {
+      return true;
+    }
+    
+    return false;
+  }
+  
+  getCurrentStageProgress(): number {
+    const stages = this.project()?.details?.stages;
+    if (!stages) return 0;
+    
+    for (let i = 0; i < stages.length; i++) {
+      if (this.isCurrentStage(i)) {
+        const stage = stages[i];
+        const stageStartTime = i > 0 ? stages[i-1].releaseDate * 1000 : (this.project()?.details?.startDate ?? 0) * 1000;
+        const stageEndTime = stage.releaseDate * 1000;
+        const currentTime = Date.now();
+        
+        if (currentTime <= stageStartTime) return 0;
+        if (currentTime >= stageEndTime) return 100;
+        
+        const totalDuration = stageEndTime - stageStartTime;
+        const elapsed = currentTime - stageStartTime;
+        
+        return Math.min(100, Math.max(0, Math.round((elapsed / totalDuration) * 100)));
+      }
+    }
+    
+    return 0;
+  }
+  
+  getOverallStageProgress(): number {
+    const stages = this.project()?.details?.stages;
+    if (!stages || !stages.length) return 0;
+
+    let completedPercentage = 0;
+    let currentStageContribution = 0;
+    
+    for (let i = 0; i < stages.length; i++) {
+      if (this.isStageCompleted(i)) {
+        completedPercentage += stages[i].amountToRelease;
+      } else if (this.isCurrentStage(i)) {
+        currentStageContribution = (stages[i].amountToRelease * this.getCurrentStageProgress()) / 100;
+        break;
+      }
+    }
+    
+    return Math.min(100, Math.round(completedPercentage + currentStageContribution));
+  }
+  
+  calculateStageAmount(percentage: number): string {
+    const targetAmount = this.project()?.details?.targetAmount ?? 0;
+    const amount = (targetAmount * percentage) / 100;
+    return this.bitcoin.toBTC(amount);
+  }
+  
+  getStageRemainingTimeText(releaseDate: number): string {
+    if (!releaseDate) return '';
+    
+    const now = Date.now();
+    const releaseMillis = releaseDate * 1000;
+    
+    if (now > releaseMillis) {
+      return 'Completed';
+    }
+    
+    const diffMillis = releaseMillis - now;
+    const diffDays = Math.floor(diffMillis / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 1) {
+      const diffHours = Math.floor(diffMillis / (1000 * 60 * 60));
+      return diffHours <= 0 ? 'Soon' : `${diffHours}h remaining`;
+    } else if (diffDays === 1) {
+      return '1 day remaining';
+    } else if (diffDays < 30) {
+      return `${diffDays} days remaining`;
+    } else {
+      const diffMonths = Math.floor(diffDays / 30);
+      return diffMonths === 1 ? '1 month remaining' : `${diffMonths} months remaining`;
+    }
+  }
 }

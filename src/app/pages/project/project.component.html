@@ -311,18 +311,61 @@
               @for (stage of project()?.details?.stages; track $index; let isLast = $last) {
               <div class="relative pl-8 pb-6">
                 @if (!isLast) {
-                <div class="absolute top-2 left-[11px] w-0.5 h-full bg-border"></div>
+                <div class="absolute top-2 left-[11px] w-0.5 h-full" 
+                     [class]="isStageCompleted($index) ? 'bg-accent' : 'bg-border'"></div>
                 }
 
-                <div class="absolute top-0 left-0 w-6 h-6 bg-accent border-4 border-surface-card rounded-full z-[1]"></div>
+                <div class="absolute top-0 left-0 w-6 h-6 rounded-full z-[1] border-4 flex items-center justify-center"
+                     [class]="isStageCompleted($index) ? 'bg-accent border-surface-card' : isCurrentStage($index) ? 'bg-yellow-500 border-surface-card' : 'bg-surface-hover border-surface-card'">
+                  @if (isStageCompleted($index)) {
+                  <span class="material-icons text-white text-xs">check</span>
+                  }
+                </div>
 
                 <div class="pt-0.5">
-                  <div class="font-semibold mb-1">Stage {{ $index + 1 }}</div>
-                  <div class="text-lg font-bold text-accent mb-1">{{ stage.amountToRelease }}%</div>
-                  <div class="text-sm text-text-secondary">{{ formatDate(stage.releaseDate) }}</div>
+                  <div class="flex items-center justify-between mb-1">
+                    <div class="font-semibold">Stage {{ $index + 1 }}</div>
+                    <div class="text-xs font-medium px-2 py-0.5 rounded-full" 
+                         [class]="isStageCompleted($index) ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 
+                                 isCurrentStage($index) ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' : 
+                                 'bg-surface-hover text-text-secondary'">
+                      {{ isStageCompleted($index) ? 'Completed' : isCurrentStage($index) ? 'Current' : 'Upcoming' }}
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-end gap-2 mb-2">
+                    <div class="text-lg font-bold" [class]="isStageCompleted($index) ? 'text-accent' : 'text-text'">
+                      {{ stage.amountToRelease }}%
+                    </div>
+                    <div class="text-sm text-text-secondary">
+                      ({{ calculateStageAmount(stage.amountToRelease) }} {{ networkService.isMain() ? "BTC" : "TBTC" }})
+                    </div>
+                  </div>
+                  
+                  <div class="relative h-2 bg-surface-hover rounded-full overflow-hidden mb-2">
+                    <div class="absolute top-0 left-0 h-full transition-width duration-500 ease-out" 
+                         [style.width.%]="isStageCompleted($index) ? 100 : isCurrentStage($index) ? getCurrentStageProgress() : 0"
+                         [class]="isStageCompleted($index) ? 'bg-accent' : isCurrentStage($index) ? 'bg-yellow-500' : ''"></div>
+                  </div>
+                  
+                  <div class="flex justify-between text-sm">
+                    <div class="text-text-secondary">{{ formatDate(stage.releaseDate) }}</div>
+                    <div class="text-text-secondary">{{ getStageRemainingTimeText(stage.releaseDate) }}</div>
+                  </div>
                 </div>
               </div>
               }
+            </div>
+            
+            <div class="mt-2 pt-4 border-t border-border">
+              <div class="flex justify-between items-center text-sm">
+                <div class="text-text-secondary">Overall Progress</div>
+                <div class="font-medium">{{ getOverallStageProgress() }}%</div>
+              </div>
+              <div class="relative h-2 bg-surface-hover rounded-full overflow-hidden mt-2">
+                <div class="absolute top-0 left-0 h-full bg-accent transition-width duration-500 ease-out" 
+                     [style.width.%]="getOverallStageProgress()"></div>
+              </div>
             </div>
           </div>
           }
