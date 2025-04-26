@@ -15,14 +15,14 @@
     </p>
 
     @if (networkService.isMain()) {
-      <div class="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-bitcoin-mainnet/10 text-bitcoin-mainnet border border-bitcoin-mainnet/20 backdrop-blur-sm">
+      <div class="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-bitcoin-mainnet/10 text-bitcoin-mainnet border-2 border-bitcoin-mainnet/30 backdrop-blur-sm hover:bg-bitcoin-mainnet/15 hover:border-bitcoin-mainnet/40 transition-all duration-300">
         <span class="material-icons text-xl">currency_bitcoin</span>
-        <span class="font-medium">Bitcoin Mainnet</span>
+        <span class="font-semibold">Bitcoin Mainnet</span>
       </div>
     } @else {
-      <div class="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-bitcoin-testnet/10 text-bitcoin-testnet border border-bitcoin-testnet/20 backdrop-blur-sm">
+      <div class="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-bitcoin-testnet/15 text-bitcoin-testnet border-2 border-bitcoin-testnet/40 backdrop-blur-sm hover:bg-bitcoin-testnet/20 hover:border-bitcoin-testnet/50 transition-all duration-300">
         <span class="material-icons text-xl">science</span>
-        <span class="font-medium">Bitcoin Testnet</span>
+        <span class="font-semibold">Bitcoin Testnet</span>
       </div>
     }
   </div>

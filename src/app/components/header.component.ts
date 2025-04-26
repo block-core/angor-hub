@@ -64,7 +64,7 @@ import { ThemeService } from '../services/theme.service';
             </button>
             @if (isNetworkMenuOpen()) {
               <div class="absolute top-full left-0 mt-2 w-64 bg-surface-card rounded-lg shadow-xl border border-border z-[100]" @dropdownAnimation>
-                <div class="p-2">
+                <div class="p-3 space-y-2">
                   <button class="w-full flex items-center gap-3 p-3 rounded-md text-left hover:bg-surface-hover transition-colors" [class.bg-surface-hover]="networkService.isMain()" (click)="switchNetwork('main')">
                     <span class="relative flex h-3 w-3"><span class="relative inline-flex rounded-full h-3 w-3 bg-bitcoin-mainnet"></span></span>
                     <div class="flex-1">
@@ -91,13 +91,13 @@ import { ThemeService } from '../services/theme.service';
         <div class="flex items-center gap-2">
           <!-- Desktop Navigation -->
           <nav class="hidden lg:flex items-center gap-1">
-            <a routerLink="/" routerLinkActive="bg-surface-hover text-accent" [routerLinkActiveOptions]="{exact: true}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover hover:text-accent transition-colors" (click)="closeAllMenus()">
+            <a routerLink="/" routerLinkActive="bg-surface-hover text-accent" [routerLinkActiveOptions]="{exact: true}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
               <span class="material-icons text-xl">home</span> Home
             </a>
-            <a routerLink="/explore" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover hover:text-accent transition-colors" (click)="closeAllMenus()">
+            <a routerLink="/explore" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
               <span class="material-icons text-xl">explore</span> Explore
             </a>
-            <a routerLink="/settings" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover hover:text-accent transition-colors" (click)="closeAllMenus()">
+            <a routerLink="/settings" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
               <span class="material-icons text-xl">settings</span> Settings
             </a>
           </nav>
@@ -125,14 +125,14 @@ import { ThemeService } from '../services/theme.service';
         </div>
         <div class="flex-grow overflow-y-auto p-4">
           <!-- Mobile Navigation -->
-          <nav class="mb-6">
-            <a routerLink="/" routerLinkActive="bg-surface-hover text-accent" [routerLinkActiveOptions]="{exact: true}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover hover:text-accent transition-colors" (click)="toggleMobileMenu()">
+          <nav class="mb-6 space-y-2">
+            <a routerLink="/" routerLinkActive="bg-surface-hover text-accent" [routerLinkActiveOptions]="{exact: true}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
               <span class="material-icons text-xl">home</span> Home
             </a>
-            <a routerLink="/explore" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover hover:text-accent transition-colors" (click)="toggleMobileMenu()">
+            <a routerLink="/explore" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
               <span class="material-icons text-xl">explore</span> Explore
             </a>
-            <a routerLink="/settings" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover hover:text-accent transition-colors" (click)="toggleMobileMenu()">
+            <a routerLink="/settings" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
               <span class="material-icons text-xl">settings</span> Settings
             </a>
           </nav>
@@ -142,20 +142,22 @@ import { ThemeService } from '../services/theme.service';
           <!-- Mobile Network Selector -->
           <div class="mb-6">
             <h4 class="px-4 mb-2 text-xs font-semibold uppercase text-text-secondary tracking-wider">Network</h4>
-            <button class="w-full flex items-center gap-3 p-3 rounded-md text-left hover:bg-surface-hover transition-colors" [class.bg-surface-hover]="networkService.isMain()" (click)="switchNetwork('main')">
-              <span class="relative flex h-3 w-3"><span class="relative inline-flex rounded-full h-3 w-3 bg-bitcoin-mainnet"></span></span>
-              <div class="flex-1">
-                <div class="font-medium text-sm">Mainnet</div>
-              </div>
-              @if (networkService.isMain()) { <span class="material-icons text-accent text-lg">check_circle</span> }
-            </button>
-            <button class="w-full flex items-center gap-3 p-3 rounded-md text-left hover:bg-surface-hover transition-colors" [class.bg-surface-hover]="!networkService.isMain()" (click)="switchNetwork('test')">
-              <span class="relative flex h-3 w-3"><span class="relative inline-flex rounded-full h-3 w-3 bg-bitcoin-testnet"></span></span>
-              <div class="flex-1">
-                <div class="font-medium text-sm">Testnet</div>
-              </div>
-              @if (!networkService.isMain()) { <span class="material-icons text-accent text-lg">check_circle</span> }
-            </button>
+            <div class="space-y-2 px-1">
+              <button class="w-full flex items-center gap-3 p-3 rounded-md text-left hover:bg-surface-hover transition-colors" [class.bg-surface-hover]="networkService.isMain()" (click)="switchNetwork('main')">
+                <span class="relative flex h-3 w-3"><span class="relative inline-flex rounded-full h-3 w-3 bg-bitcoin-mainnet"></span></span>
+                <div class="flex-1">
+                  <div class="font-medium text-sm">Mainnet</div>
+                </div>
+                @if (networkService.isMain()) { <span class="material-icons text-accent text-lg">check_circle</span> }
+              </button>
+              <button class="w-full flex items-center gap-3 p-3 rounded-md text-left hover:bg-surface-hover transition-colors" [class.bg-surface-hover]="!networkService.isMain()" (click)="switchNetwork('test')">
+                <span class="relative flex h-3 w-3"><span class="relative inline-flex rounded-full h-3 w-3 bg-bitcoin-testnet"></span></span>
+                <div class="flex-1">
+                  <div class="font-medium text-sm">Testnet</div>
+                </div>
+                @if (!networkService.isMain()) { <span class="material-icons text-accent text-lg">check_circle</span> }
+              </button>
+            </div>
           </div>
 
           <div class="h-px bg-border my-4"></div>
@@ -163,11 +165,38 @@ import { ThemeService } from '../services/theme.service';
           <!-- Mobile Theme Toggle -->
           <div>
              <h4 class="px-4 mb-2 text-xs font-semibold uppercase text-text-secondary tracking-wider">Theme</h4>
-             <button class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleTheme()">
-               <span class="material-icons text-xl">{{ isDarkTheme() ? 'dark_mode' : 'light_mode' }}</span>
-               <span>{{ isDarkTheme() ? 'Dark Mode' : 'Light Mode' }}</span>
-             </button>
+             <div class="px-1">
+               <button class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleTheme()">
+                 <span class="material-icons text-xl">{{ isDarkTheme() ? 'dark_mode' : 'light_mode' }}</span>
+                 <span>{{ isDarkTheme() ? 'Dark Mode' : 'Light Mode' }}</span>
+               </button>
+             </div>
           </div>
+        </div>
+      </div>
+    }
+
+    <!-- Desktop Network Menu -->
+    @if (isNetworkMenuOpen()) {
+      <div class="hidden lg:block fixed inset-0 z-[99]" (click)="closeAllMenus()" @fadeInOut></div>
+      <div class="absolute top-full left-0 mt-2 w-64 bg-surface-card rounded-lg shadow-xl border border-border z-[100]" @dropdownAnimation>
+        <div class="p-3 space-y-2">
+          <button class="w-full flex items-center gap-3 p-3 rounded-md text-left hover:bg-surface-hover transition-colors" [class.bg-surface-hover]="networkService.isMain()" (click)="switchNetwork('main')">
+            <span class="relative flex h-3 w-3"><span class="relative inline-flex rounded-full h-3 w-3 bg-bitcoin-mainnet"></span></span>
+            <div class="flex-1">
+              <div class="font-medium text-sm">Mainnet</div>
+              <div class="text-xs text-text-secondary">Live Bitcoin network</div>
+            </div>
+            @if (networkService.isMain()) { <span class="material-icons text-accent text-lg">check_circle</span> }
+          </button>
+          <button class="w-full flex items-center gap-3 p-3 rounded-md text-left hover:bg-surface-hover transition-colors" [class.bg-surface-hover]="!networkService.isMain()" (click)="switchNetwork('test')">
+            <span class="relative flex h-3 w-3"><span class="relative inline-flex rounded-full h-3 w-3 bg-bitcoin-testnet"></span></span>
+            <div class="flex-1">
+              <div class="font-medium text-sm">Testnet</div>
+              <div class="text-xs text-text-secondary">Bitcoin test network</div>
+            </div>
+            @if (!networkService.isMain()) { <span class="material-icons text-accent text-lg">check_circle</span> }
+          </button>
         </div>
       </div>
     }

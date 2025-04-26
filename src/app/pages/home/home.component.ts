@@ -1,42 +1,47 @@
-import { Component, OnInit, inject, signal, effect } from '@angular/core';
+import { Component, OnInit, inject, signal, effect, WritableSignal } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common'; // Import DatePipe
 import { RouterLink } from '@angular/router';
-import { BreadcrumbComponent } from '../../components/breadcrumb.component';
-import { BlogService, BlogPost } from '../../services/blog.service';
-import { CommonModule, DatePipe } from '@angular/common';
-import { TitleService } from '../../services/title.service';
 import { NetworkService } from '../../services/network.service';
 import { BitcoinInfoService } from '../../services/bitcoin-info.service';
+import { BlogService, BlogPost } from '../../services/blog.service';
+import { TitleService } from '../../services/title.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, CommonModule, DatePipe],
-  templateUrl: './home.component.html', 
+  imports: [CommonModule, RouterLink, DatePipe], // Add DatePipe to imports
+  templateUrl: './home.component.html',
+  providers: [DatePipe] // Provide DatePipe
 })
 export class HomeComponent implements OnInit {
-  private blogService = inject(BlogService);
-  public title = inject(TitleService);
-  public networkService = inject(NetworkService);
-  public bitcoinInfo = inject(BitcoinInfoService);
+  networkService = inject(NetworkService);
+  bitcoinInfo = inject(BitcoinInfoService);
+  blogService = inject(BlogService);
+  titleService = inject(TitleService);
+ 
+  datePipe = inject(DatePipe); 
 
-  blogPosts = signal<BlogPost[]>([]);
+  blogPosts: WritableSignal<BlogPost[]> = signal([]);
+  // Remove totalProjects signal if not used
+  // totalProjects = signal<number | null>(null);
+  currentDate = new Date(); // Add property for current date
 
   constructor() {
-    // No effect needed here as template bindings handle updates
   }
 
-  async ngOnInit(): Promise<void> {
-    this.title.setTitle(''); // Set page title for home
+  async ngOnInit() {
+    this.titleService.setTitle('Angor Hub - Decentralized Bitcoin Fundraising');
+    this.loadBlogPosts();
+  }
 
+  async loadBlogPosts() {
     try {
-      // Fetch blog posts asynchronously
-      const posts = await this.blogService.getLatestPosts();
+      // Assuming fetchBlogPosts exists, otherwise use getLatestPosts
+      const posts = await this.blogService.getLatestPosts(); // Use getLatestPosts if fetchBlogPosts doesn't exist
       this.blogPosts.set(posts);
     } catch (error) {
-      console.error('Failed to fetch blog posts:', error);
+      console.error('Error loading blog posts:', error);
       this.blogPosts.set([]); // Set to empty array on error
     }
-
-    // Bitcoin info fetching is handled within the BitcoinInfoService
   }
 }
