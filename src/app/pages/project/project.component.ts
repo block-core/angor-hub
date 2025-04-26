@@ -499,7 +499,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
   getRemainingTimeText(expiryDate: number | undefined): string {
     if (!expiryDate) return 'Ending soon';
-    
+
     const now = Date.now();
     const expiryMillis = expiryDate * 1000;
     const diffMillis = expiryMillis - now;
@@ -648,6 +648,27 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
   formatNpub(pubkey: string): string {
     return pubkey.substring(0, 8) + '...' + pubkey.substring(pubkey.length - 8);
+  }
+  
+  copyToClipboard(text: string | undefined | null): void {
+    if (!text) return;
+    
+    navigator.clipboard.writeText(text).then(
+      () => {
+        console.log('Copied to clipboard'); 
+        const button = document.activeElement as HTMLElement;
+        if (button) {
+          const originalInnerText = button.innerHTML;
+          button.innerHTML = '<span class="material-icons text-lg">check</span>';
+          setTimeout(() => {
+            button.innerHTML = originalInnerText;
+          }, 1000);
+        }
+      },
+      (err) => {
+        console.error('Could not copy text: ', err);
+      }
+    );
   }
   
   openImagePopup(imageUrl: string): void {

@@ -332,19 +332,51 @@
 
             <div class="mb-4">
               <div class="text-sm text-text-secondary mb-1">Project ID</div>
-              <div class="text-text font-medium font-mono text-xs break-all">{{ project()?.projectIdentifier }}</div>
+              <div class="flex items-center bg-surface-hover rounded p-2">
+                <span class="material-icons text-lg text-text-secondary mr-2 flex-shrink-0">fingerprint</span>
+                <div class="overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover flex-1">
+                  <div class="font-mono text-xs whitespace-nowrap text-text">{{ project()?.projectIdentifier }}</div>
+                </div>
+                <button (click)="copyToClipboard(project()?.projectIdentifier)" class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0" title="Copy to clipboard">
+                  <span class="material-icons text-lg">content_copy</span>
+                </button>
+              </div>
             </div>
             <div class="mb-4">
               <div class="text-sm text-text-secondary mb-1">Founder Key</div>
-              <div class="text-text font-medium font-mono text-xs break-all">{{ project()?.founderKey }}</div>
+              <div class="flex items-center bg-surface-hover rounded p-2">
+                <span class="material-icons text-lg text-text-secondary mr-2 flex-shrink-0">key</span>
+                <div class="overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover flex-1">
+                  <div class="font-mono text-xs whitespace-nowrap text-text">{{ project()?.founderKey }}</div>
+                </div>
+                <button (click)="copyToClipboard(project()?.founderKey)" class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0" title="Copy to clipboard">
+                  <span class="material-icons text-lg">content_copy</span>
+                </button>
+              </div>
             </div>
             <div class="mb-4">
               <div class="text-sm text-text-secondary mb-1">Recovery Key</div>
-              <div class="text-text font-medium font-mono text-xs break-all">{{ project()?.details?.founderRecoveryKey }}</div>
+              <div class="flex items-center bg-surface-hover rounded p-2">
+                <span class="material-icons text-lg text-text-secondary mr-2 flex-shrink-0">restore</span>
+                <div class="overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover flex-1">
+                  <div class="font-mono text-xs whitespace-nowrap text-text">{{ project()?.details?.founderRecoveryKey }}</div>
+                </div>
+                <button (click)="copyToClipboard(project()?.details?.founderRecoveryKey)" class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0" title="Copy to clipboard">
+                  <span class="material-icons text-lg">content_copy</span>
+                </button>
+              </div>
             </div>
             <div class="mb-0">
               <div class="text-sm text-text-secondary mb-1">Nostr Public Key (npub)</div>
-              <div class="text-text font-medium font-mono text-xs break-all">{{ user?.npub }}</div>
+              <div class="flex items-center bg-surface-hover rounded p-2">
+                <span class="material-icons text-lg text-text-secondary mr-2 flex-shrink-0">person</span>
+                <div class="overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover flex-1">
+                  <div class="font-mono text-xs whitespace-nowrap text-text">{{ user?.npub }}</div>
+                </div>
+                <button (click)="copyToClipboard(user?.npub)" class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0" title="Copy to clipboard">
+                  <span class="material-icons text-lg">content_copy</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -353,16 +385,32 @@
 
             <div class="mb-4">
               <div class="text-sm text-text-secondary mb-1">Created on Bitcoin block</div>
-              <div class="text-text font-medium">{{ project()?.createdOnBlock }}</div>
+              <div class="flex items-center bg-surface-hover rounded p-2">
+                <span class="material-icons text-lg text-text-secondary mr-2 flex-shrink-0">layers</span>
+                <div class="overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover flex-1">
+                  <div class="font-medium whitespace-nowrap text-text">{{ project()?.createdOnBlock }}</div>
+                </div>
+                <button (click)="copyToClipboard(project()?.createdOnBlock?.toString())" class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0" title="Copy to clipboard">
+                  <span class="material-icons text-lg">content_copy</span>
+                </button>
+              </div>
             </div>
             <div class="mb-0">
               <div class="text-sm text-text-secondary mb-1">Transaction ID</div>
-              <div class="text-text font-medium font-mono text-xs break-all">
-                @if(networkService.isMain()) {
-                <a target="_blank" [href]="'https://mempool.space/tx/' + project()?.trxId" class="text-accent hover:underline">{{ project()?.trxId }}</a>
-                } @else {
-                <a target="_blank" [href]="'https://mempool.space/testnet/tx/' + project()?.trxId" class="text-accent hover:underline">{{ project()?.trxId }}</a>
-                }
+              <div class="flex items-center bg-surface-hover rounded p-2">
+                <span class="material-icons text-lg text-text-secondary mr-2 flex-shrink-0">receipt_long</span>
+                <div class="overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover flex-1">
+                  <div class="font-mono text-xs whitespace-nowrap text-text">
+                    @if(networkService.isMain()) {
+                    <a target="_blank" [href]="'https://mempool.space/tx/' + project()?.trxId" class="text-accent hover:underline">{{ project()?.trxId }}</a>
+                    } @else {
+                    <a target="_blank" [href]="'https://mempool.space/testnet/tx/' + project()?.trxId" class="text-accent hover:underline">{{ project()?.trxId }}</a>
+                    }
+                  </div>
+                </div>
+                <button (click)="copyToClipboard(project()?.trxId)" class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0" title="Copy to clipboard">
+                  <span class="material-icons text-lg">content_copy</span>
+                </button>
               </div>
             </div>
           </div>
