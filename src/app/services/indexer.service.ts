@@ -499,11 +499,6 @@ export class IndexerService {
            this.error.set(`Project ${id} is not available.`);
            return null;
         }
-        
-       
-       
-       
-       
       }
 
       return project.data;

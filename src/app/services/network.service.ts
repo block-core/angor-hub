@@ -70,10 +70,6 @@ export class NetworkService {
    * @private
    */
   private handleNetworkChange(): void {
-   
-   
-    
-   
     window.location.reload();
   }
 }

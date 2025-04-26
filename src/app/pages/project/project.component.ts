@@ -566,14 +566,21 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
   getSpentPercentage(): number {
     const spent = (this.project()?.stats?.amountSpentSoFarByFounder ?? 0);
-    const invested = (this.project()?.stats?.amountInvested ?? 0);
+    const invested = (this.project()?.stats?.amountInvested ?? 1); // Avoid division by zero
     if (invested === 0) return 0;
     return Number(((spent / invested) * 100).toFixed(1));
   }
 
+  getWithdrawnPercentage(): number {
+    const withdrawn = (this.project()?.stats?.amountInPenalties  ?? 0);
+    const invested = (this.project()?.stats?.amountInvested ?? 1); // Avoid division by zero
+    if (invested === 0) return 0;
+    return Number(((withdrawn / invested) * 100).toFixed(1));
+  }
+
   getPenaltiesPercentage(): number {
     const penalties = (this.project()?.stats?.amountInPenalties ?? 0);
-    const invested = (this.project()?.stats?.amountInvested ?? 0);
+    const invested = (this.project()?.stats?.amountInvested ?? 1); // Avoid division by zero
     if (invested === 0) return 0;
     return Number(((penalties / invested) * 100).toFixed(1));
   }
