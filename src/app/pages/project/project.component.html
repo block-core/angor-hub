@@ -1,19 +1,27 @@
-<section class="relative w-full h-[250px] md:h-[300px] overflow-hidden"> <!-- Adjusted height -->
-  <app-breadcrumb [items]="[
-        { label: 'Home', url: '/' },
-        { label: 'Explore', url: '' }
-      ]" class="mb-4"></app-breadcrumb>
-  <!-- Banner content remains here -->
+<section class="relative w-full h-[250px] md:h-[300px] overflow-hidden"> 
+  <!-- Banner image with overlay -->
   <div
-    class="absolute inset-0 bg-cover bg-center transition-colors duration-300 after:content-[''] after:absolute after:inset-0 after:bg-black/30"
+    class="absolute inset-0 bg-cover bg-center transition-colors duration-300 after:content-[''] after:absolute after:inset-0 after:bg-gradient-to-b after:from-black/60 after:to-black/30"
     [style.background-image]="project()?.metadata?.banner && !failedBannerImage()
         ? 'url(' + project()?.metadata?.banner + ')'
-        : 'none'" [style.background-color]="failedBannerImage() || !project()?.metadata?.banner
+        : 'none'" 
+    [style.background-color]="failedBannerImage() || !project()?.metadata?.banner
         ? getBannerStyle()
         : 'transparent'">
     @if (project()?.metadata?.banner) {
-    <img [src]="project()?.metadata?.banner" class="hidden" (error)="handleBannerError()" alt="">
+      <img [src]="project()?.metadata?.banner" class="hidden" (error)="handleBannerError()" alt="">
     }
+  </div>
+  
+  <!-- Improved breadcrumb with better positioning and project name -->
+  <div class="absolute top-0 left-0 w-full z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+      <app-breadcrumb [items]="[
+        { label: 'Home', url: '/' },
+        { label: 'Explore', url: '/explore' },
+        { label: project()?.metadata?.name || 'Project', url: '' }
+      ]" class="text-white/90 text-sm"></app-breadcrumb>
+    </div>
   </div>
 </section>
 
