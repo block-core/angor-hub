@@ -112,7 +112,7 @@ export class IndexerService {
  
   public indexers = signal<IndexerConfig>({
     mainnet: [
-      { url: 'https://indexer.angor.io/', isPrimary: true },
+      { url: 'https://explorer.angor.io/', isPrimary: true },
       { url: 'https://fulcrum.angor.online/', isPrimary: false },
       { url: 'https://electrs.angor.online/', isPrimary: false }
     ],
@@ -164,7 +164,7 @@ export class IndexerService {
   getDefaultIndexerConfig(): IndexerConfig {
     return {
       mainnet: [
-        { url: 'https://indexer.angor.io/', isPrimary: false },
+        { url: 'https://explorer.angor.io/', isPrimary: false },
         { url: 'https://fulcrum.angor.online/', isPrimary: true },
         { url: 'https://electrs.angor.online/', isPrimary: false }
       ],
@@ -187,7 +187,7 @@ export class IndexerService {
     const networkIndexers = isMainnet ? config.mainnet : config.testnet;
     const primary = networkIndexers.find(indexer => indexer.isPrimary);
     return primary ? primary.url : networkIndexers[0]?.url ||
-      (isMainnet ? 'https://indexer.angor.io/' : 'https://tbtc.indexer.angor.io/');
+      (isMainnet ? 'https://explorer.angor.io/' : 'https://tbtc.indexer.angor.io/');
   }
   
   updateActiveIndexer(): void {
