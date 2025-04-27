@@ -44,7 +44,7 @@ module.exports = {
     }
   },
   plugins: [
-      require('@tailwindcss/typography'), // For prose styling
-      require('tailwind-scrollbar-hide') // Optional: if you need scrollbar hiding utility
+      require('@tailwindcss/typography'),
+      require('tailwind-scrollbar-hide')
   ],
 };

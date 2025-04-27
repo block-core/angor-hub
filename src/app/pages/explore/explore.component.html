@@ -1,139 +1,187 @@
-<section class="container mx-auto px-4 pt-8 pb-12 relative"> 
+<!-- Header Section -->
+<section class="container mx-auto px-4 pt-12 pb-16 relative overflow-hidden">
+  <!-- Background Decorative Elements -->
+  <div class="absolute inset-0 z-0 pointer-events-none">
+    <div class="absolute top-0 left-0 w-64 h-64 bg-primary/10 rounded-full filter blur-3xl animate-pulse-slow"></div>
+    <div class="absolute bottom-0 right-0 w-96 h-96 bg-bitcoin-mainnet/10 rounded-full filter blur-3xl animate-float"></div>
+  </div>
+
+  <!-- Breadcrumb -->
   <app-breadcrumb
     [items]="[
       { label: 'Home', url: '/' },
       { label: 'Explore', url: '' }
     ]"
-    class="mb-4" 
+    class="mb-6 relative z-10"
   ></app-breadcrumb>
 
-  <div class="relative z-10 text-center"> <!-- Added wrapper for centered content -->
-    <strong class="text-accent font-semibold text-lg mb-2 block">Discover Innovation</strong>
-    <h1 class="text-4xl md:text-5xl font-bold mb-4 text-text">Explore Bitcoin Projects</h1>
-    <p class="text-lg text-text-secondary max-w-2xl mx-auto mb-6">
-      Find exciting projects building on Bitcoin technology and join the future of decentralized finance.
-    </p>
-
+  <!-- Header Content -->
+  <div class="relative z-10 text-center">
     @if (networkService.isMain()) {
-      <div class="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-bitcoin-mainnet/10 text-bitcoin-mainnet border-2 border-bitcoin-mainnet/30 backdrop-blur-sm hover:bg-bitcoin-mainnet/15 hover:border-bitcoin-mainnet/40 transition-all duration-300">
+      <div
+        class="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-bitcoin-mainnet/15 text-bitcoin-mainnet backdrop-blur-md hover:bg-bitcoin-mainnet/25 transition-all duration-300 shadow-md animate-in fade-in zoom-in duration-500"
+      >
         <span class="material-icons text-xl">currency_bitcoin</span>
-        <span class="font-semibold">Bitcoin Mainnet</span>
+        <span class="font-semibold text-sm uppercase tracking-wide">Bitcoin Mainnet</span>
       </div>
     } @else {
-      <div class="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-bitcoin-testnet/15 text-bitcoin-testnet border-2 border-bitcoin-testnet/40 backdrop-blur-sm hover:bg-bitcoin-testnet/20 hover:border-bitcoin-testnet/50 transition-all duration-300">
+      <div
+        class="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-bitcoin-testnet/20 text-bitcoin-testnet backdrop-blur-md hover:bg-bitcoin-testnet/30 transition-all duration-300 shadow-md animate-in fade-in zoom-in duration-500"
+      >
         <span class="material-icons text-xl">science</span>
-        <span class="font-semibold">Bitcoin Testnet</span>
+        <span class="font-semibold text-sm uppercase tracking-wide">Bitcoin Testnet</span>
       </div>
     }
+    <h1
+      class="text-4xl md:text-6xl font-bold mb-4 mt-6 text-text animate-in fade-in slide-in-from-top-4 duration-700"
+    >
+      Explore Projects
+    </h1>
+    <p
+      class="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto mb-8 leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100"
+    >
+      Discover innovative projects and become part of the decentralized finance revolution.
+    </p>
   </div>
 </section>
 
 <!-- Floating Controls -->
-<div class="sticky top-0 z-50 px-4 mb-8 -mt-10 pointer-events-none">
-  <div class="max-w-6xl mx-auto bg-surface-card/95 backdrop-blur-lg rounded-xl shadow-lg border border-border pointer-events-auto">
-    <div class="flex items-center gap-2 md:gap-4 p-2 md:p-3">
+<div class="sticky top-4 z-50 px-4 mb-12 pointer-events-none">
+  <div
+    class="max-w-6xl mx-auto bg-surface-card/90 dark:bg-surface-ground/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-border pointer-events-auto transition-all duration-300 animate-in fade-in zoom-in duration-500"
+  >
+    <div class="flex items-center gap-4 p-4">
       <!-- Search -->
       <div class="relative flex-grow">
         <input
           type="text"
           placeholder="Search projects..."
-          class="w-full h-10 md:h-11 pl-10 pr-8 rounded-lg border border-border bg-surface-hover/50 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent text-sm md:text-base"
+          class="w-full h-11 pl-12 pr-10 rounded-xl bg-surface-ground dark:bg-surface-card border border-border focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text placeholder-text-secondary transition-all duration-300 hover:bg-surface-hover"
           [value]="searchTerm()"
           (input)="onSearchInput($event)"
-          aria-label="Search projects">
-        <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg md:text-xl">search</span>
+          aria-label="Search projects"
+        />
+        <span
+          class="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary text-lg"
+          >search</span
+        >
         @if (searchTerm()) {
-          <button class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-surface-hover text-text-secondary hover:text-text" (click)="searchTerm.set('')" aria-label="Clear search">
-            <span class="material-icons text-base md:text-lg">close</span>
+          <button
+            class="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-surface-hover text-text-secondary transition-colors duration-200"
+            (click)="searchTerm.set('')"
+            aria-label="Clear search"
+          >
+            <span class="material-icons text-base">close</span>
           </button>
         }
       </div>
 
       <!-- Mobile Toggle -->
-      <button class="md:hidden flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-surface-hover/50 hover:bg-surface-hover"
-              [class.bg-accent]="showMobileFilters"
-              [class.text-accent]="showMobileFilters"
-              [class.border-accent]="showMobileFilters"
-              (click)="toggleMobileFilters()" aria-label="Toggle filters">
+      <button
+        class="md:hidden flex-shrink-0 w-11 h-11 flex items-center justify-center rounded-xl bg-surface-ground dark:bg-surface-card border border-border hover:bg-surface-hover text-text transition-all duration-300"
+        [ngClass]="{'bg-primary text-surface-card border-primary': showMobileFilters}"
+        (click)="toggleMobileFilters()"
+        aria-label="Toggle filters"
+      >
         <span class="material-icons">{{ showMobileFilters ? 'close' : 'tune' }}</span>
       </button>
 
       <!-- Desktop Controls -->
-      <div class="hidden md:flex items-center gap-2 flex-shrink-0">
+      <div class="hidden md:flex items-center gap-3 flex-shrink-0">
         <!-- Filter Dropdown -->
         <div class="relative">
-          <button #filterBtn class="h-11 px-4 flex items-center gap-2 rounded-lg border border-border bg-surface-hover/50 hover:bg-surface-hover text-sm" (click)="toggleFilterDropdown($event)" aria-label="Filter projects">
+          <button
+            #filterBtn
+            class="h-11 px-5 flex items-center gap-2 rounded-xl bg-surface-ground dark:bg-surface-card border border-border hover:bg-surface-hover text-sm text-text transition-all duration-300"
+            (click)="toggleFilterDropdown($event)"
+            aria-label="Filter projects"
+          >
             <span class="material-icons text-lg text-text-secondary">filter_alt</span>
             <span>{{ activeFilter() | titlecase }}</span>
-            <span class="material-icons text-xl transition-transform" [class.rotate-180]="showFilterDropdown">arrow_drop_down</span>
+            <span
+              class="material-icons text-lg text-text-secondary transition-transform duration-300"
+              [ngClass]="{'rotate-180': showFilterDropdown}"
+              >arrow_drop_down</span
+            >
           </button>
           @if (showFilterDropdown) {
-            <div class="absolute top-full right-0 mt-2 w-60 bg-surface-card rounded-lg shadow-xl border border-border z-10 p-2 animate-fade-in-down">
-              <h3 class="text-xs font-semibold uppercase text-text-secondary px-2 py-1 mb-1">Filter By</h3>
-              <button class="w-full text-left flex items-center gap-3 px-3 py-2 rounded hover:bg-surface-hover text-sm"
-                      [ngClass]="{'bg-accent/10 text-accent': activeFilter() === 'all'}"
-                      (click)="setFilter('all')">
-                <span class="material-icons text-lg">apps</span> All Projects
-              </button>
-              <button class="w-full text-left flex items-center gap-3 px-3 py-2 rounded hover:bg-surface-hover text-sm"
-                      [ngClass]="{'bg-accent/10 text-accent': activeFilter() === 'active'}"
-                      (click)="setFilter('active')">
-                <span class="material-icons text-lg">timelapse</span> Active
-              </button>
-              <button class="w-full text-left flex items-center gap-3 px-3 py-2 rounded hover:bg-surface-hover text-sm"
-                      [ngClass]="{'bg-accent/10 text-accent': activeFilter() === 'upcoming'}"
-                      (click)="setFilter('upcoming')">
-                <span class="material-icons text-lg">hourglass_top</span> Upcoming
-              </button>
-              <button class="w-full text-left flex items-center gap-3 px-3 py-2 rounded hover:bg-surface-hover text-sm"
-                      [ngClass]="{'bg-accent/10 text-accent': activeFilter() === 'completed'}"
-                      (click)="setFilter('completed')">
-                <span class="material-icons text-lg">flag</span> Completed
-              </button>
+            <div
+              class="absolute top-full right-0 mt-2 w-64 bg-surface-card dark:bg-surface-ground rounded-xl shadow-2xl border border-border z-10 p-4 animate-in fade-in slide-in-from-top-2 duration-300"
+            >
+              <h3 class="text-xs font-semibold uppercase text-text-secondary px-2 py-1 mb-3">
+                Filter By
+              </h3>
+              @for (filter of filterOptions; track filter) {
+                <button
+                  class="w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-hover text-sm text-text transition-colors duration-200"
+                  [ngClass]="{'bg-primary/10 text-primary': activeFilter() === filter}"
+                  (click)="setFilter(filter)"
+                >
+                  <span class="material-icons text-lg">{{
+                    filter === 'all' ? 'apps' :
+                    filter === 'active' ? 'timelapse' :
+                    filter === 'upcoming' ? 'hourglass_top' : 'flag'
+                  }}</span>
+                  {{ filter | titlecase }}
+                </button>
+              }
             </div>
           }
         </div>
         <!-- Sort Dropdown -->
         <div class="relative">
-           <button #sortBtn class="h-11 px-4 flex items-center gap-2 rounded-lg border border-border bg-surface-hover/50 hover:bg-surface-hover text-sm" (click)="toggleSortDropdown($event)" aria-label="Sort projects">
-             <span class="material-icons text-lg text-text-secondary">sort</span>
-             <span>{{ activeSort() | titlecase }}</span>
-             <span class="material-icons text-xl transition-transform" [class.rotate-180]="showSortDropdown">arrow_drop_down</span>
-           </button>
-           @if (showSortDropdown) {
-             <div class="absolute top-full right-0 mt-2 w-60 bg-surface-card rounded-lg shadow-xl border border-border z-10 p-2 animate-fade-in-down">
-               <h3 class="text-xs font-semibold uppercase text-text-secondary px-2 py-1 mb-1">Sort By</h3>
-               <button class="w-full text-left flex items-center gap-3 px-3 py-2 rounded hover:bg-surface-hover text-sm"
-                       [ngClass]="{'bg-accent/10 text-accent': activeSort() === 'default'}"
-                       (click)="setSort('default')">
-                 <span class="material-icons text-lg">sort</span> Default
-               </button>
-               <button class="w-full text-left flex items-center gap-3 px-3 py-2 rounded hover:bg-surface-hover text-sm"
-                       [ngClass]="{'bg-accent/10 text-accent': activeSort() === 'funding'}"
-                       (click)="setSort('funding')">
-                 <span class="material-icons text-lg">trending_up</span> Funding Progress
-               </button>
-               <button class="w-full text-left flex items-center gap-3 px-3 py-2 rounded hover:bg-surface-hover text-sm"
-                       [ngClass]="{'bg-accent/10 text-accent': activeSort() === 'endDate'}"
-                       (click)="setSort('endDate')">
-                 <span class="material-icons text-lg">event</span> End Date
-               </button>
-               <button class="w-full text-left flex items-center gap-3 px-3 py-2 rounded hover:bg-surface-hover text-sm"
-                       [ngClass]="{'bg-accent/10 text-accent': activeSort() === 'investors'}"
-                       (click)="setSort('investors')">
-                 <span class="material-icons text-lg">people</span> Investor Count
-               </button>
-             </div>
-           }
+          <button
+            #sortBtn
+            class="h-11 px-5 flex items-center gap-2 rounded-xl bg-surface-ground dark:bg-surface-card border border-border hover:bg-surface-hover text-sm text-text transition-all duration-300"
+            (click)="toggleSortDropdown($event)"
+            aria-label="Sort projects"
+          >
+            <span class="material-icons text-lg text-text-secondary">sort</span>
+            <span>{{ activeSort() | titlecase }}</span>
+            <span
+              class="material-icons text-lg text-text-secondary transition-transform duration-300"
+              [ngClass]="{'rotate-180': showSortDropdown}"
+              >arrow_drop_down</span
+            >
+          </button>
+          @if (showSortDropdown) {
+            <div
+              class="absolute top-full right-0 mt-2 w-64 bg-surface-card dark:bg-surface-ground rounded-xl shadow-2xl border border-border z-10 p-4 animate-in fade-in slide-in-from-top-2 duration-300"
+            >
+              <h3 class="text-xs font-semibold uppercase text-text-secondary px-2 py-1 mb-3">
+                Sort By
+              </h3>
+              @for (sort of sortOptions; track sort) {
+                <button
+                  class="w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-hover text-sm text-text transition-colors duration-200"
+                  [ngClass]="{'bg-primary/10 text-primary': activeSort() === sort}"
+                  (click)="setSort(sort)"
+                >
+                  <span class="material-icons text-lg">{{
+                    sort === 'default' ? 'sort' :
+                    sort === 'funding' ? 'trending_up' :
+                    sort === 'endDate' ? 'event' : 'people'
+                  }}</span>
+                  {{ sort | titlecase }}
+                </button>
+              }
+            </div>
+          }
         </div>
         <!-- Results Counter -->
-        <div class="h-11 px-4 flex items-center rounded-lg border border-border bg-surface-hover/30 text-text-secondary text-sm font-medium">
+        <div
+          class="h-11 px-5 flex items-center rounded-xl bg-surface-ground dark:bg-surface-card border border-border text-text-secondary text-sm font-medium transition-colors duration-300"
+        >
           {{ filteredProjects().length }} {{ filteredProjects().length === 1 ? 'project' : 'projects' }}
         </div>
         <!-- Reset Button -->
         @if (searchTerm() || activeFilter() !== 'all' || activeSort() !== 'default') {
-          <button class="h-11 w-11 flex items-center justify-center rounded-lg border border-warning/30 bg-warning/10 text-warning hover:bg-warning/20" (click)="resetFilters()" aria-label="Reset filters">
-            <span class="material-icons text-xl">restart_alt</span>
+          <button
+            class="h-11 w-11 flex items-center justify-center rounded-xl bg-warning/10 border border-warning/30 text-warning hover:bg-warning/20 transition-all duration-300"
+            (click)="resetFilters()"
+            aria-label="Reset filters"
+          >
+            <span class="material-icons text-lg">restart_alt</span>
           </button>
         }
       </div>
@@ -141,47 +189,56 @@
 
     <!-- Mobile Filters Panel -->
     @if (showMobileFilters) {
-      <div class="md:hidden border-t border-border p-4 animate-slide-down">
-        <div class="mb-4">
-          <h4 class="text-sm font-semibold text-text-secondary mb-2">Filter by</h4>
-          <div class="grid grid-cols-2 gap-2">
-            <button class="px-3 py-2 rounded-lg text-sm flex items-center justify-center gap-2 border"
-                    [ngClass]="activeFilter() === 'all' ? 'bg-accent/10 border-accent/50 text-accent' : 'border-border'"
-                    (click)="setFilter('all')"><span class="material-icons text-base">apps</span> All</button>
-            <button class="px-3 py-2 rounded-lg text-sm flex items-center justify-center gap-2 border"
-                    [ngClass]="activeFilter() === 'active' ? 'bg-accent/10 border-accent/50 text-accent' : 'border-border'"
-                    (click)="setFilter('active')"><span class="material-icons text-base">timelapse</span> Active</button>
-            <button class="px-3 py-2 rounded-lg text-sm flex items-center justify-center gap-2 border"
-                    [ngClass]="activeFilter() === 'upcoming' ? 'bg-accent/10 border-accent/50 text-accent' : 'border-border'"
-                    (click)="setFilter('upcoming')"><span class="material-icons text-base">hourglass_top</span> Upcoming</button>
-            <button class="px-3 py-2 rounded-lg text-sm flex items-center justify-center gap-2 border"
-                    [ngClass]="activeFilter() === 'completed' ? 'bg-accent/10 border-accent/50 text-accent' : 'border-border'"
-                    (click)="setFilter('completed')"><span class="material-icons text-base">flag</span> Completed</button>
+      <div class="md:hidden border-t border-border p-6 animate-in slide-in-from-top-4 duration-300">
+        <div class="mb-6">
+          <h4 class="text-sm font-semibold text-text-secondary mb-3">Filter by</h4>
+          <div class="grid grid-cols-2 gap-3">
+            @for (filter of filterOptions; track filter) {
+              <button
+                class="px-4 py-2 rounded-xl text-sm flex items-center justify-center gap-2 border border-border text-text hover:bg-surface-hover transition-all duration-300"
+                [ngClass]="{'bg-primary/10 border-primary text-primary': activeFilter() === filter}"
+                (click)="setFilter(filter)"
+              >
+                <span class="material-icons text-base">{{
+                  filter === 'all' ? 'apps' :
+                  filter === 'active' ? 'timelapse' :
+                  filter === 'upcoming' ? 'hourglass_top' : 'flag'
+                }}</span>
+                {{ filter | titlecase }}
+              </button>
+            }
           </div>
         </div>
-        <div class="mb-4">
-          <h4 class="text-sm font-semibold text-text-secondary mb-2">Sort by</h4>
-          <div class="grid grid-cols-2 gap-2">
-             <button class="px-3 py-2 rounded-lg text-sm flex items-center justify-center gap-2 border"
-                     [ngClass]="activeSort() === 'default' ? 'bg-accent/10 border-accent/50 text-accent' : 'border-border'"
-                     (click)="setSort('default')"><span class="material-icons text-base">sort</span> Default</button>
-             <button class="px-3 py-2 rounded-lg text-sm flex items-center justify-center gap-2 border"
-                     [ngClass]="activeSort() === 'funding' ? 'bg-accent/10 border-accent/50 text-accent' : 'border-border'"
-                     (click)="setSort('funding')"><span class="material-icons text-base">trending_up</span> Funding</button>
-             <button class="px-3 py-2 rounded-lg text-sm flex items-center justify-center gap-2 border"
-                     [ngClass]="activeSort() === 'endDate' ? 'bg-accent/10 border-accent/50 text-accent' : 'border-border'"
-                     (click)="setSort('endDate')"><span class="material-icons text-base">event</span> End Date</button>
-             <button class="px-3 py-2 rounded-lg text-sm flex items-center justify-center gap-2 border"
-                     [ngClass]="activeSort() === 'investors' ? 'bg-accent/10 border-accent/50 text-accent' : 'border-border'"
-                     (click)="setSort('investors')"><span class="material-icons text-base">people</span> Investors</button>
+        <div class="mb-6">
+          <h4 class="text-sm font-semibold text-text-secondary mb-3">Sort by</h4>
+          <div class="grid grid-cols-2 gap-3">
+            @for (sort of sortOptions; track sort) {
+              <button
+                class="px-4 py-2 rounded-xl text-sm flex items-center justify-center gap-2 border border-border text-text hover:bg-surface-hover transition-all duration-300"
+                [ngClass]="{'bg-primary/10 border-primary text-primary': activeSort() === sort}"
+                (click)="setSort(sort)"
+              >
+                <span class="material-icons text-base">{{
+                  sort === 'default' ? 'sort' :
+                  sort === 'funding' ? 'trending_up' :
+                  sort === 'endDate' ? 'event' : 'people'
+                }}</span>
+                {{ sort | titlecase }}
+              </button>
+            }
           </div>
         </div>
         @if (searchTerm() || activeFilter() !== 'all' || activeSort() !== 'default') {
           <div class="flex justify-between items-center pt-4 border-t border-border">
-             <button class="px-4 py-2 rounded-lg text-sm flex items-center gap-2 bg-warning/10 text-warning hover:bg-warning/20" (click)="resetFilters()">
-               <span class="material-icons text-base">restart_alt</span> Reset
-             </button>
-             <div class="text-sm text-text-secondary font-medium">{{ filteredProjects().length }} {{ filteredProjects().length === 1 ? 'project' : 'projects' }}</div>
+            <button
+              class="px-5 py-2 rounded-xl text-sm flex items-center gap-2 bg-warning/10 text-warning hover:bg-warning/20 transition-all duration-300"
+              (click)="resetFilters()"
+            >
+              <span class="material-icons text-base">restart_alt</span> Reset
+            </button>
+            <div class="text-sm text-text-secondary font-medium">
+              {{ filteredProjects().length }} {{ filteredProjects().length === 1 ? 'project' : 'projects' }}
+            </div>
           </div>
         }
       </div>
@@ -189,81 +246,109 @@
   </div>
 </div>
 
-
 <!-- Project Listing -->
-<div class="container mx-auto px-4 pb-16">
+<div class="container mx-auto px-4 pb-20">
   @if (indexer.loading() && !filteredProjects().length) {
     <div class="flex justify-center items-center py-16">
-      <div class="w-12 h-12 border-4 border-accent/30 border-t-accent rounded-full animate-spin"></div>
+      <div class="w-14 h-14 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
     </div>
   } @else {
     @if (filteredProjects().length === 0) {
-      <div class="text-center py-16 max-w-lg mx-auto">
-        <span class="material-icons text-6xl text-text-secondary opacity-30 mb-6">search_off</span>
-        <h2 class="text-2xl font-semibold mb-3">No Projects Match Your Criteria</h2>
-        <p class="text-text-secondary mb-6">Try adjusting your search, filter, or sort options, or check back later.</p>
-        <button class="px-5 py-2.5 rounded-lg text-sm font-medium bg-accent/10 text-accent hover:bg-accent/20 flex items-center gap-2 mx-auto" (click)="resetFilters()">
+      <div class="text-center py-20 max-w-lg mx-auto animate-in fade-in zoom-in duration-500">
+        <span class="material-icons text-7xl text-text-secondary opacity-50 mb-6">search_off</span>
+        <h2 class="text-3xl font-semibold mb-4 text-text">No Projects Match Your Criteria</h2>
+        <p class="text-text-secondary mb-8 leading-relaxed">
+          Try adjusting your search, filter, or sort options, or check back later for new projects.
+        </p>
+        <button
+          class="px-6 py-3 rounded-xl text-sm font-medium bg-primary text-surface-card hover:bg-primary-dark flex items-center gap-2 mx-auto shadow-md hover:shadow-lg transition-all duration-300"
+          (click)="resetFilters()"
+        >
           <span class="material-icons text-lg">clear_all</span> Clear Filters & Search
         </button>
       </div>
     } @else {
       <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
         @for (project of filteredProjects(); track project.projectIdentifier; let i = $index) {
-          <a [routerLink]="['/project', project.projectIdentifier]"
-             class="block bg-surface-card rounded-xl border border-border overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
-             [attr.data-index]="i">
+          <a
+            [routerLink]="['/project', project.projectIdentifier]"
+            class="block bg-surface-card rounded-2xl border border-border overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group relative animate-in fade-in slide-in-from-bottom-4 duration-700 delay-{{i * 100}} project-card"
+            [attr.data-index]="i"
+          >
             <!-- Banner -->
-            <div class="h-48 relative bg-cover bg-center"
-                 [style.background-image]="shouldShowBannerImage(project) ? 'url(' + project.metadata?.['banner'] + ')' : 'none'"
-                 [style.background-color]="!shouldShowBannerImage(project) ? getBannerStyle(project) : ''">
+            <div
+              class="h-52 relative bg-cover bg-center"
+              [style.background-image]="shouldShowBannerImage(project) ? 'url(' + project.metadata?.['banner'] + ')' : 'none'"
+              [style.background-color]="!shouldShowBannerImage(project) ? getBannerStyle(project) : ''"
+            >
               @if (project.metadata?.['banner']) {
-                <img [src]="project.metadata?.['banner']" class="hidden" (error)="handleBannerError(project.projectIdentifier)" alt="">
+                <img
+                  [src]="project.metadata?.['banner']"
+                  class="hidden"
+                  (error)="handleBannerError(project.projectIdentifier)"
+                  alt=""
+                />
               }
-              <div class="absolute inset-0 bg-black/40"></div>
+              <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 group-hover:to-black/70 transition-all duration-300"></div>
 
               <!-- Status Badge -->
               @let statusInfo = getProjectStatus(project);
-              <div class="absolute top-3 right-3 z-10">
-                 <div class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm border"
-                      [ngClass]="{
-                        'bg-yellow-500/20 border-yellow-500/30 text-yellow-400': statusInfo.class === 'active',
-                        'bg-blue-500/20 border-blue-500/30 text-blue-400': statusInfo.class === 'upcoming',
-                        'bg-green-500/20 border-green-500/30 text-green-400': statusInfo.class === 'funded',
-                        'bg-red-500/20 border-red-500/30 text-red-400': statusInfo.class === 'failed'
-                      }">
-                   <span class="material-icons text-sm">{{ statusInfo.icon }}</span>
-                   <span>{{ statusInfo.status }}</span>
-                 </div>
+              <div class="absolute top-4 right-4 z-10">
+                <div
+                  class="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md border"
+                  [ngClass]="{
+                    'bg-yellow-500/20 border-yellow-500/30 text-yellow-400': statusInfo.class === 'active',
+                    'bg-blue-500/20 border-blue-500/30 text-blue-400': statusInfo.class === 'upcoming',
+                    'bg-success/20 border-success/30 text-success': statusInfo.class === 'funded',
+                    'bg-warning/20 border-warning/30 text-warning': statusInfo.class === 'failed'
+                  }"
+                >
+                  <span class="material-icons text-sm">{{ statusInfo.icon }}</span>
+                  <span>{{ statusInfo.status }}</span>
+                </div>
               </div>
 
               <!-- Favorite Badge -->
               @if (isFavorite(project.projectIdentifier)) {
-                <span class="absolute top-3 left-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/90 text-accent shadow-md">
+                <span
+                  class="absolute top-4 left-4 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-surface-card/95 text-primary shadow-lg transition-transform duration-300 group-hover:scale-110"
+                >
                   <span class="material-icons text-lg">bookmark</span>
                 </span>
               }
             </div>
 
             <!-- Content -->
-            <div class="p-4 relative">
+            <div class="p-5 relative">
               <!-- Avatar -->
-              <div class="absolute -top-10 left-4 z-10">
+              <div class="absolute -top-12 left-5 z-10">
                 @if (shouldShowProfileImage(project)) {
-                  <div class="w-16 h-16 rounded-xl border-4 border-surface-card shadow-md bg-cover bg-center"
-                       [style.background-image]="'url(' + project.metadata?.['picture'] + ')'">
-                    <img [src]="project.metadata?.['picture']" class="hidden" (error)="handleProfileError(project.projectIdentifier)" alt="">
+                  <div
+                    class="w-14 h-14 rounded-xl border-4 border-surface-card shadow-lg bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
+                    [style.background-image]="'url(' + project.metadata?.['picture'] + ')'"
+                  >
+                    <img
+                      [src]="project.metadata?.['picture']"
+                      class="hidden"
+                      (error)="handleProfileError(project.projectIdentifier)"
+                      alt=""
+                    />
                   </div>
                 } @else {
-                  <div class="w-16 h-16 rounded-xl border-4 border-surface-card shadow-md flex items-center justify-center text-white text-2xl font-semibold"
-                       [style.background-color]="getRandomColor(project.projectIdentifier)">
+                  <div
+                    class="w-14 h-14 rounded-xl border-4 border-surface-card shadow-lg flex items-center justify-center text-surface-card text-2xl font-semibold transition-transform duration-300 group-hover:scale-105"
+                    [style.background-color]="getRandomColor(project.projectIdentifier)"
+                  >
                     {{ getInitial(project.metadata?.['name'] || project.projectIdentifier) }}
                   </div>
                 }
               </div>
 
               <!-- Details -->
-              <div class="pt-8">
-                <h3 class="font-semibold text-lg mb-1 truncate group-hover:text-accent transition-colors">
+              <div class="pt-1">
+                <h3
+                  class="font-semibold text-lg mb-2 truncate group-hover:text-primary transition-colors duration-300"
+                >
                   @if ((project.metadata?.['name'] ?? '') !== '') {
                     {{ project.metadata?.['name'] }}
                   } @else {
@@ -271,29 +356,26 @@
                   }
                 </h3>
 
-                <div class="flex items-center gap-1.5 text-xs text-text-secondary mb-3">
-                  <span class="material-icons text-sm text-accent">event</span>
+                <div class="flex items-center gap-2 text-xs text-text-secondary mb-3">
+                  <span class="material-icons text-sm text-primary">event</span>
                   @if (isProjectNotStarted(project.details?.startDate)) {
-                    <!-- Add check for project.details before accessing startDate -->
                     @if (project.details) {
                       <span>Starts {{ project.details.startDate | ago }}</span>
                     }
                   } @else if (isProjectEnded(project.details?.expiryDate)) {
-                    <!-- Add check for project.details before accessing expiryDate -->
                     @if (project.details) {
                       <span>Ended {{ project.details.expiryDate | ago }}</span>
                     }
                   } @else {
-                    <!-- Add check for project.details before accessing expiryDate -->
                     @if (project.details) {
                       <span>{{ getRemainingTimeText(project.details.expiryDate) }}</span>
                     } @else {
-                      <span>Ongoing</span> <!-- Fallback if details are missing -->
+                      <span>Ongoing</span>
                     }
                   }
                 </div>
 
-                <p class="text-sm text-text-secondary mb-4 h-10 line-clamp-2">
+                <p class="text-sm text-text-secondary mb-4 h-12 line-clamp-2 leading-relaxed">
                   @if ((project.metadata?.['about'] ?? '') !== '') {
                     {{ project.metadata?.['about'] }}
                   } @else {
@@ -303,36 +385,43 @@
 
                 <!-- Funding Progress -->
                 <div class="mb-4">
-                  <div class="flex justify-between items-center text-xs mb-1">
-                    <div class="flex items-center gap-1 text-text-secondary">
-                      <span class="material-icons text-sm text-accent">people</span>
-                      <span class="font-medium text-text">{{ project.stats?.investorCount ?? 0 }}</span> Investors
+                  <div class="flex justify-between items-center text-xs mb-2 font-medium">
+                    <div class="flex items-center gap-2 text-text-secondary">
+                      <span class="material-icons text-sm text-primary">people</span>
+                      <span class="text-text">{{ project.stats?.investorCount ?? 0 }}</span>
+                      Investors
                     </div>
                     <div class="text-text-secondary">
-                      <!-- Add check for project.details before accessing targetAmount -->
-                      <span class="font-medium text-text">{{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}</span> / {{ bitcoin.toBTC(project.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
+                      <span class="text-text">{{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}</span>
+                      / {{ bitcoin.toBTC(project.details?.targetAmount ?? 0) }}
+                      {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                     </div>
                   </div>
                   @let fundingPercent = getFundingPercentage(project);
                   @let displayWidth = fundingPercent > 100 ? 100 : fundingPercent;
                   <div class="relative h-2 bg-surface-hover rounded-full overflow-hidden">
-                    <div class="absolute top-0 left-0 h-full rounded-full bg-accent transition-all duration-500 ease-out"
-                         [style.width.%]="displayWidth"
-                         [class.bg-success]="fundingPercent >= 100">
-                    </div>
-                    <span class="absolute top-0 right-2 -mt-5 text-xs font-bold"
-                          [class.text-success]="fundingPercent >= 100"
-                          [class.text-accent]="fundingPercent < 100">
+                    <div
+                      class="absolute top-0 left-0 h-full rounded-full bg-primary transition-all duration-700 ease-out"
+                      [style.width.%]="displayWidth"
+                      [class.bg-success]="fundingPercent >= 100"
+                    ></div>
+                    <span
+                      class="absolute top-0 right-2 -mt-5 text-xs font-bold"
+                      [class.text-success]="fundingPercent >= 100"
+                      [class.text-primary]="fundingPercent < 100"
+                    >
                       {{ fundingPercent }}%
                     </span>
                   </div>
                 </div>
 
                 <!-- Footer Action -->
-                <div class="pt-2 border-t border-border">
-                  <div class="flex items-center justify-center gap-2 text-sm font-medium text-accent group-hover:bg-accent/10 rounded-md py-2 transition-colors">
+                <div class="pt-3 border-t border-border">
+                  <div
+                    class="flex items-center justify-center gap-2 text-sm font-medium text-primary group-hover:bg-primary/10 rounded-lg py-2.5 transition-all duration-300"
+                  >
                     <span>View Project</span>
-                    <span class="material-icons text-lg transition-transform group-hover:translate-x-1">arrow_forward</span>
+                    <span class="material-icons text-lg transition-transform duration-300 group-hover:translate-x-2">arrow_forward</span>
                   </div>
                 </div>
               </div>
@@ -344,31 +433,40 @@
       <!-- Load More / Finished -->
       @if (!indexer.isComplete()) {
         @if (indexer.loading()) {
-          <div class="flex justify-center items-center py-10">
-            <div class="w-8 h-8 border-3 border-accent/30 border-t-accent rounded-full animate-spin"></div>
+          <div class="flex justify-center items-center py-12">
+            <div class="w-10 h-10 border-3 border-primary/30 border-t-primary rounded-full animate-spin"></div>
           </div>
         } @else {
-          <div class="text-center py-10">
-            <button class="px-5 py-2.5 rounded-lg text-sm font-medium bg-accent text-white hover:bg-accent-light flex items-center gap-2 mx-auto shadow-md hover:shadow-lg transition-all" (click)="loadMoreProjects()">
-              <span class="material-icons text-lg">expand_more</span> Load More Projects
+          <div class="text-center py-12">
+            <button
+              class="px-6 py-3 rounded-xl text-sm font-medium bg-primary text-surface-card hover:bg-primary-dark flex items-center gap-2 mx-auto shadow-lg hover:shadow-xl transition-all duration-300"
+              (click)="loadMoreProjects()"
+            >
+              <span class="material-icons text-lg">expand_more</span>
+              Load More Projects
             </button>
           </div>
         }
-        <div #scrollTrigger class="h-1"></div> <!-- Intersection Observer Trigger -->
+        <div #scrollTrigger class="h-1 scroll-trigger"></div>
       } @else {
-        <div class="text-center py-16">
-          <div class="w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-full bg-accent/10 text-accent">
-            <span class="material-icons text-3xl">done_all</span>
+        <div class="text-center py-20 animate-in fade-in zoom-in duration-500">
+          <div class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-full bg-primary/10 text-primary">
+            <span class="material-icons text-4 Theodorus van Es, Landscape with a Cottage and Trees, 1660, Oil on panel, 33 x 44.5 cm, Private collectionxl">done_all</span>
           </div>
-          <h3 class="text-xl font-semibold mb-2">All Projects Loaded</h3>
-          <p class="text-text-secondary max-w-md mx-auto">You've viewed all available projects. Ready to find your next investment?</p>
+          <h3 class="text-2xl font-semibold mb-3 text-text">All Projects Loaded</h3>
+          <p class="text-text-secondary max-w-md mx-auto leading-relaxed">
+            You've explored all available projects. Ready to invest in the future of DeFi?
+          </p>
         </div>
       }
     }
   }
 </div>
 
-<!-- Add necessary overlays for dropdowns if needed -->
+<!-- Overlay for Dropdowns -->
 @if (showFilterDropdown || showSortDropdown) {
-  <div class="fixed inset-0 z-5 md:hidden" (click)="showFilterDropdown = false; showSortDropdown = false"></div>
+  <div
+    class="fixed inset-0 z-5 md:hidden"
+    (click)="showFilterDropdown = false; showSortDropdown = false"
+  ></div>
 }
