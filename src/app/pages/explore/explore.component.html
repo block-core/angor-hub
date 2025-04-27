@@ -396,16 +396,23 @@
                   </div>
                   @let fundingPercent = getFundingPercentage(project);
                   @let displayWidth = fundingPercent > 100 ? 100 : fundingPercent;
-                  <div class="relative h-2 bg-surface-hover rounded-full overflow-hidden">
+                  <div class="relative h-3 bg-surface-hover rounded-full overflow-hidden">
                     <div
-                      class="absolute top-0 left-0 h-full rounded-full bg-primary transition-all duration-700 ease-out"
+                      class="absolute top-0 left-0 h-full rounded-full transition-all duration-700 ease-out"
                       [style.width.%]="displayWidth"
-                      [class.bg-success]="fundingPercent >= 100"
+                      [ngClass]="{
+                        'bg-success': fundingPercent >= 100,
+                        'bg-yellow-500': fundingPercent > 0 && fundingPercent < 100,
+                        'bg-primary': fundingPercent === 0
+                      }"
                     ></div>
                     <span
                       class="absolute top-0 right-2 -mt-5 text-xs font-bold"
-                      [class.text-success]="fundingPercent >= 100"
-                      [class.text-primary]="fundingPercent < 100"
+                      [ngClass]="{
+                        'text-success': fundingPercent >= 100,
+                        'text-yellow-500': fundingPercent > 0 && fundingPercent < 100,
+                        'text-primary': fundingPercent === 0
+                      }"
                     >
                       {{ fundingPercent }}%
                     </span>

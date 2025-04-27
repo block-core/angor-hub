@@ -324,9 +324,19 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getFundingPercentage(project: any): number {
-    if (!project.stats?.amountInvested || !project.details?.targetAmount) return 0;
-    let invested = project.stats.amountInvested;
-    let target = project.details.targetAmount;
+    if (!project.stats || 
+        project.stats.amountInvested === undefined || 
+        !project.details || 
+        project.details.targetAmount === undefined || 
+        project.details.targetAmount === 0) {
+      return 0;
+    }
+    
+    let invested = Number(project.stats.amountInvested);
+    let target = Number(project.details.targetAmount);
+    
+    if (isNaN(invested) || isNaN(target) || target === 0) return 0;
+    
     const percentage = (invested / target) * 100;
     if (percentage > 0 && percentage < 0.1) return 0.1;
     return Math.min(Math.round(percentage * 10) / 10, 999.9);
