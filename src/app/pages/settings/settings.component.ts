@@ -10,14 +10,19 @@ import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { environment } from '../../../environment';
 
-type SettingsTab = 'appearance' | 'network' | 'relays' | 'indexers' | 'about';
+type SettingsTabId = 'appearance' | 'network' | 'relays' | 'indexers' | 'about';
+
+interface SettingsTab {
+  id: SettingsTabId;
+  label: string;
+  icon: string;
+}
 
 @Component({
   selector: 'app-settings',
   standalone: true,
   imports: [CommonModule, FormsModule, BreadcrumbComponent],
   templateUrl: './settings.component.html',
-  styleUrl: './settings.component.scss',
   animations: [
     trigger('fadeInOut', [
       transition(':enter', [
@@ -38,9 +43,17 @@ export class SettingsComponent implements OnInit {
   public indexerService = inject(IndexerService);
   
   appVersion = environment.appVersion || '1.0.0';
-   
-  activeTab = signal<SettingsTab>('appearance');
-  
+
+  activeTab = signal<SettingsTabId>('appearance');
+
+  settingsTabs: SettingsTab[] = [
+    { id: 'appearance', label: 'Appearance', icon: 'palette' },
+    { id: 'network', label: 'Network', icon: 'public' },
+    { id: 'relays', label: 'Relays', icon: 'settings_input_antenna' },
+    { id: 'indexers', label: 'Indexers', icon: 'storage' },
+    { id: 'about', label: 'About', icon: 'info' }
+  ];
+
   currentTheme = computed(() => {
     return this.themeService.currentTheme();
   });
@@ -53,7 +66,7 @@ export class SettingsComponent implements OnInit {
   newRelayUrl = signal<string>('');
   relaySaveMessage = signal<string>('');
   
-  // Add signals for indexer management
+  
   indexerConfig = signal<IndexerConfig>(this.indexerService.getIndexerConfig());
   newMainnetIndexerUrl = signal<string>('');
   newTestnetIndexerUrl = signal<string>('');
@@ -63,20 +76,23 @@ export class SettingsComponent implements OnInit {
   
   constructor() {
     this.updateRelayUrls();
+    
+    this.indexerConfig.set(this.indexerService.getIndexerConfig());
   }
   
   ngOnInit(): void {
     this.title.setTitle('Settings');
   }
   
-  setActiveTab(tab: SettingsTab): void {
-    this.activeTab.set(tab);
+  setActiveTab(tabId: SettingsTabId): void {
+    this.activeTab.set(tabId);
     
-    // Reset messages and test results when changing tabs
-    if (tab === 'indexers') {
+    
+    if (tabId === 'indexers') {
       this.indexerSaveMessage.set('');
       this.indexerTestResult.set(null);
-    } else if (tab === 'relays') {
+      this.indexerTestingUrl.set(null); 
+    } else if (tabId === 'relays') {
       this.relaySaveMessage.set('');
     }
   }
@@ -133,7 +149,7 @@ export class SettingsComponent implements OnInit {
     return url.startsWith('wss://') && url.length > 8;
   }
   
-  // Indexer Management Methods
+  
   
   getMainnetIndexers(): IndexerEntry[] {
     return this.indexerConfig().mainnet;
@@ -150,7 +166,7 @@ export class SettingsComponent implements OnInit {
       if (this.indexerService.addIndexer(urlToAdd, isMainnet)) {
         this.indexerConfig.set(this.indexerService.getIndexerConfig());
         
-        // Only clear the URL field that was used
+        
         if (isMainnet) {
           this.newMainnetIndexerUrl.set('');
         } else {
@@ -205,6 +221,7 @@ export class SettingsComponent implements OnInit {
   }
   
   isValidIndexerUrl(url: string): boolean {
-    return (url.startsWith('http://') || url.startsWith('https://')) && url.length > 10;
+    
+    return (url.startsWith('http://') || url.startsWith('https://')) && url.length > (url.startsWith('https://') ? 8 : 7);
   }
 }

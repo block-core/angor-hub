@@ -13,11 +13,11 @@ import { ThemeService } from '../services/theme.service';
   animations: [
     trigger('dropdownAnimation', [
       transition(':enter', [
-        style({ opacity: 0, transform: 'translateY(-10px)' }),
-        animate('200ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+        style({ opacity: 0, transform: 'translateY(-10px) scale(0.95)' }),
+        animate('150ms ease-out', style({ opacity: 1, transform: 'translateY(0) scale(1)' }))
       ]),
       transition(':leave', [
-        animate('150ms ease-in', style({ opacity: 0, transform: 'translateY(-10px)' }))
+        animate('100ms ease-in', style({ opacity: 0, transform: 'translateY(-10px) scale(0.95)' }))
       ])
     ]),
     trigger('fadeInOut', [
@@ -40,741 +40,172 @@ import { ThemeService } from '../services/theme.service';
     ])
   ],
   template: `
-    <header class="main-header" [class.scrolled]="isScrolled()" [class.scroll-up]="isScrollingUp()" [class.scroll-down]="isScrollingDown()">
-      <div class="header-content">
-        <div class="header-left">
+    <header
+      class="sticky top-0 z-[1000] bg-header-bg/80 backdrop-blur-lg shadow-sm transition-transform duration-300 ease-in-out"
+      [class.shadow-md]="isScrolled()"
+      [class.-translate-y-full]="isScrollingDown()"
+      [class.translate-y-0]="isScrollingUp() || !isScrolled()">
+      <div class="container mx-auto px-4 flex items-center justify-between h-16">
+        <!-- Left Side -->
+        <div class="flex items-center gap-4">
           <app-launcher></app-launcher>
-          
-          <div class="desktop-only">
-            <button class="network-selector" (click)="toggleNetworkMenu($event)" aria-label="Switch network" [attr.aria-expanded]="isNetworkMenuOpen()">
-              <div class="network-indicator" [class.mainnet]="networkService.isMain()" [class.testnet]="!networkService.isMain()">
-                <span class="network-dot"></span>
-                <span class="network-name">{{ networkService.isMain() ? 'Mainnet' : 'Testnet' }}</span>
+
+          <!-- Desktop Network Selector -->
+          <div class="hidden lg:block relative">
+            <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleNetworkMenu($event)" aria-label="Switch network" [attr.aria-expanded]="isNetworkMenuOpen()">
+              <div class="flex items-center gap-2" [class.text-bitcoin-mainnet]="networkService.isMain()" [class.text-bitcoin-testnet]="!networkService.isMain()">
+                <span class="relative flex h-2.5 w-2.5">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" [ngClass]="networkService.isMain() ? 'bg-bitcoin-mainnet' : 'bg-bitcoin-testnet'"></span>
+                  <span class="relative inline-flex rounded-full h-2.5 w-2.5" [ngClass]="networkService.isMain() ? 'bg-bitcoin-mainnet' : 'bg-bitcoin-testnet'"></span>
+                </span>
+                <span>{{ networkService.isMain() ? 'Mainnet' : 'Testnet' }}</span>
               </div>
-              <span class="material-icons dropdown-arrow" [class.open]="isNetworkMenuOpen()">expand_more</span>
+              <span class="material-icons text-base transition-transform duration-200" [class.rotate-180]="isNetworkMenuOpen()">expand_more</span>
             </button>
             @if (isNetworkMenuOpen()) {
-              <div class="network-menu desktop-network-menu" @dropdownAnimation>
-                <div class="network-option" [class.active]="networkService.isMain()" (click)="switchNetwork('main')">
-                  <div class="network-option-dot mainnet"></div>
-                  <div class="network-option-info">
-                    <div class="network-option-name">Mainnet</div>
-                    <div class="network-option-desc">Live Bitcoin network</div>
-                  </div>
-                  @if (networkService.isMain()) {
-                    <span class="material-icons check-icon">check_circle</span>
-                  }
-                </div>
-                <div class="network-option" [class.active]="!networkService.isMain()" (click)="switchNetwork('test')">
-                  <div class="network-option-dot testnet"></div>
-                  <div class="network-option-info">
-                    <div class="network-option-name">Testnet</div>
-                    <div class="network-option-desc">Bitcoin test network</div>
-                  </div>
-                  @if (!networkService.isMain()) {
-                    <span class="material-icons check-icon">check_circle</span>
-                  }
+              <div class="absolute top-full left-0 mt-2 w-64 bg-surface-card rounded-lg shadow-xl border border-border z-[100]" @dropdownAnimation>
+                <div class="p-3 space-y-2">
+                  <button class="w-full flex items-center gap-3 p-3 rounded-md text-left hover:bg-surface-hover transition-colors" [class.bg-surface-hover]="networkService.isMain()" (click)="switchNetwork('main')">
+                    <span class="relative flex h-3 w-3"><span class="relative inline-flex rounded-full h-3 w-3 bg-bitcoin-mainnet"></span></span>
+                    <div class="flex-1">
+                      <div class="font-medium text-sm">Mainnet</div>
+                      <div class="text-xs text-text-secondary">Live Bitcoin network</div>
+                    </div>
+                    @if (networkService.isMain()) { <span class="material-icons text-accent text-lg">check_circle</span> }
+                  </button>
+                  <button class="w-full flex items-center gap-3 p-3 rounded-md text-left hover:bg-surface-hover transition-colors" [class.bg-surface-hover]="!networkService.isMain()" (click)="switchNetwork('test')">
+                    <span class="relative flex h-3 w-3"><span class="relative inline-flex rounded-full h-3 w-3 bg-bitcoin-testnet"></span></span>
+                    <div class="flex-1">
+                      <div class="font-medium text-sm">Testnet</div>
+                      <div class="text-xs text-text-secondary">Bitcoin test network</div>
+                    </div>
+                    @if (!networkService.isMain()) { <span class="material-icons text-accent text-lg">check_circle</span> }
+                  </button>
                 </div>
               </div>
             }
           </div>
         </div>
-        
 
-        
-        <div class="header-right">
-        <nav class="main-nav desktop-only">
-          <ul class="nav-list">
-            <li class="nav-item">
-              <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link no-underline" (click)="closeAllMenus()">
-                <span class="material-icons nav-icon">home</span>
-                <span>Home</span>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a routerLink="/explore" routerLinkActive="active" class="nav-link no-underline" (click)="closeAllMenus()">
-                <span class="material-icons nav-icon">explore</span>
-                <span>Explore</span>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a routerLink="/settings" routerLinkActive="active" class="nav-link no-underline" (click)="closeAllMenus()">
-                <span class="material-icons nav-icon">settings</span>
-                <span>Settings</span>
-              </a>
-            </li>
-          </ul>
-        </nav>
-          <button class="theme-toggle desktop-only" (click)="toggleTheme()" aria-label="Toggle theme">
-            <span class="material-icons">{{ isDarkTheme() ? 'dark_mode' : 'light_mode' }}</span>
+        <!-- Right Side -->
+        <div class="flex items-center gap-2">
+          <!-- Desktop Navigation -->
+          <nav class="hidden lg:flex items-center gap-1">
+            <a routerLink="/" routerLinkActive="bg-surface-hover text-accent" [routerLinkActiveOptions]="{exact: true}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
+              <span class="material-icons text-xl">home</span> Home
+            </a>
+            <a routerLink="/explore" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
+              <span class="material-icons text-xl">explore</span> Explore
+            </a>
+            <a routerLink="/settings" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
+              <span class="material-icons text-xl">settings</span> Settings
+            </a>
+          </nav>
+
+          <!-- Theme Toggle (Desktop) -->
+          <button class="hidden lg:flex items-center justify-center w-10 h-10 rounded-full text-header-text hover:bg-surface-hover transition-colors" (click)="toggleTheme()" aria-label="Toggle theme">
+            <span class="material-icons text-xl transition-transform duration-500 ease-out" [ngClass]="{'rotate-[360deg]': !isDarkTheme(), 'rotate-0': isDarkTheme()}">{{ isDarkTheme() ? 'dark_mode' : 'light_mode' }}</span>
           </button>
-          
-          <button class="mobile-menu-toggle mobile-only" (click)="toggleMobileMenu()" aria-label="Toggle mobile menu">
-            <span class="material-icons">{{ isMenuOpen() ? 'close' : 'menu' }}</span>
+
+          <!-- Mobile Menu Toggle -->
+          <button class="lg:hidden flex items-center justify-center w-10 h-10 rounded-full text-header-text hover:bg-surface-hover transition-colors z-[1101]" (click)="toggleMobileMenu()" aria-label="Toggle mobile menu">
+            <span class="material-icons text-2xl transition-transform duration-300 ease-in-out" [class.rotate-90]="isMenuOpen()">{{ isMenuOpen() ? 'close' : 'menu' }}</span>
           </button>
         </div>
       </div>
     </header>
 
+    <!-- Mobile Menu -->
     @if (isMenuOpen()) {
-      <div class="mobile-menu-backdrop mobile-only" @fadeInOut (click)="toggleMobileMenu()"></div>
-      
-      <div class="mobile-menu-overlay mobile-only" @mobileMenuAnimation>
-        <div class="mobile-menu-header">
-           <span class="mobile-menu-title">Menu</span>
-           <button class="close-mobile-menu" (click)="toggleMobileMenu()" aria-label="Close menu">
-             <span class="material-icons">close</span>
-           </button>
+      <div class="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[1099]" @fadeInOut (click)="toggleMobileMenu()"></div>
+      <div class="lg:hidden fixed top-0 right-0 bottom-0 w-full max-w-xs bg-header-bg shadow-xl z-[1100] flex flex-col" @mobileMenuAnimation>
+        <div class="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
+           <span class="font-semibold text-lg text-header-text">Menu</span>
+           <!-- Close button is part of the toggle in the header now -->
         </div>
-        
-        <div class="mobile-menu-content">
-          <nav class="mobile-nav">
-            <ul class="mobile-nav-list">
-              <li class="mobile-nav-item">
-                <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="mobile-nav-link no-underline" (click)="toggleMobileMenu()">
-                  <span class="material-icons nav-icon">home</span>
-                  <span>Home</span>
-                </a>
-              </li>
-              <li class="mobile-nav-item">
-                <a routerLink="/explore" routerLinkActive="active" class="mobile-nav-link no-underline" (click)="toggleMobileMenu()">
-                  <span class="material-icons nav-icon">explore</span>
-                  <span>Explore</span>
-                </a>
-              </li>
-              <li class="mobile-nav-item">
-                <a routerLink="/settings" routerLinkActive="active" class="mobile-nav-link no-underline" (click)="toggleMobileMenu()">
-                  <span class="material-icons nav-icon">settings</span>
-                  <span>Settings</span>
-                </a>
-              </li>
-            </ul>
+        <div class="flex-grow overflow-y-auto p-4">
+          <!-- Mobile Navigation -->
+          <nav class="mb-6 space-y-2">
+            <a routerLink="/" routerLinkActive="bg-surface-hover text-accent" [routerLinkActiveOptions]="{exact: true}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
+              <span class="material-icons text-xl">home</span> Home
+            </a>
+            <a routerLink="/explore" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
+              <span class="material-icons text-xl">explore</span> Explore
+            </a>
+            <a routerLink="/settings" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
+              <span class="material-icons text-xl">settings</span> Settings
+            </a>
           </nav>
 
-          <div class="mobile-menu-separator"></div>
+          <div class="h-px bg-border my-4"></div>
 
-          <div class="mobile-network-selector">
-             <h4 class="mobile-menu-section-title">Network</h4>
-             <div class="network-option" [class.active]="networkService.isMain()" (click)="switchNetwork('main')">
-               <div class="network-option-dot mainnet"></div>
-               <div class="network-option-info">
-                 <div class="network-option-name">Mainnet</div>
-                 <div class="network-option-desc">Live Bitcoin network</div>
-               </div>
-               @if (networkService.isMain()) {
-                 <span class="material-icons check-icon">check_circle</span>
-               }
-             </div>
-             <div class="network-option" [class.active]="!networkService.isMain()" (click)="switchNetwork('test')">
-               <div class="network-option-dot testnet"></div>
-               <div class="network-option-info">
-                 <div class="network-option-name">Testnet</div>
-                 <div class="network-option-desc">Bitcoin test network</div>
-               </div>
-               @if (!networkService.isMain()) {
-                 <span class="material-icons check-icon">check_circle</span>
-               }
-             </div>
+          <!-- Mobile Network Selector -->
+          <div class="mb-6">
+            <h4 class="px-4 mb-2 text-xs font-semibold uppercase text-text-secondary tracking-wider">Network</h4>
+            <div class="space-y-2 px-1">
+              <button class="w-full flex items-center gap-3 p-3 rounded-md text-left hover:bg-surface-hover transition-colors" [class.bg-surface-hover]="networkService.isMain()" (click)="switchNetwork('main')">
+                <span class="relative flex h-3 w-3"><span class="relative inline-flex rounded-full h-3 w-3 bg-bitcoin-mainnet"></span></span>
+                <div class="flex-1">
+                  <div class="font-medium text-sm">Mainnet</div>
+                </div>
+                @if (networkService.isMain()) { <span class="material-icons text-accent text-lg">check_circle</span> }
+              </button>
+              <button class="w-full flex items-center gap-3 p-3 rounded-md text-left hover:bg-surface-hover transition-colors" [class.bg-surface-hover]="!networkService.isMain()" (click)="switchNetwork('test')">
+                <span class="relative flex h-3 w-3"><span class="relative inline-flex rounded-full h-3 w-3 bg-bitcoin-testnet"></span></span>
+                <div class="flex-1">
+                  <div class="font-medium text-sm">Testnet</div>
+                </div>
+                @if (!networkService.isMain()) { <span class="material-icons text-accent text-lg">check_circle</span> }
+              </button>
+            </div>
           </div>
 
-          <div class="mobile-menu-separator"></div>
+          <div class="h-px bg-border my-4"></div>
 
-          <div class="mobile-theme-toggle">
-            <h4 class="mobile-menu-section-title">Theme</h4>
-            <button class="theme-toggle-button" (click)="toggleTheme()">
-              <span class="material-icons">{{ isDarkTheme() ? 'dark_mode' : 'light_mode' }}</span>
-              <span>{{ isDarkTheme() ? 'Switch to Light Mode' : 'Switch to Dark Mode' }}</span>
-            </button>
+          <!-- Mobile Theme Toggle -->
+          <div>
+             <h4 class="px-4 mb-2 text-xs font-semibold uppercase text-text-secondary tracking-wider">Theme</h4>
+             <div class="px-1">
+               <button class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleTheme()">
+                 <span class="material-icons text-xl">{{ isDarkTheme() ? 'dark_mode' : 'light_mode' }}</span>
+                 <span>{{ isDarkTheme() ? 'Dark Mode' : 'Light Mode' }}</span>
+               </button>
+             </div>
           </div>
-
-          <div class="mobile-menu-separator"></div>
-
         </div>
       </div>
     }
-    
+
+    <!-- Desktop Network Menu -->
     @if (isNetworkMenuOpen()) {
-      <div class="overlay desktop-only" (click)="closeAllMenus()" @fadeInOut></div>
+      <div class="hidden lg:block fixed inset-0 z-[99]" (click)="closeAllMenus()" @fadeInOut></div>
+      <div class="absolute top-full left-0 mt-2 w-64 bg-surface-card rounded-lg shadow-xl border border-border z-[100]" @dropdownAnimation>
+        <div class="p-3 space-y-2">
+          <button class="w-full flex items-center gap-3 p-3 rounded-md text-left hover:bg-surface-hover transition-colors" [class.bg-surface-hover]="networkService.isMain()" (click)="switchNetwork('main')">
+            <span class="relative flex h-3 w-3"><span class="relative inline-flex rounded-full h-3 w-3 bg-bitcoin-mainnet"></span></span>
+            <div class="flex-1">
+              <div class="font-medium text-sm">Mainnet</div>
+              <div class="text-xs text-text-secondary">Live Bitcoin network</div>
+            </div>
+            @if (networkService.isMain()) { <span class="material-icons text-accent text-lg">check_circle</span> }
+          </button>
+          <button class="w-full flex items-center gap-3 p-3 rounded-md text-left hover:bg-surface-hover transition-colors" [class.bg-surface-hover]="!networkService.isMain()" (click)="switchNetwork('test')">
+            <span class="relative flex h-3 w-3"><span class="relative inline-flex rounded-full h-3 w-3 bg-bitcoin-testnet"></span></span>
+            <div class="flex-1">
+              <div class="font-medium text-sm">Testnet</div>
+              <div class="text-xs text-text-secondary">Bitcoin test network</div>
+            </div>
+            @if (!networkService.isMain()) { <span class="material-icons text-accent text-lg">check_circle</span> }
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Desktop Network Menu Overlay -->
+    @if (isNetworkMenuOpen()) {
+      <div class="hidden lg:block fixed inset-0 z-[99]" (click)="closeAllMenus()" @fadeInOut></div>
     }
   `,
-  styles: [`
-    :host {
-      display: block;
-      position: relative;
-      z-index: 1000;
-    }
-
-    .main-header {
-      background: var(--header-bg);
-      padding: 0;
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    }
-    
-    .main-header.scrolled {
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    }
-    
-    .main-header.scroll-down {
-      transform: translateY(-100%);
-    }
-    
-    .main-header.scroll-up {
-      transform: translateY(0);
-    }
-    
-    .header-content {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.75rem 1.5rem;
-      max-width: 1400px;
-      margin: 0 auto;
-      position: relative;
-    }
-    
-    .header-left, .header-right {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-    
-    .mobile-only {
-      display: none !important;
-      @media (max-width: 1024px) {
-        display: flex !important; 
-      }
-    }
-    
-    .desktop-only {
-      display: flex !important; 
-      align-items: center;
-      gap: inherit;
-      @media (max-width: 1024px) {
-        display: none !important;
-      }
-    }
-    
-    nav.main-nav.desktop-only {
-       position: relative; 
-       top: auto;
-       left: auto;
-       width: auto;
-       height: auto;
-       background: transparent;
-       box-shadow: none;
-       transform: none;
-       transition: none;
-       overflow-y: visible;
-       z-index: auto;
-       
-       @media (min-width: 1025px) {
-         display: flex !important;
-       }
-    }
-
-    .network-selector {
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      background: transparent;
-      border: none;
-      color: var(--header-text);
-      font-size: 0.95rem;
-      font-weight: 500;
-      transition: all 0.2s ease;
-      
-      &:hover {
-        background: rgba(8, 108, 129, 0.08);
-      }
-    }
-    
-    .network-indicator {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    
-    .network-indicator.mainnet {
-      color: var(--bitcoin-mainnet);
-    }
-    
-    .network-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--bitcoin-testnet);
-      position: relative;
-      flex-shrink: 0;
-    }
-    
-    .network-indicator.mainnet .network-dot {
-      background: var(--bitcoin-mainnet);
-    }
-    
-    .network-dot::after {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background: inherit;
-      top: 0;
-      left: 0;
-      z-index: -1;
-      animation: wavePulse 2s infinite ease-out;
-    }
-    
-    .dropdown-arrow {
-      font-size: 1.2rem;
-      transition: transform 0.2s ease;
-    }
-    
-    .dropdown-arrow.open {
-      transform: rotate(180deg);
-    }
-    
-    .network-option {
-      display: flex;
-      align-items: center;
-      padding: 0.75rem;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-      margin-bottom: 0.5rem;
-    }
-    
-    .network-menu .network-option:first-child,
-    .mobile-network-selector .network-option:first-child {
-      margin-bottom: 0.5rem;
-    }
-    
-    .network-option:hover {
-      background: rgba(8, 108, 129, 0.08);
-    }
-    
-    .network-option.active {
-      background: rgba(8, 108, 129, 0.1);
-    }
-    
-    .network-option-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      margin-right: 0.75rem;
-      flex-shrink: 0;
-      position: relative;
-    }
-    
-    .network-option-dot.mainnet {
-      background: var(--bitcoin-mainnet);
-      box-shadow: 0 0 0 2px rgba(247, 147, 26, 0.2);
-    }
-    
-    .network-option-dot.testnet {
-      background: var(--bitcoin-testnet);
-      box-shadow: 0 0 0 2px rgba(40, 192, 37, 0.2);
-    }
-    
-    .network-option-dot::after {
-       content: '';
-       position: absolute;
-       width: 100%;
-       height: 100%;
-       border-radius: 50%;
-       background: inherit;
-       top: 0;
-       left: 0;
-       z-index: -1;
-       animation: wavePulse 2s infinite ease-out;
-       animation-delay: 0.2s;
-    }
-    
-    .network-option-info {
-      flex: 1; 
-    }
-    
-    .check-icon {
-      color: var(--accent);
-      margin-left: auto; 
-      font-size: 1.1rem;
-      padding-left: 0.5rem; 
-    }
-    
-    @keyframes wavePulse {
-      0% {
-        transform: scale(1);
-        opacity: 0.6;
-      }
-      50% {
-        transform: scale(2.5);
-        opacity: 0;
-      }
-      100% {
-        transform: scale(1);
-        opacity: 0;
-      }
-    }
-
-    .network-menu.desktop-network-menu {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      width: 280px;
-      background: var(--surface-card);
-      border-radius: 12px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-      padding: 0.75rem;
-      z-index: 100;
-      margin-top: 0.5rem;
-      border: 1px solid var(--border);
-    }
-    
-    .main-nav.desktop-only .nav-list {
-      display: flex;
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      gap: 0.25rem;
-    }
-    
-    .main-nav.desktop-only .nav-item {
-      position: relative;
-    }
-    
-    .main-nav.desktop-only .nav-link {
-      display: flex;
-      align-items: center;
-      text-decoration: none;
-      padding: 0.75rem 1rem;
-      border-radius: 8px;
-      font-weight: 500;
-      color: var(--header-text);
-      transition: all 0.2s ease;
-      position: relative;
-      background: transparent;
-      border: none;
-      font-size: 1rem;
-      cursor: pointer;
-      gap: 0.5rem;
-      
-      &:hover, &.active {
-        background: rgba(8, 108, 129, 0.08);
-        color: var(--accent);
-      }
-    }
-    
-    .no-underline::after {
-      display: none !important;
-    }
-    
-    .nav-icon {
-      font-size: 1.2rem;
-      display: flex;
-      align-items: center;
-    }
-
-    .mobile-menu-overlay {
-      position: fixed;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      width: 100%;
-      max-width: 350px;
-      background: var(--header-bg);
-      z-index: 1100;
-      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-    }
-
-    .mobile-menu-backdrop {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.6);
-      z-index: 1099;
-      backdrop-filter: blur(3px);
-    }
-
-    .mobile-menu-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    .mobile-menu-title {
-      font-size: 1.2rem;
-      font-weight: 600;
-      color: var(--header-text);
-    }
-
-    .close-mobile-menu {
-      background: transparent;
-      border: none;
-      color: var(--header-text);
-      padding: 0.5rem;
-      margin: -0.5rem;
-      cursor: pointer;
-      
-      .material-icons {
-        font-size: 1.8rem;
-      }
-      
-      &:hover {
-        color: var(--accent);
-      }
-    }
-
-    .mobile-menu-content {
-      padding: 1.5rem;
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    .mobile-nav-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .mobile-nav-link {
-      display: flex;
-      align-items: center;
-      padding: 0.8rem 1rem;
-      border-radius: 8px;
-      font-size: 1.1rem;
-      font-weight: 500;
-      color: var(--header-text);
-      text-decoration: none;
-      transition: all 0.2s ease;
-      gap: 0.8rem;
-      
-      .nav-icon {
-        font-size: 1.4rem;
-      }
-      
-      &:hover, &.active {
-        background: rgba(8, 108, 129, 0.08);
-        color: var(--accent);
-      }
-    }
-
-    .mobile-menu-separator {
-      height: 1px;
-      background: var(--border);
-      margin: 0.5rem 0;
-    }
-
-    .mobile-menu-section-title {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      margin-bottom: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .mobile-network-selector .network-option {
-      padding: 0.8rem;
-    }
-
-    .mobile-theme-toggle .theme-toggle-button {
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-      background: transparent;
-      border: none;
-      color: var(--header-text);
-      font-size: 1.1rem;
-      font-weight: 500;
-      padding: 0.8rem 1rem;
-      border-radius: 8px;
-      cursor: pointer;
-      width: 100%;
-      text-align: left;
-      transition: all 0.2s ease;
-      
-      .material-icons {
-        font-size: 1.4rem;
-      }
-      
-      &:hover {
-        background: rgba(8, 108, 129, 0.08);
-        color: var(--accent);
-      }
-    }
-
-    .mobile-action-button {
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-      padding: 0.8rem 1rem;
-      border-radius: 8px;
-      font-size: 1.1rem;
-      font-weight: 500;
-      color: var(--header-text);
-      text-decoration: none;
-      transition: all 0.2s ease;
-      background: var(--accent);
-      color: white;
-      justify-content: center;
-      
-      .material-icons {
-        font-size: 1.4rem;
-      }
-      
-      &:hover {
-        background: var(--accent-light);
-      }
-    }
-
-    .action-button.desktop-only {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: var(--accent);
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      font-weight: 500;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      border: none;
-      cursor: pointer;
-      font-size: 0.95rem;
-      box-shadow: 0 2px 8px rgba(8, 108, 129, 0.2);
-      
-      &:hover {
-        background: var(--accent-light);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(8, 108, 129, 0.3);
-      }
-      
-      .material-icons {
-        font-size: 1.1rem;
-      }
-    }
-    
-    .theme-toggle.desktop-only {
-      border: none;
-      background: transparent;
-      color: var(--header-text);
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      position: relative;
-      overflow: hidden;
-      
-      &:hover {
-        background: rgba(8, 108, 129, 0.08);
-      }
-      
-      &:active {
-        transform: scale(0.95);
-      }
-      
-      .material-icons {
-        font-size: 1.4rem;
-        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      }
-      
-      &:hover .material-icons {
-        transform: rotate(30deg);
-      }
-    }
-    
-    .mobile-menu-toggle {
-      border: none;
-      background: transparent;
-      color: var(--header-text);
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      position: relative;
-      overflow: hidden;
-      z-index: 1101;
-      
-      &:hover {
-        background: rgba(8, 108, 129, 0.08);
-      }
-      
-      &:active {
-        transform: scale(0.95);
-      }
-      
-      .material-icons {
-        font-size: 1.4rem;
-        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      }
-      
-      &:hover .material-icons {
-        transform: rotate(30deg);
-      }
-    }
-    
-    .overlay.desktop-only {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 90;
-      backdrop-filter: blur(4px);
-    }
-    
-    body.mobile-menu-open {
-      overflow: hidden;
-    }
-
-    @media (max-width: 1024px) {
-      .header-content {
-        padding: 0.75rem 1rem;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .network-name {
-        display: none;
-      }
-      
-      .network-indicator {
-        padding: 0.35rem;
-      }
-      
-      .dropdown-arrow {
-        margin-left: 0.1rem;
-      }
-    }
-  `]
 })
 export class HeaderComponent implements OnInit {
   public networkService = inject(NetworkService);

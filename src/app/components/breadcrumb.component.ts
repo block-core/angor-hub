@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
@@ -12,73 +12,26 @@ interface BreadcrumbItem {
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <nav aria-label="breadcrumb">
-      <ol class="breadcrumb">
-        @for (item of items; let first = $first; let last = $last; track item.url) {
+    <nav aria-label="breadcrumb" class="w-full overflow-hidden whitespace-nowrap text-sm">
+      <ol class="inline-flex flex-nowrap items-center p-3 rounded-lg bg-surface-card/50 dark:bg-surface-card/70 backdrop-blur-sm">
+        @for (item of items(); let first = $first; let last = $last; track item.url) {
           @if (!first) {
-            <li class="breadcrumb-separator">
-              <span class="material-icons">chevron_right</span>
+            <li class="inline-flex items-center px-1.5 max-sm:hidden">
+              <span class="material-icons text-base leading-none text-text-secondary">chevron_right</span>
             </li>
           }
-          <li class="breadcrumb-item">
-            @if (!last) {
-              <a [routerLink]="item.url" [title]="item.label">{{ item.label }}</a>
+          <li class="inline-flex items-center flex-shrink min-w-0" [class.flex-1]="last" [class.max-sm:hidden]="!last"> <!-- Hide non-last items on small screens -->
+            @if (!last && item.url) {
+              <a [routerLink]="item.url" [title]="item.label" class="text-text-secondary hover:text-accent transition-colors truncate">{{ item.label }}</a>
             } @else {
-              <span [title]="item.label">{{ item.label }}</span>
+              <span [title]="item.label" class="text-text font-medium truncate">{{ item.label }}</span>
             }
           </li>
         }
       </ol>
     </nav>
   `,
-  styles: [
-    `
-      nav {
-        width: 100%;
-        overflow: hidden;
-        white-space: nowrap;
-      }
-      .breadcrumb {
-        display: inline-flex;
-        flex-wrap: nowrap;
-        align-items: center;
-        margin: 0;
-        padding: 0.75rem 1rem;
-        width: 100%;
-      }
-      .breadcrumb-item {
-        display: inline-flex;
-        align-items: center;
-        flex-shrink: 0;
-        min-width: 0;
-      }
-      .breadcrumb-item:last-child {
-        flex: 1;
-        min-width: 0;
-      }
-      .breadcrumb-item:last-child span {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .breadcrumb-item a,
-      .breadcrumb-item span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      .breadcrumb-separator {
-        display: inline-flex;
-        align-items: center;
-        padding: 0 0.5rem;
-      }
-      .material-icons {
-        font-size: 20px;
-        line-height: 1;
-      }
-    `,
-  ],
 })
 export class BreadcrumbComponent {
-  @Input() items: BreadcrumbItem[] = [];
+  items = input.required<BreadcrumbItem[]>();
 }

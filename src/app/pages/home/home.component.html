@@ -1,0 +1,261 @@
+
+<section class="relative bg-gradient-to-b from-surface-ground to-surface-card overflow-hidden py-20 md:py-28 lg:py-32">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="text-center max-w-4xl mx-auto">
+ 
+
+      <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 text-text leading-tight">
+        Welcome to Angor Hub
+      </h1>
+      <p class="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto mb-10">
+        Your central place for discovering and investing in Bitcoin projects. Join a community of innovators and investors shaping the future of finance.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+        <a routerLink="/explore" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold bg-accent text-white shadow-md hover:bg-accent-light hover:-translate-y-0.5 transition-all duration-300 ease-in-out transform">
+          Explore Projects
+          <span class="material-icons text-lg">arrow_forward</span>
+        </a>
+        <a href="https://angor.io/launch" target="_blank" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold bg-surface text-text border border-border shadow-sm hover:bg-surface-hover hover:-translate-y-0.5 transition-all duration-300 ease-in-out transform">
+          Launch Your Project
+          <span class="material-icons text-lg">rocket_launch</span>
+        </a>
+      </div>
+
+      
+      <div class="max-w-3xl mx-auto bg-surface-card/90 backdrop-blur-md rounded-xl shadow-lg border border-border p-4 sm:p-6">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 items-center text-center sm:text-left">
+          
+          <div class="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-3 sm:gap-4 sm:col-span-2 border-b sm:border-b-0 sm:border-r border-border pb-4 sm:pb-0 sm:pr-6">
+            <span class="material-icons text-4xl sm:text-5xl text-bitcoin-mainnet">currency_bitcoin</span>
+            <div>
+              @if (bitcoinInfo.bitcoinPrice() !== '0.00') {
+                <div class="text-xl sm:text-2xl font-bold text-text" [class]="{
+                  'text-green-500': bitcoinInfo.priceDirection() === 'up',
+                  'text-red-500': bitcoinInfo.priceDirection() === 'down'
+                }">
+                  ${{ bitcoinInfo.bitcoinPrice() }}
+                  <span class="material-icons text-base align-middle" [class]="{
+                    'text-green-500': bitcoinInfo.priceDirection() === 'up',
+                    'text-red-500': bitcoinInfo.priceDirection() === 'down'
+                  }">
+                    {{ bitcoinInfo.priceDirection() === 'up' ? 'arrow_upward' : (bitcoinInfo.priceDirection() === 'down' ? 'arrow_downward' : '') }}
+                  </span>
+                </div>
+              } @else {
+                <div class="h-7 w-28 bg-surface-hover rounded animate-pulse mx-auto sm:mx-0"></div>
+              }
+              <div class="text-xs sm:text-sm text-text-secondary mt-0.5">
+                Price (USD)
+                @if (bitcoinInfo.priceChangePercent() !== '0.00') {
+                  @let change = bitcoinInfo.priceChangePercent();
+                  <span class="ml-1 font-medium" [class]="{
+                    'text-green-600 dark:text-green-400': change[0] !== '-',
+                    'text-red-600 dark:text-red-400': change[0] === '-'
+                  }">
+                    ({{ change[0] !== '-' ? '+' : '' }}{{ change }}% 24h)
+                  </span>
+                } @else {
+                  <span class="ml-1 h-4 w-16 inline-block bg-surface-hover rounded animate-pulse align-middle"></span>
+                }
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex flex-col items-center justify-center pt-4 sm:pt-0">
+             <div class="text-xl sm:text-2xl font-bold text-accent">{{ currentDate | date:'mediumDate' }}</div> 
+             <div class="text-xs sm:text-sm text-text-secondary mt-0.5">Today's Date</div> 
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-accent/5 to-transparent opacity-50 -skew-x-12"></div>
+  <div class="absolute bottom-0 right-0 w-1/4 h-1/2 bg-gradient-to-t from-accent/5 to-transparent opacity-30 rounded-full blur-3xl"></div>
+</section>
+
+
+<section class="py-16 md:py-24 bg-surface-ground">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-3xl mx-auto">
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">How Angor Works</h2>
+      <p class="text-lg text-text-secondary mb-12 md:mb-16">
+        A streamlined, secure process for decentralized fundraising on Bitcoin.
+      </p>
+    </div>
+    <div class="max-w-6xl mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10"> 
+
+        
+        <div class="relative text-center p-6 pt-12 bg-surface-card rounded-xl shadow-md border border-border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 transform flex flex-col items-center"> 
+          <div class="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center text-xl font-bold border-4 border-surface-ground z-10 shadow">1</div>
+          <div class="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 text-accent">
+            <span class="material-icons text-3xl">rocket_launch</span>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Project Creation</h3>
+          <p class="text-text-secondary text-sm leading-relaxed">Founders define their vision, funding targets, and clear milestones directly on the platform.</p> 
+        </div>
+
+        
+        <div class="relative text-center p-6 pt-12 bg-surface-card rounded-xl shadow-md border border-border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 transform flex flex-col items-center"> 
+          <div class="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center text-xl font-bold border-4 border-surface-ground z-10 shadow">2</div>
+          <div class="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 text-accent">
+            <span class="material-icons text-3xl">payments</span>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Investor Contribution</h3>
+          <p class="text-text-secondary text-sm leading-relaxed">Supporters securely contribute Bitcoin, knowing funds are managed transparently by smart contracts.</p> 
+        </div>
+
+        
+        <div class="relative text-center p-6 pt-12 bg-surface-card rounded-xl shadow-md border border-border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 transform flex flex-col items-center"> 
+          <div class="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center text-xl font-bold border-4 border-surface-ground z-10 shadow">3</div>
+          <div class="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 text-accent">
+            <span class="material-icons text-3xl">verified</span>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Milestone-Based Release</h3>
+          <p class="text-text-secondary text-sm leading-relaxed">Funds unlock automatically as projects achieve predefined milestones, ensuring accountability.</p> 
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="py-16 md:py-24 bg-surface"> 
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-3xl mx-auto">
+      <h2 class="text-3xl md:text-4xl font-bold mb-12 md:mb-16">Platform Benefits</h2>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      
+      <div class="text-center p-6 bg-surface-card rounded-xl shadow-sm border border-border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 transform">
+        <div class="mb-5 inline-flex items-center justify-center w-14 h-14 rounded-full bg-accent/10 text-accent">
+          <span class="material-icons text-3xl">shield</span>
+        </div>
+        <h3 class="text-xl font-semibold mb-2">Secure Investment</h3>
+        <p class="text-text-secondary text-sm leading-relaxed">Your Bitcoin is secured by the blockchain. No third parties hold your funds.</p>
+      </div>
+      
+      <div class="text-center p-6 bg-surface-card rounded-xl shadow-sm border border-border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 transform">
+        <div class="mb-5 inline-flex items-center justify-center w-14 h-14 rounded-full bg-accent/10 text-accent">
+          <span class="material-icons text-3xl">account_balance</span>
+        </div>
+        <h3 class="text-xl font-semibold mb-2">Milestone Funding</h3>
+        <p class="text-text-secondary text-sm leading-relaxed">Projects receive funds only when they reach predetermined milestones.</p>
+      </div>
+      
+      <div class="text-center p-6 bg-surface-card rounded-xl shadow-sm border border-border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 transform">
+        <div class="mb-5 inline-flex items-center justify-center w-14 h-14 rounded-full bg-accent/10 text-accent">
+          <span class="material-icons text-3xl">public</span>
+        </div>
+        <h3 class="text-xl font-semibold mb-2">Decentralized</h3>
+        <p class="text-text-secondary text-sm leading-relaxed">Fully non-custodial platform with no central authority controlling funds.</p>
+      </div>
+      
+      <div class="text-center p-6 bg-surface-card rounded-xl shadow-sm border border-border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 transform">
+        <div class="mb-5 inline-flex items-center justify-center w-14 h-14 rounded-full bg-accent/10 text-accent">
+          <span class="material-icons text-3xl">groups</span>
+        </div>
+        <h3 class="text-xl font-semibold mb-2">Community Driven</h3>
+        <p class="text-text-secondary text-sm leading-relaxed">Join a growing community of Bitcoin innovators and supporters.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="py-16 md:py-24 bg-surface-ground">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-12 md:mb-16">
+      <h2 class="text-3xl md:text-4xl font-bold text-center md:text-left mb-4 md:mb-0">Latest from the Blog</h2>
+      <a href="https://blog.angor.io" target="_blank" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-surface-card text-accent border border-border hover:bg-surface-hover transition-colors">
+        Explore the Blog
+        <span class="material-icons text-lg">arrow_forward</span>
+      </a>
+    </div>
+
+    @if (blogPosts().length > 0) {
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        
+        @let firstPost = blogPosts()[0];
+        <a [href]="firstPost.link" target="_blank" class="group block bg-surface-card rounded-xl shadow-md border border-border overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 transform">
+          <div class="aspect-video relative overflow-hidden">
+            <img [src]="firstPost.image || '/assets/images/default-blog.jpg'" alt="{{ firstPost.title }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent"></div>
+            <div class="absolute top-4 left-4 px-3 py-1 bg-accent text-white text-xs font-semibold rounded">Featured</div>
+          </div>
+          <div class="p-6">
+            <p class="text-xs text-text-secondary mb-1">{{firstPost.pubDate | date:'mediumDate'}}</p>
+            <h3 class="text-xl font-semibold mb-2 group-hover:text-accent transition-colors line-clamp-2 leading-snug">{{firstPost.title}}</h3>
+            
+          </div>
+        </a>
+
+        
+        <div class="flex flex-col gap-6">
+          @for (post of blogPosts().slice(1, 4); track post.link) {
+            <a [href]="post.link" target="_blank" class="group flex gap-4 bg-surface-card rounded-xl shadow-md border border-border overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 transform">
+              <div class="w-32 h-32 flex-shrink-0 overflow-hidden">
+                 <img [src]="post.image || '/assets/images/default-blog.jpg'" alt="{{ post.title }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              </div>
+              <div class="p-4 flex-1 flex flex-col justify-center min-w-0">
+                <p class="text-xs text-text-secondary mb-1">{{post.pubDate | date:'mediumDate'}}</p>
+                <h4 class="font-semibold group-hover:text-accent transition-colors line-clamp-2 leading-snug">{{post.title}}</h4>
+              </div>
+            </a>
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="text-center text-text-secondary py-10">
+        <div class="inline-block w-8 h-8 border-3 border-accent/30 border-t-accent rounded-full animate-spin mb-4"></div>
+        <p>Loading blog posts...</p>
+      </div>
+    }
+  </div>
+</section>
+
+
+<section class="relative bg-gradient-to-b from-surface-ground to-surface-card overflow-hidden py-20 md:py-28 lg:py-32">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="max-w-6xl mx-auto">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-10 md:gap-16">
+        
+        <div class="flex-1 md:max-w-2xl">
+          <h2 class="text-3xl md:text-5xl font-bold mb-6 text-text">Ready to Shape the Future of Bitcoin?</h2>
+          <p class="text-lg text-text-secondary mb-8">
+            Whether you're looking to invest in the next big Bitcoin project or launch your own groundbreaking idea, Angor Hub is your platform.
+          </p>
+          
+          <div class="flex flex-col sm:flex-row gap-4   mb-16">
+            <a routerLink="/explore" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold bg-accent text-white shadow-md hover:bg-accent-light hover:-translate-y-0.5 transition-all duration-300 ease-in-out transform">
+              Explore Projects
+              <span class="material-icons text-lg">arrow_forward</span>
+            </a>
+            <a href="https://angor.io/launch" target="_blank" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold bg-surface text-text border border-border shadow-sm hover:bg-surface-hover hover:-translate-y-0.5 transition-all duration-300 ease-in-out transform">
+              Launch Your Project
+              <span class="material-icons text-lg">rocket_launch</span>
+            </a>
+          </div>
+        </div>
+        
+        
+        <div class="relative flex-shrink-0 hidden md:block">
+          <div class="w-80 h-80 flex items-center justify-center">
+            <div class="relative animate-float">
+ 
+               
+              <div class="relative w-40 h-40 bg-accent/10 rounded-full flex items-center justify-center z-10">
+                <span class="material-icons text-accent text-8xl">rocket_launch</span>
+              </div>
+              
+              <div class="absolute inset-0 border-2 border-accent/10 rounded-full animate-spin-slow"></div>
+              <div class="absolute -inset-4 border border-accent/5 rounded-full animate-spin-slower"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

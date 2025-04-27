@@ -1,11 +1,43 @@
 import { Routes } from '@angular/router';
+import { HomeComponent } from './pages/home/home.component';
+import { ExploreComponent } from './pages/explore/explore.component';
+import { ProjectComponent } from './pages/project/project.component';
+import { SettingsComponent } from './pages/settings/settings.component';
+import { ReportComponent } from './pages/report/report.component';
 
 export const routes: Routes = [
-  { path: '', loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent) },
-  { path: 'explore', loadComponent: () => import('./pages/explore/explore.component').then(m => m.ExploreComponent) },
-  { path: 'project/:id', loadComponent: () => import('./pages/project/project.component').then(m => m.ProjectComponent) },
-  { path: 'report/:id', loadComponent: () => import('./pages/report/report.component').then(m => m.ReportComponent) },
-  { path: 'settings', loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
-  { path: '**', redirectTo: '' }
-  
+  {
+    path: '',
+    component: HomeComponent,
+    title: 'Angor Hub',
+    data: { animation: 'HomePage' } 
+  },
+  {
+    path: 'explore',
+    component: ExploreComponent,
+    title: 'Explore Projects',
+    data: { animation: 'ExplorePage' } 
+  },
+  {
+    path: 'project/:id',
+    component: ProjectComponent,
+    title: 'Project Details',
+    data: { animation: 'ProjectPage' } 
+  },
+  {
+    path: 'settings',
+    component: SettingsComponent,
+    title: 'Settings',
+    data: { animation: 'SettingsPage' } 
+  },
+  {
+    path: 'report/:id',
+    component: ReportComponent,
+    title: 'Report Project',
+    data: { animation: 'ReportPage' } 
+  },
+  {
+    path: '**',
+    redirectTo: '', 
+  },
 ];

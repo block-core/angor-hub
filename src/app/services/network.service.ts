@@ -4,15 +4,15 @@ import { Injectable, signal } from '@angular/core';
   providedIn: 'root'
 })
 export class NetworkService {
-  private currentNetwork = signal<'main' | 'test'>('main'); // Default to mainnet
+  private currentNetwork = signal<'main' | 'test'>('main');
 
   constructor() {
-    // Initialize network from local storage if available, otherwise default to mainnet
+   
     const savedNetwork = localStorage.getItem('angor-network');
     if (savedNetwork === 'main' || savedNetwork === 'test') {
       this.currentNetwork.set(savedNetwork);
     } else {
-      // If no valid network is saved, explicitly set to main and save it
+     
       this.currentNetwork.set('main');
       localStorage.setItem('angor-network', 'main');
     }
@@ -70,10 +70,6 @@ export class NetworkService {
    * @private
    */
   private handleNetworkChange(): void {
-    // Optional: You can add additional logic here when network changes
-    // Such as refreshing data, showing a notification, etc.
-    
-    // Reload the page to ensure all services are properly initialized with the new network
     window.location.reload();
   }
 }
