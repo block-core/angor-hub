@@ -1,4 +1,4 @@
-import { Component, Input, computed, signal, ChangeDetectionStrategy, inject, input } from '@angular/core';
+import { Component, computed, ChangeDetectionStrategy, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { nip19 } from 'nostr-tools';
 import { ProfileComponent } from './profile.component';
@@ -13,7 +13,7 @@ interface ContentSegment {
   standalone: true,
   imports: [CommonModule, ProfileComponent],
   template: `
-    <div class="whitespace-pre-wrap break-words">
+    <div class="whitespace-pre-wrap break-words w-full">
       @for (segment of parsedContent(); track $index) {
         @switch (segment.type) {
           @case ('text') {
@@ -25,7 +25,7 @@ interface ContentSegment {
           }
           @case ('hashtag') {
             <!-- Link hashtag to Primal search -->
-            <a [href]="'https://primal.net/explore/search/%23' + segment.value.substring(1)" target="_blank" rel="noopener noreferrer nofollow" class="text-accent dark:text-white text-gray-700 font-medium">{{ segment.value }}</a>
+            <a [href]="'https://primal.net/search/%23' + segment.value.substring(1)" target="_blank" rel="noopener noreferrer nofollow" class="text-accent dark:text-white text-gray-700 font-medium">{{ segment.value }}</a>
           }
           @case ('link') {
             <a [href]="segment.value" target="_blank" rel="noopener noreferrer nofollow" class="text-accent hover:underline break-all">{{ segment.value }}</a>
@@ -34,6 +34,12 @@ interface ContentSegment {
       }
     </div>
   `,
+  styles: [`
+    :host {
+      display: block;
+      width: 100%;
+    }
+  `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AboutContentComponent {
