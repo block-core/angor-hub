@@ -17,7 +17,7 @@ import { AgoPipe } from '../../pipes/ago.pipe';
 import { formatDate } from '@angular/common';
 import { TitleCasePipe } from '@angular/common';
 
-// Define type for sort and filter options
+
 type SortType = 'default' | 'funding' | 'endDate' | 'investors';
 type FilterType = 'all' | 'active' | 'upcoming' | 'completed';
 
@@ -54,29 +54,29 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   private title = inject(TitleService);
   private denyService = inject(DenyService);
 
-  // Signals for search, filter, and sort functionality
+  
   searchTerm = signal<string>('');
   activeFilter = signal<FilterType>('all');
   activeSort = signal<SortType>('default');
 
-  // Filter and sort options
+  
   filterOptions: FilterType[] = ['all', 'active', 'upcoming', 'completed'];
   sortOptions: SortType[] = ['default', 'funding', 'endDate', 'investors'];
 
-  // Signals to track failed image loads
+  
   failedBannerImages = signal<Set<string>>(new Set<string>());
   failedProfileImages = signal<Set<string>>(new Set<string>());
 
-  // Computed signal for filtered and sorted projects
+  
   filteredProjects: Signal<any[]> = computed(() => {
     const projects = this.indexer.projects();
     const search = this.searchTerm().toLowerCase().trim();
     const filter = this.activeFilter();
     const sort = this.activeSort();
 
-    // Apply filtering
+    
     let filtered = projects.filter(project => {
-      // Search filter
+      
       if (search) {
         const name = (project.metadata?.['name'] || '').toLowerCase();
         const about = (project.metadata?.['about'] || '').toLowerCase();
@@ -86,7 +86,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
 
-      // Status filter
+      
       if (filter === 'all') {
         return true;
       } else if (filter === 'active') {
@@ -100,31 +100,31 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       return true;
     });
 
-    // Apply sorting
+    
     if (sort === 'funding') {
       filtered = [...filtered].sort((a, b) => {
         const percentA = this.getFundingPercentage(a);
         const percentB = this.getFundingPercentage(b);
-        return percentB - percentA; // Descending
+        return percentB - percentA; 
       });
     } else if (sort === 'endDate') {
       filtered = [...filtered].sort((a, b) => {
         const dateA = a.details?.expiryDate || 0;
         const dateB = b.details?.expiryDate || 0;
-        return dateA - dateB; // Ascending
+        return dateA - dateB; 
       });
     } else if (sort === 'investors') {
       filtered = [...filtered].sort((a, b) => {
         const countA = a.stats?.investorCount || 0;
         const countB = b.stats?.investorCount || 0;
-        return countB - countA; // Descending
+        return countB - countA; 
       });
     }
 
     return filtered;
   });
 
-  // UI state for dropdowns
+  
   showFilterDropdown = false;
   showSortDropdown = false;
   showMobileFilters = false;
@@ -132,10 +132,10 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor() {
     effect(() => {
       const projects = this.indexer.projects();
-      // Handle side effects when projects update
+      
     });
 
-    // Listen for project updates
+    
     this.relay.projectUpdates.subscribe((event) => {
       const update = JSON.parse(event.content);
       const id = update.projectIdentifier;
@@ -149,7 +149,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    // Listen for profile updates
+    
     this.relay.profileUpdates.subscribe((event) => {
       if (!event) return;
       const update = JSON.parse(event.content);
@@ -166,7 +166,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    // Handle router events
+    
     this.routerSubscription = this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
       if (this.exploreState.hasState) {
         if (this.isBackNavigation) {

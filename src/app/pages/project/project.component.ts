@@ -70,18 +70,18 @@ export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
   projectId: string = '';
   isDenied = signal<boolean>(false);
 
-  // Signal for expanding/collapsing the 'about' section
+  
   showFullAbout = signal(false);
-  // Signal to determine if the 'Show More' button should be displayed
+  
   isAboutLong = signal(false);
 
-  // Method to toggle the 'about' section visibility with animation support
+  
   toggleShowFullAbout() {
     console.log('Toggling about text visibility');
     this.showFullAbout.update(v => !v);
     
-    // No need to manually call checkAboutTextOverflow since our layout
-    // is driven by the showFullAbout signal via style bindings
+    
+    
   }
 
   tabs = [
@@ -116,7 +116,7 @@ export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
     const end = this.project()?.details?.expiryDate;
 
     if (!start || !end || end <= start) {
-      return null; // Not calculable or invalid dates
+      return null; 
     }
 
     const startDate = new Date(start * 1000);
@@ -124,8 +124,8 @@ export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
     const diffMillis = endDate.getTime() - startDate.getTime();
 
     const diffDays = Math.floor(diffMillis / (1000 * 60 * 60 * 24));
-    const diffMonths = Math.floor(diffDays / 30.44); // Average days in month
-    const diffYears = Math.floor(diffDays / 365.25); // Account for leap years
+    const diffMonths = Math.floor(diffDays / 30.44); 
+    const diffYears = Math.floor(diffDays / 365.25); 
 
     if (diffYears >= 1) {
       const remainingMonths = Math.floor((diffDays % 365.25) / 30.44);
@@ -139,7 +139,7 @@ export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
     } else if (diffDays >= 1) {
       return `${diffDays} day${diffDays > 1 ? 's' : ''}`;
     } else {
-      return 'Less than a day'; // Should ideally not happen with valid start/end
+      return 'Less than a day'; 
     }
   });
 
@@ -447,7 +447,7 @@ export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
             console.warn('Unknown tag:', tag);
           }
 
-          // After content updates, check text overflow
+          
           setTimeout(() => this.checkAboutTextOverflow(), 300);
         });
 
@@ -619,21 +619,21 @@ export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
 
   getSpentPercentage(): number {
     const spent = (this.project()?.stats?.amountSpentSoFarByFounder ?? 0);
-    const invested = (this.project()?.stats?.amountInvested ?? 1); // Avoid division by zero
+    const invested = (this.project()?.stats?.amountInvested ?? 1); 
     if (invested === 0) return 0;
     return Number(((spent / invested) * 100).toFixed(1));
   }
 
   getWithdrawnPercentage(): number {
     const withdrawn = (this.project()?.stats?.amountInPenalties  ?? 0);
-    const invested = (this.project()?.stats?.amountInvested ?? 1); // Avoid division by zero
+    const invested = (this.project()?.stats?.amountInvested ?? 1); 
     if (invested === 0) return 0;
     return Number(((withdrawn / invested) * 100).toFixed(1));
   }
 
   getPenaltiesPercentage(): number {
     const penalties = (this.project()?.stats?.amountInPenalties ?? 0);
-    const invested = (this.project()?.stats?.amountInvested ?? 1); // Avoid division by zero
+    const invested = (this.project()?.stats?.amountInvested ?? 1); 
     if (invested === 0) return 0;
     return Number(((penalties / invested) * 100).toFixed(1));
   }
@@ -787,12 +787,12 @@ export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
     const stages = this.project()?.details?.stages;
     if (!stages || !stages.length) return false;
 
-    // If it's the last stage and completed, it's not current
+    
     if (stageIndex === stages.length - 1 && this.isStageCompleted(stageIndex)) {
       return false;
     }
     
-    // If this stage is not completed but the previous one is (or this is the first stage)
+    
     if (!this.isStageCompleted(stageIndex) && (stageIndex === 0 || this.isStageCompleted(stageIndex - 1))) {
       return true;
     }
@@ -875,45 +875,45 @@ export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  // Listen for window resize events
+  
   @HostListener('window:resize')
   onResize() {
-    // Trigger check when window is resized
+    
     setTimeout(() => this.checkAboutTextOverflow(), 100);
   }
 
-  // Check if the about text is too long and needs the "Show More" button
+  
   checkAboutTextOverflow() {
     const aboutParagraph = this.aboutParagraphRef()?.nativeElement;
     if (!aboutParagraph || !this.project()?.metadata?.about) return;
 
-    // To accurately measure, we need to temporarily remove both line-clamp and max-height constraints
+    
     const parentElement = aboutParagraph.parentElement;
-    if (!parentElement) return; // Add null check for parentElement
+    if (!parentElement) return; 
 
-    // Save current styles to restore later
+    
     const wasShowing = this.showFullAbout();
     const originalMaxHeight = parentElement.style.maxHeight;
 
-    // Remove constraints to get true height
+    
     parentElement.style.maxHeight = 'none';
     aboutParagraph.classList.remove('line-clamp-3');
     
-    // Get the full height without constraints
+    
     const fullHeight = aboutParagraph.scrollHeight;
     
-    // Apply line-clamp but keep maxHeight at 'none' to measure truncated content height
+    
     if (!wasShowing) {
       aboutParagraph.classList.add('line-clamp-3');
     }
     
-    // Define the max height for truncated content (3 lines ~ 4.5rem)
-    const truncatedMaxHeight = 72; // 4.5rem in px (assuming 1rem = 16px)
     
-    // Check if content exceeds truncated height limit
+    const truncatedMaxHeight = 72; 
+    
+    
     const needsExpand = fullHeight > truncatedMaxHeight;
     
-    // Restore original styles
+    
     parentElement.style.maxHeight = originalMaxHeight;
     
     console.log('Text measurements:', {
@@ -928,26 +928,26 @@ export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
     this.cdr.detectChanges();
   }
 
-  // Effect to monitor project data changes for re-checking text overflow
+  
   projectMonitor = effect(() => {
     const projectData = this.project();
     if (projectData?.metadata?.about) {
-      // When project data loads or changes, check text overflow after a delay
+      
       setTimeout(() => this.checkAboutTextOverflow(), 200);
     }
   });
 
   ngAfterViewInit() {
-    // Check after view is initialized with small delay to ensure DOM is stable
+    
     setTimeout(() => {
       this.checkAboutTextOverflow();
     }, 300);
   }
 
   setupDataSubscriptions(projectData: IndexedProject) {
-    // ...existing code...
+    
 
-    // After content updates, check text overflow
+    
     setTimeout(() => this.checkAboutTextOverflow(), 300);
   }
 }

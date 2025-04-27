@@ -66,7 +66,7 @@ export class SettingsComponent implements OnInit {
   newRelayUrl = signal<string>('');
   relaySaveMessage = signal<string>('');
   
-  // Add signals for indexer management
+  
   indexerConfig = signal<IndexerConfig>(this.indexerService.getIndexerConfig());
   newMainnetIndexerUrl = signal<string>('');
   newTestnetIndexerUrl = signal<string>('');
@@ -76,7 +76,7 @@ export class SettingsComponent implements OnInit {
   
   constructor() {
     this.updateRelayUrls();
-    // Initialize indexer config signal
+    
     this.indexerConfig.set(this.indexerService.getIndexerConfig());
   }
   
@@ -87,11 +87,11 @@ export class SettingsComponent implements OnInit {
   setActiveTab(tabId: SettingsTabId): void {
     this.activeTab.set(tabId);
     
-    // Reset messages and test results when changing tabs
+    
     if (tabId === 'indexers') {
       this.indexerSaveMessage.set('');
       this.indexerTestResult.set(null);
-      this.indexerTestingUrl.set(null); // Also reset testing URL
+      this.indexerTestingUrl.set(null); 
     } else if (tabId === 'relays') {
       this.relaySaveMessage.set('');
     }
@@ -149,7 +149,7 @@ export class SettingsComponent implements OnInit {
     return url.startsWith('wss://') && url.length > 8;
   }
   
-  // Indexer Management Methods
+  
   
   getMainnetIndexers(): IndexerEntry[] {
     return this.indexerConfig().mainnet;
@@ -166,7 +166,7 @@ export class SettingsComponent implements OnInit {
       if (this.indexerService.addIndexer(urlToAdd, isMainnet)) {
         this.indexerConfig.set(this.indexerService.getIndexerConfig());
         
-        // Only clear the URL field that was used
+        
         if (isMainnet) {
           this.newMainnetIndexerUrl.set('');
         } else {
@@ -221,7 +221,7 @@ export class SettingsComponent implements OnInit {
   }
   
   isValidIndexerUrl(url: string): boolean {
-    // Allow both http and https, ensure it's not just the protocol
+    
     return (url.startsWith('http://') || url.startsWith('https://')) && url.length > (url.startsWith('https://') ? 8 : 7);
   }
 }
