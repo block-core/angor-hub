@@ -1,4 +1,3 @@
-
 <section class="relative w-full h-[200px] sm:h-[250px] md:h-[300px] overflow-hidden">
   <div
     class="absolute inset-0 bg-cover bg-center transition-colors duration-300 after:content-[''] after:absolute after:inset-0 after:bg-gradient-to-b after:from-black/70 after:to-black/20"
@@ -106,25 +105,11 @@
         </div>
 
         <div class="w-full mx-auto md:mx-0 mt-3 max-w-full">
-          <div class="relative">
-            <div class="overflow-hidden transition-all duration-500 ease-in-out"
-              [style.max-height]="showFullAbout() ? '2000px' : '4.5rem'">
-              <p #aboutParagraph
-                class="text-sm sm:text-base leading-relaxed text-text-secondary m-0 transition-all duration-500 ease-in-out break-words"
-                [class.line-clamp-3]="!showFullAbout()">
-                {{ project()?.metadata?.about }}
-              </p>
-            </div>
-            @if (isAboutLong()) {
-              <button (click)="toggleShowFullAbout()"
-                class="text-accent text-sm sm:text-base font-medium mt-2 hover:bg-accent/10 focus:outline-none flex items-center gap-1 px-2 py-1 rounded transition-all duration-300 ease-in-out">
-                <span class="transition-all duration-300 ease-in-out">
-                  {{ showFullAbout() ? "Show Less" : "Show More" }}
-                </span>
-                <span class="material-icons text-sm">{{ showFullAbout() ? "expand_less" : "expand_more" }}</span>
-              </button>
-            }
-          </div>
+          @if (project()?.metadata?.about) {
+            <app-about-content [content]="project()?.metadata?.about"></app-about-content>
+          } @else {
+            <p class="text-sm sm:text-base leading-relaxed text-text-secondary m-0 italic">No description provided.</p>
+          }
         </div>
 
         @if (isProjectSuccessful()) {
@@ -581,10 +566,10 @@
                         <div class="font-mono text-xs sm:text-sm text-text">
                           @if(networkService.isMain()) {
                             <a target="_blank" [href]="'https://mempool.space/tx/' + project()?.trxId"
-                              class="text-accent hover:underline truncate">{{ project()?.trxId }}</a>
+                              class="text-accent dark:text-white text-gray-700 truncate">{{ project()?.trxId }}</a>
                           } @else {
                             <a target="_blank" [href]="'https://mempool.space/testnet/tx/' + project()?.trxId"
-                              class="text-accent hover:underline truncate">{{ project()?.trxId }}</a>
+                              class="text-accent dark:text-white text-gray-700 truncate">{{ project()?.trxId }}</a>
                           }
                         </div>
                       </div>

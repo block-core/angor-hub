@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed, viewChild, ElementRef, effect, HostListener, ChangeDetectorRef, AfterViewInit, AfterContentChecked } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
   IndexedProject,
@@ -29,6 +29,7 @@ import { TitleService } from '../../services/title.service';
 import { MarkdownModule } from 'ngx-markdown';
 import { SafeContentPipe } from '../../pipes/safe-content.pipe';
 import { DenyService } from '../../services/deny.service';
+import { AboutContentComponent } from '../../components/about-content.component'; // Import the new component
 
 @Component({
   selector: 'app-project',
@@ -43,10 +44,11 @@ import { DenyService } from '../../services/deny.service';
     ProfileComponent,
     MarkdownModule,
     SafeContentPipe,
+    AboutContentComponent, // Add the new component here
   ],
   templateUrl: './project.component.html',
 })
-export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
+export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterViewInit
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   indexer = inject(IndexerService);
@@ -57,10 +59,6 @@ export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
   public bitcoin = inject(BitcoinUtilsService);
   public title = inject(TitleService);
   private denyService = inject(DenyService);
-  private cdr = inject(ChangeDetectorRef); 
-
-  aboutParagraphRef = viewChild<ElementRef<HTMLParagraphElement>>('aboutParagraph');
-  private checkResize = signal(0);
 
   reloadPage(): void {
     window.location.reload();
@@ -69,20 +67,6 @@ export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
   project = signal<IndexedProject | null>(null);
   projectId: string = '';
   isDenied = signal<boolean>(false);
-
-  
-  showFullAbout = signal(false);
-  
-  isAboutLong = signal(false);
-
-  
-  toggleShowFullAbout() {
-    console.log('Toggling about text visibility');
-    this.showFullAbout.update(v => !v);
-    
-    
-    
-  }
 
   tabs = [
     { id: 'project', label: 'Project', icon: 'description' },
@@ -95,7 +79,6 @@ export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
   comments = signal<NDKEvent[]>([]);
   faqItems = signal<FaqItem[]>([]);
 
- 
   loadingUpdates = signal<boolean>(false);
   loadingComments = signal<boolean>(false);
   loadingFaq = signal<boolean>(false);
@@ -446,9 +429,6 @@ export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
           } else {
             console.warn('Unknown tag:', tag);
           }
-
-          
-          setTimeout(() => this.checkAboutTextOverflow(), 300);
         });
 
         this.subscriptions.push(projectSub, profileSub, contentSub);
@@ -873,81 +853,5 @@ export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
       const diffMonths = Math.floor(diffDays / 30);
       return diffMonths === 1 ? '1 month remaining' : `${diffMonths} months remaining`;
     }
-  }
-
-  
-  @HostListener('window:resize')
-  onResize() {
-    
-    setTimeout(() => this.checkAboutTextOverflow(), 100);
-  }
-
-  
-  checkAboutTextOverflow() {
-    const aboutParagraph = this.aboutParagraphRef()?.nativeElement;
-    if (!aboutParagraph || !this.project()?.metadata?.about) return;
-
-    
-    const parentElement = aboutParagraph.parentElement;
-    if (!parentElement) return; 
-
-    
-    const wasShowing = this.showFullAbout();
-    const originalMaxHeight = parentElement.style.maxHeight;
-
-    
-    parentElement.style.maxHeight = 'none';
-    aboutParagraph.classList.remove('line-clamp-3');
-    
-    
-    const fullHeight = aboutParagraph.scrollHeight;
-    
-    
-    if (!wasShowing) {
-      aboutParagraph.classList.add('line-clamp-3');
-    }
-    
-    
-    const truncatedMaxHeight = 72; 
-    
-    
-    const needsExpand = fullHeight > truncatedMaxHeight;
-    
-    
-    parentElement.style.maxHeight = originalMaxHeight;
-    
-    console.log('Text measurements:', {
-      fullHeight,
-      truncatedMaxHeight,
-      needsExpand,
-      wasShowing,
-      text: this.project()?.metadata?.about?.substring(0, 20) + '...'
-    });
-    
-    this.isAboutLong.set(needsExpand);
-    this.cdr.detectChanges();
-  }
-
-  
-  projectMonitor = effect(() => {
-    const projectData = this.project();
-    if (projectData?.metadata?.about) {
-      
-      setTimeout(() => this.checkAboutTextOverflow(), 200);
-    }
-  });
-
-  ngAfterViewInit() {
-    
-    setTimeout(() => {
-      this.checkAboutTextOverflow();
-    }, 300);
-  }
-
-  setupDataSubscriptions(projectData: IndexedProject) {
-    
-
-    
-    setTimeout(() => this.checkAboutTextOverflow(), 300);
   }
 }

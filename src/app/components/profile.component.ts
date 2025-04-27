@@ -7,47 +7,56 @@ import { CommonModule } from '@angular/common'; // Import CommonModule
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule], // Add CommonModule
+  imports: [CommonModule],
   template: `
-    <div class="flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5 max-w-full overflow-hidden">
-      <!-- Avatar -->
-      <div class="flex-shrink-0 relative">
-        @if(profile() && profile()!['picture'] && !imageError()) {
-          <img
-            [src]="profile()!['picture']"
-            alt="User avatar"
-            class="w-10 h-10 rounded-full object-cover shadow-sm border-2 border-white dark:border-gray-700 transition-transform hover:scale-105"
-            (error)="handleImageError($event)"
-          />
-        } @else {
-          <div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white text-lg shadow-sm border-2 border-white dark:border-gray-700"
-               [style.background-color]="getRandomColor()">
-            {{ getInitial() }}
-          </div>
-        }
-      </div>
+    @if (displayMode() === 'minimal') {
+      <a [href]="link()" target="_blank" rel="noopener noreferrer"
+         class="font-medium text-accent dark:text-white text-gray-700"
+         [title]="profile()?.displayName || profile()?.name || formatNpub()">
+        🟢{{ profile()?.displayName || profile()?.name || formatNpub() }}
+      </a>
+    } @else {
+      <div class="flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5 max-w-full overflow-hidden">
+        <!-- Avatar -->
+        <div class="flex-shrink-0 relative">
+          @if(profile() && profile()!['picture'] && !imageError()) {
+            <img
+              [src]="profile()!['picture']"
+              alt="User avatar"
+              class="w-10 h-10 rounded-full object-cover shadow-sm border-2 border-white dark:border-gray-700 transition-transform hover:scale-105"
+              (error)="handleImageError($event)"
+            />
+          } @else {
+            <div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white text-lg shadow-sm border-2 border-white dark:border-gray-700"
+                 [style.background-color]="getRandomColor()">
+              {{ getInitial() }}
+            </div>
+          }
+        </div>
 
-      <!-- Info -->
-      <div class="flex flex-col min-w-0 flex-1">
-        <a [href]="link()" target="_blank" rel="noopener noreferrer"
-           class="font-semibold text-accent hover:underline text-sm truncate"
-           [title]="profile()?.displayName || profile()?.name || formatNpub()">
-          {{ profile()?.displayName || profile()?.name || formatNpub() }}
-        </a>
-        @if (profile()?.about) {
-          <p class="text-xs text-text-secondary truncate mt-0.5" [title]="profile()!.about">
-            {{ profile()!.about }}
-          </p>
-        }
+        <!-- Info -->
+        <div class="flex flex-col min-w-0 flex-1">
+          <a [href]="link()" target="_blank" rel="noopener noreferrer"
+             class="font-semibold text-accent hover:underline text-sm truncate"
+             [title]="profile()?.displayName || profile()?.name || formatNpub()">
+            {{ profile()?.displayName || profile()?.name || formatNpub() }}
+          </a>
+          @if (profile()?.about) {
+            <p class="text-xs text-text-secondary truncate mt-0.5" [title]="profile()!.about">
+              {{ profile()!.about }}
+            </p>
+          }
+        </div>
       </div>
-    </div>
-  `,
+    }
+  `, // Added closing brace for the main @if block
 })
 export class ProfileComponent {
   relay = inject(RelayService);
   npub = input<string>();
   link = input.required<string>();
   pubkey = input<string>();
+  displayMode = input<'full' | 'minimal'>('full'); // Add displayMode input
   #pubkey: any = '';
   profile = signal<NDKUserProfile | null>(null);
   imageError = signal<boolean>(false);
