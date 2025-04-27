@@ -659,12 +659,12 @@
         } @else if (activeTab === 'comments') {
           <div class="comments-section w-full max-w-full">
             @if (loadingComments()) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 h-64 text-text-secondary bg-surface-card rounded-xl shadow-lg max-w-3xl mx-auto">
+              <div class="flex flex-col items-center justify-center p-8 sm:p-12 h-64 text-text-secondary bg-surface-card rounded-xl shadow-lg mx-auto">
                 <div class="w-10 h-10 border-3 border-accent/30 border-t-accent rounded-full animate-spin mb-4"></div>
                 <p class="text-base sm:text-lg">Loading comments...</p>
               </div>
             } @else if (errorComments()) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 text-center text-warning bg-red-500/5 rounded-xl shadow-lg max-w-3xl mx-auto">
+              <div class="flex flex-col items-center justify-center p-8 sm:p-12 text-center text-warning bg-red-500/5 rounded-xl shadow-lg mx-auto">
                 <span class="material-icons text-6xl mb-4 opacity-80">error_outline</span>
                 <p class="max-w-md mx-auto text-base sm:text-lg">{{ errorComments() }}</p>
                 <button (click)="fetchComments()"
@@ -674,7 +674,7 @@
                 </button>
               </div>
             } @else if (comments().length === 0) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 h-64 text-center text-text-secondary bg-surface-card rounded-xl shadow-lg max-w-3xl mx-auto">
+              <div class="flex flex-col items-center justify-center p-8 sm:p-12 h-64 text-center text-text-secondary bg-surface-card rounded-xl shadow-lg mx-auto">
                 <span class="material-icons text-6xl mb-4 opacity-50">chat_bubble_outline</span>
                 <p class="max-w-md mx-auto text-base sm:text-lg">No comments available for this project yet. Be the first to comment!</p>
               </div>

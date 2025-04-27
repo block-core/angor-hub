@@ -76,7 +76,7 @@
           Appearance
         </h2>
 
-        <div class="py-5 border-b border-border last:border-b-0 last:pb-0">
+        <div class="pt-5 border-b border-border last:border-b-0 last:pb-0">
           <label class="block text-lg font-semibold mb-2 text-text">Theme</label>
           <p class="text-text-secondary mb-5 text-sm leading-normal">Choose your preferred theme mode</p>
 
@@ -133,7 +133,7 @@
           Network
         </h2>
 
-        <div class="py-5 border-t border-border">
+        <div class="pt-5 border-t border-border">
           <label class="block text-lg font-semibold mb-2 text-text">Bitcoin Network</label>
           <p class="text-text-secondary mb-5 text-sm leading-normal">Select which Bitcoin network to use for data and
             interactions.</p>
@@ -187,7 +187,7 @@
           Nostr Relays
         </h2>
 
-        <div class="py-5 border-t border-border">
+        <div class="pt-5 border-t border-border">
           <label class="block text-lg font-semibold mb-2 text-text">Manage Relays</label>
           <p class="text-text-secondary mb-5 text-sm leading-normal">Configure which Nostr relays to connect to for
             real-time updates and interactions.</p>
@@ -195,7 +195,7 @@
           <div class="flex items-center justify-between mb-4">
             <span class="text-text-secondary text-sm">{{ relayUrls().length }} relays configured</span>
             <button
-              class="flex items-center gap-2 bg-none border-none text-sm text-accent cursor-pointer p-2 rounded transition duration-200 ease-in-out hover:bg-accent/10"
+              class="flex items-center dark:text-white text-gray-700 gap-2 bg-none border-none text-sm text-accent cursor-pointer p-2 rounded transition duration-200 ease-in-out hover:bg-accent/10"
               (click)="resetToDefaultRelays()">
               <span class="material-icons text-lg">restart_alt</span>
               Reset to defaults
@@ -278,7 +278,7 @@
           Indexers
         </h2>
 
-        <div class="py-5 border-t border-border">
+        <div class="pt-5 border-t border-border">
           <label class="block text-lg font-semibold mb-2 text-text">Manage Indexers</label>
           <p class="text-text-secondary mb-5 text-sm leading-normal">Configure indexer endpoints for project data
             retrieval on each network.</p>
