@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, viewChild, ElementRef, effect, HostListener, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
   IndexedProject,
@@ -57,6 +57,10 @@ export class ProjectComponent implements OnInit, OnDestroy {
   public bitcoin = inject(BitcoinUtilsService);
   public title = inject(TitleService);
   private denyService = inject(DenyService);
+  private cdr = inject(ChangeDetectorRef); 
+
+  aboutParagraphRef = viewChild<ElementRef<HTMLParagraphElement>>('aboutParagraph');
+  private checkResize = signal(0);
 
   reloadPage(): void {
     window.location.reload();
@@ -65,6 +69,16 @@ export class ProjectComponent implements OnInit, OnDestroy {
   project = signal<IndexedProject | null>(null);
   projectId: string = '';
   isDenied = signal<boolean>(false);
+
+  // Signal for expanding/collapsing the 'about' section
+  showFullAbout = signal(false);
+  // Signal to determine if the 'Show More' button should be displayed
+  isAboutLong = signal(false);
+
+  // Method to toggle the 'about' section visibility
+  toggleShowFullAbout() {
+    this.showFullAbout.update(v => !v);
+  }
 
   tabs = [
     { id: 'project', label: 'Project', icon: 'description' },
