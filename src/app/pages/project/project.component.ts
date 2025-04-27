@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed, viewChild, ElementRef, effect, HostListener, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, viewChild, ElementRef, effect, HostListener, ChangeDetectorRef, AfterViewInit, AfterContentChecked } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
   IndexedProject,
@@ -46,7 +46,7 @@ import { DenyService } from '../../services/deny.service';
   ],
   templateUrl: './project.component.html',
 })
-export class ProjectComponent implements OnInit, OnDestroy {
+export class ProjectComponent implements OnInit, OnDestroy, AfterViewInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   indexer = inject(IndexerService);
@@ -75,9 +75,13 @@ export class ProjectComponent implements OnInit, OnDestroy {
   // Signal to determine if the 'Show More' button should be displayed
   isAboutLong = signal(false);
 
-  // Method to toggle the 'about' section visibility
+  // Method to toggle the 'about' section visibility with animation support
   toggleShowFullAbout() {
+    console.log('Toggling about text visibility');
     this.showFullAbout.update(v => !v);
+    
+    // No need to manually call checkAboutTextOverflow since our layout
+    // is driven by the showFullAbout signal via style bindings
   }
 
   tabs = [
@@ -442,6 +446,9 @@ export class ProjectComponent implements OnInit, OnDestroy {
           } else {
             console.warn('Unknown tag:', tag);
           }
+
+          // After content updates, check text overflow
+          setTimeout(() => this.checkAboutTextOverflow(), 300);
         });
 
         this.subscriptions.push(projectSub, profileSub, contentSub);
@@ -866,5 +873,81 @@ export class ProjectComponent implements OnInit, OnDestroy {
       const diffMonths = Math.floor(diffDays / 30);
       return diffMonths === 1 ? '1 month remaining' : `${diffMonths} months remaining`;
     }
+  }
+
+  // Listen for window resize events
+  @HostListener('window:resize')
+  onResize() {
+    // Trigger check when window is resized
+    setTimeout(() => this.checkAboutTextOverflow(), 100);
+  }
+
+  // Check if the about text is too long and needs the "Show More" button
+  checkAboutTextOverflow() {
+    const aboutParagraph = this.aboutParagraphRef()?.nativeElement;
+    if (!aboutParagraph || !this.project()?.metadata?.about) return;
+
+    // To accurately measure, we need to temporarily remove both line-clamp and max-height constraints
+    const parentElement = aboutParagraph.parentElement;
+    if (!parentElement) return; // Add null check for parentElement
+
+    // Save current styles to restore later
+    const wasShowing = this.showFullAbout();
+    const originalMaxHeight = parentElement.style.maxHeight;
+
+    // Remove constraints to get true height
+    parentElement.style.maxHeight = 'none';
+    aboutParagraph.classList.remove('line-clamp-3');
+    
+    // Get the full height without constraints
+    const fullHeight = aboutParagraph.scrollHeight;
+    
+    // Apply line-clamp but keep maxHeight at 'none' to measure truncated content height
+    if (!wasShowing) {
+      aboutParagraph.classList.add('line-clamp-3');
+    }
+    
+    // Define the max height for truncated content (3 lines ~ 4.5rem)
+    const truncatedMaxHeight = 72; // 4.5rem in px (assuming 1rem = 16px)
+    
+    // Check if content exceeds truncated height limit
+    const needsExpand = fullHeight > truncatedMaxHeight;
+    
+    // Restore original styles
+    parentElement.style.maxHeight = originalMaxHeight;
+    
+    console.log('Text measurements:', {
+      fullHeight,
+      truncatedMaxHeight,
+      needsExpand,
+      wasShowing,
+      text: this.project()?.metadata?.about?.substring(0, 20) + '...'
+    });
+    
+    this.isAboutLong.set(needsExpand);
+    this.cdr.detectChanges();
+  }
+
+  // Effect to monitor project data changes for re-checking text overflow
+  projectMonitor = effect(() => {
+    const projectData = this.project();
+    if (projectData?.metadata?.about) {
+      // When project data loads or changes, check text overflow after a delay
+      setTimeout(() => this.checkAboutTextOverflow(), 200);
+    }
+  });
+
+  ngAfterViewInit() {
+    // Check after view is initialized with small delay to ensure DOM is stable
+    setTimeout(() => {
+      this.checkAboutTextOverflow();
+    }, 300);
+  }
+
+  setupDataSubscriptions(projectData: IndexedProject) {
+    // ...existing code...
+
+    // After content updates, check text overflow
+    setTimeout(() => this.checkAboutTextOverflow(), 300);
   }
 }

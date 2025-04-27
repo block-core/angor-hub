@@ -102,22 +102,28 @@
 
       <!-- Description with Show More/Less -->
       <div class="w-full mx-auto md:mx-0 mt-3 md:mt-2">
-        <p #aboutParagraph
-          class="text-sm md:text-base leading-relaxed text-text-secondary m-0 transition-all duration-300 ease-in-out overflow-hidden break-words"
-          [class.line-clamp-3]="!showFullAbout()"> 
-          {{ project()?.metadata?.about }}
-        </p>
-        <!-- 
-          Button visibility is determined by isAboutLong() signal, 
-          calculated in the component based on content height vs line clamp height.
-        -->
-        @if (isAboutLong()) {  
-          <button 
-            (click)="toggleShowFullAbout()" 
-            class="text-accent text-sm font-medium mt-1 hover:underline focus:outline-none">
-            {{ showFullAbout() ? 'Show Less' : 'Show More' }}
-          </button>
-        }
+        <!-- About text with conditional clamp and animations -->
+        <div class="relative">
+          <div class="overflow-hidden transition-all duration-500 ease-in-out" 
+               [style.max-height]="showFullAbout() ? '2000px' : '4.5rem'">
+            <p #aboutParagraph
+              class="text-sm md:text-base leading-relaxed text-text-secondary m-0 transition-all duration-500 ease-in-out break-words"
+              [class.line-clamp-3]="!showFullAbout()">
+              {{ project()?.metadata?.about }}
+            </p>
+          </div>
+          
+          <!-- Show More/Less button with enhanced styling -->
+          @if (isAboutLong()) {
+            <button 
+              (click)="toggleShowFullAbout()" 
+              class="text-accent text-sm font-medium mt-2 hover:bg-accent/5 focus:outline-none flex items-center gap-1 px-2 py-1 rounded transition-all">
+              <span class="transition-all duration-300 ease-in-out">
+                {{ showFullAbout() ? 'Show Less' : 'Show More' }}
+              </span>
+            </button>
+          }
+        </div>
       </div>
 
       <!-- Status Messages -->
