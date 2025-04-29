@@ -209,20 +209,35 @@
                   <div class="relative w-full rounded-xl overflow-hidden aspect-video shadow-lg bg-surface-hover max-w-full">
                     <div class="flex h-full transition-transform duration-500 ease-in-out"
                       [style.transform]="'translateX(' + -currentSlide * 100 + '%)'">
-                      @for (item of project()?.media; track item.url) { @if (item.type === 'image') {
+                      @for (item of project()?.media; track item.url) {
                         <div class="min-w-full h-full flex-shrink-0">
-                          @if (!hasMediaFailed(item.url)) {
-                            <img [src]="item.url" alt="Project media" loading="lazy"
-                              class="w-full h-full object-cover cursor-pointer transition-transform duration-300 ease-in-out hover:scale-105"
-                              (click)="showImagePopup = true; selectedImage = item.url" (error)="handleMediaError(item.url)" />
-                          } @else {
-                            <div class="w-full h-full flex items-center justify-center bg-surface-ground"
-                              [style.background]="getRandomColor(item.url)" (click)="showImagePopup = false">
-                              <span class="material-icons text-5xl text-white/70">broken_image</span>
-                            </div>
+                          @if (item.type === 'image') {
+                            @if (!hasMediaFailed(item.url)) {
+                              <img [src]="item.url" alt="Project media" loading="lazy"
+                                class="w-full h-full object-cover cursor-pointer transition-transform duration-300 ease-in-out hover:scale-105"
+                                (click)="showImagePopup = true; selectedImage = item.url" (error)="handleMediaError(item.url)" />
+                            } @else {
+                              <div class="w-full h-full flex items-center justify-center bg-surface-ground"
+                                [style.background]="getRandomColor(item.url)" (click)="showImagePopup = false">
+                                <span class="material-icons text-5xl text-white/70">broken_image</span>
+                              </div>
+                            }
+                          } @else if (item.type === 'video') {
+                            @if (!hasVideoFailed(item.url)) {
+                              <video [src]="item.url" controls
+                                class="w-full h-full object-contain bg-black"
+                                (error)="handleVideoError(item.url)">
+                                Your browser does not support the video tag.
+                              </video>
+                            } @else {
+                              <div class="w-full h-full flex items-center justify-center bg-surface-ground"
+                                [style.background]="getRandomColor(item.url)">
+                                <span class="material-icons text-5xl text-white/70">videocam_off</span>
+                              </div>
+                            }
                           }
                         </div>
-                      } }
+                      }
                     </div>
                     @if ((project()?.media?.length ?? 0) > 1) {
                       <button

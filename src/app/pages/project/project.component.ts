@@ -93,6 +93,7 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
   failedBannerImage = signal<boolean>(false);
   failedProfileImage = signal<boolean>(false);
   failedMediaImages = signal<Set<string>>(new Set<string>());
+  failedMediaVideos = signal<Set<string>>(new Set<string>()); // New signal for video errors
 
   public projectDuration = computed(() => {
     const start = this.project()?.details?.startDate;
@@ -723,8 +724,18 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
     this.failedMediaImages.set(new Set(failedImages));
   }
 
+  handleVideoError(videoUrl: string): void { // New method for video errors
+    const failedVideos = this.failedMediaVideos();
+    failedVideos.add(videoUrl);
+    this.failedMediaVideos.set(new Set(failedVideos));
+  }
+
   hasMediaFailed(imageUrl: string): boolean {
     return this.failedMediaImages().has(imageUrl);
+  }
+
+  hasVideoFailed(videoUrl: string): boolean { // New method to check video errors
+    return this.failedMediaVideos().has(videoUrl);
   }
 
   getRandomColor(seed: string): string {
