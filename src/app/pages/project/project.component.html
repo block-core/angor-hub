@@ -95,13 +95,7 @@
               {{ isFavorite() ? "bookmark" : "bookmark_border" }}
             </span>
           </button>
-          <button [title]="'Report this project'" (click)="reportProject()"
-            class="flex items-center justify-center w-10 h-10 rounded-full cursor-pointer transition-all duration-300 ease-in-out bg-surface-hover hover:bg-surface-ground focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface-card group">
-            <span
-              class="material-icons text-xl text-yellow-500/80 group-hover:text-yellow-600 transition-transform duration-300 group-hover:scale-110">
-              report_problem
-            </span>
-          </button>
+
         </div>
 
         <div class="w-full mx-auto md:mx-0 mt-3 max-w-full">
@@ -130,7 +124,7 @@
           </div>
         }
 
-        @if (project()?.details?.nostrPubKey && user?.npub) {
+        <!-- @if (project()?.details?.nostrPubKey && user?.npub) {
           <div class="flex flex-wrap gap-2 sm:gap-3 mt-3 justify-center md:justify-start">
             <a [href]="'https://primal.net/p/' + user?.npub" target="_blank"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-hover rounded-md text-text text-xs sm:text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-ground hover:shadow-sm">
@@ -145,7 +139,7 @@
               <span class="material-icons text-sm">open_in_new</span> nostr.at
             </a>
           </div>
-        }
+        } -->
 
         <div class="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-2 mt-3 justify-center md:justify-start">
           @for (identity of project()?.externalIdentities; track identity.platform) {
@@ -595,6 +589,35 @@
                       </button>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              <div class="bg-surface-card rounded-xl shadow-sm p-6 sm:p-8 max-w-full">
+                <h3 class="mt-0 mb-4 pb-3 border-b border-border text-lg sm:text-xl font-semibold">Nostr</h3>
+                <div class="space-y-4">
+                  <div>
+                    <div class="text-sm text-text-secondary mb-1">Lookup project on Nostr network</div>
+                    <div class="flex items-center bg-surface-hover rounded-lg p-3 max-w-full">
+                      <a [href]="'https://nostr.at/' + user?.npub" target="_blank"
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-hover rounded-md text-text text-xs sm:text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-ground hover:shadow-sm">
+                      <span class="material-icons text-sm">open_in_new</span> nostr.at
+                    </a>
+                    </div>
+                  </div>
+
+                  <div><br>
+                    Do you find this project problematic? Click button to report:<br>
+                    <div class="items-center text-center">
+                    <button [title]="'Report this project'" (click)="reportProject()"
+                    class="flex items-center justify-center w-10 h-10 rounded-full cursor-pointer transition-all duration-300 ease-in-out bg-surface-hover hover:bg-surface-ground focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface-card group">
+                    <span
+                      class="material-icons text-xl text-yellow-500/80 group-hover:text-yellow-600 transition-transform duration-300 group-hover:scale-110">
+                      report_problem
+                    </span>
+                  </button>
+                    </div>
+              </div>
+
                 </div>
               </div>
             </div>
