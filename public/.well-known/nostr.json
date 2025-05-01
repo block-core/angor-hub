@@ -1,0 +1,8 @@
+{
+    "names": {
+        "_": "70c48e4b4aa7784c9209e70c24f88eb8bee488a8dc53bfabfcff948700ce3ccb"
+    },
+    "relays": {
+      "70c48e4b4aa7784c9209e70c24f88eb8bee488a8dc53bfabfcff948700ce3ccb": [ "wss://relay.angor.io", "wss://relay2.angor.io" ]
+    }
+}
