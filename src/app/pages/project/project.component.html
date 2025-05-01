@@ -159,7 +159,8 @@
           class="px-6 py-3 text-base sm:text-lg font-semibold text-white bg-accent rounded-lg cursor-pointer transition-all duration-300 ease-in-out hover:enabled:-translate-y-0.5 hover:enabled:shadow-lg disabled:bg-surface-hover disabled:text-text-secondary disabled:cursor-not-allowed"
           [disabled]="!canInvest()" (click)="canInvest() && openInvestWindow()">
           @if (isProjectEnded()) { Ended {{ project()?.details?.expiryDate ?? 0 | ago }} }
-          @else if (isProjectNotStarted()) { Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest Now) }
+          <!-- @else if (isProjectNotStarted()) { Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest Now) } -->
+          @else if (isProjectNotStarted()) { Invest Now }
           @else { Invest Now }
         </button>
       </div>
@@ -171,7 +172,8 @@
         class="w-full px-6 py-3 text-lg font-semibold text-white bg-accent rounded-lg cursor-pointer transition-all duration-300 ease-in-out hover:enabled:-translate-y-0.5 hover:enabled:shadow-lg disabled:bg-surface-hover disabled:text-text-secondary disabled:cursor-not-allowed"
         [disabled]="!canInvest()" (click)="canInvest() && openInvestWindow()">
         @if (isProjectEnded()) { Ended {{ project()?.details?.expiryDate ?? 0 | ago }} }
-        @else if (isProjectNotStarted()) { Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest Now) }
+        <!-- @else if (isProjectNotStarted()) { Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest Now) } -->
+        @else if (isProjectNotStarted()) { Invest Now }
         @else { Invest Now }
       </button>
     </div>
@@ -607,7 +609,7 @@
 
                   <div><br>
                     Do you find this project problematic? Click button to report:<br>
-                    <div class="items-center text-center">
+                    <div class="flex justify-center items-center text-center mt-4">
                     <button [title]="'Report this project'" (click)="reportProject()"
                     class="flex items-center justify-center w-10 h-10 rounded-full cursor-pointer transition-all duration-300 ease-in-out bg-surface-hover hover:bg-surface-ground focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface-card group">
                     <span
