@@ -72,7 +72,7 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
     { id: 'project', label: 'Project', icon: 'description' },
     { id: 'faq', label: 'FAQ', icon: 'help_outline' },
     { id: 'updates', label: 'Updates', icon: 'campaign' },
-    { id: 'comments', label: 'Comments', icon: 'chat_bubble_outline' },
+    // { id: 'comments', label: 'Comments', icon: 'chat_bubble_outline' },
   ];
   activeTab = 'project';
   updates = signal<NDKEvent[]>([]);
@@ -132,9 +132,9 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
     if (tabId === 'updates' && this.updates().length === 0 && !this.loadingUpdates() && !this.errorUpdates()) {
       this.fetchUpdates();
     }
-    if (tabId === 'comments' && this.comments().length === 0 && !this.loadingComments() && !this.errorComments()) {
-      this.fetchComments();
-    }
+    // if (tabId === 'comments' && this.comments().length === 0 && !this.loadingComments() && !this.errorComments()) {
+    //   this.fetchComments();
+    // }
     if (tabId === 'faq' && this.faqItems().length === 0 && !this.loadingFaq() && !this.errorFaq()) {
       this.fetchFaq();
     }
@@ -192,7 +192,7 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
       const filter = {
         kinds: [1],
         authors: [this.project()!.details!.nostrPubKey],
-        '#t': ['angor-update'],
+        // '#t': ['angor-update'],
         limit: 50,
       };
 

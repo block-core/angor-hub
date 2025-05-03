@@ -2,7 +2,7 @@ import { Component, inject, input, effect, signal } from '@angular/core';
 import { RelayService } from '../services/relay.service';
 import { nip19 } from 'nostr-tools';
 import { NDKUserProfile } from '@nostr-dev-kit/ndk';
-import { CommonModule } from '@angular/common'; // Import CommonModule
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-profile',
@@ -13,7 +13,7 @@ import { CommonModule } from '@angular/common'; // Import CommonModule
       <a [href]="link()" target="_blank" rel="noopener noreferrer"
          class="font-medium text-accent dark:text-white text-gray-700"
          [title]="profile()?.displayName || profile()?.name || formatNpub()">
-        🟢{{ profile()?.displayName || profile()?.name || formatNpub() }}
+        &#64;{{ profile()?.displayName || profile()?.name || formatNpub() }}
       </a>
     } @else {
       <div class="flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5 max-w-full overflow-hidden">
@@ -41,22 +41,23 @@ import { CommonModule } from '@angular/common'; // Import CommonModule
              [title]="profile()?.displayName || profile()?.name || formatNpub()">
             {{ profile()?.displayName || profile()?.name || formatNpub() }}
           </a>
-          @if (profile()?.about) {
-            <p class="text-xs text-text-secondary truncate mt-0.5" [title]="profile()!.about">
-              {{ profile()!.about }}
+          @if (profile()?.lud16) {
+            <p class="text-xs text-text-secondary truncate mt-0.5" [title]="profile()!.lud16">
+             {{ profile()!.lud16 }}
             </p>
+
           }
         </div>
       </div>
     }
-  `, // Added closing brace for the main @if block
+  `, 
 })
 export class ProfileComponent {
   relay = inject(RelayService);
   npub = input<string>();
   link = input.required<string>();
   pubkey = input<string>();
-  displayMode = input<'full' | 'minimal'>('full'); // Add displayMode input
+  displayMode = input<'full' | 'minimal'>('full'); 
   #pubkey: any = '';
   profile = signal<NDKUserProfile | null>(null);
   imageError = signal<boolean>(false);
@@ -88,7 +89,7 @@ export class ProfileComponent {
     this.relay.profileUpdates.subscribe((event) => {
       if (event.pubkey == this.#pubkey) {
         this.profile.set(JSON.parse(event.content));
-        this.imageError.set(false); // Reset error state when profile updates
+        this.imageError.set(false);
       }
     });
   }
