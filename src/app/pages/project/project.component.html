@@ -159,9 +159,9 @@
           class="px-6 py-3 text-base sm:text-lg font-semibold text-white bg-accent rounded-lg cursor-pointer transition-all duration-300 ease-in-out hover:enabled:-translate-y-0.5 hover:enabled:shadow-lg disabled:bg-surface-hover disabled:text-text-secondary disabled:cursor-not-allowed"
           [disabled]="!canInvest()" (click)="canInvest() && openInvestWindow()">
           @if (isProjectEnded()) { Ended {{ project()?.details?.expiryDate ?? 0 | ago }} }
-          <!-- @else if (isProjectNotStarted()) { Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest Now) } -->
-          @else if (isProjectNotStarted()) { Invest Now }
-          @else { Invest Now }
+          <!-- @else if (isProjectNotStarted()) { Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest With Angor Wallet) } -->
+          @else if (isProjectNotStarted()) { Invest With Angor Wallet }
+          @else { Invest With Angor Wallet }
         </button>
       </div>
     </div>
@@ -172,9 +172,9 @@
         class="w-full px-6 py-3 text-lg font-semibold text-white bg-accent rounded-lg cursor-pointer transition-all duration-300 ease-in-out hover:enabled:-translate-y-0.5 hover:enabled:shadow-lg disabled:bg-surface-hover disabled:text-text-secondary disabled:cursor-not-allowed"
         [disabled]="!canInvest()" (click)="canInvest() && openInvestWindow()">
         @if (isProjectEnded()) { Ended {{ project()?.details?.expiryDate ?? 0 | ago }} }
-        <!-- @else if (isProjectNotStarted()) { Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest Now) } -->
-        @else if (isProjectNotStarted()) { Invest Now }
-        @else { Invest Now }
+        <!-- @else if (isProjectNotStarted()) { Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest With Angor Wallet) } -->
+        @else if (isProjectNotStarted()) { Invest With Angor Wallet }
+        @else { Invest With Angor Wallet }
       </button>
     </div>
 
