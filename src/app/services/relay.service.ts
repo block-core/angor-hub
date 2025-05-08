@@ -40,7 +40,7 @@ export class RelayService {
   private ndk: NDK | null = null;
   private isConnected = false;
   public relayUrls = signal<string[]>([]);
-  private defaultRelays = ['wss://purplepag.es', 'wss://relay.primal.net', 'wss://nos.lol', 'wss://relay.angor.io', 'wss://relay2.angor.io'];
+  private defaultRelays = ['wss://relay.damus.io', 'wss://relay.primal.net', 'wss://nos.lol', 'wss://relay.angor.io', 'wss://relay2.angor.io'];
 
   public projects = signal<ProjectEvent[]>([]);
   public loading = signal<boolean>(false);
