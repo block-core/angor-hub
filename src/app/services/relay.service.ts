@@ -124,7 +124,7 @@ export class RelayService {
       const ndk = await this.ensureConnected();
 
       const filter = {
-        kinds: [30078],
+        kinds: [30078,3030],
         ids: ids,
       };
 
