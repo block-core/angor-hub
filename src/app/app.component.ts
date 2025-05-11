@@ -1,9 +1,12 @@
-import { Component, inject, Renderer2, HostListener, OnDestroy, Inject } from '@angular/core';
-import { RouterOutlet, ChildrenOutletContexts } from '@angular/router'; 
+import { Component, inject, Renderer2, HostListener, OnDestroy, Inject, OnInit } from '@angular/core';
+import { RouterOutlet, ChildrenOutletContexts, Router, NavigationEnd } from '@angular/router'; 
 import { HeaderComponent } from './components/header.component';
 import { FooterComponent } from './components/footer.component';
 import { DOCUMENT } from '@angular/common';
 import { ThemeService } from './services/theme.service';
+import { NetworkService } from './services/network.service';
+import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { trigger, transition, style, query, animate, group } from '@angular/animations';
 
 const routeTransitionAnimations = trigger('routeAnimations', [
@@ -32,7 +35,6 @@ const routeTransitionAnimations = trigger('routeAnimations', [
   ])
 ]);
 
-
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -48,18 +50,58 @@ const routeTransitionAnimations = trigger('routeAnimations', [
   `,
   animations: [routeTransitionAnimations]
 })
-export class AppComponent implements OnDestroy {
+export class AppComponent implements OnInit, OnDestroy {
   title = 'angor-hub';
   private renderer = inject(Renderer2);
   private document = inject(DOCUMENT);
   private themeService = inject(ThemeService);
-  private contexts = inject(ChildrenOutletContexts);  
+  private networkService = inject(NetworkService);
+  private router = inject(Router);
+  private contexts = inject(ChildrenOutletContexts);
   private scrollTimeout: any = null;
+  private routerSubscription: Subscription | null = null;
 
-  constructor() {
-   }
+  constructor() { }
 
-   getRouteAnimationData() {
+  ngOnInit() {
+    // Subscribe to router events to detect URL parameter changes
+    this.routerSubscription = this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.checkNetworkParam();
+    });
+
+    // Check on initial load
+    this.checkNetworkParam();
+  }
+
+  /**
+   * Check for network parameter in URL and update network if needed
+   */
+  private checkNetworkParam(): void {
+    const urlParams = new URLSearchParams(window.location.search);
+    const networkParam = urlParams.get('network');
+    
+    if (networkParam === 'main' || networkParam === 'test') {
+      const currentNetwork = this.networkService.getNetwork();
+      if (networkParam !== currentNetwork) {
+        this.networkService.setNetworkFromUrlParam(networkParam);
+        // Update services that depend on network change
+        this.updateDependentServices();
+      }
+    }
+  }
+
+  /**
+   * Update services that need to react to network change
+   */
+  private updateDependentServices(): void {
+    // This is where we would update any services that depend on the network
+    // For example, we might need to update the IndexerService
+    // This avoids page reloads when changing network from URL parameters
+  }
+
+  getRouteAnimationData() {
     return this.contexts.getContext('primary')?.route?.snapshot?.data?.['animation'];
   }
 
@@ -80,5 +122,9 @@ export class AppComponent implements OnDestroy {
       clearTimeout(this.scrollTimeout);
     }
     this.renderer.removeClass(this.document.body, 'scrolling');
+    
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
+    }
   }
 }

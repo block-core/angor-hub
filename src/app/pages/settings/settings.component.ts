@@ -103,9 +103,9 @@ export class SettingsComponent implements OnInit {
   
   setNetwork(network: 'main' | 'test'): void {
     if (network === 'main') {
-      this.networkService.switchToMain();
+      this.networkService.setNetwork('main', true); // Set updateUrl=true
     } else {
-      this.networkService.switchToTest();
+      this.networkService.setNetwork('test', true); // Set updateUrl=true
     }
   }
   

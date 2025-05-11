@@ -258,9 +258,9 @@ export class HeaderComponent implements OnInit {
 
   switchNetwork(network: 'main' | 'test'): void {
     if (network === 'main') {
-      this.networkService.switchToMain();
+      this.networkService.setNetwork('main', true); // Set updateUrl=true
     } else {
-      this.networkService.switchToTest();
+      this.networkService.setNetwork('test', true); // Set updateUrl=true
     }
     this.isNetworkMenuOpen.set(false);
   }
