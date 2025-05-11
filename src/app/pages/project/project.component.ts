@@ -28,8 +28,9 @@ import { BitcoinUtilsService } from '../../services/bitcoin.service';
 import { TitleService } from '../../services/title.service';
 import { MarkdownModule } from 'ngx-markdown';
 import { SafeContentPipe } from '../../pipes/safe-content.pipe';
+import { SafePipe } from '../../pipes/safe.pipe';  // Add the SafePipe import
 import { DenyService } from '../../services/deny.service';
-import { AboutContentComponent } from '../../components/about-content.component'; // Import the new component
+import { AboutContentComponent } from '../../components/about-content.component';
 
 @Component({
   selector: 'app-project',
@@ -44,7 +45,8 @@ import { AboutContentComponent } from '../../components/about-content.component'
     ProfileComponent,
     MarkdownModule,
     SafeContentPipe,
-    AboutContentComponent, // Add the new component here
+    SafePipe,  // Add SafePipe to imports
+    AboutContentComponent,
   ],
   templateUrl: './project.component.html',
 })
@@ -864,5 +866,45 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
       const diffMonths = Math.floor(diffDays / 30);
       return diffMonths === 1 ? '1 month remaining' : `${diffMonths} months remaining`;
     }
+  }
+
+  /**
+   * Checks if the provided URL is a YouTube video URL.
+   * Supports youtube.com/watch, youtu.be, and youtube.com/embed formats
+   */
+  isYouTubeUrl(url: string): boolean {
+    if (!url) return false;
+    
+    // Regular expressions to match various YouTube URL formats
+    const patterns = [
+      /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/watch\?v=([^&]+)/i,
+      /^(https?:\/\/)?(www\.)?(youtu\.?be)\/([^?]+)/i,
+      /^(https?:\/\/)?(www\.)?(youtube\.com)\/embed\/([^?]+)/i
+    ];
+    
+    return patterns.some(pattern => pattern.test(url));
+  }
+
+  /**
+   * Extracts the video ID from a YouTube URL and returns the embed URL
+   */
+  getYouTubeEmbedUrl(url: string): string {
+    if (!url) return '';
+    
+    let videoId = '';
+    
+    // Extract video ID from youtube.com/watch?v=VIDEO_ID
+    const watchMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?]+)/i);
+    if (watchMatch && watchMatch[1]) {
+      videoId = watchMatch[1];
+    }
+    
+    if (!videoId) {
+      console.error('Could not extract YouTube video ID from URL:', url);
+      return '';
+    }
+    
+    // Return the embed URL with additional parameters for better UX
+    return `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&showinfo=0&modestbranding=1`;
   }
 }

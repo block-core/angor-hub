@@ -219,7 +219,17 @@
                               </div>
                             }
                           } @else if (item.type === 'video') {
-                            @if (!hasVideoFailed(item.url)) {
+                            @if (isYouTubeUrl(item.url)) {
+                              <div class="w-full h-full flex items-center justify-center bg-black">
+                                <iframe 
+                                  [src]="getYouTubeEmbedUrl(item.url) | safe: 'resourceUrl'"
+                                  class="w-full h-full border-0"
+                                  title="YouTube video player" 
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                  allowfullscreen>
+                                </iframe>
+                              </div>
+                            } @else if (!hasVideoFailed(item.url)) {
                               <video [src]="item.url" controls
                                 class="w-full h-full object-contain bg-black"
                                 (error)="handleVideoError(item.url)">
