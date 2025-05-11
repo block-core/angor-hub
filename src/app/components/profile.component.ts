@@ -41,11 +41,10 @@ import { CommonModule } from '@angular/common';
              [title]="profile()?.displayName || profile()?.name || formatNpub()">
             {{ profile()?.displayName || profile()?.name || formatNpub() }}
           </a>
-          @if (profile()?.lud16) {
-            <p class="text-xs text-text-secondary truncate mt-0.5" [title]="profile()!.lud16">
-             {{ profile()!.lud16 }}
+          @if (profile()?.nip05) {
+            <p class="text-xs text-text-secondary truncate mt-0.5" [title]="profile()!.nip05">
+            {{ formatNip05(profile()!.nip05) }}
             </p>
-
           }
         </div>
       </div>
@@ -102,6 +101,17 @@ export class ProfileComponent {
     this.imageError.set(true);
     // Optionally set a fallback image or hide the img element
     // (event.target as HTMLImageElement).style.display = 'none';
+  }
+
+  formatNip05(nip05?: string): string {
+    if (!nip05) return '';
+    
+    // If the NIP-05 starts with an underscore, remove it
+    if (nip05.startsWith('_@')) {
+      return nip05.substring(1); // Remove the underscore
+    }
+    
+    return nip05;
   }
 
   formatNpub(): string {
