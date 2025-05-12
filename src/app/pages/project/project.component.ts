@@ -102,7 +102,7 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
     const end = this.project()?.details?.expiryDate;
 
     if (!start || !end || end <= start) {
-      return null; 
+      return null;
     }
 
     const startDate = new Date(start * 1000);
@@ -110,8 +110,8 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
     const diffMillis = endDate.getTime() - startDate.getTime();
 
     const diffDays = Math.floor(diffMillis / (1000 * 60 * 60 * 24));
-    const diffMonths = Math.floor(diffDays / 30.44); 
-    const diffYears = Math.floor(diffDays / 365.25); 
+    const diffMonths = Math.floor(diffDays / 30.44);
+    const diffYears = Math.floor(diffDays / 365.25);
 
     if (diffYears >= 1) {
       const remainingMonths = Math.floor((diffDays % 365.25) / 30.44);
@@ -125,7 +125,7 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
     } else if (diffDays >= 1) {
       return `${diffDays} day${diffDays > 1 ? 's' : ''}`;
     } else {
-      return 'Less than a day'; 
+      return 'Less than a day';
     }
   });
 
@@ -199,7 +199,7 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
       };
 
       const events = await ndk.fetchEvents(filter);
-     
+
       const sortedEvents = Array.from(events).sort((a, b) => (b.created_at ?? 0) - (a.created_at ?? 0));
       this.updates.set(sortedEvents);
     } catch (error) {
@@ -217,16 +217,16 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
     this.errorComments.set(null);
     try {
       const ndk = await this.relay.ensureConnected();
-     
+
       const filter = {
         kinds: [1],
         '#p': [this.project()!.details!.nostrPubKey],
-       
+
         limit: 50,
       };
 
       const events = await ndk.fetchEvents(filter);
-     
+
       const sortedEvents = Array.from(events).sort((a, b) => (b.created_at ?? 0) - (a.created_at ?? 0));
       this.comments.set(sortedEvents);
     } catch (error) {
@@ -237,7 +237,7 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
     }
   }
 
- 
+
   isFavorite() {
     const favorites = JSON.parse(
       localStorage.getItem('angor-hub-favorites') || '[]'
@@ -291,10 +291,10 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
 
     this.projectId = id;
 
-   
+
     await this.denyService.loadDenyList();
 
-   
+
     if (await this.denyService.isEventDenied(this.projectId)) {
       this.isDenied.set(true);
       this.project.set(null);
@@ -303,31 +303,31 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
       return;
     }
 
-   
+
     let projectData: IndexedProject | undefined | null =
       this.indexer.getProject(id);
 
     try {
-     
+
       if (!projectData) {
         projectData = await this.indexer.fetchProject(id);
       }
 
-     
+
       if (projectData && await this.denyService.isEventDenied(projectData.projectIdentifier)) {
-          this.isDenied.set(true);
-          this.project.set(null);
-          this.title.setTitle('Project Not Available');
-          console.warn(`Access denied for project after fetch: ${this.projectId}`);
-          return;
+        this.isDenied.set(true);
+        this.project.set(null);
+        this.title.setTitle('Project Not Available');
+        console.warn(`Access denied for project after fetch: ${this.projectId}`);
+        return;
       }
 
       if (projectData) {
         console.log('Project Data:  ', projectData);
-       
+
         this.project.set(projectData);
 
-       
+
         if (!projectData.stats) {
           this.indexer
             .fetchProjectStats(id)
@@ -337,9 +337,9 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
         }
 
         if (!projectData.details) {
-         
+
           this.relay.fetchData([projectData.nostrEventId]);
-         
+
         } else {
           this.user = new NDKUser({
             pubkey: projectData.details.nostrPubKey,
@@ -351,7 +351,7 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
           }
         }
 
-       
+
         const projectSub = this.relay.projectUpdates.subscribe((event) => {
           if (!event) {
             return;
@@ -371,18 +371,18 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
             this.projectEvent = event;
             projectData!.details = details;
 
-           
+
             this.user = new NDKUser({
               pubkey: projectData!.details.nostrPubKey,
               relayUrls: this.relay.relayUrls(),
             });
 
-           
+
             this.relay.fetchProfile([details.nostrPubKey]);
           }
         });
 
-       
+
         const profileSub = this.relay.profileUpdates.subscribe((event) => {
           if (!event) {
             return;
@@ -443,18 +443,18 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
         }
 
       } else {
-       
+
         if (!this.isDenied()) {
-           this.noProjectFoundYet = true;
-           this.title.setTitle('Project Not Found');
+          this.noProjectFoundYet = true;
+          this.title.setTitle('Project Not Found');
         }
       }
     } catch (error) {
       console.error('Error loading project:', error);
-       if (!this.isDenied()) {
-          this.noProjectFoundYet = true;
-          this.title.setTitle('Error Loading Project');
-       }
+      if (!this.isDenied()) {
+        this.noProjectFoundYet = true;
+        this.title.setTitle('Error Loading Project');
+      }
     }
   }
 
@@ -465,15 +465,15 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
   }
 
   ngOnDestroy() {
-   
+
     this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.subscriptions = [];
 
-   
+
     this.project.set(null);
   }
 
- 
+
   formatDate(timestamp: number | undefined): string {
     if (!timestamp) return 'N/A';
     return new Date(timestamp * 1000).toLocaleDateString('en-US', {
@@ -489,7 +489,7 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
     return Date.now() < startDate * 1000;
   }
 
- 
+
   isProjectStarted(): boolean {
     const startDate = this.project()?.details?.startDate;
     if (!startDate) return false;
@@ -503,26 +503,26 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
   }
 
   isProjectSuccessful(): boolean {
-   
+
     const amountInvested = this.project()?.stats?.amountInvested ?? 0;
     const targetAmount = this.project()?.details?.targetAmount ?? 0;
-    
-   
-    if (targetAmount === 0) return false; 
-    
+
+
+    if (targetAmount === 0) return false;
+
     return amountInvested >= targetAmount;
   }
 
   isProjectFailed(): boolean {
-   
-    if (!this.isProjectEnded()) return false; 
-    
+
+    if (!this.isProjectEnded()) return false;
+
     const amountInvested = this.project()?.stats?.amountInvested ?? 0;
     const targetAmount = this.project()?.details?.targetAmount ?? 0;
-    
-   
+
+
     if (targetAmount === 0) return true;
-    
+
     return amountInvested < targetAmount;
   }
 
@@ -541,7 +541,7 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
     const diffMillis = expiryMillis - now;
 
     if (diffMillis <= 0) {
-      return 'Ended'; 
+      return 'Ended';
     }
 
     const diffSeconds = Math.floor(diffMillis / 1000);
@@ -557,7 +557,7 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
       } else if (diffHours === 1) {
         return `Ends in 1 hour`;
       } else if (diffMinutes > 1) {
-         return `Ends in ${diffMinutes} minutes`;
+        return `Ends in ${diffMinutes} minutes`;
       } else {
         return 'Ending soon';
       }
@@ -595,28 +595,28 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
     const baseUrl = this.networkService.isMain()
       ? 'https://beta.angor.io/'
       : 'https://test.angor.io/';
-      
+
     const url = `${baseUrl}view/${projectId}`;
     window.open(url, '_blank');
   }
 
   getSpentPercentage(): number {
     const spent = (this.project()?.stats?.amountSpentSoFarByFounder ?? 0);
-    const invested = (this.project()?.stats?.amountInvested ?? 1); 
+    const invested = (this.project()?.stats?.amountInvested ?? 1);
     if (invested === 0) return 0;
     return Number(((spent / invested) * 100).toFixed(1));
   }
 
   getWithdrawnPercentage(): number {
-    const withdrawn = (this.project()?.stats?.amountInPenalties  ?? 0);
-    const invested = (this.project()?.stats?.amountInvested ?? 1); 
+    const withdrawn = (this.project()?.stats?.amountInPenalties ?? 0);
+    const invested = (this.project()?.stats?.amountInvested ?? 1);
     if (invested === 0) return 0;
     return Number(((withdrawn / invested) * 100).toFixed(1));
   }
 
   getPenaltiesPercentage(): number {
     const penalties = (this.project()?.stats?.amountInPenalties ?? 0);
-    const invested = (this.project()?.stats?.amountInvested ?? 1); 
+    const invested = (this.project()?.stats?.amountInvested ?? 1);
     if (invested === 0) return 0;
     return Number(((penalties / invested) * 100).toFixed(1));
   }
@@ -663,11 +663,19 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
   }
 
   formatUsername(username: string): string {
-   
+
     if (username.includes('@')) {
       return '@' + username.split('@')[1];
     }
     return '@' + username;
+  }
+
+  formatWebsite(username?: string): string {
+    if (!username) return '';
+
+    // Remove protocol and www prefixes, then remove trailing slashes
+    return username.replace(/^(https?:\/\/)?(www\.)?/, '')
+      .replace(/\/+$/, '');
   }
 
   prevSlide() {
@@ -685,13 +693,13 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
   formatNpub(pubkey: string): string {
     return pubkey.substring(0, 8) + '...' + pubkey.substring(pubkey.length - 8);
   }
-  
+
   copyToClipboard(text: string | undefined | null): void {
     if (!text) return;
-    
+
     navigator.clipboard.writeText(text).then(
       () => {
-        console.log('Copied to clipboard'); 
+        console.log('Copied to clipboard');
         const button = document.activeElement as HTMLElement;
         if (button) {
           const originalInnerText = button.innerHTML;
@@ -706,7 +714,7 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
       }
     );
   }
-  
+
   openImagePopup(imageUrl: string): void {
     this.selectedImage = imageUrl;
     this.showImagePopup = true;
@@ -745,26 +753,26 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
     for (let i = 0; i < seed.length; i++) {
       hash = seed.charCodeAt(i) + ((hash << 5) - hash);
     }
-     
+
     const colors = [
       '#022229',
       '#086c81',
       '#cbdde1',
-      '#b8c9cd' 
+      '#b8c9cd'
     ];
-    
+
     const index = Math.abs(hash) % colors.length;
     return colors[index];
   }
-  
- 
+
+
   getInitial(name: string | undefined | null): string {
     if (!name || name.trim() === '') {
       return '#';
     }
     return name.trim()[0].toUpperCase();
   }
-  
+
   getBannerStyle(): string {
     return this.getRandomColor(this.projectId);
   }
@@ -772,58 +780,58 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
   isStageCompleted(stageIndex: number): boolean {
     const stage = this.project()?.details?.stages?.[stageIndex];
     if (!stage) return false;
-    
+
     return Date.now() > stage.releaseDate * 1000;
   }
-  
+
   isCurrentStage(stageIndex: number): boolean {
     const stages = this.project()?.details?.stages;
     if (!stages || !stages.length) return false;
 
-    
+
     if (stageIndex === stages.length - 1 && this.isStageCompleted(stageIndex)) {
       return false;
     }
-    
-    
+
+
     if (!this.isStageCompleted(stageIndex) && (stageIndex === 0 || this.isStageCompleted(stageIndex - 1))) {
       return true;
     }
-    
+
     return false;
   }
-  
+
   getCurrentStageProgress(): number {
     const stages = this.project()?.details?.stages;
     if (!stages) return 0;
-    
+
     for (let i = 0; i < stages.length; i++) {
       if (this.isCurrentStage(i)) {
         const stage = stages[i];
-        const stageStartTime = i > 0 ? stages[i-1].releaseDate * 1000 : (this.project()?.details?.startDate ?? 0) * 1000;
+        const stageStartTime = i > 0 ? stages[i - 1].releaseDate * 1000 : (this.project()?.details?.startDate ?? 0) * 1000;
         const stageEndTime = stage.releaseDate * 1000;
         const currentTime = Date.now();
-        
+
         if (currentTime <= stageStartTime) return 0;
         if (currentTime >= stageEndTime) return 100;
-        
+
         const totalDuration = stageEndTime - stageStartTime;
         const elapsed = currentTime - stageStartTime;
-        
+
         return Math.min(100, Math.max(0, Math.round((elapsed / totalDuration) * 100)));
       }
     }
-    
+
     return 0;
   }
-  
+
   getOverallStageProgress(): number {
     const stages = this.project()?.details?.stages;
     if (!stages || !stages.length) return 0;
 
     let completedPercentage = 0;
     let currentStageContribution = 0;
-    
+
     for (let i = 0; i < stages.length; i++) {
       if (this.isStageCompleted(i)) {
         completedPercentage += stages[i].amountToRelease;
@@ -832,29 +840,29 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
         break;
       }
     }
-    
+
     return Math.min(100, Math.round(completedPercentage + currentStageContribution));
   }
-  
+
   calculateStageAmount(percentage: number): string {
     const targetAmount = this.project()?.details?.targetAmount ?? 0;
     const amount = (targetAmount * percentage) / 100;
     return this.bitcoin.toBTC(amount);
   }
-  
+
   getStageRemainingTimeText(releaseDate: number): string {
     if (!releaseDate) return '';
-    
+
     const now = Date.now();
     const releaseMillis = releaseDate * 1000;
-    
+
     if (now > releaseMillis) {
       return 'Completed';
     }
-    
+
     const diffMillis = releaseMillis - now;
     const diffDays = Math.floor(diffMillis / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays < 1) {
       const diffHours = Math.floor(diffMillis / (1000 * 60 * 60));
       return diffHours <= 0 ? 'Soon' : `${diffHours}h remaining`;
@@ -874,14 +882,14 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
    */
   isYouTubeUrl(url: string): boolean {
     if (!url) return false;
-    
+
     // Regular expressions to match various YouTube URL formats
     const patterns = [
       /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/watch\?v=([^&]+)/i,
       /^(https?:\/\/)?(www\.)?(youtu\.?be)\/([^?]+)/i,
       /^(https?:\/\/)?(www\.)?(youtube\.com)\/embed\/([^?]+)/i
     ];
-    
+
     return patterns.some(pattern => pattern.test(url));
   }
 
@@ -890,20 +898,20 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
    */
   getYouTubeEmbedUrl(url: string): string {
     if (!url) return '';
-    
+
     let videoId = '';
-    
+
     // Extract video ID from youtube.com/watch?v=VIDEO_ID
     const watchMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?]+)/i);
     if (watchMatch && watchMatch[1]) {
       videoId = watchMatch[1];
     }
-    
+
     if (!videoId) {
       console.error('Could not extract YouTube video ID from URL:', url);
       return '';
     }
-    
+
     // Return the embed URL with additional parameters for better UX
     return `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&showinfo=0&modestbranding=1`;
   }
