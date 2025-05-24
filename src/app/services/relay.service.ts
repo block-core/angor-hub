@@ -15,6 +15,7 @@ export interface ProjectUpdate {
   projectIdentifier: string;
   nostrPubKey: string;
   startDate: number;
+  endDate: number;
   penaltyDays: number;
   expiryDate: number;
   targetAmount: number;
@@ -77,11 +78,11 @@ export class RelayService {
   public async reconnectToRelays(): Promise<void> {
     // Disconnect from current relays
     this.disconnect();
-    
+
     // Reset NDK instance
     this.ndk = null;
     this.isConnected = false;
-    
+
     // Reinitialize with new relay URLs
     await this.initializeRelays();
   }

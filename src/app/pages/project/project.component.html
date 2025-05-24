@@ -61,9 +61,9 @@
       </div>
     </div>
   } @else if (project()) {
-    
+
     <div class="flex flex-col md:flex-row md:flex-wrap gap-4 sm:gap-6 bg-surface-card rounded-xl shadow-lg mb-6 items-start px-4 sm:px-6 py-6 max-w-full">
-      
+
       <div class="flex-shrink-0 -mt-[80px] md:mt-0 mx-auto md:mx-0 w-24 md:w-32">
         @if (project()?.metadata?.['picture'] && !failedProfileImage()) {
           <img [src]="project()?.metadata?.['picture']"
@@ -79,7 +79,7 @@
         }
       </div>
 
-      
+
       <div class="flex flex-col gap-3 min-w-0 flex-1 items-center md:items-start text-center md:text-left mt-4 md:mt-0 max-w-full w-full">
         <h1 class="m-0 text-2xl sm:text-3xl md:text-4xl font-bold break-words w-full line-clamp-2">
           {{ project()?.metadata?.name || projectId }}
@@ -165,7 +165,7 @@
         </div>
       </div>
 
-      
+
       <div class="hidden md:flex items-start flex-shrink-0 mt-4 md:mt-0">
         <button
           class="px-6 py-3 text-base sm:text-lg font-semibold text-white bg-accent rounded-lg cursor-pointer transition-all duration-300 ease-in-out hover:enabled:-translate-y-0.5 hover:enabled:shadow-lg disabled:bg-surface-hover disabled:text-text-secondary disabled:cursor-not-allowed"
@@ -178,7 +178,7 @@
       </div>
     </div>
 
-    
+
     <div class="md:hidden mb-6 px-4">
       <button
         class="w-full px-6 py-3 text-lg font-semibold text-white bg-accent rounded-lg cursor-pointer transition-all duration-300 ease-in-out hover:enabled:-translate-y-0.5 hover:enabled:shadow-lg disabled:bg-surface-hover disabled:text-text-secondary disabled:cursor-not-allowed"
@@ -190,9 +190,9 @@
       </button>
     </div>
 
-    
+
     <div class="container mx-auto flex flex-col md:flex-row gap-6">
-      
+
       <div class="sticky top-4 z-30 flex flex-row md:flex-col gap-3 h-fit rounded-xl bg-surface-card p-4 shadow-lg overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover md:w-40 flex-shrink-0 max-w-full">
         @for (tab of tabs; track tab.id) {
           <div
@@ -206,11 +206,11 @@
         }
       </div>
 
-      
+
       <div class="flex flex-col gap-6 flex-1 max-w-full min-w-0">
         @if (activeTab === 'project') {
           <div class="flex flex-col lg:flex-row gap-6 max-w-full">
-            
+
             <div class="flex flex-col gap-6 w-full lg:w-2/3 min-w-0 max-w-full">
               @if (project()?.content) {
                 @if (project()?.media?.length) {
@@ -233,11 +233,11 @@
                           } @else if (item.type === 'video') {
                             @if (isYouTubeUrl(item.url)) {
                               <div class="w-full h-full flex items-center justify-center bg-black">
-                                <iframe 
+                                <iframe
                                   [src]="getYouTubeEmbedUrl(item.url) | safe: 'resourceUrl'"
                                   class="w-full h-full border-0"
-                                  title="YouTube video player" 
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                  title="YouTube video player"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                   allowfullscreen>
                                 </iframe>
                               </div>
@@ -304,7 +304,7 @@
               }
             </div>
 
-            
+
             <div class="flex flex-col gap-6 w-full lg:w-1/3 min-w-0 max-w-full">
               <div class="flex flex-col gap-6">
                 <div
@@ -421,6 +421,36 @@
                       </div>
                     </div>
                   </li>
+                  <li class="flex items-start gap-3">
+                    <span class="material-icons text-xl text-accent mt-0.5 flex-shrink-0">event_available</span>
+                    <div class="min-w-0">
+                      <div class="text-sm text-text-secondary">End Date</div>
+                      <div class="text-base sm:text-lg font-medium">
+                        @if (project()?.details?.endDate) {
+                        {{ formatDate(project()?.details?.endDate) }}
+                        <span class="block text-xs text-text-secondary mt-0.5 italic">
+                          @if (isProjectEnded()) {
+                          (Ended {{ project()?.details?.endDate ?? 0 | ago }})
+                          }
+                          @else if (isProjectNotStarted()) {
+                          (Will end {{ project()?.details?.endDate ?? 0 | ago }})
+                          }
+                          @else {
+                          (Ends {{ project()?.details?.endDate ?? 0 | ago }})
+                          }
+                        </span>
+                        } @else if (project()?.details?.stages?.length) {
+                        {{ formatDate(project()?.details?.stages?.[0]?.releaseDate || 0) }}
+                        <span class="block text-xs text-text-secondary mt-0.5 italic">
+                          (First stage release date)
+                        </span>
+                        } @else {
+                        <span class="text-text-secondary italic">Not specified</span>
+                        }
+                      </div>
+                    </div>
+                  </li>
+
                   <li class="flex items-start gap-3">
                     <span class="material-icons text-xl text-accent mt-0.5 flex-shrink-0">timer</span>
                     <div class="min-w-0">
@@ -776,7 +806,7 @@
     </div>
   }
 
-  
+
   @if (project() && showImagePopup && selectedImage) {
     <app-image-popup [imageUrl]="selectedImage" altText="Project media"
       (close)="showImagePopup = false; selectedImage = null"></app-image-popup>
