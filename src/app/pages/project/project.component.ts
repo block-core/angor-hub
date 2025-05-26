@@ -31,6 +31,7 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
 import { SafePipe } from '../../pipes/safe.pipe';  // Add the SafePipe import
 import { DenyService } from '../../services/deny.service';
 import { AboutContentComponent } from '../../components/about-content.component';
+import { nip19 } from 'nostr-tools';
 
 @Component({
   selector: 'app-project',
@@ -50,7 +51,7 @@ import { AboutContentComponent } from '../../components/about-content.component'
   ],
   templateUrl: './project.component.html',
 })
-export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterViewInit
+export class ProjectComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   indexer = inject(IndexerService);
@@ -69,6 +70,10 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
   project = signal<IndexedProject | null>(null);
   projectId: string = '';
   isDenied = signal<boolean>(false);
+
+  // Add these new signals for badge verification
+  memberBadges = signal<Map<string, boolean>>(new Map());
+  loadingMemberBadges = signal<boolean>(false);
 
   tabs = [
     { id: 'project', label: 'Project', icon: 'description' },
@@ -134,11 +139,13 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
     if (tabId === 'updates' && this.updates().length === 0 && !this.loadingUpdates() && !this.errorUpdates()) {
       this.fetchUpdates();
     }
-    // if (tabId === 'comments' && this.comments().length === 0 && !this.loadingComments() && !this.errorComments()) {
-    //   this.fetchComments();
-    // }
     if (tabId === 'faq' && this.faqItems().length === 0 && !this.loadingFaq() && !this.errorFaq()) {
       this.fetchFaq();
+    }
+
+    // Fetch member badges when project tab is active and members exist
+    if (tabId === 'project' && this.project()?.members?.length && this.memberBadges().size === 0) {
+      await this.fetchMemberBadges();
     }
   }
 
@@ -427,8 +434,26 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
             project.media = JSON.parse(event.content);
             project.media_created_at = event.created_at;
           } else if (tag == 'angor:members') {
-            project.members = JSON.parse(event.content).pubkeys;
+            // Currently the Angor project members are stored as npubs, this may change in the future.
+            const npubs = JSON.parse(event.content).pubkeys;
+
+            if (npubs.length > 0) {
+              if (npubs[0].startsWith('npub')) {
+                project.members = npubs.map((npub: string) => {
+                  const decoded = nip19.decode(npub);
+                  return decoded.data as string;
+                });
+              } else {
+                project.members = JSON.parse(event.content).pubkeys;
+              }
+            }
+
             project.members_created_at = event.created_at;
+
+            // Fetch member badges when members are loaded and project tab is active
+            if (this.activeTab === 'project' && project.members?.length) {
+              this.fetchMemberBadges();
+            }
           } else {
             console.warn('Unknown tag:', tag);
           }
@@ -914,5 +939,65 @@ export class ProjectComponent implements OnInit, OnDestroy { // Removed AfterVie
 
     // Return the embed URL with additional parameters for better UX
     return `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&showinfo=0&modestbranding=1`;
+  }
+
+  async fetchMemberBadges() {
+    if (this.loadingMemberBadges()) {
+      return;
+    }
+
+    const members = this.project()?.members;
+    if (!members || members.length === 0) return;
+
+    this.loadingMemberBadges.set(true);
+    try {
+      const ndk = await this.relay.ensureConnected();
+
+      const filter = {
+        kinds: [30008],
+        authors: members,
+        // '#d': ['profile_badges'],
+        // limit: 50,
+      };
+
+      console.log('Fetching member badges with filter:', filter);
+
+      const events = await ndk.fetchEvents(filter);
+      const badgeMap = new Map<string, boolean>();
+
+      console.log('Fetched member badge events:', events);
+
+      for (const event of events) {
+        const hasAngorBadge = this.checkForAngorProjectMemberBadge(event);
+        badgeMap.set(event.pubkey, hasAngorBadge);
+      }
+
+      // Ensure all members are in the map (even those without badges)
+      members.forEach(member => {
+        if (!badgeMap.has(member)) {
+          badgeMap.set(member, false);
+        }
+      });
+
+      this.memberBadges.set(badgeMap);
+    } catch (error) {
+      console.error('Error fetching member badges:', error);
+    } finally {
+      this.loadingMemberBadges.set(false);
+    }
+  }
+
+  private checkForAngorProjectMemberBadge(event: NDKEvent): boolean {
+    if (!event.tags) return false;
+
+    return event.tags.some(tag => {
+      return tag[0] === 'a' &&
+        tag[1] &&
+        tag[1].includes('angor-project-member');
+    });
+  }
+
+  isMemberVerified(pubkey: string): boolean {
+    return this.memberBadges().get(pubkey) || false;
   }
 }
