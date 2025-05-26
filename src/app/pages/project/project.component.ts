@@ -992,10 +992,17 @@ export class ProjectComponent implements OnInit, OnDestroy {
   private checkForAngorProjectMemberBadge(event: NDKEvent): boolean {
     if (!event.tags) return false;
 
+    const projectPubkey = this.user?.pubkey;
+    
+    if (!projectPubkey) {
+      return false;
+    }
+
     return event.tags.some(tag => {
       return tag[0] === 'a' &&
         tag[1] &&
-        tag[1].includes('angor-project-member');
+        tag[1].includes('angor-project-member') &&
+        tag[1].includes(projectPubkey);
     });
   }
 
