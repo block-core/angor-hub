@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     @if (displayMode() === 'minimal') {
-      <a [href]="link()" target="_blank" rel="noopener noreferrer"
+      <a [href]="'https://nostr.at/' + npub" target="_blank" rel="noopener noreferrer"
          class="font-medium text-accent dark:text-white text-gray-700"
          [title]="profile()?.displayName || profile()?.name || formatNpub()">
         &#64;{{ profile()?.displayName || profile()?.name || formatNpub() }}
@@ -36,7 +36,7 @@ import { CommonModule } from '@angular/common';
 
         <!-- Info -->
         <div class="flex flex-col min-w-0 flex-1">
-          <a [href]="link()" target="_blank" rel="noopener noreferrer"
+          <a [href]="'https://nostr.at/' + npub" target="_blank" rel="noopener noreferrer"
              class="font-semibold text-accent hover:underline text-sm truncate"
              [title]="profile()?.displayName || profile()?.name || formatNpub()">
             {{ profile()?.displayName || profile()?.name || formatNpub() }}
@@ -53,8 +53,9 @@ import { CommonModule } from '@angular/common';
 })
 export class ProfileComponent {
   relay = inject(RelayService);
-  npub = input<string>();
-  link = input.required<string>();
+  // npub = input<string>();
+  // link = input.required<string>();
+  npub: string = '';
   pubkey = input<string>();
   displayMode = input<'full' | 'minimal'>('full'); 
   #pubkey: any = '';
@@ -66,24 +67,25 @@ export class ProfileComponent {
       const publicKey = this.pubkey();
       if (publicKey) {
         this.#pubkey = publicKey;
+        this.npub = nip19.npubEncode(publicKey);
         this.handleNpubChange(this.#pubkey);
       }
     });
 
-    effect(() => {
-      const currentNpub: any = this.npub();
-      if (!currentNpub) return;
+    // effect(() => {
+    //   const currentNpub: any = this.npub();
+    //   if (!currentNpub) return;
 
-      try {
-        const result = nip19.decode(currentNpub);
-        if (result.data) {
-          this.#pubkey = result.data as string;
-          this.handleNpubChange(this.#pubkey);
-        }
-      } catch (err) {
-        console.error('Error decoding npub:', err);
-      }
-    });
+    //   try {
+    //     const result = nip19.decode(currentNpub);
+    //     if (result.data) {
+    //       this.#pubkey = result.data as string;
+    //       this.handleNpubChange(this.#pubkey);
+    //     }
+    //   } catch (err) {
+    //     console.error('Error decoding npub:', err);
+    //   }
+    // });
 
     this.relay.profileUpdates.subscribe((event) => {
       if (event.pubkey == this.#pubkey) {
@@ -115,7 +117,7 @@ export class ProfileComponent {
   }
 
   formatNpub(): string {
-    const id = this.npub() || this.pubkey() || this.#pubkey;
+    const id = this.npub || this.pubkey() || this.#pubkey;
     if (!id) return 'Unknown';
 
     if (id.length > 16) {
@@ -126,7 +128,7 @@ export class ProfileComponent {
   }
 
   getRandomColor(): string {
-    const id = this.npub() || this.pubkey() || this.#pubkey || '';
+    const id = this.npub || this.pubkey() || this.#pubkey || '';
     let hash = 0;
 
     for (let i = 0; i < id.length; i++) {
@@ -151,7 +153,7 @@ export class ProfileComponent {
       return name.trim().charAt(0).toUpperCase();
     }
 
-    const id = this.npub() || this.pubkey() || this.#pubkey;
+    const id = this.npub || this.pubkey() || this.#pubkey;
     // Use a character from the ID if name is unavailable
     if (id && id.length > 2) return id.charAt(2).toUpperCase();
 

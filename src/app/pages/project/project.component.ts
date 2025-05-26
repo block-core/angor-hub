@@ -32,6 +32,7 @@ import { SafePipe } from '../../pipes/safe.pipe';  // Add the SafePipe import
 import { DenyService } from '../../services/deny.service';
 import { AboutContentComponent } from '../../components/about-content.component';
 import { nip19 } from 'nostr-tools';
+import { NPubPipe } from '../../pipes/npub.pipe';
 
 @Component({
   selector: 'app-project',
@@ -48,6 +49,7 @@ import { nip19 } from 'nostr-tools';
     SafeContentPipe,
     SafePipe,  // Add SafePipe to imports
     AboutContentComponent,
+    NPubPipe
   ],
   templateUrl: './project.component.html',
 })

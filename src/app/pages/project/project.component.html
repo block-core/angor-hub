@@ -302,7 +302,7 @@
                               <span class="material-icons text-white text-sm">verified</span>
                             </div>
                           }
-                          <app-profile [pubkey]="member" [link]="'https://nostr.at/' + member"></app-profile>
+                          <app-profile [pubkey]="member"></app-profile>
                         </div>
                       }
                     </div>
@@ -762,7 +762,7 @@
                 @for (update of updates(); track update.id) {
                   <div class="bg-surface-card rounded-xl shadow-sm p-6 sm:p-8 transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 max-w-full">
                     <div class="flex justify-between items-center mb-4 pb-3 border-b border-border flex-wrap gap-2">
-                      <app-profile [pubkey]="update.pubkey" [link]="'https://primal.net/p/' + update.pubkey"
+                      <app-profile [pubkey]="update.pubkey"
                         class="text-sm min-w-0 flex-grow"></app-profile>
                       <span class="text-sm text-text-secondary whitespace-nowrap">{{ update.created_at ?? 0 | ago }}</span>
                     </div>
@@ -801,7 +801,7 @@
                 @for (comment of comments(); track comment.id) {
                   <div class="bg-surface-card rounded-xl shadow-sm p-6 sm:p-8 transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 max-w-full">
                     <div class="flex justify-between items-start mb-3 pb-3 border-b border-border gap-4 flex-wrap">
-                      <app-profile [pubkey]="comment.pubkey" [link]="'https://primal.net/p/' + comment.pubkey"
+                      <app-profile [pubkey]="comment.pubkey"
                         class="text-sm flex-grow min-w-0"></app-profile>
                       <span class="text-sm text-text-secondary whitespace-nowrap">{{ comment.created_at ?? 0 | ago }}</span>
                     </div>
