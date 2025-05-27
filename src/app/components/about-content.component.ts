@@ -21,7 +21,7 @@ interface ContentSegment {
           }
           @case ('npub') {
             <!-- Use minimal profile display -->
-            <app-profile class="inline" [npub]="segment.value" [displayMode]="'minimal'"></app-profile>
+            <app-profile class="inline" [pubkey]="segment.value" [displayMode]="'minimal'"></app-profile>
           }
           @case ('hashtag') {
             <!-- Link hashtag to Primal search -->
