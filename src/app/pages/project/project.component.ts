@@ -557,7 +557,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
    * Determines if investment is currently possible (project has not ended AND not yet successful).
    */
   canInvest(): boolean {
-    return !this.isProjectEnded() && !this.isProjectSuccessful();
+    return !this.isProjectEnded();
   }
 
   getRemainingTimeText(expiryDate: number | undefined): string {
