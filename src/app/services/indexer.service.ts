@@ -76,19 +76,19 @@ export interface AddressBalance {
 export interface Transaction {
   id: string;
   hex?: string;
- 
+
 }
 
 export interface Block {
   hash: string;
   height: number;
- 
+
 }
 
 export interface NetworkStats {
   connections: number;
   blockHeight: number;
- 
+
 }
 
 @Injectable({
@@ -108,8 +108,8 @@ export class IndexerService {
   public projects = signal<IndexedProject[]>([]);
   public error = signal<string | null>(null);
   private network = inject(NetworkService);
-  
- 
+
+
   public indexers = signal<IndexerConfig>({
     mainnet: [
       { url: 'https://explorer.angor.io/', isPrimary: true },
@@ -120,7 +120,7 @@ export class IndexerService {
   });
 
   constructor() {
-   
+
     this.relay.profileUpdates.subscribe((update) => {
       this.updateProjectMetadata(update);
     });
@@ -129,16 +129,16 @@ export class IndexerService {
       this.updateProjectDetails(update);
     });
 
-   
+
     this.loadIndexerConfig();
-    
-   
+
+
     this.updateActiveIndexer();
 
-   
+
     this.denyService.loadDenyList();
   }
-  
+
   private loadIndexerConfig(): void {
     const savedConfig = localStorage.getItem('angor-indexers');
     if (savedConfig) {
@@ -147,20 +147,20 @@ export class IndexerService {
         this.indexers.set(config);
       } catch (error) {
         console.error('Failed to parse saved indexer config', error);
-       
+
       }
     }
   }
-  
+
   saveIndexerConfig(): void {
     localStorage.setItem('angor-indexers', JSON.stringify(this.indexers()));
     this.updateActiveIndexer();
   }
-  
+
   getIndexerConfig(): IndexerConfig {
     return this.indexers();
   }
-  
+
   getDefaultIndexerConfig(): IndexerConfig {
     return {
       mainnet: [
@@ -176,12 +176,12 @@ export class IndexerService {
     this.indexers.set(this.getDefaultIndexerConfig());
     this.saveIndexerConfig();
   }
-  
+
   setIndexerConfig(config: IndexerConfig): void {
     this.indexers.set(config);
     this.saveIndexerConfig();
   }
-  
+
   getPrimaryIndexerUrl(isMainnet: boolean): string {
     const config = this.indexers();
     const networkIndexers = isMainnet ? config.mainnet : config.testnet;
@@ -189,15 +189,15 @@ export class IndexerService {
     return primary ? primary.url : networkIndexers[0]?.url ||
       (isMainnet ? 'https://explorer.angor.io/' : 'https://tbtc.indexer.angor.io/');
   }
-  
+
   updateActiveIndexer(): void {
     const isMain = this.network.isMain();
     this.indexerUrl = this.getPrimaryIndexerUrl(isMain);
-    
-   
+
+
     this.resetProjects();
   }
-  
+
   setPrimaryIndexer(url: string, isMainnet: boolean): void {
     this.indexers.update(config => {
       const networkKey = isMainnet ? 'mainnet' : 'testnet';
@@ -211,69 +211,82 @@ export class IndexerService {
     });
     this.saveIndexerConfig();
   }
-  
+
   addIndexer(url: string, isMainnet: boolean): boolean {
-   
+
     let normalizedUrl = url;
     if (!normalizedUrl.endsWith('/')) {
       normalizedUrl += '/';
     }
-    
-   
+
+
     const networkKey = isMainnet ? 'mainnet' : 'testnet';
     const exists = this.indexers()[networkKey].some(indexer => indexer.url === normalizedUrl);
-    
+
     if (exists) {
       return false;
     }
-    
-   
+
+
     this.indexers.update(config => {
       const networkIndexers = config[networkKey];
       const isPrimary = networkIndexers.length === 0;
-      
+
       return {
         ...config,
         [networkKey]: [...networkIndexers, { url: normalizedUrl, isPrimary }]
       };
     });
-    
+
     this.saveIndexerConfig();
     return true;
   }
-  
+
   removeIndexer(url: string, isMainnet: boolean): void {
     const networkKey = isMainnet ? 'mainnet' : 'testnet';
-    
+
     this.indexers.update(config => {
-     
+
       const filteredIndexers = config[networkKey].filter(indexer => indexer.url !== url);
-      
-     
+
+
       if (filteredIndexers.length > 0 && !filteredIndexers.some(i => i.isPrimary)) {
         filteredIndexers[0].isPrimary = true;
       }
-      
+
       return {
         ...config,
         [networkKey]: filteredIndexers
       };
     });
-    
+
     this.saveIndexerConfig();
   }
-  
+
   async testIndexerConnection(url: string): Promise<boolean> {
-    try {
-      const response = await fetch(`${url}api/stats/heartbeat`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(5000)
-      });
-      return response.ok;
-    } catch {
-      return false;
+    const endpoints = ['api/stats/heartbeat', 'api/mempool'];
+
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(`${url}${endpoint}`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' },
+          signal: AbortSignal.timeout(5000)
+        });
+
+        if (response.ok) {
+          return true;
+        }
+      }
+      catch (error) {
+        if (error instanceof Error) {
+          console.debug(`Connection test failed for ${endpoint}:`, error.message);
+        }
+        return false;
+      }
     }
+
+    return false;
   }
 
   private async fetchJson<T>(
@@ -296,7 +309,7 @@ export class IndexerService {
     this.projects.update((projects) =>
       projects.map((project) => {
         if (project.founderKey === pubkey) {
-         
+
           if (
             !project.metadata_created_at ||
             event.created_at! > project.metadata_created_at
@@ -317,7 +330,7 @@ export class IndexerService {
     this.projects.update((projects) =>
       projects.map((project) => {
         if (project.projectIdentifier === details.projectIdentifier) {
-         
+
           if (
             !project.details_created_at ||
             details.created_at > project.details_created_at
@@ -347,14 +360,14 @@ export class IndexerService {
     }
 
     try {
-     
+
       await this.denyService.loadDenyList();
 
       this.loading.set(true);
       this.error.set(null);
       let limit = this.LIMIT;
 
-     
+
       if (this.offset !== -1000 && this.offset < 0) {
         limit = this.LIMIT + this.offset;
         console.log('LIMIT SUBSTRACTED:', limit);
@@ -362,7 +375,7 @@ export class IndexerService {
         this.totalProjectsFetched = true;
       }
 
-     
+
       if (limit == 0) {
         this.loading.set(false);
         return;
@@ -375,42 +388,41 @@ export class IndexerService {
         params.append('offset', this.offset.toString());
       }
 
-      const url = `${
-        this.indexerUrl
-      }api/query/Angor/projects?${params.toString()}`;
-     
+      const url = `${this.indexerUrl
+        }api/query/Angor/projects?${params.toString()}`;
+
 
       const { data: response, headers } = await this.fetchJson<
         IndexedProject[]
       >(url);
 
       if (Array.isArray(response) && response.length > 0) {
-       
+
         const filteredResponse: IndexedProject[] = [];
         for (const item of response) {
-         
+
           const isDenied = await this.denyService.isEventDenied(item.projectIdentifier);
           if (!isDenied) {
             filteredResponse.push(item);
           }
         }
-      
+
         if (filteredResponse.length === 0 && response.length > 0) {
-           console.log(`All ${response.length} fetched projects were denied.`);
+          console.log(`All ${response.length} fetched projects were denied.`);
         }
 
         if (filteredResponse.length > 0) {
           if (this.offset === -1000) {
             this.totalItems = parseInt(headers.get('pagination-total') || '0');
-           
-           
-            this.offset = Math.max(0, this.totalItems - limit - limit); 
+
+
+            this.offset = Math.max(0, this.totalItems - limit - limit);
           } else {
             const nextOffset = this.offset - this.LIMIT;
             this.offset = nextOffset;
           }
 
-         
+
           this.projects.update((existing) => {
             const merged = [...existing];
             const existingIds = new Set(existing.map(p => p.projectIdentifier));
@@ -431,18 +443,18 @@ export class IndexerService {
             this.relay.fetchListData(eventIds);
           }
         } else {
-          
-           if (this.offset === -1000) {
-              this.totalItems = parseInt(headers.get('pagination-total') || '0');
-              this.offset = Math.max(0, this.totalItems - limit - limit);
-           } else {
-              const nextOffset = this.offset - this.LIMIT;
-              this.offset = nextOffset;
-           }
-          
-           if (this.offset < 0) {
-              this.totalProjectsFetched = true;
-           }
+
+          if (this.offset === -1000) {
+            this.totalItems = parseInt(headers.get('pagination-total') || '0');
+            this.offset = Math.max(0, this.totalItems - limit - limit);
+          } else {
+            const nextOffset = this.offset - this.LIMIT;
+            this.offset = nextOffset;
+          }
+
+          if (this.offset < 0) {
+            this.totalProjectsFetched = true;
+          }
         }
 
       } else {
@@ -460,9 +472,9 @@ export class IndexerService {
 
   private async fetchProjectsBatch(offset: number, limit: number) {
     console.log('fetchProjectsBatch');
-   
-   
-   
+
+
+
     if (offset < limit) {
       console.log('LIMIT HIGHER THAN OFFSET!!', offset, limit);
       limit = offset;
@@ -481,7 +493,7 @@ export class IndexerService {
   }
 
   async fetchProject(id: string): Promise<IndexedProject | null> {
-   
+
     await this.denyService.loadDenyList();
     if (await this.denyService.isEventDenied(id)) {
       this.error.set(`Project ${id} is not available.`);
@@ -494,10 +506,10 @@ export class IndexerService {
         `${this.indexerUrl}api/query/Angor/projects/${id}`
       );
       if (project && project.data) {
-       
+
         if (await this.denyService.isEventDenied(project.data.projectIdentifier)) {
-           this.error.set(`Project ${id} is not available.`);
-           return null;
+          this.error.set(`Project ${id} is not available.`);
+          return null;
         }
       }
 
@@ -516,11 +528,11 @@ export class IndexerService {
     try {
       this.loading.set(true);
       const url = `${this.indexerUrl}api/query/Angor/projects/${id}/stats`;
-     
+
 
       const stats = (await this.fetchJson<ProjectStats>(url)).data;
 
-     
+
       stats.amountInvested = stats.amountInvested;
       stats.amountSpentSoFarByFounder = stats.amountSpentSoFarByFounder;
       stats.amountInPenalties = stats.amountInPenalties;
@@ -654,9 +666,8 @@ export class IndexerService {
 
   async getBlocks(offset?: number, limit = 10): Promise<Block[]> {
     try {
-      const url = `${this.indexerUrl}api/query/block?${
-        offset !== undefined ? `offset=${offset}&` : ''
-      }limit=${limit}`;
+      const url = `${this.indexerUrl}api/query/block?${offset !== undefined ? `offset=${offset}&` : ''
+        }limit=${limit}`;
       return (await this.fetchJson<Block[]>(url)).data;
     } catch (err) {
       this.error.set(
