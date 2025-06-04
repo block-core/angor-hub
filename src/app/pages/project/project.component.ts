@@ -49,7 +49,6 @@ import { NPubPipe } from '../../pipes/npub.pipe';
     SafeContentPipe,
     SafePipe,  // Add SafePipe to imports
     AboutContentComponent,
-    NPubPipe
   ],
   templateUrl: './project.component.html',
 })
