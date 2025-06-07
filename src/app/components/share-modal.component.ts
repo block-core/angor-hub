@@ -272,7 +272,7 @@ ${this.getDisplayDescription()}
 
 You can view it here: ${url}
 
-Angor is a decentralized crowdfunding protocol built on Bitcoin and Nostr.
+Angor is a P2P funding protocol built on Bitcoin and Nostr.
 
 Best regards`;
 
