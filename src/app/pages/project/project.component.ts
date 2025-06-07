@@ -31,12 +31,13 @@ import { SafeContentPipe } from '../../pipes/safe-content.pipe';
 import { SafePipe } from '../../pipes/safe.pipe';  // Add the SafePipe import
 import { DenyService } from '../../services/deny.service';
 import { AboutContentComponent } from '../../components/about-content.component';
+import { ShareModalComponent, ShareData } from '../../components/share-modal.component';
 import { nip19 } from 'nostr-tools';
 import { NPubPipe } from '../../pipes/npub.pipe';
 
 @Component({
   selector: 'app-project',
-  standalone: true,
+  standalone: true,  
   imports: [
     RouterModule,
     CommonModule,
@@ -49,6 +50,7 @@ import { NPubPipe } from '../../pipes/npub.pipe';
     SafeContentPipe,
     SafePipe,  // Add SafePipe to imports
     AboutContentComponent,
+    ShareModalComponent,
   ],
   templateUrl: './project.component.html',
 })
@@ -97,11 +99,40 @@ export class ProjectComponent implements OnInit, OnDestroy {
   showImagePopup = false;
   currentSlide = 0;
   selectedImage: string | null = null;
-
   failedBannerImage = signal<boolean>(false);
   failedProfileImage = signal<boolean>(false);
   failedMediaImages = signal<Set<string>>(new Set<string>());
-  failedMediaVideos = signal<Set<string>>(new Set<string>()); // New signal for video errors
+  failedMediaVideos = signal<Set<string>>(new Set<string>()); // New signal for video errors  
+  showShareModal = signal<boolean>(false);
+
+  shareData = computed<ShareData>(() => {
+    const project = this.project();
+    if (!project) {
+      return {
+        title: 'Project on Angor Hub',
+        description: 'Check out this project on Angor Hub - A decentralized crowdfunding platform',
+        url: `${window.location.origin}/project/${this.projectId}`,
+        projectId: this.projectId
+      };
+    }
+
+    const about = project.metadata?.about;
+    let description = 'Check out this project on Angor Hub';
+    if (about && about.length > 0) {
+      const plainText = about.replace(/[#*_`~\[\]()]/g, '').replace(/<[^>]*>/g, '');
+      description = plainText.length > 100 ? plainText.substring(0, 100) + '...' : plainText;
+    } else {
+      description = `${project.metadata?.name || 'This project'} on Angor Hub - A decentralized crowdfunding platform`;
+    }
+
+    return {
+      title: project.metadata?.name || 'Project on Angor Hub',
+      description: description,
+      url: `${window.location.origin}/project/${this.projectId}`,
+      imageUrl: project.metadata?.['picture'],
+      projectId: this.projectId
+    };
+  });
 
   public projectDuration = computed(() => {
     const start = this.project()?.details?.startDate;
@@ -1003,9 +1034,16 @@ export class ProjectComponent implements OnInit, OnDestroy {
         tag[1].includes('angor-project-member') &&
         tag[1].includes(projectPubkey);
     });
-  }
-
+  }  
   isMemberVerified(pubkey: string): boolean {
     return this.memberBadges().get(pubkey) || false;
+  }
+
+  openShareModal(): void {
+    this.showShareModal.set(true);
+  }
+  
+  closeShareModal(): void {
+    this.showShareModal.set(false);
   }
 }

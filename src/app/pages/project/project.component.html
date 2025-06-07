@@ -83,7 +83,7 @@
       <div class="flex flex-col gap-3 min-w-0 flex-1 items-center md:items-start text-center md:text-left mt-4 md:mt-0 max-w-full w-full">
         <h1 class="m-0 text-2xl sm:text-3xl md:text-4xl font-bold break-words w-full line-clamp-2">
           {{ project()?.metadata?.name || projectId }}
-        </h1>
+        </h1>        
         <div class="flex gap-3 flex-shrink-0 self-center md:self-start mt-2">
           <button [title]="isFavorite() ? 'Remove from bookmarks' : 'Add to bookmarks'" (click)="toggleFavorite()"
             class="flex items-center justify-center w-10 h-10 rounded-full cursor-pointer transition-all duration-300 ease-in-out bg-surface-hover hover:bg-surface-ground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface-card group"
@@ -93,6 +93,13 @@
               [class.text-yellow-500]="isFavorite()" [class.text-text-secondary]="!isFavorite()"
               [class.group-hover:text-yellow-600]="isFavorite()" [class.group-hover:text-blue-500]="!isFavorite()">
               {{ isFavorite() ? "bookmark" : "bookmark_border" }}
+            </span>
+          </button>
+
+          <button title="Share this project" (click)="openShareModal()"
+            class="flex items-center justify-center w-10 h-10 rounded-full cursor-pointer transition-all duration-300 ease-in-out bg-surface-hover hover:bg-surface-ground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface-card focus:ring-blue-500 group">
+            <span class="material-icons text-xl text-text-secondary group-hover:text-blue-500 transition-transform duration-300 group-hover:scale-110">
+              share
             </span>
           </button>
 
@@ -822,5 +829,11 @@
   @if (project() && showImagePopup && selectedImage) {
     <app-image-popup [imageUrl]="selectedImage" altText="Project media"
       (close)="showImagePopup = false; selectedImage = null"></app-image-popup>
-  }
+  }  
+
+  <app-share-modal 
+    [shareData]="shareData()"
+    [isOpen]="showShareModal"
+    (closeModal)="closeShareModal()">
+  </app-share-modal>
 </div>
