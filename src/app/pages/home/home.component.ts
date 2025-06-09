@@ -5,6 +5,7 @@ import { NetworkService } from '../../services/network.service';
 import { BitcoinInfoService } from '../../services/bitcoin-info.service';
 import { BlogService, BlogPost } from '../../services/blog.service';
 import { TitleService } from '../../services/title.service';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-home',
@@ -18,6 +19,7 @@ export class HomeComponent implements OnInit {
   bitcoinInfo = inject(BitcoinInfoService);
   blogService = inject(BlogService);
   titleService = inject(TitleService);
+  themeService = inject(ThemeService);
  
   datePipe = inject(DatePipe); 
 
