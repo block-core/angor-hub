@@ -351,23 +351,23 @@
                   } @else {
                     {{ project.projectIdentifier | slice:0:12 }}...
                   }
-                </h3>
-
+                </h3>                
+                
                 <div class="flex items-center gap-2 text-xs text-text-secondary mb-3">
                   <span class="material-icons text-sm text-primary">event</span>
                   @if (isProjectNotStarted(project.details?.startDate)) {
                     @if (project.details) {
-                      <span>Starts {{ project.details.startDate | ago }}</span>
+                      <span>Investment starts {{ project.details.startDate | ago }}</span>
                     }
-                  } @else if (isProjectEnded(project.details?.expiryDate)) {
+                  } @else if (isProjectEnded(project.details?.endDate)) {
                     @if (project.details) {
-                      <span>Ended {{ project.details.expiryDate | ago }}</span>
+                      <span>Investment ended {{ project.details.endDate | ago }}</span>
                     }
                   } @else {
                     @if (project.details) {
-                      <span>{{ getRemainingTimeText(project.details.expiryDate) }}</span>
+                      <span>Investment {{ getRemainingTimeText(project.details.endDate) }}</span>
                     } @else {
-                      <span>Ongoing</span>
+                      <span>Ongoing investment</span>
                     }
                   }
                 </div>

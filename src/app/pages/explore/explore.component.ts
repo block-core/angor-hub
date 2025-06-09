@@ -357,34 +357,27 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     const targetAmount = project.details?.targetAmount ?? 0;
     if (targetAmount === 0) return false;
     return amountInvested >= targetAmount;
-  }
-
-  getRemainingTimeText(expiryDate: number | undefined): string {
-    if (!expiryDate) return 'Ending soon';
+  } 
+  
+  getRemainingTimeText(endDate: number | undefined): string {
+    if (!endDate) return 'period not specified';
+    
     const now = Date.now();
-    const expiryMillis = expiryDate * 1000;
-    const diffMillis = expiryMillis - now;
-    if (diffMillis <= 0) return 'Ended';
-    const diffSeconds = Math.floor(diffMillis / 1000);
-    const diffMinutes = Math.floor(diffSeconds / 60);
-    const diffHours = Math.floor(diffMinutes / 60);
-    const diffDays = Math.floor(diffHours / 24);
-    const diffWeeks = Math.floor(diffDays / 7);
-    const diffMonths = Math.floor(diffDays / 30);
-    if (diffDays < 1) {
-      if (diffHours > 1) return `Ends in ${diffHours} hours`;
-      else if (diffHours === 1) return `Ends in 1 hour`;
-      else if (diffMinutes > 1) return `Ends in ${diffMinutes} minutes`;
-      else return 'Ending soon';
-    } else if (diffDays === 1) return '1 day remaining';
-    else if (diffDays < 7) return `${diffDays} days remaining`;
-    else if (diffWeeks === 1) return 'About a week remaining';
-    else if (diffWeeks < 4) return `About ${diffWeeks} weeks remaining`;
-    else if (diffMonths === 1) return 'About a month remaining';
-    else if (diffMonths < 12) return `About ${diffMonths} months remaining`;
-    else {
-      const diffYears = Math.floor(diffMonths / 12);
-      return diffYears === 1 ? 'About a year remaining' : `About ${diffYears} years remaining`;
+    const endMillis = endDate * 1000;
+    const diffMillis = endMillis - now;
+    
+    if (diffMillis <= 0) {
+      return 'period has ended';
+    }
+    
+    const diffDays = Math.ceil(diffMillis / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return 'ends today';
+    } else if (diffDays === 1) {
+      return 'ends in 1 day';
+    } else {
+      return `ends in ${diffDays} days`;
     }
   }
 
