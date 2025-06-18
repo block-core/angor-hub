@@ -467,7 +467,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
             project.media_created_at = event.created_at;
           } else if (tag == 'angor:members') {
             // Currently the Angor project members are stored as npubs, this may change in the future.
-            const npubs = JSON.parse(event.content).pubkeys;
+            const npubs = JSON.parse(event.content).pubkeys.filter((pubkey: string) => pubkey && pubkey.trim() !== '');
 
             if (npubs.length > 0) {
               if (npubs[0].startsWith('npub')) {

@@ -1,4 +1,4 @@
-import { Component, inject, input, effect, signal } from '@angular/core';
+import { Component, inject, input, effect, signal, untracked } from '@angular/core';
 import { RelayService } from '../services/relay.service';
 import { nip19 } from 'nostr-tools';
 import { NDKUserProfile } from '@nostr-dev-kit/ndk';
@@ -49,7 +49,7 @@ import { CommonModule } from '@angular/common';
         </div>
       </div>
     }
-  `, 
+  `,
 })
 export class ProfileComponent {
   relay = inject(RelayService);
@@ -57,19 +57,31 @@ export class ProfileComponent {
   // link = input.required<string>();
   npub: string = '';
   pubkey = input<string>();
-  displayMode = input<'full' | 'minimal'>('full'); 
+  displayMode = input<'full' | 'minimal'>('full');
   #pubkey: any = '';
   profile = signal<NDKUserProfile | null>(null);
   imageError = signal<boolean>(false);
 
   constructor() {
-    effect(() => {
+    effect(async () => {
       const publicKey = this.pubkey();
-      if (publicKey) {
+
+      if (!publicKey) {
+        this.#pubkey = '';
+        this.npub = '';
+        this.profile.set(null);
+        return;
+      }
+
+      if (publicKey.startsWith('npub')) {
+        this.npub = publicKey;
+        this.#pubkey = nip19.decode(publicKey).data as string;
+      } else {
         this.#pubkey = publicKey;
         this.npub = nip19.npubEncode(publicKey);
-        this.handleNpubChange(this.#pubkey);
       }
+
+      await this.handleNpubChange(this.#pubkey);
     });
 
     // effect(() => {
@@ -95,8 +107,8 @@ export class ProfileComponent {
     });
   }
 
-  private async handleNpubChange(npub: string) {
-    await this.relay.fetchProfile([npub]);
+  private async handleNpubChange(pubkey: string) {
+    await this.relay.fetchProfile([pubkey]);
   }
 
   handleImageError(event: Event) {
@@ -107,17 +119,17 @@ export class ProfileComponent {
 
   formatNip05(nip05?: string): string {
     if (!nip05) return '';
-    
+
     // If the NIP-05 starts with an underscore, remove it
     if (nip05.startsWith('_@')) {
       return nip05.substring(1); // Remove the underscore
     }
-    
+
     return nip05;
   }
 
   formatNpub(): string {
-    const id = this.npub || this.pubkey() || this.#pubkey;
+    const id = this.npub || this.#pubkey;
     if (!id) return 'Unknown';
 
     if (id.length > 16) {
@@ -128,7 +140,7 @@ export class ProfileComponent {
   }
 
   getRandomColor(): string {
-    const id = this.npub || this.pubkey() || this.#pubkey || '';
+    const id = this.npub || this.#pubkey || '';
     let hash = 0;
 
     for (let i = 0; i < id.length; i++) {
@@ -153,7 +165,7 @@ export class ProfileComponent {
       return name.trim().charAt(0).toUpperCase();
     }
 
-    const id = this.npub || this.pubkey() || this.#pubkey;
+    const id = this.npub || this.#pubkey;
     // Use a character from the ID if name is unavailable
     if (id && id.length > 2) return id.charAt(2).toUpperCase();
 
