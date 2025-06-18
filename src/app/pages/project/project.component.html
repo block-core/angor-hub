@@ -213,11 +213,9 @@
         }
       </div>
 
-
       <div class="flex flex-col gap-6 flex-1 max-w-full min-w-0">
         @if (activeTab === 'project') {
           <div class="flex flex-col lg:flex-row gap-6 max-w-full">
-
             <div class="flex flex-col gap-6 w-full lg:w-2/3 min-w-0 max-w-full">
               @if (project()?.content) {
                 @if (project()?.media?.length) {
@@ -291,6 +289,13 @@
                     class="prose prose-sm sm:prose-base max-w-none prose-headings:mt-6 prose-headings:mb-3 prose-p:mb-4 prose-p:leading-relaxed prose-img:rounded-md prose-img:my-5 prose-code:bg-surface-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surface-hover prose-pre:p-4 prose-pre:rounded-md prose-pre:overflow-x-auto prose-a:text-accent prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-4 prose-blockquote:border-accent prose-blockquote:pl-4 prose-blockquote:ml-0 prose-blockquote:text-text-secondary dark:prose-invert dark:prose-headings:text-text dark:prose-p:text-text-secondary dark:prose-a:text-accent-light dark:prose-blockquote:text-text-secondary dark:prose-code:bg-surface-ground dark:prose-pre:bg-surface-ground">
                   </markdown>
                 </div>
+              } @else {
+                <div class="bg-surface-card rounded-xl shadow-sm p-8 sm:p-12 text-center text-text-secondary max-w-full">
+                  <span class="material-icons text-6xl mb-4 opacity-50">description</span>
+                  <p class="text-base sm:text-lg">No project description provided.</p>
+                </div>
+              }
+
                 @if (project()?.members?.length) {
                   <div class="bg-surface-card rounded-xl shadow-sm p-6 sm:p-8 max-w-full">
                     <h2 class="mt-0 mb-4 pb-3 border-b border-border text-xl sm:text-2xl md:text-3xl font-semibold">
@@ -315,12 +320,6 @@
                     </div>
                   </div>
                 }
-              } @else {
-                <div class="bg-surface-card rounded-xl shadow-sm p-8 sm:p-12 text-center text-text-secondary max-w-full">
-                  <span class="material-icons text-6xl mb-4 opacity-50">description</span>
-                  <p class="text-base sm:text-lg">No project description provided.</p>
-                </div>
-              }
             </div>
 
 
