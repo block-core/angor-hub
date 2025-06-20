@@ -37,6 +37,7 @@ body {
   background-color: var(--background); 
   color: var(--text); 
   font-family: 'Inter', sans-serif; 
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 :root {

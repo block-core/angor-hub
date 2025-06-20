@@ -17,11 +17,97 @@
     <meta property="og:url" content="https://hub.angor.io">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Angor Hub is a Nostr client that is customized around the Angor protocol, a decentralized crowdfunding platform.">
-    
-    <base href="/" />
+      <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    
+    <style>
+      :root { 
+        --accent: #086c81; 
+        --accent-light: #0ab6d9; 
+        --accent-dark: #022229; 
+        --text: #cbdde1; 
+        --text-secondary: #a8b8bc; 
+        --surface-card: #043a4a; 
+        --surface-ground: #022229; 
+        --surface-hover: #065366; 
+        --border: #2a5f6a; 
+        --header-bg: #086c81; 
+        --header-text: #cbdde1; 
+        --bitcoin-mainnet: #f7931a;
+        --bitcoin-testnet: #28c025;
+        --warning: #f20000;
+        --success: #0f9d58;
+        --background: var(--surface-ground); 
+      }
+
+      html[data-theme="light"] {
+        --text: #022229; 
+        --text-secondary: #547c85; 
+        --surface-card: #ffffff; 
+        --surface-ground: #f8fafa; 
+        --surface-hover: #eef4f5; 
+        --border: #cbdde1; 
+        --header-bg: #ffffff; 
+        --header-text: #022229; 
+        --background: var(--surface-ground); 
+      }
+
+      html {
+        transition: none !important;
+      }
+
+      body {
+        background-color: var(--background);
+        color: var(--text);
+        font-family: system-ui, -apple-system, sans-serif;
+        margin: 0;
+        padding: 0;
+        transition: none !important;
+      }
+
+      app-root {
+        display: block;
+        min-height: 100vh;
+        background-color: var(--background);
+      }
+
+      app-root:empty {
+        background-color: var(--background);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+
+      app-root:empty::before {
+        content: '';
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--accent-light);
+        border-top: 3px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+
+    <script>
+      (function() {
+        let theme = localStorage.getItem('angor-theme') || 'system';
+        
+        if (theme === 'system') {
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+    
   </head>
   <body>
     <app-root></app-root>

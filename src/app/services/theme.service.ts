@@ -27,8 +27,7 @@ export class ThemeService {
       this.applyTheme(this.effectiveTheme());
     });
   }
-  
-  private initializeTheme(): void {
+    private initializeTheme(): void {
     try {
       // Set up system preference detection
       this.systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
@@ -42,6 +41,7 @@ export class ThemeService {
       
       // Get theme from localStorage
       const savedTheme = localStorage.getItem('angor-theme') as ThemeType | null;
+      const currentDOMTheme = this.document.documentElement.getAttribute('data-theme') as 'light' | 'dark';
       
       if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system')) {
         this.currentTheme.set(savedTheme);
@@ -52,6 +52,10 @@ export class ThemeService {
       
       // Update the effective theme based on current selection
       this.updateEffectiveTheme();
+      
+      if (currentDOMTheme && this.effectiveTheme() !== currentDOMTheme) {
+        this.effectiveTheme.set(currentDOMTheme);
+      }
       
     } catch (e) {
       console.error('Error initializing theme:', e);
@@ -88,8 +92,19 @@ export class ThemeService {
       console.error('Failed to save theme preference:', e);
     }
   }
-  
-  private applyTheme(theme: 'light' | 'dark'): void {
+    private applyTheme(theme: 'light' | 'dark'): void {
+    if (!this.document.documentElement.hasAttribute('data-theme-initialized')) {
+      this.document.documentElement.setAttribute('data-theme-initialized', 'true');
+      setTimeout(() => {
+        const style = this.document.createElement('style');
+        style.textContent = `
+          html { transition: background-color 0.2s ease, color 0.2s ease; }
+          * { transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+        `;
+        this.document.head.appendChild(style);
+      }, 100);
+    }
+    
     this.document.documentElement.setAttribute('data-theme', theme);
   }
   
