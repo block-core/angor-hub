@@ -116,7 +116,10 @@ export class IndexerService {
       { url: 'https://fulcrum.angor.online/', isPrimary: false },
       { url: 'https://electrs.angor.online/', isPrimary: false }
     ],
-    testnet: [{ url: 'https://tbtc.indexer.angor.io/', isPrimary: true }]
+    testnet: [
+      { url: 'https://tbtc.indexer.angor.io/', isPrimary: false },
+      { url: 'https://signet.angor.online/', isPrimary: true }
+    ]
   });
 
   constructor() {
