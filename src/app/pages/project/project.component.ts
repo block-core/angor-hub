@@ -735,6 +735,19 @@ export class ProjectComponent implements OnInit, OnDestroy {
       .replace(/\/+$/, '');
   }
 
+  // Add method to get proper website URL with protocol
+  getWebsiteUrl(website?: string): string {
+    if (!website) return '';
+    
+    // If the URL already starts with http:// or https://, return as is
+    if (website.match(/^https?:\/\//)) {
+      return website;
+    }
+    
+    // Otherwise, add https:// prefix (default to secure)
+    return `https://${website}`;
+  }
+
   prevSlide() {
     if (!this.project()?.media) return;
     this.currentSlide =
