@@ -508,17 +508,17 @@
                 </ul>
               </div>
               @if (project()?.details?.stages?.length) {
-                <div class="bg-surface-card rounded-xl shadow-sm p-6 sm:p-8 max-w-full">
+                <div class="bg-surface-card rounded-xl shadow-sm p-6 max-w-full">
                   <h3 class="mt-0 mb-4 pb-3 border-b border-border text-lg sm:text-xl font-semibold">Funding Stages</h3>
                   <div class="relative">
                     @for (stage of project()?.details?.stages; track $index; let isLast = $last) {
-                      <div class="relative pl-10 pb-6">
+                      <div class="relative pl-10 pb-7">
                         @if (!isLast) {
                           <div class="absolute top-2 left-[14px] w-0.5 h-full"
-                            [class]="isStageCompleted($index) ? 'bg-accent' : 'bg-border'"></div>
+                            [class]="isStageCompleted($index + 1) ? 'bg-green-600' : isLineToNextStageActive($index) ? 'bg-yellow-500' : 'bg-border'"></div>
                         }
                         <div class="absolute top-0 left-0 w-8 h-8 rounded-full z-[1] border-4 flex items-center justify-center"
-                          [class]="isStageCompleted($index) ? 'bg-accent border-surface-card' : isCurrentStage($index) ? 'bg-yellow-500 border-surface-card' : 'bg-surface-hover border-surface-card'">
+                          [class]="isStageCompleted($index) ? 'bg-green-600 border-surface-card' : (isCurrentStage($index) && currentTime >= ((project()?.details?.stages?.[$index]?.releaseDate ?? 0) * 1000)) ? 'bg-yellow-500 border-surface-card' : 'bg-surface-hover border-surface-card'">
                           @if (isStageCompleted($index)) {
                             <span class="material-icons text-white text-sm">check</span>
                           }
@@ -532,13 +532,13 @@
                             </div>
                           </div>
                           <div class="flex items-end gap-2 mb-2">
-                            <div class="text-lg sm:text-xl font-bold" [class]="isStageCompleted($index) ? 'text-accent' : 'text-text'">{{ stage.amountToRelease }}%</div>
-                            <div class="text-sm text-text-secondary">({{ calculateStageAmount(stage.amountToRelease) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }})</div>
+                            <div class="text-sm sm:text-normal font-bold mr-2" [class]="isStageCompleted($index) ? 'text-green-600' : isCurrentStage($index) ? 'text-yellow-500' : 'text-gray-400'">{{ stage.amountToRelease }}%</div>
+                            <div class="text-xs sm:text-sm text-text-secondary">({{ calculateStageAmount(stage.amountToRelease) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }})</div>
                           </div>
                           <div class="relative h-2 bg-surface-hover rounded-full overflow-hidden mb-2">
                             <div class="absolute top-0 left-0 h-full transition-all duration-500 ease-out"
                               [style.width.%]="isStageCompleted($index) ? 100 : isCurrentStage($index) ? getCurrentStageProgress() : 0"
-                              [class]="isStageCompleted($index) ? 'bg-accent' : isCurrentStage($index) ? 'bg-yellow-500' : ''">
+                              [class]="isStageCompleted($index) ? 'bg-green-600' : isCurrentStage($index) ? 'bg-yellow-500' : ''">
                             </div>
                           </div>
                           <div class="flex justify-between text-sm">
@@ -551,11 +551,11 @@
                   </div>
                   <div class="mt-4 pt-4 border-t border-border">
                     <div class="flex justify-between items-center text-sm">
-                      <div class="text-text-secondary">Overall Progress</div>
-                      <div class="font-medium">{{ getOverallStageProgress() }}%</div>
+                      <div class="text-gray-400">Overall Progress</div>
+                      <div class="font-medium text-green-600">{{ getOverallStageProgress() }}%</div>
                     </div>
                     <div class="relative h-2 bg-surface-hover rounded-full overflow-hidden mt-2">
-                      <div class="absolute top-0 left-0 h-full bg-accent transition-all duration-500 ease-out"
+                      <div class="absolute top-0 left-0 h-full bg-green-600 transition-all duration-500 ease-out"
                         [style.width.%]="getOverallStageProgress()"></div>
                     </div>
                   </div>

@@ -319,6 +319,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
       }));
   }
 
+  public currentTime: number = Date.now();
+
   async ngOnInit() {
     window.scrollTo(0, 0);
 
@@ -1045,5 +1047,15 @@ export class ProjectComponent implements OnInit, OnDestroy {
   
   closeShareModal(): void {
     this.showShareModal.set(false);
+  }
+
+  //To highlight the line before the current stage
+  isLineToNextStageActive(stageIndex: number): boolean {
+    const stages = this.project()?.details?.stages;
+    if (!stages) return false;
+    const now = Date.now();
+    const currentStage = stages[stageIndex].releaseDate * 1000;
+    const nextStage = stages[stageIndex + 1].releaseDate * 1000;
+    return now > currentStage && now < nextStage;
   }
 }
