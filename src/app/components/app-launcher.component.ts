@@ -11,7 +11,7 @@ import { RouterLink } from '@angular/router';
       <a class="cursor-pointer group" (click)="toggleAppMenu($event)">
         <img src="images/logo-text.svg" alt="Angor Menu" class="h-8 w-auto transition-all duration-300 group-hover:scale-105 group-hover:brightness-125">
       </a>
-      @if (isAppMenuOpen()) {
+      @if (isAppMenuOpen() && hasBeenClicked()) {
         <div
           class="absolute top-full left-0 mt-2 w-80 rounded-lg border border-border bg-surface-card shadow-xl z-[1000]"
           (click)="$event.stopPropagation()">
@@ -66,28 +66,36 @@ import { RouterLink } from '@angular/router';
 })
 export class AppLauncherComponent {
   isAppMenuOpen = signal<boolean>(false);
+  hasBeenClicked = signal<boolean>(false);
 
   toggleAppMenu(event: Event) {
     event.preventDefault();
     event.stopPropagation(); 
+    
+    if (!this.hasBeenClicked()) {
+      this.hasBeenClicked.set(true);
+    }
+    
     this.isAppMenuOpen.update(value => !value);
   }
 
   closeMenu() {
-    this.isAppMenuOpen.set(false);
+    if (this.hasBeenClicked()) {
+      this.isAppMenuOpen.set(false);
+    }
   }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {
     const hostElement = (event.target as HTMLElement).closest('app-launcher');
-    if (!hostElement && this.isAppMenuOpen()) { 
+    if (!hostElement && this.isAppMenuOpen() && this.hasBeenClicked()) { 
         this.isAppMenuOpen.set(false);
     }
   }
 
   @HostListener('window:scroll')
   onWindowScroll() {
-    if (this.isAppMenuOpen()) {
+    if (this.isAppMenuOpen() && this.hasBeenClicked()) {
       this.isAppMenuOpen.set(false);
     }
   }
