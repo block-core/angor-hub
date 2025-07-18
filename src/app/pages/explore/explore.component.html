@@ -1,4 +1,4 @@
-<section class="container mx-auto px-4 pt-12 pb-16 relative overflow-hidden">
+<section class="container mx-auto px-4 pt-8 pb-8 relative overflow-hidden">
   <div class="absolute inset-0 z-0 pointer-events-none">
     <div class="absolute top-0 left-0 w-64 h-64 bg-primary/10 rounded-full filter blur-3xl animate-pulse-slow"></div>
     <div class="absolute bottom-0 right-0 w-96 h-96 bg-bitcoin-mainnet/10 rounded-full filter blur-3xl animate-float"></div>
@@ -14,21 +14,6 @@
 
   
   <div class="relative z-10 text-center">
-    @if (networkService.isMain()) {
-      <div
-        class="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-bitcoin-mainnet/15 text-bitcoin-mainnet backdrop-blur-md hover:bg-bitcoin-mainnet/25 transition-all duration-300 animate-in fade-in zoom-in duration-500"
-      >
-        <span class="material-icons text-xl">currency_bitcoin</span>
-        <span class="font-semibold text-sm uppercase tracking-wide">Bitcoin Mainnet</span>
-      </div>
-    } @else {
-      <div
-        class="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-bitcoin-testnet/20 text-bitcoin-testnet backdrop-blur-md hover:bg-bitcoin-testnet/30 transition-all duration-300 animate-in fade-in zoom-in duration-500"
-      >
-        <span class="material-icons text-xl">science</span>
-        <span class="font-semibold text-sm uppercase tracking-wide">Bitcoin Testnet</span>
-      </div>
-    }
     <h1
       class="text-4xl md:text-6xl font-bold mb-4 mt-6 text-text animate-in fade-in slide-in-from-top-4 duration-700"
     >
