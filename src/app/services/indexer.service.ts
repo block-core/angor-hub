@@ -292,6 +292,43 @@ export class IndexerService {
     return false;
   }
 
+  /**
+   * Try 3 times before setting error, to avoid showing error modal for temporary issues
+   */
+  async setErrorWithRetry(errorMsg: string, retryCount = 3, delayMs = 1000): Promise<void> {
+    const isMainnet = this.network.isMain();
+    const config = this.getIndexerConfig();
+    const indexers = isMainnet ? config.mainnet : config.testnet;
+    const primary = indexers.find(i => i.isPrimary) || indexers[0];
+    
+    if (!primary) {
+      this.error.set(errorMsg);
+      return;
+    }
+
+    for (let i = 0; i < retryCount; i++) {
+      try {
+        const isOnline = await this.testIndexerConnection(primary.url);
+        if (isOnline) {
+          // Connection restored, do not show error
+          console.log(`Indexer connection restored after ${i + 1} attempt(s)`);
+          return;
+        }
+      } catch (retryError) {
+        console.debug(`Retry ${i + 1} failed:`, retryError);
+      }
+      
+      // Wait before next retry (except for the last attempt)
+      if (i < retryCount - 1) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+
+    // All retries failed, show error
+    console.warn(`Indexer connection failed after ${retryCount} attempts, showing error modal`);
+    this.error.set(errorMsg);
+  }
+
   private async fetchJson<T>(
     url: string
   ): Promise<{ data: T; headers: Headers }> {
@@ -464,7 +501,7 @@ export class IndexerService {
         this.totalProjectsFetched = true;
       }
     } catch (err) {
-      this.error.set(
+      await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch projects'
       );
       console.error(err);
@@ -518,7 +555,7 @@ export class IndexerService {
 
       return project.data;
     } catch (err) {
-      this.error.set(
+      await this.setErrorWithRetry(
         err instanceof Error ? err.message : `Failed to fetch project ${id}`
       );
       return null;
@@ -542,7 +579,7 @@ export class IndexerService {
 
       return stats;
     } catch (err) {
-      this.error.set(
+      await this.setErrorWithRetry(
         err instanceof Error
           ? err.message
           : `Failed to fetch stats for project ${id}`
@@ -562,7 +599,7 @@ export class IndexerService {
       const url = `${this.indexerUrl}api/query/Angor/projects/${projectId}/investments?offset=${offset}&limit=${limit}`;
       return (await this.fetchJson<ProjectInvestment[]>(url)).data;
     } catch (err) {
-      this.error.set(
+      await this.setErrorWithRetry(
         err instanceof Error
           ? err.message
           : `Failed to fetch investments for project ${projectId}`
@@ -579,7 +616,7 @@ export class IndexerService {
       const url = `${this.indexerUrl}api/query/Angor/projects/${projectId}/investments/${investorKey}`;
       return (await this.fetchJson<ProjectInvestment>(url)).data;
     } catch (err) {
-      this.error.set(
+      await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch investor details'
       );
       return null;
@@ -591,7 +628,7 @@ export class IndexerService {
       const url = `${this.indexerUrl}api/insight/supply`;
       return (await this.fetchJson<Supply>(url)).data;
     } catch (err) {
-      this.error.set(
+      await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch supply'
       );
       return null;
@@ -603,7 +640,7 @@ export class IndexerService {
       const url = `${this.indexerUrl}api/insight/supply/circulating`;
       return (await this.fetchJson<number>(url)).data;
     } catch (err) {
-      this.error.set(
+      await this.setErrorWithRetry(
         err instanceof Error
           ? err.message
           : 'Failed to fetch circulating supply'
@@ -617,7 +654,7 @@ export class IndexerService {
       const url = `${this.indexerUrl}api/query/address/${address}`;
       return (await this.fetchJson<AddressBalance>(url)).data;
     } catch (err) {
-      this.error.set(
+      await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch address balance'
       );
       return null;
@@ -633,7 +670,7 @@ export class IndexerService {
       const url = `${this.indexerUrl}api/query/address/${address}/transactions?offset=${offset}&limit=${limit}`;
       return (await this.fetchJson<Transaction[]>(url)).data;
     } catch (err) {
-      this.error.set(
+      await this.setErrorWithRetry(
         err instanceof Error
           ? err.message
           : 'Failed to fetch address transactions'
@@ -647,7 +684,7 @@ export class IndexerService {
       const url = `${this.indexerUrl}api/query/transaction/${txId}`;
       return (await this.fetchJson<Transaction>(url)).data;
     } catch (err) {
-      this.error.set(
+      await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch transaction'
       );
       return null;
@@ -660,7 +697,7 @@ export class IndexerService {
       const response = (await this.fetchJson<string>(url)).data;
       return response !== undefined ? response : null;
     } catch (err) {
-      this.error.set(
+      await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch transaction hex'
       );
       return null;
@@ -673,7 +710,7 @@ export class IndexerService {
         }limit=${limit}`;
       return (await this.fetchJson<Block[]>(url)).data;
     } catch (err) {
-      this.error.set(
+      await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch blocks'
       );
       return [];
@@ -685,7 +722,7 @@ export class IndexerService {
       const url = `${this.indexerUrl}api/query/block/${hash}`;
       return (await this.fetchJson<Block>(url)).data;
     } catch (err) {
-      this.error.set(
+      await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch block'
       );
       return null;
@@ -697,7 +734,7 @@ export class IndexerService {
       const url = `${this.indexerUrl}api/query/block/index/${height}`;
       return (await this.fetchJson<Block>(url)).data;
     } catch (err) {
-      this.error.set(
+      await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch block by height'
       );
       return null;
@@ -710,7 +747,7 @@ export class IndexerService {
       const response = (await this.fetchJson<NetworkStats>(url)).data;
       return response !== undefined ? response : null;
     } catch (err) {
-      this.error.set(
+      await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch network stats'
       );
       return null;
