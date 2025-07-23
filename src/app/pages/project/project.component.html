@@ -27,35 +27,35 @@
 
 <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative -mt-[60px] sm:-mt-[80px] md:-mt-[30px]">
   @if (isDenied()) {
-    <div class="flex flex-col items-center justify-center p-8 sm:p-12 mt-12 bg-surface-card rounded-xl shadow-lg text-center max-w-3xl mx-auto">
-      <span class="material-icons text-6xl text-red-500 mb-6 animate-pulse">gpp_bad</span>
-      <h1 class="text-2xl sm:text-3xl font-bold mb-4 text-text">Project Not Available</h1>
-      <p class="max-w-lg mb-8 text-text-secondary text-base sm:text-lg leading-relaxed">This project is currently not available for viewing due to content policy violations or other restrictions.</p>
+    <div class="flex flex-col items-center justify-center p-6 sm:p-8 mt-8 bg-surface-card rounded-lg shadow-md text-center max-w-2xl mx-auto">
+      <span class="material-icons text-5xl text-red-500 mb-4 animate-pulse">gpp_bad</span>
+      <h1 class="text-xl sm:text-2xl font-bold mb-3 text-text">Project Not Available</h1>
+      <p class="max-w-lg mb-6 text-text-secondary text-sm sm:text-base leading-relaxed">This project is currently not available for viewing due to content policy violations or other restrictions.</p>
       <a routerLink="/explore"
-        class="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm sm:text-base font-semibold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
-        <span class="material-icons text-lg">explore</span>
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
+        <span class="material-icons text-base">explore</span>
         Explore Other Projects
       </a>
     </div>
   } @else if (!project() && indexer.loading()) {
-    <div class="flex flex-col items-center justify-center p-12 mt-12 bg-surface-card rounded-xl shadow-lg text-center max-w-3xl mx-auto">
-      <div class="w-12 h-12 border-4 border-accent/20 border-t-accent rounded-full animate-spin mb-6"></div>
-      <p class="text-text-secondary text-base sm:text-lg">Loading project details...</p>
+    <div class="flex flex-col items-center justify-center p-8 mt-8 bg-surface-card rounded-lg shadow-md text-center max-w-2xl mx-auto">
+      <div class="w-10 h-10 border-4 border-accent/20 border-t-accent rounded-full animate-spin mb-4"></div>
+      <p class="text-text-secondary text-sm sm:text-base">Loading project details...</p>
     </div>
   } @else if (!project() && !indexer.loading() && noProjectFoundYet) {
-    <div class="flex flex-col items-center justify-center p-8 sm:p-12 mt-12 bg-surface-card rounded-xl shadow-lg text-center max-w-3xl mx-auto">
-      <span class="material-icons text-6xl text-text-secondary opacity-50 mb-6">search_off</span>
-      <h1 class="text-2xl sm:text-3xl font-bold mb-4 text-text">Project not found... yet</h1>
-      <p class="max-w-lg mb-8 text-text-secondary text-base sm:text-lg leading-relaxed">If you recently created a new Angor project, it might take a few minutes for it to be distributed and indexed on the decentralized infrastructure.</p>
-      <div class="flex gap-4 max-sm:flex-col">
+    <div class="flex flex-col items-center justify-center p-6 sm:p-8 mt-8 bg-surface-card rounded-lg shadow-md text-center max-w-2xl mx-auto">
+      <span class="material-icons text-5xl text-text-secondary opacity-50 mb-4">search_off</span>
+      <h1 class="text-xl sm:text-2xl font-bold mb-3 text-text">Project not found... yet</h1>
+      <p class="max-w-lg mb-6 text-text-secondary text-sm sm:text-base leading-relaxed">If you recently created a new Angor project, it might take a few minutes for it to be distributed and indexed on the decentralized infrastructure.</p>
+      <div class="flex gap-3 max-sm:flex-col">
         <button type="button" (click)="reloadPage()" title="Reload page to check for project updates"
-          class="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm sm:text-base font-semibold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
-          <span class="material-icons text-lg">refresh</span>
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
+          <span class="material-icons text-base">refresh</span>
           Retry
         </button>
         <a routerLink="/explore"
-          class="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm sm:text-base font-semibold bg-surface-card text-text border border-border hover:bg-surface-hover hover:shadow-md transition-all duration-300 ease-in-out">
-          <span class="material-icons text-lg">explore</span>
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-surface-card text-text border border-border hover:bg-surface-hover hover:shadow-md transition-all duration-300 ease-in-out">
+          <span class="material-icons text-base">explore</span>
           Explore All Projects
         </a>
       </div>
@@ -63,9 +63,9 @@
   } @else if (project()) {
 
     <!-- Main Project Header Card -->
-    <div class="bg-surface-card rounded-2xl shadow-xl mb-8 relative">
+    <div class="bg-surface-card rounded-xl shadow-lg mb-6 relative">
       <!-- Header Content Container -->
-      <div class="p-6 sm:p-8 lg:p-10 pt-[70px] sm:pt-[90px] lg:pt-10">
+      <div class="p-4 sm:p-6 lg:p-8 pt-[70px] sm:pt-[90px] lg:pt-8">
         <!-- Mobile/Tablet Layout: Profile + Info Section -->
         <div class="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">
           
@@ -136,22 +136,22 @@
 
             <!-- Project Status Banner -->
             @if (isProjectSuccessful()) {
-              <div class="flex items-start p-4 sm:p-5 lg:p-6 rounded-xl bg-gradient-to-r from-green-500/10 to-green-600/10 border border-green-500/30 shadow-lg">
-                <span class="material-icons text-green-500 text-2xl lg:text-3xl mr-4 flex-shrink-0 animate-pulse">check_circle</span>
+              <div class="flex items-start p-3 sm:p-4 rounded-lg bg-gradient-to-r from-green-500/10 to-green-600/10 border border-green-500/30 shadow-md">
+                <span class="material-icons text-green-500 text-xl mr-3 flex-shrink-0 animate-pulse">check_circle</span>
                 <div class="min-w-0 flex-1">
-                  <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-green-700 dark:text-green-400 mb-2">Project Successfully Funded!</h3>
-                  <p class="text-sm sm:text-base lg:text-lg text-green-600 dark:text-green-500">
+                  <h3 class="text-base sm:text-lg font-bold text-green-700 dark:text-green-400 mb-1">Project Successfully Funded!</h3>
+                  <p class="text-sm text-green-600 dark:text-green-500">
                     Reached goal of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? "BTC" : "TBTC" }} 
                     <span class="font-semibold">({{ getFundingPercentage() }}% funded)</span>
                   </p>
                 </div>
               </div>
             } @else if (isProjectFailed()) {
-              <div class="flex items-start p-4 sm:p-5 lg:p-6 rounded-xl bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/30 shadow-lg">
-                <span class="material-icons text-red-500 text-2xl lg:text-3xl mr-4 flex-shrink-0 animate-pulse">error</span>
+              <div class="flex items-start p-3 sm:p-4 rounded-lg bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/30 shadow-md">
+                <span class="material-icons text-red-500 text-xl mr-3 flex-shrink-0 animate-pulse">error</span>
                 <div class="min-w-0 flex-1">
-                  <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-red-700 dark:text-red-400 mb-2">Project Did Not Reach Funding Goal</h3>
-                  <p class="text-sm sm:text-base lg:text-lg text-red-600 dark:text-red-500">
+                  <h3 class="text-base sm:text-lg font-bold text-red-700 dark:text-red-400 mb-1">Project Did Not Reach Funding Goal</h3>
+                  <p class="text-sm text-red-600 dark:text-red-500">
                     Raised {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }} of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? "BTC" : "TBTC" }} 
                     <span class="font-semibold">({{ getFundingPercentage() }}% funded)</span>
                   </p>
@@ -160,21 +160,21 @@
             }
 
             <!-- Social Links Section -->
-            <div class="flex flex-wrap items-center justify-center lg:justify-start gap-3 lg:gap-4">
+            <div class="flex flex-wrap items-center justify-center lg:justify-start gap-2">
               @if(project()?.metadata?.website) {
                 <a [href]="getWebsiteUrl(project()?.metadata?.website)" rel="noopener noreferrer" target="_blank"
-                  class="inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg bg-surface-hover text-text-secondary text-sm sm:text-base transition-all duration-300 ease-in-out hover:bg-surface-ground hover:text-accent hover:shadow-md hover:-translate-y-0.5"
+                  class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-hover text-text-secondary text-sm transition-all duration-300 ease-in-out hover:bg-surface-ground hover:text-accent hover:shadow-md"
                   [title]="project()?.metadata?.website">
-                  <span class="material-icons text-lg">language</span>
+                  <span class="material-icons text-base">language</span>
                   <span class="truncate max-w-[120px] sm:max-w-[180px] lg:max-w-[200px]">{{ formatWebsite(project()?.metadata?.website) }}</span>
                 </a>
               }
 
               @for (identity of project()?.externalIdentities; track identity.platform) {
                 <a [href]="getSocialLink(identity)" rel="noopener noreferrer" target="_blank"
-                  class="inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg bg-surface-hover text-text-secondary text-sm sm:text-base transition-all duration-300 ease-in-out hover:bg-surface-ground hover:text-accent hover:shadow-md hover:-translate-y-0.5"
+                  class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-hover text-text-secondary text-sm transition-all duration-300 ease-in-out hover:bg-surface-ground hover:text-accent hover:shadow-md"
                   [title]="identity.username">
-                  <span class="material-icons text-lg">{{ getSocialIcon(identity.platform) }}</span>
+                  <span class="material-icons text-base">{{ getSocialIcon(identity.platform) }}</span>
                   <span class="truncate max-w-[120px] sm:max-w-[180px] lg:max-w-[200px]">{{ formatUsername(identity.username) }}</span>
                 </a>
               }
@@ -183,19 +183,19 @@
         </div>
 
         <!-- Invest Button Section - Full Width for Better Responsiveness -->
-        <div class="mt-8 lg:mt-10">
+        <div class="mt-6">
           <div class="flex justify-center lg:justify-end">
             <button
-              class="w-full sm:w-auto min-w-[280px] px-8 py-4 sm:px-10 sm:py-5 text-lg sm:text-xl font-bold !text-white bg-accent rounded-xl shadow-lg transition-all duration-300 ease-in-out hover:enabled:shadow-xl hover:enabled:-translate-y-1 hover:enabled:scale-105 hover:enabled:bg-accent-dark disabled:!bg-gray-400 disabled:!text-gray-200 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none"
+              class="w-full sm:w-auto min-w-[280px] px-6 py-3 text-base font-bold !text-white bg-accent rounded-lg shadow-md transition-all duration-300 ease-in-out hover:enabled:shadow-lg hover:enabled:bg-accent-dark disabled:!bg-gray-400 disabled:!text-gray-200 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none"
               [disabled]="!canInvest()" (click)="canInvest() && openInvestWindow()" type="button" title="Invest in this project">
               @if (isProjectEnded()) { 
                 <span class="flex items-center justify-center gap-2">
-                  <span class="material-icons">timer_off</span>
+                  <span class="material-icons text-base">timer_off</span>
                   Ended {{ project()?.details?.expiryDate ?? 0 | ago }}
                 </span>
               } @else { 
                 <span class="flex items-center justify-center gap-2">
-                  <span class="material-icons">account_balance_wallet</span>
+                  <span class="material-icons text-base">account_balance_wallet</span>
                   Invest With Angor Wallet
                 </span>
               }
@@ -209,21 +209,21 @@
 
 
     <!-- Main Content Container -->
-    <div class="flex flex-col xl:flex-row gap-6 lg:gap-8">
+    <div class="flex flex-col xl:flex-row gap-4 lg:gap-6">
       <!-- Responsive Navigation Tabs -->
       <div class="xl:sticky xl:top-4 z-30 xl:w-48 flex-shrink-0">
-        <div class="flex xl:flex-col gap-2 lg:gap-3 rounded-xl bg-surface-card p-4 lg:p-5 shadow-lg overflow-x-auto xl:overflow-x-visible scrollbar-thin scrollbar-thumb-surface-hover">
+        <div class="flex xl:flex-col gap-2 rounded-lg bg-surface-card p-3 shadow-md overflow-x-auto xl:overflow-x-visible scrollbar-thin scrollbar-thumb-surface-hover">
           @for (tab of tabs; track tab.id) {
             <button
-              class="flex items-center justify-center xl:justify-start gap-3 p-3 lg:p-4 rounded-lg transition-all duration-200 ease-in-out text-text hover:bg-surface-hover hover:text-accent flex-1 xl:flex-none min-w-[80px] xl:min-w-0 whitespace-nowrap group"
+              class="flex items-center justify-center xl:justify-start gap-2 p-2.5 rounded-lg transition-all duration-200 ease-in-out text-text flex-1 xl:flex-none min-w-[80px] xl:min-w-0 whitespace-nowrap group"
               [class.bg-accent]="activeTab === tab.id" 
               [class.text-white]="activeTab === tab.id"
               [class.shadow-md]="activeTab === tab.id"
               [title]="tab.label"
               (click)="setActiveTab(tab.id)">
-              <span class="material-icons text-lg lg:text-xl transition-all duration-200 ease-in-out group-hover:scale-110"
+              <span class="material-icons text-base transition-all duration-200 ease-in-out group-hover:scale-110"
                 [class.text-white]="activeTab === tab.id">{{ tab.icon }}</span>
-              <span class="text-sm lg:text-base font-medium hidden xl:inline">{{ tab.label }}</span>
+              <span class="text-sm font-medium hidden xl:inline">{{ tab.label }}</span>
             </button>
           }
         </div>
@@ -357,58 +357,58 @@
             </div>
 
             <!-- Statistics and Details Sidebar -->
-            <div class="2xl:w-96 flex-shrink-0 space-y-6 lg:space-y-8">
+            <div class="2xl:w-96 flex-shrink-0 space-y-4">
               <!-- Funding Statistics -->
-              <div class="space-y-4 lg:space-y-6">
+              <div class="space-y-3">
                 <div
-                  class="p-6 lg:p-8 bg-surface-card rounded-2xl shadow-md transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 relative overflow-hidden">
+                  class="p-4 bg-surface-card rounded-lg shadow-md transition-all duration-300 ease-in-out hover:shadow-lg relative overflow-hidden">
                   <!-- Progress Background -->
                   <div class="absolute inset-0 bg-surface-card">
                     <div class="h-full transition-all duration-700 ease-out"
                       [class]="getFundingPercentage() >= 100 ? 'bg-green-500/10' : 'bg-blue-500/10'"
                       [style.width.%]="getFundingPercentage() > 100 ? 100 : getFundingPercentage()"></div>
                   </div>
-                  <div class="relative flex items-start gap-4 lg:gap-6">
+                  <div class="relative flex items-start gap-3">
                     <div
-                      class="w-14 h-14 lg:w-16 lg:h-16 flex-shrink-0 flex items-center justify-center bg-blue-500/10 rounded-xl">
-                      <span class="material-icons text-2xl lg:text-3xl text-blue-500">campaign</span>
+                      class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-blue-500/10 rounded-lg">
+                      <span class="material-icons text-xl text-blue-500">campaign</span>
                     </div>
                     <div class="flex-1 min-w-0">
-                      <div class="flex justify-between items-center mb-2">
-                        <div class="text-sm lg:text-base text-text-secondary">Total Raised</div>
-                        <div class="text-xs lg:text-sm font-bold px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                      <div class="flex justify-between items-center mb-1">
+                        <div class="text-sm text-text-secondary">Total Raised</div>
+                        <div class="text-xs font-bold px-2 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400"
                           [ngClass]="getFundingPercentage() >= 100 ? 'bg-green-500/10 text-green-600 dark:text-green-400' : ''">
                           {{ getFundingPercentage() }}%
                         </div>
                       </div>
-                      <div class="text-2xl lg:text-3xl font-bold mb-3">
+                      <div class="text-xl font-bold mb-2">
                         {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }}
-                        <span class="text-sm lg:text-base font-medium text-text-secondary ml-2">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+                        <span class="text-sm font-medium text-text-secondary ml-1">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
                       </div>
-                      <div class="relative w-full h-3 bg-surface-hover rounded-full overflow-hidden">
+                      <div class="relative w-full h-2 bg-surface-hover rounded-full overflow-hidden">
                         <div class="absolute top-0 left-0 h-full transition-all duration-700 ease-out rounded-full"
                           [class]="getFundingPercentage() >= 100 ? 'bg-green-500' : 'bg-blue-500'"
                           [style.width.%]="getFundingPercentage() > 100 ? 100 : getFundingPercentage()"></div>
                       </div>
-                      <div class="text-xs lg:text-sm text-text-secondary mt-2">Goal: {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}</div>
+                      <div class="text-xs text-text-secondary mt-1">Goal: {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}</div>
                     </div>
                   </div>
                 </div>
 
                 <div
-                  class="p-6 lg:p-8 bg-surface-card rounded-2xl shadow-md transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1">
-                  <div class="flex items-start gap-4 lg:gap-6">
+                  class="p-4 bg-surface-card rounded-lg shadow-md transition-all duration-300 ease-in-out hover:shadow-lg">
+                  <div class="flex items-start gap-3">
                     <div
-                      class="w-14 h-14 lg:w-16 lg:h-16 flex-shrink-0 flex items-center justify-center bg-purple-500/10 rounded-xl">
-                      <span class="material-icons text-2xl lg:text-3xl text-purple-500">people</span>
+                      class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-purple-500/10 rounded-lg">
+                      <span class="material-icons text-xl text-purple-500">people</span>
                     </div>
                     <div class="flex-1 min-w-0">
-                      <div class="text-sm lg:text-base text-text-secondary mb-2">Total Investors</div>
-                      <div class="text-2xl lg:text-3xl font-bold flex items-center gap-2">
+                      <div class="text-sm text-text-secondary mb-1">Total Investors</div>
+                      <div class="text-xl font-bold flex items-center gap-2">
                         {{ project()?.stats?.investorCount || '0' }}
                         @if (project()?.stats?.investorCount) {
                           <span class="text-green-500">
-                            <span class="material-icons text-lg lg:text-xl">trending_up</span>
+                            <span class="material-icons text-base">trending_up</span>
                           </span>
                         }
                       </div>
@@ -417,30 +417,30 @@
                 </div>
 
                 <div
-                  class="p-6 lg:p-8 bg-surface-card rounded-2xl shadow-md transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 relative overflow-hidden">
+                  class="p-4 bg-surface-card rounded-lg shadow-md transition-all duration-300 ease-in-out hover:shadow-lg relative overflow-hidden">
                   <!-- Progress Background -->
                   <div class="absolute inset-0 bg-surface-card">
                     <div class="h-full bg-orange-500/10 transition-all duration-700 ease-out"
                       [style.width.%]="getSpentPercentage()"></div>
                   </div>
-                  <div class="relative flex items-start gap-4 lg:gap-6">
+                  <div class="relative flex items-start gap-3">
                     <div
-                      class="w-14 h-14 lg:w-16 lg:h-16 flex-shrink-0 flex items-center justify-center bg-orange-500/10 rounded-xl">
-                      <span class="material-icons text-2xl lg:text-3xl text-orange-500">account_balance_wallet</span>
+                      class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-orange-500/10 rounded-lg">
+                      <span class="material-icons text-xl text-orange-500">account_balance_wallet</span>
                     </div>
                     <div class="flex-1 min-w-0">
-                      <div class="flex justify-between items-center mb-2">
-                        <div class="text-sm lg:text-base text-text-secondary">Founder Spent</div>
+                      <div class="flex justify-between items-center mb-1">
+                        <div class="text-sm text-text-secondary">Founder Spent</div>
                         <div
-                          class="text-xs lg:text-sm font-bold px-3 py-1 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                          class="text-xs font-bold px-2 py-1 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400">
                           {{ getSpentPercentage() }}%
                         </div>
                       </div>
-                      <div class="text-2xl lg:text-3xl font-bold mb-3">
+                      <div class="text-xl font-bold mb-2">
                         {{ bitcoin.toBTC(project()?.stats?.amountSpentSoFarByFounder ?? 0) }}
-                        <span class="text-sm lg:text-base font-medium text-text-secondary ml-2">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+                        <span class="text-sm font-medium text-text-secondary ml-1">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
                       </div>
-                      <div class="relative w-full h-3 bg-surface-hover rounded-full overflow-hidden">
+                      <div class="relative w-full h-2 bg-surface-hover rounded-full overflow-hidden">
                         <div class="absolute top-0 left-0 h-full bg-orange-500 transition-all duration-700 ease-out rounded-full"
                           [style.width.%]="getSpentPercentage()"></div>
                       </div>
@@ -449,30 +449,30 @@
                 </div>
 
                 <div
-                  class="p-6 lg:p-8 bg-surface-card rounded-2xl shadow-md transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 relative overflow-hidden">
+                  class="p-4 bg-surface-card rounded-lg shadow-md transition-all duration-300 ease-in-out hover:shadow-lg relative overflow-hidden">
                   <!-- Progress Background -->
                   <div class="absolute inset-0 bg-surface-card">
                     <div class="h-full bg-red-500/10 transition-all duration-700 ease-out"
                       [style.width.%]="getPenaltiesPercentage()"></div>
                   </div>
-                  <div class="relative flex items-start gap-4 lg:gap-6">
+                  <div class="relative flex items-start gap-3">
                     <div
-                      class="w-14 h-14 lg:w-16 lg:h-16 flex-shrink-0 flex items-center justify-center bg-red-500/10 rounded-xl">
-                      <span class="material-icons text-2xl lg:text-3xl text-red-500">logout</span>
+                      class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-red-500/10 rounded-lg">
+                      <span class="material-icons text-xl text-red-500">logout</span>
                     </div>
                     <div class="flex-1 min-w-0">
-                      <div class="flex justify-between items-center mb-2">
-                        <div class="text-sm lg:text-base text-text-secondary">Investor Withdrawals</div>
+                      <div class="flex justify-between items-center mb-1">
+                        <div class="text-sm text-text-secondary">Investor Withdrawals</div>
                         <div
-                          class="text-xs lg:text-sm font-bold px-3 py-1 rounded-full bg-red-500/10 text-red-600 dark:text-red-400">
+                          class="text-xs font-bold px-2 py-1 rounded-full bg-red-500/10 text-red-600 dark:text-red-400">
                           {{ project()?.stats?.countInPenalties || '0' }}
                         </div>
                       </div>
-                      <div class="text-2xl lg:text-3xl font-bold mb-3">
+                      <div class="text-xl font-bold mb-2">
                         {{ bitcoin.toBTC(project()?.stats?.amountInPenalties ?? 0) }}
-                        <span class="text-sm lg:text-base font-medium text-text-secondary ml-2">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+                        <span class="text-sm font-medium text-text-secondary ml-1">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
                       </div>
-                      <div class="relative w-full h-3 bg-surface-hover rounded-full overflow-hidden">
+                      <div class="relative w-full h-2 bg-surface-hover rounded-full overflow-hidden">
                         <div class="absolute top-0 left-0 h-full bg-red-500 transition-all duration-700 ease-out rounded-full"
                           [style.width.%]="getPenaltiesPercentage()"></div>
                       </div>
@@ -481,17 +481,17 @@
                 </div>
               </div>
               <!-- Project Details Section -->
-              <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8">
-                <h3 class="text-xl lg:text-2xl font-bold mb-6 pb-4 border-b border-border">Project Details</h3>
-                <div class="space-y-5 lg:space-y-6">
-                  <div class="flex items-start gap-4">
-                    <span class="material-icons text-xl lg:text-2xl text-accent mt-1 flex-shrink-0">event_available</span>
+              <div class="bg-surface-card rounded-lg shadow-md p-4">
+                <h3 class="text-lg font-bold mb-4 pb-3 border-b border-border">Project Details</h3>
+                <div class="space-y-4">
+                  <div class="flex items-start gap-3">
+                    <span class="material-icons text-base text-accent mt-1 flex-shrink-0">event_available</span>
                     <div class="min-w-0 flex-1">
-                      <div class="text-sm lg:text-base text-text-secondary mb-1">Start Date</div>
-                      <div class="text-base lg:text-lg font-semibold">
+                      <div class="text-sm text-text-secondary mb-1">Start Date</div>
+                      <div class="text-sm font-semibold">
                         {{ formatDate(project()?.details?.startDate) }}
                         @if (project()?.details?.startDate) {
-                          <span class="block text-xs lg:text-sm text-text-secondary mt-1 italic">
+                          <span class="block text-xs text-text-secondary mt-1 italic">
                             @if (isProjectNotStarted()) { (Starts {{ project()?.details?.startDate ?? 0 | ago }}) }
                             @else { (Started {{ project()?.details?.startDate ?? 0 | ago }}) }
                           </span>
@@ -500,81 +500,81 @@
                     </div>
                   </div>
 
-                  <div class="flex items-start gap-4">
-                    <span class="material-icons text-xl lg:text-2xl text-accent mt-1 flex-shrink-0">timer</span>
+                  <div class="flex items-start gap-3">
+                    <span class="material-icons text-base text-accent mt-1 flex-shrink-0">timer</span>
                     <div class="min-w-0 flex-1">
-                      <div class="text-sm lg:text-base text-text-secondary mb-1">Expiry Date</div>
-                      <div class="text-base lg:text-lg font-semibold">
+                      <div class="text-sm text-text-secondary mb-1">Expiry Date</div>
+                      <div class="text-base font-semibold">
                         {{ formatDate(project()?.details?.expiryDate) }}
                         @if (project()?.details?.expiryDate) {
-                          <span class="block text-xs lg:text-sm text-text-secondary mt-1 italic">
+                          <span class="block text-xs text-text-secondary mt-1 italic">
                             @if (isProjectEnded()) { (Ended {{ project()?.details?.expiryDate ?? 0 | ago }}) }
                             @else { ({{ getRemainingTimeText(project()?.details?.expiryDate) }}) }
                           </span>
                         } @else {
-                          <span class="block text-xs lg:text-sm text-text-secondary mt-1 italic">(No expiry date)</span>
+                          <span class="block text-xs text-text-secondary mt-1 italic">(No expiry date)</span>
                         }
                       </div>
                     </div>
                   </div>
 
                   @if (projectDuration()) {
-                    <div class="flex items-start gap-4">
-                      <span class="material-icons text-xl lg:text-2xl text-accent mt-1 flex-shrink-0">date_range</span>
+                    <div class="flex items-start gap-3">
+                      <span class="material-icons text-base text-accent mt-1 flex-shrink-0">date_range</span>
                       <div class="min-w-0 flex-1">
-                        <div class="text-sm lg:text-base text-text-secondary mb-1">Project Duration</div>
-                        <div class="text-base lg:text-lg font-semibold">
+                        <div class="text-sm text-text-secondary mb-1">Project Duration</div>
+                        <div class="text-base font-semibold">
                           {{ projectDuration() }}
                         </div>
                       </div>
                     </div>
                   }
 
-                  <div class="flex items-start gap-4">
-                    <span class="material-icons text-xl lg:text-2xl text-accent mt-1 flex-shrink-0">gavel</span>
+                  <div class="flex items-start gap-3">
+                    <span class="material-icons text-base text-accent mt-1 flex-shrink-0">gavel</span>
                     <div class="min-w-0 flex-1">
-                      <div class="text-sm lg:text-base text-text-secondary mb-1">Penalty Period</div>
-                      <div class="text-base lg:text-lg font-semibold">{{ project()?.details?.penaltyDays }} days</div>
-                      <div class="text-xs lg:text-sm text-text-secondary mt-1 italic">(Investor withdrawal penalty window after expiry)</div>
+                      <div class="text-sm text-text-secondary mb-1">Penalty Period</div>
+                      <div class="text-base font-semibold">{{ project()?.details?.penaltyDays }} days</div>
+                      <div class="text-xs text-text-secondary mt-1 italic">(Investor withdrawal penalty window after expiry)</div>
                     </div>
                   </div>
                 </div>
               </div>
               @if (project()?.details?.stages?.length) {
-                <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8">
-                  <h3 class="text-xl lg:text-2xl font-bold mb-6 pb-4 border-b border-border">Funding Stages</h3>
+                <div class="bg-surface-card rounded-lg shadow-md p-4">
+                  <h3 class="text-lg font-bold mb-4 pb-3 border-b border-border">Funding Stages</h3>
                   <div class="relative">
                     @for (stage of project()?.details?.stages; track $index; let isLast = $last) {
-                      <div class="relative pl-12 pb-8">
+                      <div class="relative pl-10 pb-6">
                         @if (!isLast) {
-                          <div class="absolute top-3 left-[18px] w-0.5 h-full"
+                          <div class="absolute top-3 left-[15px] w-0.5 h-full"
                             [class]="isStageCompleted($index) ? 'bg-accent' : 'bg-border'"></div>
                         }
-                        <div class="absolute top-0 left-0 w-9 h-9 lg:w-10 lg:h-10 rounded-full z-[1] border-4 flex items-center justify-center shadow-md"
+                        <div class="absolute top-0 left-0 w-8 h-8 rounded-full z-[1] border-3 flex items-center justify-center shadow-md"
                           [class]="isStageCompleted($index) ? 'bg-accent border-surface-card' : isCurrentStage($index) ? 'bg-yellow-500 border-surface-card' : 'bg-surface-hover border-surface-card'">
                           @if (isStageCompleted($index)) {
-                            <span class="material-icons text-white text-base lg:text-lg">check</span>
+                            <span class="material-icons text-white text-base">check</span>
                           }
                         </div>
                         <div class="pt-1">
-                          <div class="flex items-center justify-between mb-3">
-                            <div class="font-bold text-lg lg:text-xl">Stage {{ $index + 1 }}</div>
-                            <div class="text-xs lg:text-sm font-bold px-3 py-1 rounded-full"
+                          <div class="flex items-center justify-between mb-2">
+                            <div class="font-bold text-base">Stage {{ $index + 1 }}</div>
+                            <div class="text-xs font-bold px-2 py-1 rounded-full"
                               [class]="isStageCompleted($index) ? 'bg-green-500/10 text-green-600 dark:text-green-400' : isCurrentStage($index) ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' : 'bg-surface-hover text-text-secondary'">
                               {{ isStageCompleted($index) ? 'Completed' : isCurrentStage($index) ? 'Current' : 'Upcoming' }}
                             </div>
                           </div>
-                          <div class="flex items-end gap-3 mb-3">
-                            <div class="text-xl lg:text-2xl font-bold" [class]="isStageCompleted($index) ? 'text-accent' : 'text-text'">{{ stage.amountToRelease }}%</div>
-                            <div class="text-sm lg:text-base text-text-secondary">({{ calculateStageAmount(stage.amountToRelease) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }})</div>
+                          <div class="flex items-end gap-2 mb-2">
+                            <div class="text-lg font-bold" [class]="isStageCompleted($index) ? 'text-accent' : 'text-text'">{{ stage.amountToRelease }}%</div>
+                            <div class="text-sm text-text-secondary">({{ calculateStageAmount(stage.amountToRelease) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }})</div>
                           </div>
-                          <div class="relative h-3 bg-surface-hover rounded-full overflow-hidden mb-3">
+                          <div class="relative h-2 bg-surface-hover rounded-full overflow-hidden mb-2">
                             <div class="absolute top-0 left-0 h-full transition-all duration-700 ease-out rounded-full"
                               [style.width.%]="isStageCompleted($index) ? 100 : isCurrentStage($index) ? getCurrentStageProgress() : 0"
                               [class]="isStageCompleted($index) ? 'bg-accent' : isCurrentStage($index) ? 'bg-yellow-500' : ''">
                             </div>
                           </div>
-                          <div class="flex justify-between text-sm lg:text-base">
+                          <div class="flex justify-between text-sm">
                             <div class="text-text-secondary">{{ formatDate(stage.releaseDate) }}</div>
                             <div class="text-text-secondary">{{ getStageRemainingTimeText(stage.releaseDate) }}</div>
                           </div>
@@ -582,12 +582,12 @@
                       </div>
                     }
                   </div>
-                  <div class="mt-6 pt-6 border-t border-border">
-                    <div class="flex justify-between items-center text-base lg:text-lg mb-3">
+                  <div class="mt-4 pt-4 border-t border-border">
+                    <div class="flex justify-between items-center text-base mb-2">
                       <div class="text-text-secondary font-medium">Overall Progress</div>
                       <div class="font-bold text-accent">{{ getOverallStageProgress() }}%</div>
                     </div>
-                    <div class="relative h-3 bg-surface-hover rounded-full overflow-hidden">
+                    <div class="relative h-2 bg-surface-hover rounded-full overflow-hidden">
                       <div class="absolute top-0 left-0 h-full bg-accent transition-all duration-700 ease-out rounded-full"
                         [style.width.%]="getOverallStageProgress()"></div>
                     </div>
@@ -595,76 +595,76 @@
                 </div>
               }
               <!-- Public Keys & IDs Section -->
-              <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8">
-                <h3 class="text-xl lg:text-2xl font-bold mb-6 pb-4 border-b border-border">Public Keys & IDs</h3>
-                <div class="space-y-5 lg:space-y-6">
+              <div class="bg-surface-card rounded-lg shadow-md p-4">
+                <h3 class="text-lg font-bold mb-4 pb-3 border-b border-border">Public Keys & IDs</h3>
+                <div class="space-y-3">
                   <div>
-                    <div class="text-sm lg:text-base text-text-secondary mb-2">Project ID</div>
-                    <div class="flex items-center bg-surface-hover rounded-xl p-4 lg:p-5">
-                      <span class="material-icons text-xl lg:text-2xl text-text-secondary mr-3 flex-shrink-0">fingerprint</span>
+                    <div class="text-sm text-text-secondary mb-2">Project ID</div>
+                    <div class="flex items-center bg-surface-hover rounded-lg p-2">
+                      <span class="material-icons text-base text-text-secondary mr-2 flex-shrink-0">fingerprint</span>
                       <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs lg:text-sm text-text">{{ project()?.projectIdentifier }}</div>
+                        <div class="font-mono text-xs text-text">{{ project()?.projectIdentifier }}</div>
                       </div>
                       <button (click)="copyToClipboard(project()?.projectIdentifier)"
-                        class="ml-3 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-2 rounded-lg hover:bg-surface-ground transition-all duration-200"
+                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-1 rounded-lg hover:bg-surface-ground transition-all duration-200"
                         title="Copy to clipboard">
-                        <span class="material-icons text-lg lg:text-xl">content_copy</span>
+                        <span class="material-icons text-base">content_copy</span>
                       </button>
                     </div>
                   </div>
                   <div>
-                    <div class="text-sm lg:text-base text-text-secondary mb-2">Founder Key</div>
-                    <div class="flex items-center bg-surface-hover rounded-xl p-4 lg:p-5">
-                      <span class="material-icons text-xl lg:text-2xl text-text-secondary mr-3 flex-shrink-0">key</span>
+                    <div class="text-sm text-text-secondary mb-2">Founder Key</div>
+                    <div class="flex items-center bg-surface-hover rounded-lg p-2">
+                      <span class="material-icons text-base text-text-secondary mr-2 flex-shrink-0">key</span>
                       <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs lg:text-sm text-text">{{ project()?.founderKey }}</div>
+                        <div class="font-mono text-xs text-text">{{ project()?.founderKey }}</div>
                       </div>
                       <button (click)="copyToClipboard(project()?.founderKey)"
-                        class="ml-3 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-2 rounded-lg hover:bg-surface-ground transition-all duration-200"
+                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-1 rounded-lg hover:bg-surface-ground transition-all duration-200"
                         title="Copy to clipboard">
-                        <span class="material-icons text-lg lg:text-xl">content_copy</span>
+                        <span class="material-icons text-base">content_copy</span>
                       </button>
                     </div>
                   </div>
                   <div>
-                    <div class="text-sm lg:text-base text-text-secondary mb-2">Recovery Key</div>
-                    <div class="flex items-center bg-surface-hover rounded-xl p-4 lg:p-5">
-                      <span class="material-icons text-xl lg:text-2xl text-text-secondary mr-3 flex-shrink-0">restore</span>
+                    <div class="text-sm text-text-secondary mb-2">Recovery Key</div>
+                    <div class="flex items-center bg-surface-hover rounded-lg p-2">
+                      <span class="material-icons text-base text-text-secondary mr-2 flex-shrink-0">restore</span>
                       <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs lg:text-sm text-text">{{ project()?.details?.founderRecoveryKey }}</div>
+                        <div class="font-mono text-xs text-text">{{ project()?.details?.founderRecoveryKey }}</div>
                       </div>
                       <button (click)="copyToClipboard(project()?.details?.founderRecoveryKey)"
-                        class="ml-3 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-2 rounded-lg hover:bg-surface-ground transition-all duration-200"
+                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-1 rounded-lg hover:bg-surface-ground transition-all duration-200"
                         title="Copy to clipboard">
-                        <span class="material-icons text-lg lg:text-xl">content_copy</span>
+                        <span class="material-icons text-base">content_copy</span>
                       </button>
                     </div>
                   </div>
                   <div>
-                    <div class="text-sm lg:text-base text-text-secondary mb-2">Nostr Public Key (npub)</div>
-                    <div class="flex items-center bg-surface-hover rounded-xl p-4 lg:p-5">
-                      <span class="material-icons text-xl lg:text-2xl text-text-secondary mr-3 flex-shrink-0">person</span>
+                    <div class="text-sm text-text-secondary mb-2">Nostr Public Key (npub)</div>
+                    <div class="flex items-center bg-surface-hover rounded-lg p-2">
+                      <span class="material-icons text-base text-text-secondary mr-2 flex-shrink-0">person</span>
                       <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs lg:text-sm text-text">{{ user?.npub }}</div>
+                        <div class="font-mono text-xs text-text">{{ user?.npub }}</div>
                       </div>
                       <button (click)="copyToClipboard(user?.npub)"
-                        class="ml-3 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-2 rounded-lg hover:bg-surface-ground transition-all duration-200"
+                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-1 rounded-lg hover:bg-surface-ground transition-all duration-200"
                         title="Copy to clipboard">
-                        <span class="material-icons text-lg lg:text-xl">content_copy</span>
+                        <span class="material-icons text-base">content_copy</span>
                       </button>
                     </div>
                   </div>
                   <div>
-                    <div class="text-sm lg:text-base text-text-secondary mb-2">NIP-05</div>
-                    <div class="flex items-center bg-surface-hover rounded-xl p-4 lg:p-5">
-                      <span class="material-icons text-xl lg:text-2xl text-text-secondary mr-3 flex-shrink-0">person</span>
+                    <div class="text-sm text-text-secondary mb-2">NIP-05</div>
+                    <div class="flex items-center bg-surface-hover rounded-lg p-2">
+                      <span class="material-icons text-base text-text-secondary mr-2 flex-shrink-0">person</span>
                       <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs lg:text-sm text-text">{{ project()?.metadata?.nip05 }}</div>
+                        <div class="font-mono text-xs text-text">{{ project()?.metadata?.nip05 }}</div>
                       </div>
                       <button (click)="copyToClipboard(project()?.metadata?.nip05)"
-                        class="ml-3 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-2 rounded-lg hover:bg-surface-ground transition-all duration-200"
+                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-1 rounded-lg hover:bg-surface-ground transition-all duration-200"
                         title="Copy to clipboard">
-                        <span class="material-icons text-lg lg:text-xl">content_copy</span>
+                        <span class="material-icons text-base">content_copy</span>
                       </button>
                     </div>
                   </div>
@@ -672,29 +672,29 @@
               </div>
 
               <!-- Blockchain Details Section -->
-              <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8">
-                <h3 class="text-xl lg:text-2xl font-bold mb-6 pb-4 border-b border-border">Blockchain Details</h3>
-                <div class="space-y-5 lg:space-y-6">
+              <div class="bg-surface-card rounded-lg shadow-md p-4">
+                <h3 class="text-lg font-bold mb-4 pb-3 border-b border-border">Blockchain Details</h3>
+                <div class="space-y-3">
                   <div>
-                    <div class="text-sm lg:text-base text-text-secondary mb-2">Created on Bitcoin block</div>
-                    <div class="flex items-center bg-surface-hover rounded-xl p-4 lg:p-5">
-                      <span class="material-icons text-xl lg:text-2xl text-text-secondary mr-3 flex-shrink-0">layers</span>
+                    <div class="text-sm text-text-secondary mb-2">Created on Bitcoin block</div>
+                    <div class="flex items-center bg-surface-hover rounded-lg p-2">
+                      <span class="material-icons text-base text-text-secondary mr-2 flex-shrink-0">layers</span>
                       <div class="flex-1 min-w-0">
-                        <div class="font-bold text-lg lg:text-xl text-text">{{ project()?.createdOnBlock }}</div>
+                        <div class="font-bold text-base text-text">{{ project()?.createdOnBlock }}</div>
                       </div>
                       <button (click)="copyToClipboard(project()?.createdOnBlock?.toString())"
-                        class="ml-3 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-2 rounded-lg hover:bg-surface-ground transition-all duration-200"
+                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-1 rounded-lg hover:bg-surface-ground transition-all duration-200"
                         title="Copy to clipboard">
-                        <span class="material-icons text-lg lg:text-xl">content_copy</span>
+                        <span class="material-icons text-base">content_copy</span>
                       </button>
                     </div>
                   </div>
                   <div>
-                    <div class="text-sm lg:text-base text-text-secondary mb-2">Transaction ID</div>
-                    <div class="flex items-center bg-surface-hover rounded-xl p-4 lg:p-5">
-                      <span class="material-icons text-xl lg:text-2xl text-text-secondary mr-3 flex-shrink-0">receipt_long</span>
+                    <div class="text-sm text-text-secondary mb-2">Transaction ID</div>
+                    <div class="flex items-center bg-surface-hover rounded-lg p-2">
+                      <span class="material-icons text-base text-text-secondary mr-2 flex-shrink-0">receipt_long</span>
                       <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs lg:text-sm">
+                        <div class="font-mono text-xs">
                           @if(networkService.isMain()) {
                             <a target="_blank" [href]="'https://mempool.space/tx/' + project()?.trxId"
                               class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors duration-200 underline">{{ project()?.trxId }}</a>
@@ -705,9 +705,9 @@
                         </div>
                       </div>
                       <button (click)="copyToClipboard(project()?.trxId)"
-                        class="ml-3 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-2 rounded-lg hover:bg-surface-ground transition-all duration-200"
+                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-1 rounded-lg hover:bg-surface-ground transition-all duration-200"
                         title="Copy to clipboard">
-                        <span class="material-icons text-lg lg:text-xl">content_copy</span>
+                        <span class="material-icons text-base">content_copy</span>
                       </button>
                     </div>
                   </div>
@@ -715,28 +715,28 @@
               </div>
 
               <!-- Nostr & Report Section -->
-              <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8">
-                <h3 class="text-xl lg:text-2xl font-bold mb-6 pb-4 border-b border-border">Nostr</h3>
-                <div class="space-y-6">
+              <div class="bg-surface-card rounded-lg shadow-md p-4">
+                <h3 class="text-lg font-bold mb-4 pb-3 border-b border-border">Nostr</h3>
+                <div class="space-y-3">
                   <div>
-                    <div class="text-sm lg:text-base text-text-secondary mb-3">Lookup project on Nostr network</div>
+                    <div class="text-sm text-text-secondary mb-2">Lookup project on Nostr network</div>
                     <a [href]="'https://nostr.at/' + user?.npub" target="_blank"
-                      class="w-full flex items-center justify-center gap-3 px-4 lg:px-6 py-3 lg:py-4 bg-surface-hover rounded-xl text-text text-sm lg:text-base font-medium transition-all duration-300 ease-in-out hover:bg-surface-ground hover:shadow-md hover:-translate-y-0.5">
-                      <span class="material-icons text-lg lg:text-xl">open_in_new</span> 
+                      class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-surface-hover rounded-lg text-text text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-ground hover:shadow-md">
+                      <span class="material-icons text-base">open_in_new</span> 
                       View on nostr.at
                     </a>
                   </div>
 
-                  <div class="pt-4 border-t border-border">
-                    <div class="text-sm lg:text-base text-text-secondary mb-4">
+                  <div class="pt-2 border-t border-border">
+                    <div class="text-sm text-text-secondary mb-3">
                       Do you find this project problematic? Click button to report:
                     </div>
                     <button [title]="'Report this project'" (click)="reportProject()"
-                      class="w-full flex items-center justify-center gap-3 px-6 lg:px-8 py-3 lg:py-4 rounded-xl cursor-pointer transition-all duration-300 ease-in-out bg-yellow-500/10 hover:bg-yellow-500/20 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-surface-card group">
-                      <span class="material-icons text-xl lg:text-2xl text-yellow-500 group-hover:text-yellow-600 transition-all duration-300 group-hover:scale-110">
+                      class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg cursor-pointer transition-all duration-300 ease-in-out bg-yellow-500/10 hover:bg-yellow-500/20 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-surface-card group">
+                      <span class="material-icons text-base text-yellow-500 group-hover:text-yellow-600 transition-all duration-300 group-hover:scale-110">
                         report_problem
                       </span>
-                      <span class="text-sm lg:text-base font-medium text-yellow-600 group-hover:text-yellow-700">
+                      <span class="text-sm font-medium text-yellow-600 group-hover:text-yellow-700">
                         Report Project
                       </span>
                     </button>
@@ -757,8 +757,8 @@
                 <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-80 text-red-500">error_outline</span>
                 <p class="max-w-md mx-auto text-lg sm:text-xl lg:text-2xl text-red-600 dark:text-red-400 mb-6">{{ errorFaq() }}</p>
                 <button (click)="fetchFaq()" title="Retry loading FAQ"
-                  class="inline-flex items-center gap-3 px-6 lg:px-8 py-3 lg:py-4 rounded-xl text-base lg:text-lg font-bold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out hover:-translate-y-0.5">
-                  <span class="material-icons text-xl">refresh</span>
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
+                  <span class="material-icons text-base">refresh</span>
                   Retry
                 </button>
               </div>
@@ -790,8 +790,8 @@
                 <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-80 text-red-500">error_outline</span>
                 <p class="max-w-md mx-auto text-lg sm:text-xl lg:text-2xl text-red-600 dark:text-red-400 mb-6">{{ errorUpdates() }}</p>
                 <button (click)="fetchUpdates()" title="Retry loading updates"
-                  class="inline-flex items-center gap-3 px-6 lg:px-8 py-3 lg:py-4 rounded-xl text-base lg:text-lg font-bold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out hover:-translate-y-0.5">
-                  <span class="material-icons text-xl">refresh</span>
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
+                  <span class="material-icons text-base">refresh</span>
                   Retry
                 </button>
               </div>
@@ -828,8 +828,8 @@
                 <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-80 text-red-500">error_outline</span>
                 <p class="max-w-md mx-auto text-lg sm:text-xl lg:text-2xl text-red-600 dark:text-red-400 mb-6">{{ errorComments() }}</p>
                 <button (click)="fetchComments()" title="Retry loading comments"
-                  class="inline-flex items-center gap-3 px-6 lg:px-8 py-3 lg:py-4 rounded-xl text-base lg:text-lg font-bold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out hover:-translate-y-0.5">
-                  <span class="material-icons text-xl">refresh</span>
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
+                  <span class="material-icons text-base">refresh</span>
                   Retry
                 </button>
               </div>

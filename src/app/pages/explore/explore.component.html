@@ -30,7 +30,7 @@
 
 <div class="sticky top-4 z-50 px-4 mb-8 pointer-events-none">
   <div
-    class="max-w-6xl mx-auto bg-surface-card/90 backdrop-blur-lg rounded-xl shadow-xl border border-border pointer-events-auto transition-all duration-300 animate-in fade-in zoom-in duration-500"
+    class="max-w-6xl mx-auto bg-surface-card backdrop-blur-lg rounded-xl shadow-xl pointer-events-auto transition-all duration-300 animate-in fade-in zoom-in duration-500"
   >
     <div class="flex items-center gap-3 p-3">
       
@@ -38,7 +38,7 @@
         <input
           type="text"
           placeholder="Search projects..."
-          class="w-full h-10 pl-10 pr-10 rounded-lg bg-surface-ground border border-border focus:ring-2 focus:ring-accent focus:border-transparent text-sm text-text placeholder-text-secondary transition-all duration-300 hover:bg-surface-hover"
+          class="w-full h-10 pl-10 pr-10 rounded-lg bg-surface-ground focus:outline-none focus:bg-surface-ground text-sm text-text placeholder-text-secondary hover:bg-surface-hover"
           [value]="searchTerm()"
           (input)="onSearchInput($event)"
           aria-label="Search projects"
@@ -60,8 +60,8 @@
 
       
       <button
-        class="md:hidden flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg bg-surface-ground border border-border hover:bg-surface-hover text-text transition-all duration-300"
-        [ngClass]="{'bg-accent text-white border-accent': showMobileFilters}"
+        class="md:hidden flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg bg-surface-ground hover:bg-surface-hover text-text transition-all duration-300"
+        [ngClass]="{'bg-accent text-white': showMobileFilters}"
         (click)="toggleMobileFilters()"
         aria-label="Toggle filters"
       >
@@ -74,7 +74,7 @@
         <div class="relative">
           <button
             #filterBtn
-            class="h-10 px-4 flex items-center gap-2 rounded-lg bg-surface-ground border border-border hover:bg-surface-hover text-sm text-text transition-all duration-300"
+            class="h-10 px-4 flex items-center gap-2 rounded-lg bg-surface-ground hover:bg-surface-hover text-sm text-text transition-all duration-300"
             (click)="toggleFilterDropdown($event)"
             aria-label="Filter projects"
           >
@@ -88,7 +88,7 @@
           </button>
           @if (showFilterDropdown) {
             <div
-              class="absolute top-full right-0 mt-2 w-56 bg-surface-card rounded-lg shadow-xl border border-border z-10 p-3 animate-in fade-in slide-in-from-top-2 duration-300"
+              class="absolute top-full right-0 mt-2 w-56 bg-surface-card rounded-lg shadow-xl z-10 p-3 animate-in fade-in slide-in-from-top-2 duration-300"
             >
               <h3 class="text-xs font-semibold uppercase text-text-secondary px-2 py-1 mb-2">
                 Filter By
@@ -96,7 +96,7 @@
               @for (filter of filterOptions; track filter) {
                 <button
                   class="w-full text-left flex items-center gap-2 px-2 py-2 rounded-md hover:bg-surface-hover text-sm text-text transition-colors duration-200"
-                  [ngClass]="{'bg-accent/10 text-accent': activeFilter() === filter}"
+                  [ngClass]="{'bg-accent/25 text-accent font-semibold': activeFilter() === filter}"
                   (click)="setFilter(filter)"
                 >
                   <span class="material-icons text-base">{{
@@ -114,7 +114,7 @@
         <div class="relative">
           <button
             #sortBtn
-            class="h-10 px-4 flex items-center gap-2 rounded-lg bg-surface-ground border border-border hover:bg-surface-hover text-sm text-text transition-all duration-300"
+            class="h-10 px-4 flex items-center gap-2 rounded-lg bg-surface-ground hover:bg-surface-hover text-sm text-text transition-all duration-300"
             (click)="toggleSortDropdown($event)"
             aria-label="Sort projects"
           >
@@ -128,7 +128,7 @@
           </button>
           @if (showSortDropdown) {
             <div
-              class="absolute top-full right-0 mt-2 w-52 bg-surface-card rounded-lg shadow-xl border border-border z-10 p-3 animate-in fade-in slide-in-from-top-2 duration-300"
+              class="absolute top-full right-0 mt-2 w-52 bg-surface-card rounded-lg shadow-xl z-10 p-3 animate-in fade-in slide-in-from-top-2 duration-300"
             >
               <h3 class="text-xs font-semibold uppercase text-text-secondary px-2 py-1 mb-2">
                 Sort By
@@ -136,7 +136,7 @@
               @for (sort of sortOptions; track sort) {
                 <button
                   class="w-full text-left flex items-center gap-2 px-2 py-2 rounded-md hover:bg-surface-hover text-sm text-text transition-colors duration-200"
-                  [ngClass]="{'bg-accent/10 text-accent': activeSort() === sort}"
+                  [ngClass]="{'bg-accent/25 text-accent font-semibold': activeSort() === sort}"
                   (click)="setSort(sort)"
                 >
                   <span class="material-icons text-base">{{
@@ -152,7 +152,7 @@
         </div>
         
         <div
-          class="h-10 px-4 flex items-center rounded-lg bg-surface-ground border border-border text-text-secondary text-sm font-medium transition-colors duration-300"
+          class="h-10 px-4 flex items-center rounded-lg bg-surface-ground text-text-secondary text-sm font-medium transition-colors duration-300"
         >
           <span class="material-icons text-base mr-2">article</span>
           {{ filteredProjects().length }} {{ filteredProjects().length === 1 ? 'project' : 'projects' }}
@@ -160,7 +160,7 @@
         
         @if (searchTerm() || activeFilter() !== 'all' || activeSort() !== 'default') {
           <button
-            class="h-10 w-10 flex items-center justify-center rounded-lg bg-warning/10 border border-warning/30 text-warning hover:bg-warning/20 transition-all duration-300"
+            class="h-10 w-10 flex items-center justify-center rounded-lg bg-warning/10 text-warning hover:bg-warning/20 transition-all duration-300"
             (click)="resetFilters()"
             aria-label="Reset filters"
           >
@@ -172,14 +172,14 @@
 
     
     @if (showMobileFilters) {
-      <div class="md:hidden border-t border-border p-6 animate-in slide-in-from-top-4 duration-300">
+      <div class="md:hidden p-6 animate-in slide-in-from-top-4 duration-300">
         <div class="mb-6">
           <h4 class="text-sm font-semibold text-text-secondary mb-3">Filter by</h4>
           <div class="grid grid-cols-2 gap-3">
             @for (filter of filterOptions; track filter) {
               <button
-                class="px-4 py-2 rounded-xl text-sm flex items-center justify-center gap-2 border border-border text-text hover:bg-surface-hover transition-all duration-300"
-                [ngClass]="{'bg-primary/10 border-primary text-primary': activeFilter() === filter}"
+                class="px-4 py-2 rounded-xl text-sm flex items-center justify-center gap-2 text-text hover:bg-surface-hover transition-all duration-300"
+                [ngClass]="{'bg-accent/20 text-accent font-semibold': activeFilter() === filter}"
                 (click)="setFilter(filter)"
               >
                 <span class="material-icons text-base">{{
@@ -197,8 +197,8 @@
           <div class="grid grid-cols-2 gap-3">
             @for (sort of sortOptions; track sort) {
               <button
-                class="px-4 py-2 rounded-xl text-sm flex items-center justify-center gap-2 border border-border text-text hover:bg-surface-hover transition-all duration-300"
-                [ngClass]="{'bg-primary/10 border-primary text-primary': activeSort() === sort}"
+                class="px-4 py-2 rounded-xl text-sm flex items-center justify-center gap-2 text-text hover:bg-surface-hover transition-all duration-300"
+                [ngClass]="{'bg-accent/20 text-accent font-semibold': activeSort() === sort}"
                 (click)="setSort(sort)"
               >
                 <span class="material-icons text-base">{{
@@ -212,7 +212,7 @@
           </div>
         </div>
         @if (searchTerm() || activeFilter() !== 'all' || activeSort() !== 'default') {
-          <div class="flex justify-between items-center pt-4 border-t border-border">
+          <div class="flex justify-between items-center pt-4">
             <button
               class="px-5 py-2 rounded-xl text-sm flex items-center gap-2 bg-warning/10 text-warning hover:bg-warning/20 transition-all duration-300"
               (click)="resetFilters()"
