@@ -25,7 +25,7 @@
 </section>
 
 
-<div class="container mx-auto px-4 sm:px-6 lg:px-8 relative -mt-[60px] sm:-mt-[70px] md:-mt-[30px]">
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 relative -mt-[60px] sm:-mt-[80px] md:-mt-[30px]">
   @if (isDenied()) {
     <div class="flex flex-col items-center justify-center p-8 sm:p-12 mt-12 bg-surface-card rounded-xl shadow-lg text-center max-w-3xl mx-auto">
       <span class="material-icons text-6xl text-red-500 mb-6 animate-pulse">gpp_bad</span>
@@ -48,7 +48,7 @@
       <h1 class="text-2xl sm:text-3xl font-bold mb-4 text-text">Project not found... yet</h1>
       <p class="max-w-lg mb-8 text-text-secondary text-base sm:text-lg leading-relaxed">If you recently created a new Angor project, it might take a few minutes for it to be distributed and indexed on the decentralized infrastructure.</p>
       <div class="flex gap-4 max-sm:flex-col">
-        <button (click)="reloadPage()"
+        <button type="button" (click)="reloadPage()" title="Reload page to check for project updates"
           class="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm sm:text-base font-semibold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
           <span class="material-icons text-lg">refresh</span>
           Retry
@@ -62,178 +62,204 @@
     </div>
   } @else if (project()) {
 
-    <div class="flex flex-col md:flex-row md:flex-wrap gap-4 sm:gap-6 bg-surface-card rounded-xl shadow-lg mb-6 items-start px-4 sm:px-6 py-6 max-w-full">
-
-      <div class="flex-shrink-0 -mt-[80px] md:mt-0 mx-auto md:mx-0 w-24 md:w-32">
-        @if (project()?.metadata?.['picture'] && !failedProfileImage()) {
-          <img [src]="project()?.metadata?.['picture']"
-            class="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-surface-card shadow-lg transition-transform duration-300 ease-in-out cursor-pointer hover:scale-105"
-            alt="{{ project()?.metadata?.name }} logo" (error)="handleProfileError()"
-            (click)="openImagePopup(project()?.metadata?.['picture']!)" />
-        } @else {
-          <div
-            class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-surface-card shadow-lg flex items-center justify-center text-white text-3xl md:text-4xl font-semibold cursor-default bg-gradient-to-br from-blue-500 to-purple-600"
-            [style.background]="getRandomColor(projectId)" (click)="showImagePopup = false">
-            {{ getInitial(project()?.metadata?.name || projectId) }}
+    <!-- Main Project Header Card -->
+    <div class="bg-surface-card rounded-2xl shadow-xl mb-8 relative">
+      <!-- Header Content Container -->
+      <div class="p-6 sm:p-8 lg:p-10 pt-[70px] sm:pt-[90px] lg:pt-10">
+        <!-- Mobile/Tablet Layout: Profile + Info Section -->
+        <div class="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">
+          
+          <!-- Profile Image Section -->
+          <div class="flex-shrink-0 absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 lg:relative lg:top-auto lg:left-auto lg:transform-none lg:mt-0 mx-auto lg:mx-0">
+            @if (project()?.metadata?.['picture'] && !failedProfileImage()) {
+              <button type="button" 
+                class="block w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36 rounded-full border-4 border-surface-card shadow-2xl transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-3xl bg-transparent p-0"
+                title="View {{ project()?.metadata?.name }} profile image"
+                (click)="showImagePopup = true; selectedImage = project()?.metadata?.['picture'] || null">
+                <img [src]="project()?.metadata?.['picture']"
+                  class="w-full h-full rounded-full object-cover"
+                  alt="{{ project()?.metadata?.name }} logo" (error)="handleProfileError()" />
+              </button>
+                 
+            } @else {
+              <div
+                class="w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36 rounded-full border-4 border-surface-card shadow-2xl flex items-center justify-center text-white text-3xl sm:text-4xl lg:text-5xl font-bold cursor-default bg-blue-500 transition-all duration-300 ease-in-out hover:scale-105"
+                [style.background]="getRandomColor(projectId)">
+                {{ getInitial(project()?.metadata?.name || projectId) }}
+              </div>
+            }
           </div>
-        }
-      </div>
 
+          <!-- Main Content Section -->
+          <div class="flex-1 min-w-0 space-y-4 lg:space-y-6">
+            <!-- Title and Action Buttons Row -->
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <!-- Title Section -->
+              <div class="flex-1 min-w-0 text-center lg:text-left">
+                <h1 class="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-text leading-tight break-words">
+                  {{ project()?.metadata?.name || projectId }}
+                </h1>
+              </div>
 
-      <div class="flex flex-col gap-3 min-w-0 flex-1 items-center md:items-start text-center md:text-left mt-4 md:mt-0 max-w-full w-full">
-        <h1 class="m-0 text-2xl sm:text-3xl md:text-4xl font-bold break-words w-full line-clamp-2">
-          {{ project()?.metadata?.name || projectId }}
-        </h1>        
-        <div class="flex gap-3 flex-shrink-0 self-center md:self-start mt-2">
-          <button [title]="isFavorite() ? 'Remove from bookmarks' : 'Add to bookmarks'" (click)="toggleFavorite()"
-            class="flex items-center justify-center w-10 h-10 rounded-full cursor-pointer transition-all duration-300 ease-in-out bg-surface-hover hover:bg-surface-ground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface-card group"
-            [class.focus:ring-yellow-500]="isFavorite()" [class.focus:ring-blue-500]="!isFavorite()"
-            [attr.aria-pressed]="isFavorite()">
-            <span class="material-icons text-xl transition-transform duration-300 group-hover:scale-110"
-              [class.text-yellow-500]="isFavorite()" [class.text-text-secondary]="!isFavorite()"
-              [class.group-hover:text-yellow-600]="isFavorite()" [class.group-hover:text-blue-500]="!isFavorite()">
-              {{ isFavorite() ? "bookmark" : "bookmark_border" }}
-            </span>
-          </button>
+              <!-- Action Buttons -->
+              <div class="flex items-center justify-center sm:justify-end gap-3 flex-shrink-0">
+                <button [title]="isFavorite() ? 'Remove from bookmarks' : 'Add to bookmarks'" (click)="toggleFavorite()"
+                  class="flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 ease-in-out bg-surface-hover hover:bg-surface-ground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface-card group shadow-md hover:shadow-lg"
+                  [class.focus:ring-yellow-500]="isFavorite()" [class.focus:ring-blue-500]="!isFavorite()"
+                  [attr.aria-pressed]="isFavorite()">
+                  <span class="material-icons text-xl transition-all duration-300 group-hover:scale-110"
+                    [class.text-yellow-500]="isFavorite()" [class.text-text-secondary]="!isFavorite()"
+                    [class.group-hover:text-yellow-600]="isFavorite()" [class.group-hover:text-blue-500]="!isFavorite()">
+                    {{ isFavorite() ? "bookmark" : "bookmark_border" }}
+                  </span>
+                </button>
 
-          <button title="Share this project" (click)="openShareModal()"
-            class="flex items-center justify-center w-10 h-10 rounded-full cursor-pointer transition-all duration-300 ease-in-out bg-surface-hover hover:bg-surface-ground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface-card focus:ring-blue-500 group">
-            <span class="material-icons text-xl text-text-secondary group-hover:text-blue-500 transition-transform duration-300 group-hover:scale-110">
-              share
-            </span>
-          </button>
+                <button title="Share this project" (click)="openShareModal()"
+                  class="flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 ease-in-out bg-surface-hover hover:bg-surface-ground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface-card focus:ring-blue-500 group shadow-md hover:shadow-lg">
+                  <span class="material-icons text-xl text-text-secondary group-hover:text-blue-500 transition-all duration-300 group-hover:scale-110">
+                    share
+                  </span>
+                </button>
+              </div>
+            </div>
 
-        </div>
+            <!-- Description Section -->
+            <div class="w-full text-center lg:text-left">
+              @if (project()?.metadata?.about) {
+                <div class="prose prose-sm sm:prose-base lg:prose-lg max-w-none dark:prose-invert">
+                  <app-about-content [content]="project()?.metadata?.about"></app-about-content>
+                </div>
+              } @else {
+                <p class="text-sm sm:text-base lg:text-lg leading-relaxed text-text-secondary italic">No description provided.</p>
+              }
+            </div>
 
-        <div class="w-full mx-auto md:mx-0 mt-3 max-w-full">
-          @if (project()?.metadata?.about) {
-            <app-about-content [content]="project()?.metadata?.about"></app-about-content>
-          } @else {
-            <p class="text-sm sm:text-base leading-relaxed text-text-secondary m-0 italic">No description provided.</p>
-          }
-        </div>
+            <!-- Project Status Banner -->
+            @if (isProjectSuccessful()) {
+              <div class="flex items-start p-4 sm:p-5 lg:p-6 rounded-xl bg-gradient-to-r from-green-500/10 to-green-600/10 border border-green-500/30 shadow-lg">
+                <span class="material-icons text-green-500 text-2xl lg:text-3xl mr-4 flex-shrink-0 animate-pulse">check_circle</span>
+                <div class="min-w-0 flex-1">
+                  <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-green-700 dark:text-green-400 mb-2">Project Successfully Funded!</h3>
+                  <p class="text-sm sm:text-base lg:text-lg text-green-600 dark:text-green-500">
+                    Reached goal of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? "BTC" : "TBTC" }} 
+                    <span class="font-semibold">({{ getFundingPercentage() }}% funded)</span>
+                  </p>
+                </div>
+              </div>
+            } @else if (isProjectFailed()) {
+              <div class="flex items-start p-4 sm:p-5 lg:p-6 rounded-xl bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/30 shadow-lg">
+                <span class="material-icons text-red-500 text-2xl lg:text-3xl mr-4 flex-shrink-0 animate-pulse">error</span>
+                <div class="min-w-0 flex-1">
+                  <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-red-700 dark:text-red-400 mb-2">Project Did Not Reach Funding Goal</h3>
+                  <p class="text-sm sm:text-base lg:text-lg text-red-600 dark:text-red-500">
+                    Raised {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }} of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? "BTC" : "TBTC" }} 
+                    <span class="font-semibold">({{ getFundingPercentage() }}% funded)</span>
+                  </p>
+                </div>
+              </div>
+            }
 
-        @if (isProjectSuccessful()) {
-          <div class="flex items-center p-3 sm:p-4 rounded-lg bg-green-500/10 border border-green-500/30 mt-3 w-full max-w-xl mx-auto md:mx-0">
-            <span class="material-icons text-green-500 text-2xl mr-3 sm:mr-4 flex-shrink-0 animate-pulse">check_circle</span>
-            <div class="min-w-0 text-left">
-              <h3 class="m-0 mb-1 text-base sm:text-lg font-semibold text-green-700 dark:text-green-400">Project Successfully Funded!</h3>
-              <p class="m-0 text-sm sm:text-base text-green-600 dark:text-green-500 break-words">Reached goal of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? "BTC" : "TBTC" }} ({{ getFundingPercentage() }}% funded).</p>
+            <!-- Social Links Section -->
+            <div class="flex flex-wrap items-center justify-center lg:justify-start gap-3 lg:gap-4">
+              @if(project()?.metadata?.website) {
+                <a [href]="getWebsiteUrl(project()?.metadata?.website)" rel="noopener noreferrer" target="_blank"
+                  class="inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg bg-surface-hover text-text-secondary text-sm sm:text-base transition-all duration-300 ease-in-out hover:bg-surface-ground hover:text-accent hover:shadow-md hover:-translate-y-0.5"
+                  [title]="project()?.metadata?.website">
+                  <span class="material-icons text-lg">language</span>
+                  <span class="truncate max-w-[120px] sm:max-w-[180px] lg:max-w-[200px]">{{ formatWebsite(project()?.metadata?.website) }}</span>
+                </a>
+              }
+
+              @for (identity of project()?.externalIdentities; track identity.platform) {
+                <a [href]="getSocialLink(identity)" rel="noopener noreferrer" target="_blank"
+                  class="inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg bg-surface-hover text-text-secondary text-sm sm:text-base transition-all duration-300 ease-in-out hover:bg-surface-ground hover:text-accent hover:shadow-md hover:-translate-y-0.5"
+                  [title]="identity.username">
+                  <span class="material-icons text-lg">{{ getSocialIcon(identity.platform) }}</span>
+                  <span class="truncate max-w-[120px] sm:max-w-[180px] lg:max-w-[200px]">{{ formatUsername(identity.username) }}</span>
+                </a>
+              }
             </div>
           </div>
-        } @else if (isProjectFailed()) {
-          <div class="flex items-center p-3 sm:p-4 rounded-lg bg-red-500/10 border border-red-500/30 mt-3 w-full max-w-xl mx-auto md:mx-0">
-            <span class="material-icons text-red-500 text-2xl mr-3 sm:mr-4 flex-shrink-0 animate-pulse">error</span>
-            <div class="min-w-0 text-left">
-              <h3 class="m-0 mb-1 text-base sm:text-lg font-semibold text-red-700 dark:text-red-400">Project Did Not Reach Funding Goal</h3>
-              <p class="m-0 text-sm sm:text-base text-red-600 dark:text-red-500 break-words">Raised {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }} of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? "BTC" : "TBTC" }} ({{ getFundingPercentage() }}% funded).</p>
-            </div>
-          </div>
-        }
-
-        <!-- @if (project()?.details?.nostrPubKey && user?.npub) {
-          <div class="flex flex-wrap gap-2 sm:gap-3 mt-3 justify-center md:justify-start">
-            <a [href]="'https://primal.net/p/' + user?.npub" target="_blank"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-hover rounded-md text-text text-xs sm:text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-ground hover:shadow-sm">
-              <span class="material-icons text-sm">open_in_new</span> Primal
-            </a>
-            <a [href]="'https://notes.blockcore.net/p/' + user?.npub" target="_blank"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-hover rounded-md text-text text-xs sm:text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-ground hover:shadow-sm">
-              <span class="material-icons text-sm">open_in_new</span> Notes
-            </a>
-            <a [href]="'https://nostr.at/' + user?.npub" target="_blank"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-hover rounded-md text-text text-xs sm:text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-ground hover:shadow-sm">
-              <span class="material-icons text-sm">open_in_new</span> nostr.at
-            </a>
-          </div>
-        } -->
-
-        <div class="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-2 mt-3 justify-center md:justify-start">
-
-
-           @if(project()?.metadata?.website) {
-            <a [href]="getWebsiteUrl(project()?.metadata?.website)" rel="noopener noreferrer" target="_blank"
-              class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-text-secondary text-xs sm:text-sm transition-all duration-300 ease-in-out hover:bg-surface-hover hover:text-accent"
-              [title]="project()?.metadata?.website">
-              <span class="material-icons text-sm sm:text-base">language</span>
-              <span class="truncate max-w-[100px] sm:max-w-[150px]">{{ formatWebsite(project()?.metadata?.website) }}</span>
-            </a>
-          }
-
-
-          @for (identity of project()?.externalIdentities; track identity.platform) {
-            <a [href]="getSocialLink(identity)" rel="noopener noreferrer" target="_blank"
-              class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-text-secondary text-xs sm:text-sm transition-all duration-300 ease-in-out hover:bg-surface-hover hover:text-accent"
-              [title]="identity.username">
-              <span class="material-icons text-sm sm:text-base">{{ getSocialIcon(identity.platform) }}</span>
-              <span class="truncate max-w-[100px] sm:max-w-[150px]">{{ formatUsername(identity.username) }}</span>
-            </a>
-          }
         </div>
-      </div>
 
-
-      <div class="hidden md:flex items-start flex-shrink-0 mt-4 md:mt-0">
-        <button
-          class="px-6 py-3 text-base sm:text-lg font-semibold text-white bg-accent rounded-lg cursor-pointer transition-all duration-300 ease-in-out hover:enabled:-translate-y-0.5 hover:enabled:shadow-lg disabled:bg-surface-hover disabled:text-text-secondary disabled:cursor-not-allowed"
-          [disabled]="!canInvest()" (click)="canInvest() && openInvestWindow()">
-          @if (isProjectEnded()) { Ended {{ project()?.details?.expiryDate ?? 0 | ago }} }
-          <!-- @else if (isProjectNotStarted()) { Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest With Angor Wallet) } -->
-          @else if (isProjectNotStarted()) { Invest With Angor Wallet }
-          @else { Invest With Angor Wallet }
-        </button>
+        <!-- Invest Button Section - Full Width for Better Responsiveness -->
+        <div class="mt-8 lg:mt-10">
+          <div class="flex justify-center lg:justify-end">
+            <button
+              class="w-full sm:w-auto min-w-[280px] px-8 py-4 sm:px-10 sm:py-5 text-lg sm:text-xl font-bold text-white bg-accent rounded-xl shadow-lg transition-all duration-300 ease-in-out hover:enabled:shadow-xl hover:enabled:-translate-y-1 hover:enabled:scale-105 hover:enabled:bg-accent-dark disabled:bg-surface-hover disabled:text-text-secondary disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none"
+              [disabled]="!canInvest()" (click)="canInvest() && openInvestWindow()">
+              @if (isProjectEnded()) { 
+                <span class="flex items-center justify-center gap-2">
+                  <span class="material-icons">timer_off</span>
+                  Ended {{ project()?.details?.expiryDate ?? 0 | ago }}
+                </span>
+              } @else { 
+                <span class="flex items-center justify-center gap-2">
+                  <span class="material-icons">account_balance_wallet</span>
+                  Invest With Angor Wallet
+                </span>
+              }
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
 
-    <div class="md:hidden mb-6 px-4">
-      <button
-        class="w-full px-6 py-3 text-lg font-semibold text-white bg-accent rounded-lg cursor-pointer transition-all duration-300 ease-in-out hover:enabled:-translate-y-0.5 hover:enabled:shadow-lg disabled:bg-surface-hover disabled:text-text-secondary disabled:cursor-not-allowed"
-        [disabled]="!canInvest()" (click)="canInvest() && openInvestWindow()">
-        @if (isProjectEnded()) { Ended {{ project()?.details?.expiryDate ?? 0 | ago }} }
-        <!-- @else if (isProjectNotStarted()) { Starts {{ project()?.details?.startDate ?? 0 | ago }} (Invest With Angor Wallet) } -->
-        @else if (isProjectNotStarted()) { Invest With Angor Wallet }
-        @else { Invest With Angor Wallet }
-      </button>
-    </div>
 
 
-    <div class="container mx-auto flex flex-col md:flex-row gap-6">
-
-      <div class="sticky top-4 z-30 flex flex-row md:flex-col gap-3 h-fit rounded-xl bg-surface-card p-4 shadow-lg overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover md:w-40 flex-shrink-0 max-w-full">
-        @for (tab of tabs; track tab.id) {
-          <div
-            class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 ease-in-out text-text hover:bg-surface-hover hover:text-accent flex-1 md:flex-none justify-center md:justify-start min-w-[60px]"
-            [class.bg-accent]="activeTab === tab.id" [class.text-white]="activeTab === tab.id"
-            (click)="setActiveTab(tab.id)">
-            <span class="material-icons text-lg transition-transform duration-200 ease-in-out group-hover:scale-110"
-              [class.text-white]="activeTab === tab.id">{{ tab.icon }}</span>
-            <span class="text-sm font-medium hidden md:inline">{{ tab.label }}</span>
-          </div>
-        }
+    <!-- Main Content Container -->
+    <div class="flex flex-col xl:flex-row gap-6 lg:gap-8">
+      <!-- Responsive Navigation Tabs -->
+      <div class="xl:sticky xl:top-4 z-30 xl:w-48 flex-shrink-0">
+        <div class="flex xl:flex-col gap-2 lg:gap-3 rounded-xl bg-surface-card p-4 lg:p-5 shadow-lg overflow-x-auto xl:overflow-x-visible scrollbar-thin scrollbar-thumb-surface-hover">
+          @for (tab of tabs; track tab.id) {
+            <button
+              class="flex items-center justify-center xl:justify-start gap-3 p-3 lg:p-4 rounded-lg transition-all duration-200 ease-in-out text-text hover:bg-surface-hover hover:text-accent flex-1 xl:flex-none min-w-[80px] xl:min-w-0 whitespace-nowrap group"
+              [class.bg-accent]="activeTab === tab.id" 
+              [class.text-white]="activeTab === tab.id"
+              [class.shadow-md]="activeTab === tab.id"
+              [title]="tab.label"
+              (click)="setActiveTab(tab.id)">
+              <span class="material-icons text-lg lg:text-xl transition-all duration-200 ease-in-out group-hover:scale-110"
+                [class.text-white]="activeTab === tab.id">{{ tab.icon }}</span>
+              <span class="text-sm lg:text-base font-medium hidden xl:inline">{{ tab.label }}</span>
+            </button>
+          }
+        </div>
       </div>
 
-      <div class="flex flex-col gap-6 flex-1 max-w-full min-w-0">
+      <!-- Tab Content Area -->
+      <div class="flex-1 min-w-0 max-w-full">
         @if (activeTab === 'project') {
-          <div class="flex flex-col lg:flex-row gap-6 max-w-full">
-            <div class="flex flex-col gap-6 w-full lg:w-2/3 min-w-0 max-w-full">
+          <div class="flex flex-col 2xl:flex-row gap-6 lg:gap-8">
+            <!-- Main Content Column -->
+            <div class="flex-1 min-w-0 space-y-6 lg:space-y-8">
               @if (project()?.content) {
                 @if (project()?.media?.length) {
-                  <div class="relative w-full rounded-xl overflow-hidden aspect-video shadow-lg bg-surface-hover max-w-full">
+                  <div class="relative w-full rounded-2xl overflow-hidden aspect-video shadow-xl bg-surface-hover">
                     <div class="flex h-full transition-transform duration-500 ease-in-out"
                       [style.transform]="'translateX(' + -currentSlide * 100 + '%)'">
                       @for (item of project()?.media; track item.url) {
                         <div class="min-w-full h-full flex-shrink-0">
                           @if (item.type === 'image') {
                             @if (!hasMediaFailed(item.url)) {
-                              <img [src]="item.url" alt="Project media" loading="lazy"
-                                class="w-full h-full object-cover cursor-pointer transition-transform duration-300 ease-in-out hover:scale-105"
-                                (click)="showImagePopup = true; selectedImage = item.url" (error)="handleMediaError(item.url)" />
+                              <button type="button" 
+                                class="block w-full h-full bg-transparent p-0 border-0 cursor-pointer"
+                                title="View image"
+                                (click)="showImagePopup = true; selectedImage = item.url">
+                                <img [src]="item.url" alt="Project media" loading="lazy"
+                                  class="w-full h-full object-cover transition-transform duration-300 ease-in-out hover:scale-105"
+                                  (error)="handleMediaError(item.url)" />
+                              </button>
                             } @else {
-                              <div class="w-full h-full flex items-center justify-center bg-surface-ground"
-                                [style.background]="getRandomColor(item.url)" (click)="showImagePopup = false">
+                              <button type="button"
+                                class="w-full h-full flex items-center justify-center bg-surface-ground border-0 cursor-pointer"
+                                [style.background]="getRandomColor(item.url)"
+                                title="Close image popup"
+                                (click)="showImagePopup = false">
                                 <span class="material-icons text-5xl text-white/70">broken_image</span>
-                              </div>
+                              </button>
                             }
                           } @else if (item.type === 'video') {
                             @if (isYouTubeUrl(item.url)) {
@@ -264,53 +290,61 @@
                     </div>
                     @if ((project()?.media?.length ?? 0) > 1) {
                       <button
+                        type="button"
                         class="absolute top-1/2 -translate-y-1/2 left-4 w-12 h-12 bg-black/60 text-white rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-black/80 hover:shadow-lg"
-                        (click)="prevSlide()">
+                        (click)="prevSlide()" title="Previous image">
                         <span class="material-icons text-2xl">chevron_left</span>
                       </button>
                       <button
+                        type="button"
                         class="absolute top-1/2 -translate-y-1/2 right-4 w-12 h-12 bg-black/60 text-white rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-black/80 hover:shadow-lg"
-                        (click)="nextSlide()">
+                        (click)="nextSlide()" title="Next image">
                         <span class="material-icons text-2xl">chevron_right</span>
                       </button>
                       <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                         @for (item of project()?.media; track $index) {
                           <button
+                            type="button"
                             class="w-3 h-3 rounded-full bg-white/60 cursor-pointer transition-all duration-300 ease-in-out hover:bg-white/90 hover:scale-125"
-                            [class.bg-white]="currentSlide === $index" (click)="currentSlide = $index"></button>
+                            [class.bg-white]="currentSlide === $index" 
+                            (click)="currentSlide = $index"
+                            [title]="'Go to slide ' + ($index + 1)"
+                            [attr.aria-label]="'Go to slide ' + ($index + 1)">
+                            <span class="sr-only">Slide {{ $index + 1 }}</span>
+                          </button>
                         }
                       </div>
                     }
                   </div>
                 }
-                <div class="bg-surface-card rounded-xl shadow-sm p-6 sm:p-8 max-w-full">
-                  <h2 class="mt-0 mb-4 pb-3 border-b border-border text-xl sm:text-2xl md:text-3xl font-semibold">About This Project</h2>
-                  <markdown [data]="project()?.content"
-                    class="prose prose-sm sm:prose-base max-w-none prose-headings:mt-6 prose-headings:mb-3 prose-p:mb-4 prose-p:leading-relaxed prose-img:rounded-md prose-img:my-5 prose-code:bg-surface-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surface-hover prose-pre:p-4 prose-pre:rounded-md prose-pre:overflow-x-auto prose-a:text-accent prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-4 prose-blockquote:border-accent prose-blockquote:pl-4 prose-blockquote:ml-0 prose-blockquote:text-text-secondary dark:prose-invert dark:prose-headings:text-text dark:prose-p:text-text-secondary dark:prose-a:text-accent-light dark:prose-blockquote:text-text-secondary dark:prose-code:bg-surface-ground dark:prose-pre:bg-surface-ground">
-                  </markdown>
+                <div class="bg-surface-card rounded-2xl shadow-md p-6 sm:p-8 lg:p-10">
+                  <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-6 pb-4 border-b border-border">About This Project</h2>
+                  <div class="prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-8 prose-headings:mb-4 prose-p:mb-6 prose-p:leading-relaxed prose-img:rounded-lg prose-img:my-6 prose-code:bg-surface-hover prose-code:px-2 prose-code:py-1 prose-code:rounded prose-pre:bg-surface-hover prose-pre:p-4 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-a:text-accent prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-4 prose-blockquote:border-accent prose-blockquote:pl-6 prose-blockquote:ml-0 prose-blockquote:text-text-secondary dark:prose-invert dark:prose-headings:text-text dark:prose-p:text-text-secondary dark:prose-a:text-accent-light dark:prose-blockquote:text-text-secondary dark:prose-code:bg-surface-ground dark:prose-pre:bg-surface-ground">
+                    <markdown [data]="project()?.content"></markdown>
+                  </div>
                 </div>
               } @else {
-                <div class="bg-surface-card rounded-xl shadow-sm p-8 sm:p-12 text-center text-text-secondary max-w-full">
-                  <span class="material-icons text-6xl mb-4 opacity-50">description</span>
-                  <p class="text-base sm:text-lg">No project description provided.</p>
+                <div class="bg-surface-card rounded-2xl shadow-md p-8 sm:p-12 lg:p-16 text-center text-text-secondary">
+                  <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-50">description</span>
+                  <p class="text-lg sm:text-xl lg:text-2xl">No project description provided.</p>
                 </div>
               }
 
                 @if (project()?.members?.length) {
-                  <div class="bg-surface-card rounded-xl shadow-sm p-6 sm:p-8 max-w-full">
-                    <h2 class="mt-0 mb-4 pb-3 border-b border-border text-xl sm:text-2xl md:text-3xl font-semibold">
+                  <div class="bg-surface-card rounded-2xl shadow-md p-6 sm:p-8 lg:p-10">
+                    <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-6 pb-4 border-b border-border">
                       Project Team
                       @if (loadingMemberBadges()) {
-                        <span class="inline-flex items-center ml-2">
-                          <div class="w-4 h-4 border-2 border-accent/30 border-t-accent rounded-full animate-spin"></div>
+                        <span class="inline-flex items-center ml-3">
+                          <div class="w-5 h-5 border-2 border-accent/30 border-t-accent rounded-full animate-spin"></div>
                         </span>
                       }
                     </h2>
-                    <div class="flex flex-wrap gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
                       @for (member of project()?.members; track member) {
-                        <div class="bg-surface-ground rounded-lg p-4 transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.33%-1rem)] relative">
+                        <div class="bg-surface-ground rounded-xl p-4 lg:p-6 transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 relative">
                           @if (isMemberVerified(member)) {
-                            <div class="absolute top-2 right-2 flex items-center justify-center w-6 h-6 bg-green-500 rounded-full" title="Verified Angor Project Member">
+                            <div class="absolute top-3 right-3 flex items-center justify-center w-7 h-7 bg-green-500 rounded-full shadow-md" title="Verified Angor Project Member">
                               <span class="material-icons text-white text-sm">verified</span>
                             </div>
                           }
@@ -322,226 +356,225 @@
                 }
             </div>
 
+            <!-- Statistics and Details Sidebar -->
+            <div class="2xl:w-96 flex-shrink-0 space-y-6 lg:space-y-8">
+              <!-- Funding Statistics -->
+              <div class="space-y-4 lg:space-y-6">
+                <div
+                  class="p-6 lg:p-8 bg-surface-card rounded-2xl shadow-md transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 relative overflow-hidden">
+                  <!-- Progress Background -->
+                  <div class="absolute inset-0 bg-surface-card">
+                    <div class="h-full transition-all duration-700 ease-out"
+                      [class]="getFundingPercentage() >= 100 ? 'bg-green-500/10' : 'bg-blue-500/10'"
+                      [style.width.%]="getFundingPercentage() > 100 ? 100 : getFundingPercentage()"></div>
+                  </div>
+                  <div class="relative flex items-start gap-4 lg:gap-6">
+                    <div
+                      class="w-14 h-14 lg:w-16 lg:h-16 flex-shrink-0 flex items-center justify-center bg-blue-500/10 rounded-xl">
+                      <span class="material-icons text-2xl lg:text-3xl text-blue-500">campaign</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex justify-between items-center mb-2">
+                        <div class="text-sm lg:text-base text-text-secondary">Total Raised</div>
+                        <div class="text-xs lg:text-sm font-bold px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                          [ngClass]="getFundingPercentage() >= 100 ? 'bg-green-500/10 text-green-600 dark:text-green-400' : ''">
+                          {{ getFundingPercentage() }}%
+                        </div>
+                      </div>
+                      <div class="text-2xl lg:text-3xl font-bold mb-3">
+                        {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }}
+                        <span class="text-sm lg:text-base font-medium text-text-secondary ml-2">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+                      </div>
+                      <div class="relative w-full h-3 bg-surface-hover rounded-full overflow-hidden">
+                        <div class="absolute top-0 left-0 h-full transition-all duration-700 ease-out rounded-full"
+                          [class]="getFundingPercentage() >= 100 ? 'bg-green-500' : 'bg-blue-500'"
+                          [style.width.%]="getFundingPercentage() > 100 ? 100 : getFundingPercentage()"></div>
+                      </div>
+                      <div class="text-xs lg:text-sm text-text-secondary mt-2">Goal: {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}</div>
+                    </div>
+                  </div>
+                </div>
 
-            <div class="flex flex-col gap-6 w-full lg:w-1/3 min-w-0 max-w-full">
-              <div class="flex flex-col gap-6">
                 <div
-                  class="flex items-start gap-4 p-6 bg-surface-card rounded-xl shadow-sm transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 max-w-full"
-                  [style.background]="'linear-gradient(90deg, ' + (getFundingPercentage() >= 100 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.1)') + ' ' + (getFundingPercentage() > 100 ? 100 : getFundingPercentage()) + '%, var(--surface-card) ' + (getFundingPercentage() > 100 ? 100 : getFundingPercentage()) + '%)'">
-                  <div
-                    class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-blue-500/10 rounded-full">
-                    <span class="material-icons text-2xl text-blue-500">campaign</span>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="flex justify-between items-center mb-1">
-                      <div class="text-sm text-text-secondary truncate">Total Raised</div>
-                      <div class="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                        [ngClass]="getFundingPercentage() >= 100 ? 'bg-green-500/10 text-green-600 dark:text-green-400' : ''">
-                        {{ getFundingPercentage() }}% of goal
+                  class="p-6 lg:p-8 bg-surface-card rounded-2xl shadow-md transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1">
+                  <div class="flex items-start gap-4 lg:gap-6">
+                    <div
+                      class="w-14 h-14 lg:w-16 lg:h-16 flex-shrink-0 flex items-center justify-center bg-purple-500/10 rounded-xl">
+                      <span class="material-icons text-2xl lg:text-3xl text-purple-500">people</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm lg:text-base text-text-secondary mb-2">Total Investors</div>
+                      <div class="text-2xl lg:text-3xl font-bold flex items-center gap-2">
+                        {{ project()?.stats?.investorCount || '0' }}
+                        @if (project()?.stats?.investorCount) {
+                          <span class="text-green-500">
+                            <span class="material-icons text-lg lg:text-xl">trending_up</span>
+                          </span>
+                        }
                       </div>
-                    </div>
-                    <div class="text-xl sm:text-2xl font-semibold mb-2 truncate">
-                      {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }}
-                      <span class="text-sm font-medium text-text-secondary ml-1">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
-                    </div>
-                    <div class="relative w-full h-2 bg-surface-hover rounded-full overflow-hidden">
-                      <div class="absolute top-0 left-0 h-full transition-all duration-500 ease-out"
-                        [class]="getFundingPercentage() >= 100 ? 'bg-green-500' : 'bg-blue-500'"
-                        [style.width.%]="getFundingPercentage() > 100 ? 100 : getFundingPercentage()"></div>
-                    </div>
-                    <div class="text-xs text-text-secondary mt-1.5 truncate">Target: {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}</div>
-                  </div>
-                </div>
-                <div
-                  class="flex items-start gap-4 p-6 bg-surface-card rounded-xl shadow-sm transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 max-w-full">
-                  <div
-                    class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-purple-500/10 rounded-full">
-                    <span class="material-icons text-2xl text-purple-500">people</span>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="text-sm text-text-secondary mb-1 truncate">Total Investors</div>
-                    <div class="text-xl sm:text-2xl font-semibold truncate">
-                      {{ project()?.stats?.investorCount || '0' }}
-                      @if (project()?.stats?.investorCount) {
-                        <span class="text-sm font-medium ml-2 inline-flex items-center text-green-500">
-                          <span class="material-icons text-base">trending_up</span>
-                        </span>
-                      }
                     </div>
                   </div>
                 </div>
+
                 <div
-                  class="flex items-start gap-4 p-6 bg-surface-card rounded-xl shadow-sm transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 max-w-full"
-                  [style.background]="'linear-gradient(90deg, rgba(245, 158, 11, 0.1) ' + getSpentPercentage() + '%, var(--surface-card) ' + getSpentPercentage() + '%)'">
-                  <div
-                    class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-orange-500/10 rounded-full">
-                    <span class="material-icons text-2xl text-orange-500">account_balance_wallet</span>
+                  class="p-6 lg:p-8 bg-surface-card rounded-2xl shadow-md transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 relative overflow-hidden">
+                  <!-- Progress Background -->
+                  <div class="absolute inset-0 bg-surface-card">
+                    <div class="h-full bg-orange-500/10 transition-all duration-700 ease-out"
+                      [style.width.%]="getSpentPercentage()"></div>
                   </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="flex justify-between items-center mb-1">
-                      <div class="text-sm text-text-secondary truncate">Founder Spent</div>
-                      <div
-                        class="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400">
-                        {{ getSpentPercentage() }}% of funds
+                  <div class="relative flex items-start gap-4 lg:gap-6">
+                    <div
+                      class="w-14 h-14 lg:w-16 lg:h-16 flex-shrink-0 flex items-center justify-center bg-orange-500/10 rounded-xl">
+                      <span class="material-icons text-2xl lg:text-3xl text-orange-500">account_balance_wallet</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex justify-between items-center mb-2">
+                        <div class="text-sm lg:text-base text-text-secondary">Founder Spent</div>
+                        <div
+                          class="text-xs lg:text-sm font-bold px-3 py-1 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                          {{ getSpentPercentage() }}%
+                        </div>
                       </div>
-                    </div>
-                    <div class="text-xl sm:text-2xl font-semibold mb-2 truncate">
-                      {{ bitcoin.toBTC(project()?.stats?.amountSpentSoFarByFounder ?? 0) }}
-                      <span class="text-sm font-medium text-text-secondary ml-1">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
-                    </div>
-                    <div class="relative w-full h-2 bg-surface-hover rounded-full overflow-hidden">
-                      <div class="absolute top-0 left-0 h-full bg-orange-500 transition-all duration-500 ease-out"
-                        [style.width.%]="getSpentPercentage()"></div>
+                      <div class="text-2xl lg:text-3xl font-bold mb-3">
+                        {{ bitcoin.toBTC(project()?.stats?.amountSpentSoFarByFounder ?? 0) }}
+                        <span class="text-sm lg:text-base font-medium text-text-secondary ml-2">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+                      </div>
+                      <div class="relative w-full h-3 bg-surface-hover rounded-full overflow-hidden">
+                        <div class="absolute top-0 left-0 h-full bg-orange-500 transition-all duration-700 ease-out rounded-full"
+                          [style.width.%]="getSpentPercentage()"></div>
+                      </div>
                     </div>
                   </div>
                 </div>
+
                 <div
-                  class="flex items-start gap-4 p-6 bg-surface-card rounded-xl shadow-sm transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 max-w-full"
-                  [style.background]="'linear-gradient(90deg, rgba(239, 68, 68, 0.1) ' + getPenaltiesPercentage() + '%, var(--surface-card) ' + getPenaltiesPercentage() + '%)'">
-                  <div
-                    class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-red-500/10 rounded-full">
-                    <span class="material-icons text-2xl text-red-500">logout</span>
+                  class="p-6 lg:p-8 bg-surface-card rounded-2xl shadow-md transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 relative overflow-hidden">
+                  <!-- Progress Background -->
+                  <div class="absolute inset-0 bg-surface-card">
+                    <div class="h-full bg-red-500/10 transition-all duration-700 ease-out"
+                      [style.width.%]="getPenaltiesPercentage()"></div>
                   </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="flex justify-between items-center mb-1">
-                      <div class="text-sm text-text-secondary truncate">Investor Withdrawals</div>
-                      <div
-                        class="text-xs font-medium px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400">
-                        {{ project()?.stats?.countInPenalties || '0' }} investors
+                  <div class="relative flex items-start gap-4 lg:gap-6">
+                    <div
+                      class="w-14 h-14 lg:w-16 lg:h-16 flex-shrink-0 flex items-center justify-center bg-red-500/10 rounded-xl">
+                      <span class="material-icons text-2xl lg:text-3xl text-red-500">logout</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex justify-between items-center mb-2">
+                        <div class="text-sm lg:text-base text-text-secondary">Investor Withdrawals</div>
+                        <div
+                          class="text-xs lg:text-sm font-bold px-3 py-1 rounded-full bg-red-500/10 text-red-600 dark:text-red-400">
+                          {{ project()?.stats?.countInPenalties || '0' }}
+                        </div>
                       </div>
-                    </div>
-                    <div class="text-xl sm:text-2xl font-semibold mb-2 truncate">
-                      {{ bitcoin.toBTC(project()?.stats?.amountInPenalties ?? 0) }}
-                      <span class="text-sm font-medium text-text-secondary ml-1">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
-                    </div>
-                    <div class="relative w-full h-2 bg-surface-hover rounded-full overflow-hidden">
-                      <div class="absolute top-0 left-0 h-full bg-red-500 transition-all duration-500 ease-out"
-                        [style.width.%]="getPenaltiesPercentage()"></div>
+                      <div class="text-2xl lg:text-3xl font-bold mb-3">
+                        {{ bitcoin.toBTC(project()?.stats?.amountInPenalties ?? 0) }}
+                        <span class="text-sm lg:text-base font-medium text-text-secondary ml-2">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+                      </div>
+                      <div class="relative w-full h-3 bg-surface-hover rounded-full overflow-hidden">
+                        <div class="absolute top-0 left-0 h-full bg-red-500 transition-all duration-700 ease-out rounded-full"
+                          [style.width.%]="getPenaltiesPercentage()"></div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-              <div class="bg-surface-card rounded-xl shadow-sm p-6 sm:p-8 max-w-full">
-                <h3 class="mt-0 mb-4 pb-3 border-b border-border text-lg sm:text-xl font-semibold">Project Details</h3>
-                <ul class="space-y-4">
-                  <li class="flex items-start gap-3">
-                    <span class="material-icons text-xl text-accent mt-0.5 flex-shrink-0">event_available</span>
-                    <div class="min-w-0">
-                      <div class="text-sm text-text-secondary">Start Date</div>
-                      <div class="text-base sm:text-lg font-medium">
+              <!-- Project Details Section -->
+              <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8">
+                <h3 class="text-xl lg:text-2xl font-bold mb-6 pb-4 border-b border-border">Project Details</h3>
+                <div class="space-y-5 lg:space-y-6">
+                  <div class="flex items-start gap-4">
+                    <span class="material-icons text-xl lg:text-2xl text-accent mt-1 flex-shrink-0">event_available</span>
+                    <div class="min-w-0 flex-1">
+                      <div class="text-sm lg:text-base text-text-secondary mb-1">Start Date</div>
+                      <div class="text-base lg:text-lg font-semibold">
                         {{ formatDate(project()?.details?.startDate) }}
                         @if (project()?.details?.startDate) {
-                          <span class="block text-xs text-text-secondary mt-0.5 italic">
+                          <span class="block text-xs lg:text-sm text-text-secondary mt-1 italic">
                             @if (isProjectNotStarted()) { (Starts {{ project()?.details?.startDate ?? 0 | ago }}) }
                             @else { (Started {{ project()?.details?.startDate ?? 0 | ago }}) }
                           </span>
                         }
                       </div>
                     </div>
-                  </li>
-                  <li class="flex items-start gap-3">
-                    <span class="material-icons text-xl text-accent mt-0.5 flex-shrink-0">event_available</span>
-                    <div class="min-w-0">
-                      <div class="text-sm text-text-secondary">End Date</div>
-                      <div class="text-base sm:text-lg font-medium">
-                        @if (project()?.details?.endDate) {
-                        {{ formatDate(project()?.details?.endDate) }}
-                        <span class="block text-xs text-text-secondary mt-0.5 italic">
-                          @if (isProjectEnded()) {
-                          (Ended {{ project()?.details?.endDate ?? 0 | ago }})
-                          }
-                          @else if (isProjectNotStarted()) {
-                          (Will end {{ project()?.details?.endDate ?? 0 | ago }})
-                          }
-                          @else {
-                          (Ends {{ project()?.details?.endDate ?? 0 | ago }})
-                          }
-                        </span>
-                        } @else if (project()?.details?.stages?.length) {
-                        {{ formatDate(project()?.details?.stages?.[0]?.releaseDate || 0) }}
-                        <span class="block text-xs text-text-secondary mt-0.5 italic">
-                          (First stage release date)
-                        </span>
-                        } @else {
-                        <span class="text-text-secondary italic">Not specified</span>
-                        }
-                      </div>
-                    </div>
-                  </li>
+                  </div>
 
-                  <li class="flex items-start gap-3">
-                    <span class="material-icons text-xl text-accent mt-0.5 flex-shrink-0">timer</span>
-                    <div class="min-w-0">
-                      <div class="text-sm text-text-secondary">Expiry Date</div>
-                      <div class="text-base sm:text-lg font-medium">
+                  <div class="flex items-start gap-4">
+                    <span class="material-icons text-xl lg:text-2xl text-accent mt-1 flex-shrink-0">timer</span>
+                    <div class="min-w-0 flex-1">
+                      <div class="text-sm lg:text-base text-text-secondary mb-1">Expiry Date</div>
+                      <div class="text-base lg:text-lg font-semibold">
                         {{ formatDate(project()?.details?.expiryDate) }}
                         @if (project()?.details?.expiryDate) {
-                          <span class="block text-xs text-text-secondary mt-0.5 italic">
+                          <span class="block text-xs lg:text-sm text-text-secondary mt-1 italic">
                             @if (isProjectEnded()) { (Ended {{ project()?.details?.expiryDate ?? 0 | ago }}) }
                             @else { ({{ getRemainingTimeText(project()?.details?.expiryDate) }}) }
                           </span>
                         } @else {
-                          <span class="block text-xs text-text-secondary mt-0.5 italic">(No expiry date)</span>
+                          <span class="block text-xs lg:text-sm text-text-secondary mt-1 italic">(No expiry date)</span>
                         }
                       </div>
                     </div>
-                  </li>
+                  </div>
+
                   @if (projectDuration()) {
-                    <li class="flex items-start gap-3">
-                      <span class="material-icons text-xl text-accent mt-0.5 flex-shrink-0">date_range</span>
-                      <div class="min-w-0">
-                        <div class="text-sm text-text-secondary">Project Duration</div>
-                        <div class="text-base sm:text-lg font-medium">
+                    <div class="flex items-start gap-4">
+                      <span class="material-icons text-xl lg:text-2xl text-accent mt-1 flex-shrink-0">date_range</span>
+                      <div class="min-w-0 flex-1">
+                        <div class="text-sm lg:text-base text-text-secondary mb-1">Project Duration</div>
+                        <div class="text-base lg:text-lg font-semibold">
                           {{ projectDuration() }}
                         </div>
                       </div>
-                    </li>
-                  }
-                  <li class="flex items-start gap-3">
-                    <span class="material-icons text-xl text-accent mt-0.5 flex-shrink-0">gavel</span>
-                    <div class="min-w-0">
-                      <div class="text-sm text-text-secondary">Penalty Period</div>
-                      <div class="text-base sm:text-lg font-medium">{{ project()?.details?.penaltyDays }} days</div>
-                      <div class="text-xs text-text-secondary mt-0.5 italic">(Investor withdrawal penalty window after expiry)</div>
                     </div>
-                  </li>
-                </ul>
+                  }
+
+                  <div class="flex items-start gap-4">
+                    <span class="material-icons text-xl lg:text-2xl text-accent mt-1 flex-shrink-0">gavel</span>
+                    <div class="min-w-0 flex-1">
+                      <div class="text-sm lg:text-base text-text-secondary mb-1">Penalty Period</div>
+                      <div class="text-base lg:text-lg font-semibold">{{ project()?.details?.penaltyDays }} days</div>
+                      <div class="text-xs lg:text-sm text-text-secondary mt-1 italic">(Investor withdrawal penalty window after expiry)</div>
+                    </div>
+                  </div>
+                </div>
               </div>
               @if (project()?.details?.stages?.length) {
-                <div class="bg-surface-card rounded-xl shadow-sm p-6 sm:p-8 max-w-full">
-                  <h3 class="mt-0 mb-4 pb-3 border-b border-border text-lg sm:text-xl font-semibold">Funding Stages</h3>
+                <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8">
+                  <h3 class="text-xl lg:text-2xl font-bold mb-6 pb-4 border-b border-border">Funding Stages</h3>
                   <div class="relative">
                     @for (stage of project()?.details?.stages; track $index; let isLast = $last) {
-                      <div class="relative pl-10 pb-6">
+                      <div class="relative pl-12 pb-8">
                         @if (!isLast) {
-                          <div class="absolute top-2 left-[14px] w-0.5 h-full"
+                          <div class="absolute top-3 left-[18px] w-0.5 h-full"
                             [class]="isStageCompleted($index) ? 'bg-accent' : 'bg-border'"></div>
                         }
-                        <div class="absolute top-0 left-0 w-8 h-8 rounded-full z-[1] border-4 flex items-center justify-center"
+                        <div class="absolute top-0 left-0 w-9 h-9 lg:w-10 lg:h-10 rounded-full z-[1] border-4 flex items-center justify-center shadow-md"
                           [class]="isStageCompleted($index) ? 'bg-accent border-surface-card' : isCurrentStage($index) ? 'bg-yellow-500 border-surface-card' : 'bg-surface-hover border-surface-card'">
                           @if (isStageCompleted($index)) {
-                            <span class="material-icons text-white text-sm">check</span>
+                            <span class="material-icons text-white text-base lg:text-lg">check</span>
                           }
                         </div>
-                        <div class="pt-0.5">
-                          <div class="flex items-center justify-between mb-1">
-                            <div class="font-semibold text-base sm:text-lg">Stage {{ $index + 1 }}</div>
-                            <div class="text-xs font-medium px-2 py-0.5 rounded-full"
+                        <div class="pt-1">
+                          <div class="flex items-center justify-between mb-3">
+                            <div class="font-bold text-lg lg:text-xl">Stage {{ $index + 1 }}</div>
+                            <div class="text-xs lg:text-sm font-bold px-3 py-1 rounded-full"
                               [class]="isStageCompleted($index) ? 'bg-green-500/10 text-green-600 dark:text-green-400' : isCurrentStage($index) ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' : 'bg-surface-hover text-text-secondary'">
                               {{ isStageCompleted($index) ? 'Completed' : isCurrentStage($index) ? 'Current' : 'Upcoming' }}
                             </div>
                           </div>
-                          <div class="flex items-end gap-2 mb-2">
-                            <div class="text-lg sm:text-xl font-bold" [class]="isStageCompleted($index) ? 'text-accent' : 'text-text'">{{ stage.amountToRelease }}%</div>
-                            <div class="text-sm text-text-secondary">({{ calculateStageAmount(stage.amountToRelease) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }})</div>
+                          <div class="flex items-end gap-3 mb-3">
+                            <div class="text-xl lg:text-2xl font-bold" [class]="isStageCompleted($index) ? 'text-accent' : 'text-text'">{{ stage.amountToRelease }}%</div>
+                            <div class="text-sm lg:text-base text-text-secondary">({{ calculateStageAmount(stage.amountToRelease) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }})</div>
                           </div>
-                          <div class="relative h-2 bg-surface-hover rounded-full overflow-hidden mb-2">
-                            <div class="absolute top-0 left-0 h-full transition-all duration-500 ease-out"
+                          <div class="relative h-3 bg-surface-hover rounded-full overflow-hidden mb-3">
+                            <div class="absolute top-0 left-0 h-full transition-all duration-700 ease-out rounded-full"
                               [style.width.%]="isStageCompleted($index) ? 100 : isCurrentStage($index) ? getCurrentStageProgress() : 0"
                               [class]="isStageCompleted($index) ? 'bg-accent' : isCurrentStage($index) ? 'bg-yellow-500' : ''">
                             </div>
                           </div>
-                          <div class="flex justify-between text-sm">
+                          <div class="flex justify-between text-sm lg:text-base">
                             <div class="text-text-secondary">{{ formatDate(stage.releaseDate) }}</div>
                             <div class="text-text-secondary">{{ getStageRemainingTimeText(stage.releaseDate) }}</div>
                           </div>
@@ -549,161 +582,165 @@
                       </div>
                     }
                   </div>
-                  <div class="mt-4 pt-4 border-t border-border">
-                    <div class="flex justify-between items-center text-sm">
-                      <div class="text-text-secondary">Overall Progress</div>
-                      <div class="font-medium">{{ getOverallStageProgress() }}%</div>
+                  <div class="mt-6 pt-6 border-t border-border">
+                    <div class="flex justify-between items-center text-base lg:text-lg mb-3">
+                      <div class="text-text-secondary font-medium">Overall Progress</div>
+                      <div class="font-bold text-accent">{{ getOverallStageProgress() }}%</div>
                     </div>
-                    <div class="relative h-2 bg-surface-hover rounded-full overflow-hidden mt-2">
-                      <div class="absolute top-0 left-0 h-full bg-accent transition-all duration-500 ease-out"
+                    <div class="relative h-3 bg-surface-hover rounded-full overflow-hidden">
+                      <div class="absolute top-0 left-0 h-full bg-accent transition-all duration-700 ease-out rounded-full"
                         [style.width.%]="getOverallStageProgress()"></div>
                     </div>
                   </div>
                 </div>
               }
-              <div class="bg-surface-card rounded-xl shadow-sm p-6 sm:p-8 max-w-full">
-                <h3 class="mt-0 mb-4 pb-3 border-b border-border text-lg sm:text-xl font-semibold">Public Keys & IDs</h3>
-                <div class="space-y-4">
+              <!-- Public Keys & IDs Section -->
+              <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8">
+                <h3 class="text-xl lg:text-2xl font-bold mb-6 pb-4 border-b border-border">Public Keys & IDs</h3>
+                <div class="space-y-5 lg:space-y-6">
                   <div>
-                    <div class="text-sm text-text-secondary mb-1">Project ID</div>
-                    <div class="flex items-center bg-surface-hover rounded-lg p-3 max-w-full">
-                      <span class="material-icons text-lg text-text-secondary mr-2 flex-shrink-0">fingerprint</span>
+                    <div class="text-sm lg:text-base text-text-secondary mb-2">Project ID</div>
+                    <div class="flex items-center bg-surface-hover rounded-xl p-4 lg:p-5">
+                      <span class="material-icons text-xl lg:text-2xl text-text-secondary mr-3 flex-shrink-0">fingerprint</span>
                       <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs sm:text-sm text-text truncate">{{ project()?.projectIdentifier }}</div>
+                        <div class="font-mono text-xs lg:text-sm text-text">{{ project()?.projectIdentifier }}</div>
                       </div>
                       <button (click)="copyToClipboard(project()?.projectIdentifier)"
-                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0"
+                        class="ml-3 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-2 rounded-lg hover:bg-surface-ground transition-all duration-200"
                         title="Copy to clipboard">
-                        <span class="material-icons text-lg">content_copy</span>
+                        <span class="material-icons text-lg lg:text-xl">content_copy</span>
                       </button>
                     </div>
                   </div>
                   <div>
-                    <div class="text-sm text-text-secondary mb-1">Founder Key</div>
-                    <div class="flex items-center bg-surface-hover rounded-lg p-3 max-w-full">
-                      <span class="material-icons text-lg text-text-secondary mr-2 flex-shrink-0">key</span>
+                    <div class="text-sm lg:text-base text-text-secondary mb-2">Founder Key</div>
+                    <div class="flex items-center bg-surface-hover rounded-xl p-4 lg:p-5">
+                      <span class="material-icons text-xl lg:text-2xl text-text-secondary mr-3 flex-shrink-0">key</span>
                       <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs sm:text-sm text-text truncate">{{ project()?.founderKey }}</div>
+                        <div class="font-mono text-xs lg:text-sm text-text">{{ project()?.founderKey }}</div>
                       </div>
                       <button (click)="copyToClipboard(project()?.founderKey)"
-                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0"
+                        class="ml-3 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-2 rounded-lg hover:bg-surface-ground transition-all duration-200"
                         title="Copy to clipboard">
-                        <span class="material-icons text-lg">content_copy</span>
+                        <span class="material-icons text-lg lg:text-xl">content_copy</span>
                       </button>
                     </div>
                   </div>
                   <div>
-                    <div class="text-sm text-text-secondary mb-1">Recovery Key</div>
-                    <div class="flex items-center bg-surface-hover rounded-lg p-3 max-w-full">
-                      <span class="material-icons text-lg text-text-secondary mr-2 flex-shrink-0">restore</span>
+                    <div class="text-sm lg:text-base text-text-secondary mb-2">Recovery Key</div>
+                    <div class="flex items-center bg-surface-hover rounded-xl p-4 lg:p-5">
+                      <span class="material-icons text-xl lg:text-2xl text-text-secondary mr-3 flex-shrink-0">restore</span>
                       <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs sm:text-sm text-text truncate">{{ project()?.details?.founderRecoveryKey }}</div>
+                        <div class="font-mono text-xs lg:text-sm text-text">{{ project()?.details?.founderRecoveryKey }}</div>
                       </div>
                       <button (click)="copyToClipboard(project()?.details?.founderRecoveryKey)"
-                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0"
+                        class="ml-3 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-2 rounded-lg hover:bg-surface-ground transition-all duration-200"
                         title="Copy to clipboard">
-                        <span class="material-icons text-lg">content_copy</span>
+                        <span class="material-icons text-lg lg:text-xl">content_copy</span>
                       </button>
                     </div>
                   </div>
                   <div>
-                    <div class="text-sm text-text-secondary mb-1">Nostr Public Key (npub)</div>
-                    <div class="flex items-center bg-surface-hover rounded-lg p-3 max-w-full">
-                      <span class="material-icons text-lg text-text-secondary mr-2 flex-shrink-0">person</span>
+                    <div class="text-sm lg:text-base text-text-secondary mb-2">Nostr Public Key (npub)</div>
+                    <div class="flex items-center bg-surface-hover rounded-xl p-4 lg:p-5">
+                      <span class="material-icons text-xl lg:text-2xl text-text-secondary mr-3 flex-shrink-0">person</span>
                       <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs sm:text-sm text-text truncate">{{ user?.npub }}</div>
+                        <div class="font-mono text-xs lg:text-sm text-text">{{ user?.npub }}</div>
                       </div>
                       <button (click)="copyToClipboard(user?.npub)"
-                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0"
+                        class="ml-3 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-2 rounded-lg hover:bg-surface-ground transition-all duration-200"
                         title="Copy to clipboard">
-                        <span class="material-icons text-lg">content_copy</span>
+                        <span class="material-icons text-lg lg:text-xl">content_copy</span>
                       </button>
                     </div>
                   </div>
                   <div>
-                    <div class="text-sm text-text-secondary mb-1">NIP-05</div>
-                    <div class="flex items-center bg-surface-hover rounded-lg p-3 max-w-full">
-                      <span class="material-icons text-lg text-text-secondary mr-2 flex-shrink-0">person</span>
+                    <div class="text-sm lg:text-base text-text-secondary mb-2">NIP-05</div>
+                    <div class="flex items-center bg-surface-hover rounded-xl p-4 lg:p-5">
+                      <span class="material-icons text-xl lg:text-2xl text-text-secondary mr-3 flex-shrink-0">person</span>
                       <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs sm:text-sm text-text truncate">{{ project()?.metadata?.nip05 }}</div>
+                        <div class="font-mono text-xs lg:text-sm text-text">{{ project()?.metadata?.nip05 }}</div>
                       </div>
                       <button (click)="copyToClipboard(project()?.metadata?.nip05)"
-                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0"
+                        class="ml-3 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-2 rounded-lg hover:bg-surface-ground transition-all duration-200"
                         title="Copy to clipboard">
-                        <span class="material-icons text-lg">content_copy</span>
+                        <span class="material-icons text-lg lg:text-xl">content_copy</span>
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
-              <div class="bg-surface-card rounded-xl shadow-sm p-6 sm:p-8 max-w-full">
-                <h3 class="mt-0 mb-4 pb-3 border-b border-border text-lg sm:text-xl font-semibold">Blockchain Details</h3>
-                <div class="space-y-4">
+
+              <!-- Blockchain Details Section -->
+              <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8">
+                <h3 class="text-xl lg:text-2xl font-bold mb-6 pb-4 border-b border-border">Blockchain Details</h3>
+                <div class="space-y-5 lg:space-y-6">
                   <div>
-                    <div class="text-sm text-text-secondary mb-1">Created on Bitcoin block</div>
-                    <div class="flex items-center bg-surface-hover rounded-lg p-3 max-w-full">
-                      <span class="material-icons text-lg text-text-secondary mr-2 flex-shrink-0">layers</span>
+                    <div class="text-sm lg:text-base text-text-secondary mb-2">Created on Bitcoin block</div>
+                    <div class="flex items-center bg-surface-hover rounded-xl p-4 lg:p-5">
+                      <span class="material-icons text-xl lg:text-2xl text-text-secondary mr-3 flex-shrink-0">layers</span>
                       <div class="flex-1 min-w-0">
-                        <div class="font-medium text-base sm:text-lg text-text truncate">{{ project()?.createdOnBlock }}</div>
+                        <div class="font-bold text-lg lg:text-xl text-text">{{ project()?.createdOnBlock }}</div>
                       </div>
                       <button (click)="copyToClipboard(project()?.createdOnBlock?.toString())"
-                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0"
+                        class="ml-3 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-2 rounded-lg hover:bg-surface-ground transition-all duration-200"
                         title="Copy to clipboard">
-                        <span class="material-icons text-lg">content_copy</span>
+                        <span class="material-icons text-lg lg:text-xl">content_copy</span>
                       </button>
                     </div>
                   </div>
                   <div>
-                    <div class="text-sm text-text-secondary mb-1">Transaction ID</div>
-                    <div class="flex items-center bg-surface-hover rounded-lg p-3 max-w-full">
-                      <span class="material-icons text-lg text-text-secondary mr-2 flex-shrink-0">receipt_long</span>
+                    <div class="text-sm lg:text-base text-text-secondary mb-2">Transaction ID</div>
+                    <div class="flex items-center bg-surface-hover rounded-xl p-4 lg:p-5">
+                      <span class="material-icons text-xl lg:text-2xl text-text-secondary mr-3 flex-shrink-0">receipt_long</span>
                       <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs sm:text-sm text-text">
+                        <div class="font-mono text-xs lg:text-sm">
                           @if(networkService.isMain()) {
                             <a target="_blank" [href]="'https://mempool.space/tx/' + project()?.trxId"
-                              class="text-accent dark:text-white text-gray-700 truncate">{{ project()?.trxId }}</a>
+                              class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors duration-200 underline">{{ project()?.trxId }}</a>
                           } @else {
                             <a target="_blank" [href]="'https://mempool.space/testnet/tx/' + project()?.trxId"
-                              class="text-accent dark:text-white text-gray-700 truncate">{{ project()?.trxId }}</a>
+                              class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors duration-200 underline">{{ project()?.trxId }}</a>
                           }
                         </div>
                       </div>
                       <button (click)="copyToClipboard(project()?.trxId)"
-                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0"
+                        class="ml-3 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-2 rounded-lg hover:bg-surface-ground transition-all duration-200"
                         title="Copy to clipboard">
-                        <span class="material-icons text-lg">content_copy</span>
+                        <span class="material-icons text-lg lg:text-xl">content_copy</span>
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div class="bg-surface-card rounded-xl shadow-sm p-6 sm:p-8 max-w-full">
-                <h3 class="mt-0 mb-4 pb-3 border-b border-border text-lg sm:text-xl font-semibold">Nostr</h3>
-                <div class="space-y-4">
+              <!-- Nostr & Report Section -->
+              <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8">
+                <h3 class="text-xl lg:text-2xl font-bold mb-6 pb-4 border-b border-border">Nostr</h3>
+                <div class="space-y-6">
                   <div>
-                    <div class="text-sm text-text-secondary mb-1">Lookup project on Nostr network</div>
-                    <div class="flex items-center bg-surface-hover rounded-lg p-3 max-w-full">
-                      <a [href]="'https://nostr.at/' + user?.npub" target="_blank"
-                      class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-hover rounded-md text-text text-xs sm:text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-ground hover:shadow-sm">
-                      <span class="material-icons text-sm">open_in_new</span> nostr.at
+                    <div class="text-sm lg:text-base text-text-secondary mb-3">Lookup project on Nostr network</div>
+                    <a [href]="'https://nostr.at/' + user?.npub" target="_blank"
+                      class="w-full flex items-center justify-center gap-3 px-4 lg:px-6 py-3 lg:py-4 bg-surface-hover rounded-xl text-text text-sm lg:text-base font-medium transition-all duration-300 ease-in-out hover:bg-surface-ground hover:shadow-md hover:-translate-y-0.5">
+                      <span class="material-icons text-lg lg:text-xl">open_in_new</span> 
+                      View on nostr.at
                     </a>
-                    </div>
                   </div>
 
-                  <div><br>
-                    Do you find this project problematic? Click button to report:<br>
-                    <div class="flex justify-center items-center text-center mt-4">
-                    <button [title]="'Report this project'" (click)="reportProject()"
-                    class="flex items-center justify-center w-10 h-10 rounded-full cursor-pointer transition-all duration-300 ease-in-out bg-surface-hover hover:bg-surface-ground focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface-card group">
-                    <span
-                      class="material-icons text-xl text-yellow-500/80 group-hover:text-yellow-600 transition-transform duration-300 group-hover:scale-110">
-                      report_problem
-                    </span>
-                  </button>
+                  <div class="pt-4 border-t border-border">
+                    <div class="text-sm lg:text-base text-text-secondary mb-4">
+                      Do you find this project problematic? Click button to report:
                     </div>
-              </div>
-
+                    <button [title]="'Report this project'" (click)="reportProject()"
+                      class="w-full flex items-center justify-center gap-3 px-6 lg:px-8 py-3 lg:py-4 rounded-xl cursor-pointer transition-all duration-300 ease-in-out bg-yellow-500/10 hover:bg-yellow-500/20 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-surface-card group">
+                      <span class="material-icons text-xl lg:text-2xl text-yellow-500 group-hover:text-yellow-600 transition-all duration-300 group-hover:scale-110">
+                        report_problem
+                      </span>
+                      <span class="text-sm lg:text-base font-medium text-yellow-600 group-hover:text-yellow-700">
+                        Report Project
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -711,31 +748,31 @@
         } @else if (activeTab === 'faq') {
           <div class="faq-section w-full max-w-full">
             @if (loadingFaq()) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 h-64 text-text-secondary bg-surface-card rounded-xl shadow-lg mx-auto">
-                <div class="w-10 h-10 border-3 border-accent/30 border-t-accent rounded-full animate-spin mb-4"></div>
-                <p class="text-base sm:text-lg">Loading FAQ...</p>
+              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 h-64 lg:h-80 text-text-secondary bg-surface-card rounded-2xl shadow-lg mx-auto">
+                <div class="w-12 h-12 lg:w-16 lg:h-16 border-4 border-accent/30 border-t-accent rounded-full animate-spin mb-6"></div>
+                <p class="text-lg sm:text-xl lg:text-2xl">Loading FAQ...</p>
               </div>
             } @else if (errorFaq()) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 text-center text-warning bg-red-500/5 rounded-xl shadow-lg mx-auto">
-                <span class="material-icons text-6xl mb-4 opacity-80">error_outline</span>
-                <p class="max-w-md mx-auto text-base sm:text-lg">{{ errorFaq() }}</p>
-                <button (click)="fetchFaq()"
-                  class="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm sm:text-base font-semibold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
-                  <span class="material-icons text-lg">refresh</span>
+              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 text-center bg-red-500/5 rounded-2xl shadow-lg mx-auto">
+                <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-80 text-red-500">error_outline</span>
+                <p class="max-w-md mx-auto text-lg sm:text-xl lg:text-2xl text-red-600 dark:text-red-400 mb-6">{{ errorFaq() }}</p>
+                <button (click)="fetchFaq()" title="Retry loading FAQ"
+                  class="inline-flex items-center gap-3 px-6 lg:px-8 py-3 lg:py-4 rounded-xl text-base lg:text-lg font-bold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out hover:-translate-y-0.5">
+                  <span class="material-icons text-xl">refresh</span>
                   Retry
                 </button>
               </div>
             } @else if (faqItems().length === 0) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 h-64 text-center text-text-secondary bg-surface-card rounded-xl shadow-lg mx-auto">
-                <span class="material-icons text-6xl mb-4 opacity-50">help_outline</span>
-                <p class="max-w-md mx-auto text-base sm:text-lg">No FAQ items available for this project yet.</p>
+              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 h-64 lg:h-80 text-center text-text-secondary bg-surface-card rounded-2xl shadow-lg mx-auto">
+                <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-50">help_outline</span>
+                <p class="max-w-md mx-auto text-lg sm:text-xl lg:text-2xl">No FAQ items available for this project yet.</p>
               </div>
             } @else {
-              <div class="flex flex-wrap gap-6">
+              <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
                 @for (faq of faqItems(); track faq.id) {
-                  <div class="bg-surface-card rounded-xl shadow-sm p-6 sm:p-8 transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 w-full  flex flex-col">
-                    <h3 class="mt-0 mb-3 text-lg sm:text-xl font-semibold line-clamp-2">{{ faq.question }}</h3>
-                    <p class="m-0 text-base sm:text-lg text-text-secondary leading-relaxed whitespace-pre-wrap break-words">{{ faq.answer }}</p>
+                  <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8 transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 flex flex-col">
+                    <h3 class="text-xl lg:text-2xl font-bold mb-4 lg:mb-6 leading-tight">{{ faq.question }}</h3>
+                    <p class="text-base lg:text-lg text-text-secondary leading-relaxed whitespace-pre-wrap flex-1">{{ faq.answer }}</p>
                   </div>
                 }
               </div>
@@ -744,36 +781,35 @@
         } @else if (activeTab === 'updates') {
           <div class="updates-section w-full max-w-full">
             @if (loadingUpdates()) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 h-64 text-text-secondary bg-surface-card rounded-xl shadow-lg mx-auto">
-                <div class="w-10 h-10 border-3 border-accent/30 border-t-accent rounded-full animate-spin mb-4"></div>
-                <p class="text-base sm:text-lg">Loading updates...</p>
+              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 h-64 lg:h-80 text-text-secondary bg-surface-card rounded-2xl shadow-lg mx-auto">
+                <div class="w-12 h-12 lg:w-16 lg:h-16 border-4 border-accent/30 border-t-accent rounded-full animate-spin mb-6"></div>
+                <p class="text-lg sm:text-xl lg:text-2xl">Loading updates...</p>
               </div>
             } @else if (errorUpdates()) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 text-center text-warning bg-red-500/5 rounded-xl shadow-lg max-w-3xl mx-auto">
-                <span class="material-icons text-6xl mb-4 opacity-80">error_outline</span>
-                <p class="max-w-md mx-auto text-base sm:text-lg">{{ errorUpdates() }}</p>
-                <button (click)="fetchUpdates()"
-                  class="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm sm:text-base font-semibold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
-                  <span class="material-icons text-lg">refresh</span>
+              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 text-center bg-red-500/5 rounded-2xl shadow-lg mx-auto">
+                <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-80 text-red-500">error_outline</span>
+                <p class="max-w-md mx-auto text-lg sm:text-xl lg:text-2xl text-red-600 dark:text-red-400 mb-6">{{ errorUpdates() }}</p>
+                <button (click)="fetchUpdates()" title="Retry loading updates"
+                  class="inline-flex items-center gap-3 px-6 lg:px-8 py-3 lg:py-4 rounded-xl text-base lg:text-lg font-bold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out hover:-translate-y-0.5">
+                  <span class="material-icons text-xl">refresh</span>
                   Retry
                 </button>
               </div>
             } @else if (updates().length === 0) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 h-64 text-center text-text-secondary bg-surface-card rounded-xl shadow-lg mx-auto">
-                <span class="material-icons text-6xl mb-4 opacity-50">campaign</span>
-                <p class="max-w-md mx-auto text-base sm:text-lg">No updates available for this project yet.</p>
+              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 h-64 lg:h-80 text-center text-text-secondary bg-surface-card rounded-2xl shadow-lg mx-auto">
+                <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-50">campaign</span>
+                <p class="max-w-md mx-auto text-lg sm:text-xl lg:text-2xl">No updates available for this project yet.</p>
               </div>
             } @else {
-              <div class="flex flex-col gap-6">
+              <div class="space-y-6 lg:space-y-8">
                 @for (update of updates(); track update.id) {
-                  <div class="bg-surface-card rounded-xl shadow-sm p-6 sm:p-8 transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 max-w-full">
-                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-border flex-wrap gap-2">
-                      <app-profile [pubkey]="update.pubkey"
-                        class="text-sm min-w-0 flex-grow"></app-profile>
-                      <span class="text-sm text-text-secondary whitespace-nowrap">{{ update.created_at ?? 0 | ago }}</span>
+                  <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8 transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1">
+                    <div class="flex justify-between items-center mb-6 pb-4 border-b border-border flex-wrap gap-4">
+                      <app-profile [pubkey]="update.pubkey" class="text-base lg:text-lg min-w-0 flex-grow"></app-profile>
+                      <span class="text-sm lg:text-base text-text-secondary whitespace-nowrap">{{ update.created_at ?? 0 | ago }}</span>
                     </div>
                     <div
-                      class="prose prose-sm sm:prose-base max-w-none dark:prose-invert prose-a:text-accent hover:prose-a:underline prose-img:rounded-md prose-img:max-h-80 prose-img:mx-auto prose-pre:overflow-x-auto break-words leading-relaxed"
+                      class="prose prose-base lg:prose-lg max-w-none dark:prose-invert prose-a:text-accent hover:prose-a:underline prose-img:rounded-xl prose-img:max-h-80 prose-img:mx-auto prose-pre:overflow-x-auto break-words leading-relaxed"
                       [innerHTML]="update.content | safeContent"></div>
                   </div>
                 }
@@ -783,36 +819,35 @@
         } @else if (activeTab === 'comments') {
           <div class="comments-section w-full max-w-full">
             @if (loadingComments()) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 h-64 text-text-secondary bg-surface-card rounded-xl shadow-lg mx-auto">
-                <div class="w-10 h-10 border-3 border-accent/30 border-t-accent rounded-full animate-spin mb-4"></div>
-                <p class="text-base sm:text-lg">Loading comments...</p>
+              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 h-64 lg:h-80 text-text-secondary bg-surface-card rounded-2xl shadow-lg mx-auto">
+                <div class="w-12 h-12 lg:w-16 lg:h-16 border-4 border-accent/30 border-t-accent rounded-full animate-spin mb-6"></div>
+                <p class="text-lg sm:text-xl lg:text-2xl">Loading comments...</p>
               </div>
             } @else if (errorComments()) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 text-center text-warning bg-red-500/5 rounded-xl shadow-lg mx-auto">
-                <span class="material-icons text-6xl mb-4 opacity-80">error_outline</span>
-                <p class="max-w-md mx-auto text-base sm:text-lg">{{ errorComments() }}</p>
-                <button (click)="fetchComments()"
-                  class="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm sm:text-base font-semibold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
-                  <span class="material-icons text-lg">refresh</span>
+              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 text-center bg-red-500/5 rounded-2xl shadow-lg mx-auto">
+                <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-80 text-red-500">error_outline</span>
+                <p class="max-w-md mx-auto text-lg sm:text-xl lg:text-2xl text-red-600 dark:text-red-400 mb-6">{{ errorComments() }}</p>
+                <button (click)="fetchComments()" title="Retry loading comments"
+                  class="inline-flex items-center gap-3 px-6 lg:px-8 py-3 lg:py-4 rounded-xl text-base lg:text-lg font-bold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out hover:-translate-y-0.5">
+                  <span class="material-icons text-xl">refresh</span>
                   Retry
                 </button>
               </div>
             } @else if (comments().length === 0) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 h-64 text-center text-text-secondary bg-surface-card rounded-xl shadow-lg mx-auto">
-                <span class="material-icons text-6xl mb-4 opacity-50">chat_bubble_outline</span>
-                <p class="max-w-md mx-auto text-base sm:text-lg">No comments available for this project yet. Be the first to comment!</p>
+              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 h-64 lg:h-80 text-center text-text-secondary bg-surface-card rounded-2xl shadow-lg mx-auto">
+                <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-50">chat_bubble_outline</span>
+                <p class="max-w-md mx-auto text-lg sm:text-xl lg:text-2xl">No comments available for this project yet. Be the first to comment!</p>
               </div>
             } @else {
-              <div class="flex flex-col gap-6">
+              <div class="space-y-6 lg:space-y-8">
                 @for (comment of comments(); track comment.id) {
-                  <div class="bg-surface-card rounded-xl shadow-sm p-6 sm:p-8 transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 max-w-full">
-                    <div class="flex justify-between items-start mb-3 pb-3 border-b border-border gap-4 flex-wrap">
-                      <app-profile [pubkey]="comment.pubkey"
-                        class="text-sm flex-grow min-w-0"></app-profile>
-                      <span class="text-sm text-text-secondary whitespace-nowrap">{{ comment.created_at ?? 0 | ago }}</span>
+                  <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8 transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1">
+                    <div class="flex justify-between items-start mb-6 pb-4 border-b border-border gap-4 flex-wrap">
+                      <app-profile [pubkey]="comment.pubkey" class="text-base lg:text-lg flex-grow min-w-0"></app-profile>
+                      <span class="text-sm lg:text-base text-text-secondary whitespace-nowrap">{{ comment.created_at ?? 0 | ago }}</span>
                     </div>
                     <div
-                      class="prose prose-sm sm:prose-base max-w-none dark:prose-invert prose-a:text-accent hover:prose-a:underline prose-pre:overflow-x-auto break-words leading-relaxed"
+                      class="prose prose-base lg:prose-lg max-w-none dark:prose-invert prose-a:text-accent hover:prose-a:underline prose-pre:overflow-x-auto break-words leading-relaxed"
                       [innerHTML]="comment.content | safeContent"></div>
                   </div>
                 }
