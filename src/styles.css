@@ -103,3 +103,10 @@ html {
 body.mobile-menu-open {
   overflow: hidden;
 }
+.custom-modal-border {
+  border-color: #1a2e36 !important; 
+}
+
+html[data-theme="light"] .custom-modal-border {
+  border-color: #cbdde1 !important;
+}
