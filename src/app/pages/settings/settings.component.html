@@ -26,7 +26,7 @@
   <div class="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-4 md:gap-8 max-w-7xl mx-auto">
     <div class="flex flex-row flex-wrap md:flex-col gap-2 h-fit rounded-xl bg-surface-card p-4 shadow-md">
       <div
-        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text hover:bg-surface-hover hover:text-accent flex-1 md:flex-none justify-center md:justify-start"
+        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text flex-1 md:flex-none justify-center md:justify-start"
         [class.bg-accent]="activeTab() === 'appearance'" [class.text-white]="activeTab() === 'appearance'"
         (click)="setActiveTab('appearance')">
         <span class="material-icons text-text-secondary transition duration-200 ease-in-out"
@@ -34,7 +34,7 @@
         <span class="hidden md:inline">Appearance</span>
       </div>
       <div
-        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text hover:bg-surface-hover hover:text-accent flex-1 md:flex-none justify-center md:justify-start"
+        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text flex-1 md:flex-none justify-center md:justify-start"
         [class.bg-accent]="activeTab() === 'network'" [class.text-white]="activeTab() === 'network'"
         (click)="setActiveTab('network')">
         <span class="material-icons text-text-secondary transition duration-200 ease-in-out"
@@ -42,7 +42,7 @@
         <span class="hidden md:inline">Network</span>
       </div>
       <div
-        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text hover:bg-surface-hover hover:text-accent flex-1 md:flex-none justify-center md:justify-start"
+        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text flex-1 md:flex-none justify-center md:justify-start"
         [class.bg-accent]="activeTab() === 'relays'" [class.text-white]="activeTab() === 'relays'"
         (click)="setActiveTab('relays')">
         <span class="material-icons text-text-secondary transition duration-200 ease-in-out"
@@ -50,7 +50,7 @@
         <span class="hidden md:inline">Relays</span>
       </div>
       <div
-        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text hover:bg-surface-hover hover:text-accent flex-1 md:flex-none justify-center md:justify-start"
+        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text flex-1 md:flex-none justify-center md:justify-start"
         [class.bg-accent]="activeTab() === 'indexers'" [class.text-white]="activeTab() === 'indexers'"
         (click)="setActiveTab('indexers')">
         <span class="material-icons text-text-secondary transition duration-200 ease-in-out"
@@ -58,7 +58,7 @@
         <span class="hidden md:inline">Indexers</span>
       </div>
       <div
-        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text hover:bg-surface-hover hover:text-accent flex-1 md:flex-none justify-center md:justify-start"
+        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text flex-1 md:flex-none justify-center md:justify-start"
         [class.bg-accent]="activeTab() === 'about'" [class.text-white]="activeTab() === 'about'"
         (click)="setActiveTab('about')">
         <span class="material-icons text-text-secondary transition duration-200 ease-in-out"
@@ -108,7 +108,7 @@
             </button>
 
             <button
-              class="flex flex-col items-center gap-3 p-4 rounded-lg bg-surface-ground border-2 border-transparent cursor-pointer transition duration-200 ease-in-out hover:border-accent/50 hover:-translate-y-1 hover:shadow-lg"
+              class="flex flex-col items-center gap-3 p-4 rounded-lg bg-surface-hover border-2 border-transparent cursor-pointer transition duration-200 ease-in-out hover:border-accent/50 hover:-translate-y-1 hover:shadow-lg"
               [class.!border-accent]="currentTheme() === 'system'" [class.ring-2]="currentTheme() === 'system'"
               [class.ring-accent]="currentTheme() === 'system'" (click)="setTheme('system')"
               aria-label="Select System Theme">
