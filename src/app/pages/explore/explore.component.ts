@@ -332,8 +332,8 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       return 0;
     }
     
-    let invested = Number(project.stats.amountInvested);
-    let target = Number(project.details.targetAmount);
+    const invested = Number(project.stats.amountInvested);
+    const target = Number(project.details.targetAmount);
     
     if (isNaN(invested) || isNaN(target) || target === 0) return 0;
     

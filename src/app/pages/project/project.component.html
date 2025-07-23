@@ -124,9 +124,9 @@
             </div>
 
             <!-- Description Section -->
-            <div class="w-full text-center lg:text-left">
+            <div class="w-full text-center lg:text-left max-w-4xl">
               @if (project()?.metadata?.about) {
-                <div class="prose prose-sm sm:prose-base lg:prose-lg max-w-none dark:prose-invert">
+                <div class="prose prose-sm sm:prose-base lg:prose-lg max-w-none dark:prose-invert prose-p:text-text prose-p:leading-relaxed">
                   <app-about-content [content]="project()?.metadata?.about"></app-about-content>
                 </div>
               } @else {
@@ -186,8 +186,8 @@
         <div class="mt-8 lg:mt-10">
           <div class="flex justify-center lg:justify-end">
             <button
-              class="w-full sm:w-auto min-w-[280px] px-8 py-4 sm:px-10 sm:py-5 text-lg sm:text-xl font-bold text-white bg-accent rounded-xl shadow-lg transition-all duration-300 ease-in-out hover:enabled:shadow-xl hover:enabled:-translate-y-1 hover:enabled:scale-105 hover:enabled:bg-accent-dark disabled:bg-surface-hover disabled:text-text-secondary disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none"
-              [disabled]="!canInvest()" (click)="canInvest() && openInvestWindow()">
+              class="w-full sm:w-auto min-w-[280px] px-8 py-4 sm:px-10 sm:py-5 text-lg sm:text-xl font-bold !text-white bg-accent rounded-xl shadow-lg transition-all duration-300 ease-in-out hover:enabled:shadow-xl hover:enabled:-translate-y-1 hover:enabled:scale-105 hover:enabled:bg-accent-dark disabled:!bg-gray-400 disabled:!text-gray-200 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none"
+              [disabled]="!canInvest()" (click)="canInvest() && openInvestWindow()" type="button" title="Invest in this project">
               @if (isProjectEnded()) { 
                 <span class="flex items-center justify-center gap-2">
                   <span class="material-icons">timer_off</span>
@@ -862,7 +862,7 @@
 
   @if (project() && showImagePopup && selectedImage) {
     <app-image-popup [imageUrl]="selectedImage" altText="Project media"
-      (close)="showImagePopup = false; selectedImage = null"></app-image-popup>
+      (closeEvent)="showImagePopup = false; selectedImage = null"></app-image-popup>
   }  
 
   <app-share-modal 

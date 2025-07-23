@@ -20,7 +20,7 @@ export class SafeContentPipe implements PipeTransform {
 
   // Function to escape HTML characters for safe insertion
   private escapeHtml(text: string): string {
-    const map: { [key: string]: string } = {
+    const map: Record<string, string> = {
       '&': '&amp;',
       '<': '&lt;',
       '>': '&gt;',

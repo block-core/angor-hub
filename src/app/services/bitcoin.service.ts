@@ -13,7 +13,7 @@ export class BitcoinUtilsService {
    * @param decimals Number of decimal places (default 8)
    * @returns String representation of BTC amount
    */
-  toBTC(satoshis: number | string | undefined | null, decimals: number = 8): string {
+  toBTC(satoshis: number | string | undefined | null, decimals = 8): string {
     // Add validation for null, undefined, or non-numeric input
     if (satoshis === null || satoshis === undefined || isNaN(Number(satoshis))) {
       // console.warn('Invalid input provided to toBTC:', satoshis);
@@ -52,7 +52,7 @@ export class BitcoinUtilsService {
    * @param showFullPrecision Whether to show all 8 decimals
    * @returns Formatted BTC string
    */
-  formatBTC(btc: number | string, showFullPrecision: boolean = false): string {
+  formatBTC(btc: number | string, showFullPrecision = false): string {
     try {
       const amount = new Big(btc);
       if (showFullPrecision) {

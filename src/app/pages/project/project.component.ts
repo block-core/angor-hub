@@ -71,7 +71,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   project = signal<IndexedProject | null>(null);
-  projectId: string = '';
+  projectId = '';
   isDenied = signal<boolean>(false);
 
   // Add these new signals for badge verification
@@ -679,7 +679,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   getSocialIcon(platform: string): string {
-    const icons: { [key: string]: string } = {
+    const icons: Record<string, string> = {
       github: 'code',
       twitter: 'flutter_dash',
       facebook: 'facebook',
@@ -697,7 +697,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   getSocialLink(identity: ExternalIdentity): string {
-    const baseUrls: { [key: string]: string } = {
+    const baseUrls: Record<string, string> = {
       github: 'https://github.com/',
       twitter: 'https://x.com/',
       facebook: 'https://facebook.com/',

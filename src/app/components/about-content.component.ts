@@ -13,22 +13,28 @@ interface ContentSegment {
   standalone: true,
   imports: [CommonModule, ProfileComponent],
   template: `
-    <div class="whitespace-pre-wrap break-words w-full">
+    <div class="space-y-2 w-full">
       @for (segment of parsedContent(); track $index) {
         @switch (segment.type) {
           @case ('text') {
-            <span class="text-sm sm:text-base leading-relaxed text-text-secondary">{{ segment.value }}</span>
+            <span class="text-sm sm:text-base leading-relaxed text-text block">{{ segment.value }}</span>
           }
           @case ('npub') {
             <!-- Use minimal profile display -->
-            <app-profile class="inline" [pubkey]="segment.value" [displayMode]="'minimal'"></app-profile>
+            <app-profile class="inline-block my-1" [pubkey]="segment.value" [displayMode]="'minimal'"></app-profile>
           }
           @case ('hashtag') {
             <!-- Link hashtag to Primal search -->
-            <a [href]="'https://primal.net/search/%23' + segment.value.substring(1)" target="_blank" rel="noopener noreferrer nofollow" class="text-accent dark:text-white text-gray-700 font-medium">{{ segment.value }}</a>
+            <a [href]="'https://primal.net/search/%23' + segment.value.substring(1)" 
+               target="_blank" 
+               rel="noopener noreferrer nofollow" 
+               class="inline-block px-2 py-1 bg-accent/10 text-accent rounded-md text-sm font-medium hover:bg-accent/20 transition-colors mx-1">{{ segment.value }}</a>
           }
           @case ('link') {
-            <a [href]="segment.value" target="_blank" rel="noopener noreferrer nofollow" class="text-accent hover:underline break-all">{{ segment.value }}</a>
+            <a [href]="segment.value" 
+               target="_blank" 
+               rel="noopener noreferrer nofollow" 
+               class="text-accent hover:text-accent-light underline decoration-accent/50 hover:decoration-accent break-all text-sm sm:text-base">{{ segment.value }}</a>
           }
         }
       }
@@ -49,16 +55,23 @@ export class AboutContentComponent {
     const text = this.content();
     if (!text) return [];
 
+    // Trim and clean up the content
+    const cleanedText = text.trim().replace(/\s+/g, ' ');
+    if (!cleanedText) return [];
+
     const segments: ContentSegment[] = [];
     // Regex to find npub, hashtags (# followed by word characters or hyphens), and links.
     const regex = /(npub[a-zA-Z0-9]{59})|(#[\p{L}\p{N}\-_]+)|(https?:\/\/[^\s]+)/gu;
     let lastIndex = 0;
     let match;
 
-    while ((match = regex.exec(text)) !== null) {
+    while ((match = regex.exec(cleanedText)) !== null) {
       // Add text before the match
       if (match.index > lastIndex) {
-        segments.push({ type: 'text', value: text.substring(lastIndex, match.index) });
+        const textSegment = cleanedText.substring(lastIndex, match.index).trim();
+        if (textSegment) {
+          segments.push({ type: 'text', value: textSegment });
+        }
       }
 
       // Add the matched segment
@@ -66,7 +79,7 @@ export class AboutContentComponent {
         try {
           nip19.decode(match[1]); // Validate npub
           segments.push({ type: 'npub', value: match[1] });
-        } catch (e) {
+        } catch {
           // If invalid npub, treat as text
           segments.push({ type: 'text', value: match[1] });
         }
@@ -80,8 +93,11 @@ export class AboutContentComponent {
     }
 
     // Add any remaining text after the last match
-    if (lastIndex < text.length) {
-      segments.push({ type: 'text', value: text.substring(lastIndex) });
+    if (lastIndex < cleanedText.length) {
+      const remainingText = cleanedText.substring(lastIndex).trim();
+      if (remainingText) {
+        segments.push({ type: 'text', value: remainingText });
+      }
     }
 
     return segments;

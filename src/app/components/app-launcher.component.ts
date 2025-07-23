@@ -8,14 +8,13 @@ import { RouterLink } from '@angular/router';
   imports: [CommonModule, RouterLink],
   template: `
     <div class="relative">
-      <a class="cursor-pointer group" (click)="toggleAppMenu($event)">
+      <button type="button" class="cursor-pointer group bg-transparent border-0 p-0" (click)="toggleAppMenu($event)" title="Open Angor Apps Menu">
         <img src="images/logo-text.svg" alt="Angor Menu" class="h-8 w-auto transition-all duration-300 group-hover:scale-105 group-hover:brightness-125">
-      </a>
+      </button>
       @if (isAppMenuOpen() && hasBeenClicked()) {
         <div
-          class="absolute top-full left-0 mt-2 w-80 rounded-lg border border-border bg-surface-card shadow-xl z-[1000]"
-          (click)="$event.stopPropagation()">
-           <div class="p-2 space-y-1">
+          class="absolute top-full left-0 mt-2 w-80 rounded-lg border border-border bg-surface-card shadow-xl z-[1000]">
+           <div class="p-2 space-y-1" role="menu">
             <a href="https://test.angor.io" class="flex items-center gap-4 p-3 rounded-md text-text hover:bg-surface-hover transition-colors duration-200 group/item" target="_blank" rel="noopener noreferrer">
               <i class="fa-solid fa-rocket text-xl w-6 text-center text-text-secondary group-hover/item:text-accent transition-colors duration-200"></i>
               <div>

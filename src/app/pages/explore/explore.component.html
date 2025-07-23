@@ -254,7 +254,7 @@
         @for (project of filteredProjects(); track project.projectIdentifier; let i = $index) {
           <a
             [routerLink]="['/project', project.projectIdentifier]"
-            class="block bg-surface-card rounded-2xl border border-border overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group relative animate-in fade-in slide-in-from-bottom-4 duration-700 delay-{{i * 100}} project-card"
+            class="block bg-surface-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group relative animate-in fade-in slide-in-from-bottom-4 duration-700 delay-{{i * 100}} project-card"
             [attr.data-index]="i"
           >
             
@@ -271,7 +271,6 @@
                   alt=""
                 />
               }
-              <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 group-hover:to-black/70 transition-all duration-300"></div>
 
               
               @let statusInfo = getProjectStatus(project);

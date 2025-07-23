@@ -69,7 +69,7 @@ export class NetworkService {
    * @param network The network to set ('main' or 'test')
    * @param updateUrl Whether to update the URL with the network parameter (default: false)
    */
-  setNetwork(network: 'main' | 'test', updateUrl: boolean = false): void {
+  setNetwork(network: 'main' | 'test', updateUrl = false): void {
     if (this.currentNetwork() !== network) {
       this.currentNetwork.set(network);
       localStorage.setItem('angor-network', network);

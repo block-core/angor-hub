@@ -28,22 +28,27 @@ import { animate, style, transition, trigger } from '@angular/animations';
     ])
   ],
   template: `
-    <div
-      class="fixed inset-0 bg-black/90 flex justify-center items-center z-[1000] cursor-pointer backdrop-blur-sm"
+    <div class="fixed inset-0 bg-black/90 flex justify-center items-center z-[1000] backdrop-blur-sm"
       [@overlay]
-      (click)="close.emit()">
-      <img
-        [src]="imageUrl"
-        [alt]="altText"
-        class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg cursor-default shadow-2xl"
-        [@dialog]
-        (click)="$event.stopPropagation()"
-      />
+      (click)="closeEvent.emit()">
+      <div class="relative max-w-[360px] max-h-[360px]" (click)="$event.stopPropagation()">
+        <button type="button" 
+          class="absolute -top-3 -right-3 text-white hover:text-red-400 text-xl z-20 bg-red-600 hover:bg-red-700 w-8 h-8 rounded-full flex items-center justify-center border-2 border-white shadow-lg transition-colors"
+          (click)="closeEvent.emit()" 
+          title="Close image">
+          ×
+        </button>
+        <img
+          [src]="imageUrl"
+          [alt]="altText"
+          class="w-full h-full object-cover rounded-lg cursor-default shadow-2xl"
+          [@dialog] />
+      </div>
     </div>
   `
 })
 export class ImagePopupComponent {
-  @Input() imageUrl: string = '';
-  @Input() altText: string = '';
-  @Output() close = new EventEmitter<void>();
+  @Input() imageUrl = '';
+  @Input() altText = '';
+  @Output() closeEvent = new EventEmitter<void>();
 }

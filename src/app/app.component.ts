@@ -1,4 +1,4 @@
-import { Component, inject, Renderer2, HostListener, OnDestroy, Inject, OnInit } from '@angular/core';
+import { Component, inject, Renderer2, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { RouterOutlet, ChildrenOutletContexts, Router, NavigationEnd } from '@angular/router'; 
 import { HeaderComponent } from './components/header.component';
 import { FooterComponent } from './components/footer.component';
@@ -58,10 +58,13 @@ export class AppComponent implements OnInit, OnDestroy {
   private networkService = inject(NetworkService);
   private router = inject(Router);
   private contexts = inject(ChildrenOutletContexts);
-  private scrollTimeout: any = null;
+  private scrollTimeout: ReturnType<typeof setTimeout> | null = null;
   private routerSubscription: Subscription | null = null;
 
-  constructor() { }
+  // Empty constructor is required for Angular dependency injection
+  constructor() { 
+    // Constructor intentionally left empty - initialization happens in ngOnInit
+  }
 
   ngOnInit() {
     // Subscribe to router events to detect URL parameter changes

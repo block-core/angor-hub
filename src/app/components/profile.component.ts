@@ -55,7 +55,7 @@ export class ProfileComponent {
   relay = inject(RelayService);
   // npub = input<string>();
   // link = input.required<string>();
-  npub: string = '';
+  npub = '';
   pubkey = input<string>();
   displayMode = input<'full' | 'minimal'>('full');
   #pubkey: any = '';

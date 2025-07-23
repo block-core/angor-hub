@@ -167,7 +167,7 @@ export class ReportComponent implements OnInit {
   private indexer = inject(IndexerService);
   private titleService = inject(TitleService);
   
-  projectId: string = '';
+  projectId = '';
   nostrPubKey = signal<string>('');
   copied = signal<string | null>(null);
 

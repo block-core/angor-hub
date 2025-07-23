@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, effect, HostListener, Renderer2 } from '@angular/core';
+import { Component, OnInit, inject, signal, effect, HostListener, Renderer2, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AppLauncherComponent } from './app-launcher.component';
@@ -117,7 +117,9 @@ import { ThemeService } from '../services/theme.service';
 
     <!-- Mobile Menu -->
     @if (isMenuOpen()) {
-      <div class="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[1099]" @fadeInOut (click)="toggleMobileMenu()"></div>
+      <button type="button" class="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[1099] border-0 cursor-pointer" 
+              @fadeInOut (click)="toggleMobileMenu()" title="Close mobile menu">
+      </button>
       <div class="lg:hidden fixed top-0 right-0 bottom-0 w-full max-w-xs bg-header-bg shadow-xl z-[1100] flex flex-col" @mobileMenuAnimation>
         <div class="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
            <span class="font-semibold text-lg text-header-text">Menu</span>
@@ -178,7 +180,9 @@ import { ThemeService } from '../services/theme.service';
 
     <!-- Desktop Network Menu -->
     @if (isNetworkMenuOpen()) {
-      <div class="hidden lg:block fixed inset-0 z-[99]" (click)="closeAllMenus()" @fadeInOut></div>
+      <button type="button" class="hidden lg:block fixed inset-0 z-[99] bg-transparent border-0 cursor-pointer" 
+              (click)="closeAllMenus()" @fadeInOut title="Close network menu">
+      </button>
       <div class="absolute top-full left-0 mt-2 w-64 bg-surface-card rounded-lg shadow-xl border border-border z-[100]" @dropdownAnimation>
         <div class="p-3 space-y-2">
           <button class="w-full flex items-center gap-3 p-3 rounded-md text-left hover:bg-surface-hover transition-colors" [class.bg-surface-hover]="networkService.isMain()" (click)="switchNetwork('main')">
@@ -203,11 +207,13 @@ import { ThemeService } from '../services/theme.service';
 
     <!-- Desktop Network Menu Overlay -->
     @if (isNetworkMenuOpen()) {
-      <div class="hidden lg:block fixed inset-0 z-[99]" (click)="closeAllMenus()" @fadeInOut></div>
+      <button type="button" class="hidden lg:block fixed inset-0 z-[99] bg-transparent border-0 cursor-pointer" 
+              (click)="closeAllMenus()" @fadeInOut title="Close network menu overlay">
+      </button>
     }
   `,
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent implements OnInit, OnDestroy {
   public networkService = inject(NetworkService);
   public themeService = inject(ThemeService);
   private renderer = inject(Renderer2);

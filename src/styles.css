@@ -22,6 +22,9 @@
 }
 
 html[data-theme="light"] {
+  --accent: #086c81; 
+  --accent-light: #0ab6d9; 
+  --accent-dark: #065366; 
   --text: #022229; 
   --text-secondary: #547c85; 
   --surface-card: #ffffff; 
