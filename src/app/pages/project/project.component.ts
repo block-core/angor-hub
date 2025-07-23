@@ -7,6 +7,7 @@ import {
 } from '../../services/indexer.service';
 import { CommonModule } from '@angular/common';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
+import { IndexerErrorComponent } from '../../components/indexer-error.component';
 import {
   ProjectUpdate,
   RelayService,
@@ -40,6 +41,7 @@ import { nip19 } from 'nostr-tools';
     RouterModule,
     CommonModule,
     BreadcrumbComponent,
+    IndexerErrorComponent,
     AgoPipe,
     RouterModule,
     ImagePopupComponent,
@@ -103,6 +105,22 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
   reloadPage(): void {
     window.location.reload();
+  }
+
+  async retryLoadProject(): Promise<void> {
+    this.indexer.error.set(null);
+    if (this.projectId) {
+      const project = await this.indexer.fetchProject(this.projectId);
+      if (project) {
+        this.project.set(project);
+        if (!project.stats) {
+          const stats = await this.indexer.fetchProjectStats(this.projectId);
+          if (stats) {
+            project.stats = stats;
+          }
+        }
+      }
+    }
   }
 
   project = signal<IndexedProject | null>(null);

@@ -458,3 +458,11 @@
     (click)="showFilterDropdown = false; showSortDropdown = false"
   ></div>
 }
+
+<!-- Indexer Error Modal -->
+<app-indexer-error
+  [visible]="!!indexer.error()"
+  [errorDetails]="indexer.error()"
+  (onRetry)="retryLoadProjects()"
+  (onDismiss)="indexer.error.set(null)"
+></app-indexer-error>

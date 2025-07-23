@@ -10,6 +10,7 @@ import { RouterLink } from '@angular/router';
 import { ExploreStateService } from '../../services/explore-state.service';
 import { Router, NavigationEnd } from '@angular/router';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
+import { IndexerErrorComponent } from '../../components/indexer-error.component';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { Location } from '@angular/common';
 import { filter } from 'rxjs/operators';
@@ -24,7 +25,7 @@ type FilterType = 'all' | 'active' | 'upcoming' | 'completed';
 @Component({
   selector: 'app-explore',
   standalone: true,
-  imports: [RouterLink, BreadcrumbComponent, CommonModule, AgoPipe, TitleCasePipe],
+  imports: [RouterLink, BreadcrumbComponent, IndexerErrorComponent, CommonModule, AgoPipe, TitleCasePipe],
   templateUrl: './explore.component.html',
 })
 export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -412,7 +413,8 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async retryLoadProjects() {
-    await this.indexer.fetchProjects();
+    this.indexer.error.set(null);
+    await this.indexer.fetchProjects(true);
     this.observeProjects();
   }
 
