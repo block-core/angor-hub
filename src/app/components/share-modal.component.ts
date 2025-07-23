@@ -26,7 +26,7 @@ export interface ShareData {
           </h3>
             <button 
               (click)="close()"
-              class="p-2 hover:bg-surface-hover rounded-full transition-colors duration-200">
+              class="rounded-full transition-colors duration-200">
               <span class="material-icons text-text-secondary">close</span>
             </button>
           </div>
