@@ -5,14 +5,13 @@ import {
   ProjectStats,
   IndexerService,
 } from '../../services/indexer.service';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import {
-  ProfileUpdate,
   ProjectUpdate,
   RelayService,
 } from '../../services/relay.service';
-import NDK, {
+import {
   NDKEvent,
   NDKKind,
   NDKUser,
@@ -33,7 +32,6 @@ import { DenyService } from '../../services/deny.service';
 import { AboutContentComponent } from '../../components/about-content.component';
 import { ShareModalComponent, ShareData } from '../../components/share-modal.component';
 import { nip19 } from 'nostr-tools';
-import { NPubPipe } from '../../pipes/npub.pipe';
 
 @Component({
   selector: 'app-project',
@@ -53,6 +51,43 @@ import { NPubPipe } from '../../pipes/npub.pipe';
     ShareModalComponent,
   ],
   templateUrl: './project.component.html',
+  styles: [`
+    :host ::ng-deep .prose img {
+      display: block !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+      max-width: 100% !important;
+      height: auto !important;
+      border-radius: 12px !important;
+    }
+    
+    
+    :host ::ng-deep .prose figure {
+      text-align: center !important;
+      margin: 2rem 0 !important;
+    }
+    
+    :host ::ng-deep .prose figcaption {
+      text-align: center !important;
+      font-style: italic !important;
+      color: var(--text-secondary) !important;
+      margin-top: 0.5rem !important;
+    }
+    
+    @media (max-width: 640px) {
+      :host ::ng-deep .prose img {
+        margin: 1.5rem auto !important;
+        border-radius: 8px !important;
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      :host ::ng-deep .prose img {
+        max-width: 80% !important;
+        margin: 3rem auto !important;
+      }
+    }
+  `],
 })
 export class ProjectComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
@@ -119,7 +154,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
     const about = project.metadata?.about;
     let description = 'Check out this project on Angor Hub';
     if (about && about.length > 0) {
-      const plainText = about.replace(/[#*_`~\[\]()]/g, '').replace(/<[^>]*>/g, '');
+      const plainText = about.replace(/[#*_`~[\]()]/g, '').replace(/<[^>]*>/g, '');
       description = plainText.length > 100 ? plainText.substring(0, 100) + '...' : plainText;
     } else {
       description = `${project.metadata?.name || project.metadata?.displayName || 'This project'} on Angor Hub`;
