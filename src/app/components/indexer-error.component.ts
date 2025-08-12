@@ -182,8 +182,8 @@ export class IndexerErrorComponent {
   visible = input<boolean>(false);
   errorDetails = input<string | null>(null);
   
-  onRetry = output<void>();
-  onDismiss = output<void>();
+  retryEvent = output<void>();
+  dismissEvent = output<void>();
 
   private router = inject(Router);
   private indexerService = inject(IndexerService);
@@ -267,10 +267,10 @@ export class IndexerErrorComponent {
   }
 
   retry(): void {
-    this.onRetry.emit();
+    this.retryEvent.emit();
   }
 
   dismiss(): void {
-    this.onDismiss.emit();
+    this.dismissEvent.emit();
   }
 }

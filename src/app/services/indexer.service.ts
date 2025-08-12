@@ -95,7 +95,7 @@ export interface NetworkStats {
   providedIn: 'root',
 })
 export class IndexerService {
-  private readonly LIMIT = 6;
+  private readonly LIMIT = 8;
   private indexerUrl = 'https://tbtc.indexer.angor.io/';
   private offset = -1000;
   private totalItems = 0;
@@ -400,47 +400,42 @@ export class IndexerService {
     }
 
     try {
-
       await this.denyService.loadDenyList();
 
       this.loading.set(true);
       this.error.set(null);
       let limit = this.LIMIT;
 
+      const isFirstLoad = this.offset === -1000;
 
-      if (this.offset !== -1000 && this.offset < 0) {
+      if (!isFirstLoad && this.offset < 0) {
         limit = this.LIMIT + this.offset;
         console.log('LIMIT SUBSTRACTED:', limit);
         this.offset = 0;
         this.totalProjectsFetched = true;
       }
 
-
-      if (limit == 0) {
+      if (limit <= 0) {
         this.loading.set(false);
+        this.totalProjectsFetched = true;
         return;
       }
 
       const params = new URLSearchParams();
       params.append('limit', limit.toString());
 
-      if (this.offset > -1000) {
+      if (!isFirstLoad && this.offset >= 0) {
         params.append('offset', this.offset.toString());
       }
 
-      const url = `${this.indexerUrl
-        }api/query/Angor/projects?${params.toString()}`;
+      const url = `${this.indexerUrl}api/query/Angor/projects?${params.toString()}`;
 
 
-      const { data: response, headers } = await this.fetchJson<
-        IndexedProject[]
-      >(url);
+      const { data: response, headers } = await this.fetchJson<IndexedProject[]>(url);
 
       if (Array.isArray(response) && response.length > 0) {
-
         const filteredResponse: IndexedProject[] = [];
         for (const item of response) {
-
           const isDenied = await this.denyService.isEventDenied(item.projectIdentifier);
           if (!isDenied) {
             filteredResponse.push(item);
@@ -451,18 +446,20 @@ export class IndexerService {
           console.log(`All ${response.length} fetched projects were denied.`);
         }
 
+        if (isFirstLoad) {
+          this.totalItems = parseInt(headers.get('pagination-total') || '0');
+          
+          this.offset = Math.max(0, this.totalItems - limit);
+        } else {
+          this.offset = Math.max(0, this.offset - this.LIMIT);
+        }
+
+        if (this.offset === 0 && !isFirstLoad) {
+          this.totalProjectsFetched = true;
+          console.log('Reached beginning of projects list');
+        }
+
         if (filteredResponse.length > 0) {
-          if (this.offset === -1000) {
-            this.totalItems = parseInt(headers.get('pagination-total') || '0');
-
-
-            this.offset = Math.max(0, this.totalItems - limit - limit);
-          } else {
-            const nextOffset = this.offset - this.LIMIT;
-            this.offset = nextOffset;
-          }
-
-
           this.projects.update((existing) => {
             const merged = [...existing];
             const existingIds = new Set(existing.map(p => p.projectIdentifier));
@@ -482,21 +479,7 @@ export class IndexerService {
           if (eventIds.length > 0) {
             this.relay.fetchListData(eventIds);
           }
-        } else {
-
-          if (this.offset === -1000) {
-            this.totalItems = parseInt(headers.get('pagination-total') || '0');
-            this.offset = Math.max(0, this.totalItems - limit - limit);
-          } else {
-            const nextOffset = this.offset - this.LIMIT;
-            this.offset = nextOffset;
-          }
-
-          if (this.offset < 0) {
-            this.totalProjectsFetched = true;
-          }
         }
-
       } else {
         this.totalProjectsFetched = true;
       }
@@ -573,9 +556,9 @@ export class IndexerService {
       const stats = (await this.fetchJson<ProjectStats>(url)).data;
 
 
-      stats.amountInvested = stats.amountInvested;
-      stats.amountSpentSoFarByFounder = stats.amountSpentSoFarByFounder;
-      stats.amountInPenalties = stats.amountInPenalties;
+      stats.amountInvested = Number(stats.amountInvested) || 0;
+      stats.amountSpentSoFarByFounder = Number(stats.amountSpentSoFarByFounder) || 0;
+      stats.amountInPenalties = Number(stats.amountInPenalties) || 0;
 
       return stats;
     } catch (err) {
@@ -771,8 +754,9 @@ export class IndexerService {
   }
 
   resetProjects(): void {
-    this.offset = 0;
+    this.offset = -1000;
     this.totalProjectsFetched = false;
+    this.totalItems = 0;
     this.projects.set([]);
     this.fetchProjects(true);
   }
