@@ -901,24 +901,49 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   isStageCompleted(stageIndex: number): boolean {
-    const stage = this.project()?.details?.stages?.[stageIndex];
-    if (!stage) return false;
+    const stages = this.project()?.details?.stages;
+    if (!stages || !stages[stageIndex]) return false;
 
-    return Date.now() > stage.releaseDate * 1000;
+    const now = Date.now();
+    
+    if (stageIndex === stages.length - 1) {
+      const expiryDate = this.project()?.details?.expiryDate;
+      if (expiryDate) {
+        return now > expiryDate * 1000;
+      }
+      return false;
+    }
+    
+    const nextStage = stages[stageIndex + 1];
+    if (nextStage) {
+      return now >= nextStage.releaseDate * 1000;
+    }
+    
+    return false;
   }
 
   isCurrentStage(stageIndex: number): boolean {
     const stages = this.project()?.details?.stages;
     if (!stages || !stages.length) return false;
 
+    if (this.isProjectNotStarted()) return false;
 
-    if (stageIndex === stages.length - 1 && this.isStageCompleted(stageIndex)) {
-      return false;
-    }
+    const currentStage = stages[stageIndex];
+    if (!currentStage) return false;
 
+    const now = Date.now();
+    const stageReleaseTime = currentStage.releaseDate * 1000;
 
-    if (!this.isStageCompleted(stageIndex) && (stageIndex === 0 || this.isStageCompleted(stageIndex - 1))) {
-      return true;
+    if (now < stageReleaseTime) return false;
+
+    if (this.isStageCompleted(stageIndex)) return false;
+
+    if (stageIndex === stages.length - 1) return true;
+
+    const nextStage = stages[stageIndex + 1];
+    if (nextStage) {
+      const nextStageReleaseTime = nextStage.releaseDate * 1000;
+      return now < nextStageReleaseTime;
     }
 
     return false;
@@ -931,8 +956,21 @@ export class ProjectComponent implements OnInit, OnDestroy {
     for (let i = 0; i < stages.length; i++) {
       if (this.isCurrentStage(i)) {
         const stage = stages[i];
-        const stageStartTime = i > 0 ? stages[i - 1].releaseDate * 1000 : (this.project()?.details?.startDate ?? 0) * 1000;
-        const stageEndTime = stage.releaseDate * 1000;
+        
+        const stageStartTime = stage.releaseDate * 1000;
+        
+        let stageEndTime: number;
+        if (i < stages.length - 1) {
+          stageEndTime = stages[i + 1].releaseDate * 1000;
+        } else {
+          const expiryDate = this.project()?.details?.expiryDate;
+          if (expiryDate) {
+            stageEndTime = expiryDate * 1000;
+          } else {
+            stageEndTime = stageStartTime + (30 * 24 * 60 * 60 * 1000);
+          }
+        }
+        
         const currentTime = Date.now();
 
         if (currentTime <= stageStartTime) return 0;
