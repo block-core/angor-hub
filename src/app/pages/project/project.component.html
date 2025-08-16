@@ -487,7 +487,7 @@
                   <div class="flex items-start gap-3">
                     <span class="material-icons text-base text-accent mt-1 flex-shrink-0">event_available</span>
                     <div class="min-w-0 flex-1">
-                      <div class="text-sm text-text-secondary mb-1">Start Date</div>
+                      <div class="text-sm text-text-secondary mb-1">Funding Start Date</div>
                       <div class="text-sm font-semibold">
                         {{ formatDate(project()?.details?.startDate) }}
                         @if (project()?.details?.startDate) {
@@ -501,18 +501,16 @@
                   </div>
 
                   <div class="flex items-start gap-3">
-                    <span class="material-icons text-base text-accent mt-1 flex-shrink-0">timer</span>
+                    <span class="material-icons text-base text-accent mt-1 flex-shrink-0">event_available</span>
                     <div class="min-w-0 flex-1">
-                      <div class="text-sm text-text-secondary mb-1">Expiry Date</div>
-                      <div class="text-base font-semibold">
-                        {{ formatDate(project()?.details?.expiryDate) }}
-                        @if (project()?.details?.expiryDate) {
+                      <div class="text-sm text-text-secondary mb-1">Funding End Date</div>
+                      <div class="text-sm font-semibold">
+                        {{ formatDate(project()?.details?.endDate || project()?.details?.stages?.[0]?.releaseDate) }}
+                        @if (project()?.details?.endDate || project()?.details?.stages?.[0]?.releaseDate) {
                           <span class="block text-xs text-text-secondary mt-1 italic">
-                            @if (isProjectEnded()) { (Ended {{ project()?.details?.expiryDate ?? 0 | ago }}) }
-                            @else { ({{ getRemainingTimeText(project()?.details?.expiryDate) }}) }
+                            @if (isProjectNotStarted()) { (Starts {{ (project()?.details?.endDate || project()?.details?.stages?.[0]?.releaseDate) ?? 0 | ago }}) }
+                            @else { (Started {{ (project()?.details?.endDate || project()?.details?.stages?.[0]?.releaseDate) ?? 0 | ago }}) }
                           </span>
-                        } @else {
-                          <span class="block text-xs text-text-secondary mt-1 italic">(No expiry date)</span>
                         }
                       </div>
                     </div>
@@ -536,6 +534,24 @@
                       <div class="text-sm text-text-secondary mb-1">Penalty Period</div>
                       <div class="text-base font-semibold">{{ project()?.details?.penaltyDays }} days</div>
                       <div class="text-xs text-text-secondary mt-1 italic">(Investor withdrawal penalty window after expiry)</div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-start gap-3">
+                    <span class="material-icons text-base text-accent mt-1 flex-shrink-0">timer</span>
+                    <div class="min-w-0 flex-1">
+                      <div class="text-sm text-text-secondary mb-1">Expiry Date</div>
+                      <div class="text-base font-semibold">
+                        {{ formatDate(project()?.details?.expiryDate) }}
+                        @if (project()?.details?.expiryDate) {
+                          <span class="block text-xs text-text-secondary mt-1 italic">
+                            @if (isProjectEnded()) { (Ended {{ project()?.details?.expiryDate ?? 0 | ago }}) }
+                            @else { ({{ getRemainingTimeText(project()?.details?.expiryDate) }}) }
+                          </span>
+                        } @else {
+                          <span class="block text-xs text-text-secondary mt-1 italic">(No expiry date)</span>
+                        }
+                      </div>
                     </div>
                   </div>
                 </div>
