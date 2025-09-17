@@ -561,7 +561,7 @@
                             </div>
                           </div>
                           <div class="flex items-end gap-2 mb-2">
-                            <div class="text-lg font-bold" [class]="isStageCompleted($index) ? 'text-accent' : 'text-text'">{{ stage.amountToRelease }}%</div>
+                            <div class="text-lg font-bold" [class]="isStageCompleted($index) ? 'text-accent' : 'text-text'">{{ (stage.amountToRelease | number:'1.2-2') }}%</div>
                             <div class="text-sm text-text-secondary">({{ calculateStageAmount(stage.amountToRelease) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }})</div>
                             @if (isCurrentStage($index)) {
                               <div class="text-xs font-semibold text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-full ml-auto">
