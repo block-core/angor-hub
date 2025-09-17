@@ -292,10 +292,8 @@ export class IndexerService {
     return false;
   }
 
-  /**
-   * Try 3 times before setting error, to avoid showing error modal for temporary issues
-   */
-  async setErrorWithRetry(errorMsg: string, retryCount = 3, delayMs = 1000): Promise<void> {
+
+  async setErrorWithRetry(errorMsg: string, retryCount = 1, delayMs = 1000): Promise<void> {
     const isMainnet = this.network.isMain();
     const config = this.getIndexerConfig();
     const indexers = isMainnet ? config.mainnet : config.testnet;
