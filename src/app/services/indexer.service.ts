@@ -112,8 +112,8 @@ export class IndexerService {
 
   public indexers = signal<IndexerConfig>({
     mainnet: [
-      { url: 'https://explorer.angor.io/', isPrimary: true },
-      { url: 'https://fulcrum.angor.online/', isPrimary: false },
+      { url: 'https://explorer.angor.io/', isPrimary: false },
+      { url: 'https://fulcrum.angor.online/', isPrimary: true },
       { url: 'https://electrs.angor.online/', isPrimary: false }
     ],
     testnet: [
