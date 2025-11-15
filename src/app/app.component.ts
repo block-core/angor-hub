@@ -1,8 +1,8 @@
-import { Component, inject, Renderer2, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { Component, inject, Renderer2, HostListener, OnDestroy, OnInit, DOCUMENT } from '@angular/core';
 import { RouterOutlet, ChildrenOutletContexts, Router, NavigationEnd } from '@angular/router'; 
 import { HeaderComponent } from './components/header.component';
 import { FooterComponent } from './components/footer.component';
-import { DOCUMENT } from '@angular/common';
+
 import { ThemeService } from './services/theme.service';
 import { NetworkService } from './services/network.service';
 import { filter } from 'rxjs/operators';

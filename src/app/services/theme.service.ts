@@ -1,5 +1,5 @@
-import { Injectable, signal, inject, effect } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
+import { Injectable, signal, inject, effect, DOCUMENT } from '@angular/core';
+
 
 // Define theme type to include system option
 type ThemeType = 'light' | 'dark' | 'system';

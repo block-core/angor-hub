@@ -1,4 +1,4 @@
-import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, effect, signal, computed, Signal } from '@angular/core';
+import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, effect, signal, computed, Signal, DOCUMENT } from '@angular/core';
 import { RelayService } from '../../services/relay.service';
 import { IndexedProject, IndexerService } from '../../services/indexer.service';
 import { NetworkService } from '../../services/network.service';
@@ -11,7 +11,7 @@ import { ExploreStateService } from '../../services/explore-state.service';
 import { Router, NavigationEnd } from '@angular/router';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import { IndexerErrorComponent } from '../../components/indexer-error.component';
-import { CommonModule, DOCUMENT } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Location } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { AgoPipe } from '../../pipes/ago.pipe';
