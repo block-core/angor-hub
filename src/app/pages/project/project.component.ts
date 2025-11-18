@@ -383,9 +383,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
     this.projectId = id;
 
-
-    await this.denyService.loadDenyList();
-
+    // Force reload deny list to ensure it's fresh from Nostr
+    await this.denyService.reloadDenyList();
 
     if (await this.denyService.isEventDenied(this.projectId)) {
       this.isDenied.set(true);

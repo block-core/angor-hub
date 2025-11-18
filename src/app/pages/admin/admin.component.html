@@ -1,0 +1,311 @@
+<div class="min-h-screen bg-surface-ground py-8">
+  <div class="max-w-6xl mx-auto px-4">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold text-text mb-2">
+        Manage Denied Projects
+      </h1>
+      <p class="text-text-secondary">
+        Manage denied projects list using Nostr
+      </p>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (error()) {
+      <div class="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+        <div class="flex items-start gap-3">
+          <span class="material-icons text-red-600 dark:text-red-400">error</span>
+          <p class="text-red-600 dark:text-red-400 flex-1">{{ error() }}</p>
+        </div>
+      </div>
+    }
+    
+    @if (success()) {
+      <div class="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+        <div class="flex items-start gap-3">
+          <span class="material-icons text-green-600 dark:text-green-400">check_circle</span>
+          <p class="text-green-600 dark:text-green-400 flex-1">{{ success() }}</p>
+        </div>
+      </div>
+    }
+
+    @if (publishingStatus()) {
+      <div class="mb-4 p-4 bg-accent/10 border border-accent/30 rounded-lg">
+        <div class="flex items-center gap-3">
+          <svg class="animate-spin h-5 w-5 text-accent" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-accent flex-1">{{ publishingStatus() }}</p>
+        </div>
+      </div>
+    }
+
+    <!-- Login Section -->
+    @if (!isLoggedIn()) {
+      <div class="bg-surface-card rounded-xl shadow-lg p-8 text-center border border-border">
+        <div class="mb-6">
+          <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-accent/10 text-accent">
+            <span class="material-icons text-5xl">key</span>
+          </div>
+        </div>
+        <h2 class="text-2xl font-bold text-text mb-4">
+          Login with Nostr
+        </h2>
+        <p class="text-text-secondary mb-6 max-w-md mx-auto">
+          To manage the denied projects list, please login with your Nostr account
+        </p>
+        <button
+          (click)="login()"
+          [disabled]="loading()"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-accent hover:bg-accent-light disabled:bg-surface-hover disabled:text-text-secondary text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 transform"
+        >
+          @if (loading()) {
+            <svg class="animate-spin -ml-1 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Logging in...
+          } @else {
+            <span class="material-icons">login</span>
+            Login with Nostr Extension
+          }
+        </button>
+        <p class="text-sm text-text-secondary mt-4">
+          Requires a Nostr extension like Alby or nos2x
+        </p>
+      </div>
+    } @else {
+      <!-- Admin Panel -->
+      <div class="space-y-6">
+        <!-- Admin Info -->
+        <div class="bg-surface-card rounded-xl shadow-lg p-6 border border-border">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h3 class="text-lg font-semibold text-text mb-2">
+                Admin Information
+              </h3>
+              <div class="flex items-center gap-2">
+                <code class="text-sm text-text-secondary font-mono">
+                  {{ formatPubkey(adminPubkey()!) }}
+                </code>
+                <button
+                  (click)="copyToClipboard(adminPubkey()!)"
+                  class="text-text-secondary hover:text-accent transition-colors"
+                  title="Copy"
+                >
+                  <span class="material-icons text-base">content_copy</span>
+                </button>
+              </div>
+            </div>
+            <button
+              (click)="logout()"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 transform"
+            >
+              <span class="material-icons text-sm">logout</span>
+              Logout
+            </button>
+          </div>
+
+          <!-- Relay Status -->
+          <div class="border-t border-border pt-4">
+            <div class="flex items-center justify-between mb-2">
+              <button
+                (click)="toggleRelayStatus()"
+                class="flex items-center gap-2 text-sm text-text-secondary hover:text-accent transition-colors"
+              >
+                <span class="material-icons text-base">{{ showRelayStatus() ? 'expand_less' : 'expand_more' }}</span>
+                Connected Relays ({{ relayStatus().length }})
+              </button>
+              
+              <button
+                (click)="testRelayConnections()"
+                [disabled]="loading()"
+                class="inline-flex items-center gap-1 px-3 py-1 text-xs bg-surface-hover hover:bg-surface text-text border border-border rounded transition-all"
+                title="Test and reconnect to relays"
+              >
+                <span class="material-icons text-sm">refresh</span>
+                Test
+              </button>
+            </div>
+            
+            @if (showRelayStatus()) {
+              <div class="mt-3 space-y-2">
+                @for (relay of relayStatus(); track relay.url) {
+                  <div class="flex items-center gap-2 text-xs">
+                    <span class="material-icons text-sm" [class.text-green-500]="relay.connected" [class.text-red-500]="!relay.connected">
+                      {{ relay.connected ? 'check_circle' : 'cancel' }}
+                    </span>
+                    <code class="text-text-secondary font-mono flex-1">{{ relay.url }}</code>
+                  </div>
+                }
+                <div class="mt-2 pt-2 border-t border-border">
+                  <p class="text-xs text-text-secondary">
+                    <span class="material-icons text-xs align-middle">info</span>
+                    Publishing requires at least 1 relay to accept the event
+                  </p>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Add Project Form -->
+        <div class="bg-surface-card rounded-xl shadow-lg p-6 border border-border">
+          <h3 class="text-lg font-semibold text-text mb-4">
+            Add Project to Deny List
+          </h3>
+          <div class="flex gap-2">
+            <input
+              type="text"
+              [(ngModel)]="newProjectId"
+              (keyup.enter)="addProject()"
+              placeholder="Project ID (Event ID or Identifier)"
+              class="flex-1 px-4 py-2 border border-border rounded-lg bg-surface-ground text-text placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+            />
+            <button
+              (click)="addProject()"
+              [disabled]="loading() || !newProjectId().trim()"
+              class="inline-flex items-center gap-2 px-6 py-2 bg-accent hover:bg-accent-light disabled:bg-surface-hover disabled:text-text-secondary text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 transform"
+            >
+              @if (loading()) {
+                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              } @else {
+                <span class="material-icons text-sm">add</span>
+                Add
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- Search and List -->
+        <div class="bg-surface-card rounded-xl shadow-lg p-6 border border-border">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-text">
+              Denied Projects ({{ deniedProjects().length }})
+            </h3>
+            <div class="flex gap-2">
+              <button
+                (click)="loadDenyList()"
+                [disabled]="loading()"
+                class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-surface-hover hover:bg-surface text-text border border-border rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                title="Reload deny list from Nostr"
+              >
+                <span class="material-icons text-sm">refresh</span>
+                Reload
+              </button>
+            </div>
+          </div>
+
+          <!-- Search Box -->
+          <div class="mb-4 relative">
+            <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-base">search</span>
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              placeholder="Search in list..."
+              class="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-surface-ground text-text placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+            />
+          </div>
+
+          <!-- Projects List -->
+          @if (loading() && deniedProjects().length === 0) {
+            <div class="text-center py-12">
+              <svg class="animate-spin h-8 w-8 mx-auto text-accent" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p class="text-text-secondary mt-4">Loading...</p>
+            </div>
+          } @else if (filteredProjects().length === 0) {
+            <div class="text-center py-12">
+              <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 text-accent mb-4">
+                <span class="material-icons text-4xl">folder_off</span>
+              </div>
+              <p class="text-text-secondary">
+                @if (searchQuery()) {
+                  No results found
+                } @else {
+                  No denied projects yet
+                }
+              </p>
+            </div>
+          } @else {
+            <div class="space-y-2">
+              @for (project of filteredProjects(); track project.id) {
+                <div class="flex items-center justify-between p-4 bg-surface-hover rounded-lg hover:bg-surface transition-all duration-200 border border-border/50 hover:border-border">
+                  <div class="flex-1 min-w-0">
+                    <code class="text-sm text-text font-mono break-all">
+                      {{ project.id }}
+                    </code>
+                  </div>
+                  <div class="flex items-center gap-2 ml-4">
+                    <button
+                      (click)="copyToClipboard(project.id)"
+                      class="p-2 text-text-secondary hover:text-accent transition-colors"
+                      title="Copy"
+                    >
+                      <span class="material-icons text-base">content_copy</span>
+                    </button>
+                    <button
+                      (click)="removeProject(project.id)"
+                      [disabled]="loading()"
+                      class="p-2 text-red-500 hover:text-red-700 dark:hover:text-red-400 disabled:text-text-secondary transition-colors"
+                      title="Remove"
+                    >
+                      <span class="material-icons text-base">delete</span>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Info Box -->
+        <div class="bg-accent/90 border border-accent/30 rounded-xl p-6">
+          <div class="flex items-start gap-3">
+            <span class="material-icons text-accent">info</span>
+            <div class="flex-1">
+              <h4 class="font-semibold text-text mb-2">
+                Important Notes:
+              </h4>
+              <ul class="space-y-2 text-sm text-text-secondary mb-4">
+                <li class="flex gap-2">
+                  <span>•</span>
+                  <span>This list is stored on the Nostr network using NIP-51</span>
+                </li>
+                <li class="flex gap-2">
+                  <span>•</span>
+                  <span>Projects in this list will not be displayed on the explore page</span>
+                </li>
+                <li class="flex gap-2">
+                  <span>•</span>
+                  <span>Project ID can be an Event ID or Project Identifier</span>
+                </li>
+                <li class="flex gap-2">
+                  <span>•</span>
+                  <span>Changes are automatically published to all connected relays</span>
+                </li>
+                <li class="flex gap-2">
+                  <span>•</span>
+                  <span>Events are published with retry mechanism to ensure delivery</span>
+                </li>
+              </ul>
+              <a 
+                routerLink="/settings" 
+                class="inline-flex items-center gap-2 text-sm text-accent hover:text-accent-light transition-colors"
+              >
+                <span class="material-icons text-sm">settings</span>
+                Configure Relays in Settings
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

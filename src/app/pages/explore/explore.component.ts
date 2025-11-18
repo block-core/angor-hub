@@ -213,6 +213,9 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     this.watchForScrollTrigger();
     this.setupProjectObserver();
 
+    // Force reload deny list to ensure it's fresh from Nostr
+    await this.denyService.reloadDenyList();
+
     if (this.exploreState.hasState && this.indexer.projects().length > 0) {
       this.indexer.restoreOffset(this.exploreState.offset);
       this.observeProjects();
