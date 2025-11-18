@@ -223,7 +223,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  @HostListener('window:scroll', ['$event'])
+  @HostListener('window:scroll')
   onScroll() {
     if (this.loadingTimeout) clearTimeout(this.loadingTimeout);
     this.loadingTimeout = setTimeout(() => {
