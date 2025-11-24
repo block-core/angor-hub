@@ -288,7 +288,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
   }
 
-  @HostListener('window:scroll', ['$event'])
+  @HostListener('window:scroll')
   onScroll(): void {
     this.checkScrollPosition();
     this.isNetworkMenuOpen.set(false);
