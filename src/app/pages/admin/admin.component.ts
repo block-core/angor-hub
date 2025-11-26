@@ -1,8 +1,9 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NostrListService } from '../../services/nostr-list.service';
 import { RelayService } from '../../services/relay.service';
+import { NostrAuthService } from '../../services/nostr-auth.service';
 
 interface ProjectItem {
   id: string;
@@ -42,23 +43,40 @@ export class AdminComponent implements OnInit {
 
   constructor(
     private nostrListService: NostrListService,
-    private relayService: RelayService
-  ) {}
+    private relayService: RelayService,
+    public nostrAuth: NostrAuthService
+  ) {
+    // Watch for auth changes
+    effect(() => {
+      const user = this.nostrAuth.currentUser();
+      if (user) {
+        console.log('[Admin] User authenticated via nostr-login:', user.pubkey);
+        this.isLoggedIn.set(true);
+        this.adminPubkey.set(user.pubkey);
+        this.loadDenyList();
+      } else {
+        console.log('[Admin] User logged out');
+        this.isLoggedIn.set(false);
+        this.adminPubkey.set(null);
+        this.deniedProjects.set([]);
+      }
+    });
+  }
 
   async ngOnInit() {
-    // Check if already logged in
-    const pubkey = this.nostrListService.getAdminPubkey();
-    if (pubkey) {
-      console.log('[Admin] Already logged in with pubkey:', pubkey);
-      this.isLoggedIn.set(true);
-      this.adminPubkey.set(pubkey);
-      await this.loadDenyList();
-    } else {
-      console.log('[Admin] Not logged in');
-    }
-    
     // Load relay status
     this.updateRelayStatus();
+    
+    // Check if user is already authenticated via nostr-login
+    if (this.nostrAuth.isLoggedIn()) {
+      const pubkey = this.nostrAuth.getPubkey();
+      if (pubkey) {
+        console.log('[Admin] Already logged in via nostr-login:', pubkey);
+        this.isLoggedIn.set(true);
+        this.adminPubkey.set(pubkey);
+        await this.loadDenyList();
+      }
+    }
   }
 
   async updateRelayStatus() {
@@ -101,32 +119,30 @@ export class AdminComponent implements OnInit {
     this.error.set(null);
     
     try {
-      console.log('[Admin] Attempting login...');
-      const pubkey = await this.nostrListService.loginWithNostr();
-      if (pubkey) {
-        console.log('[Admin] Login successful, pubkey:', pubkey);
-        this.isLoggedIn.set(true);
-        this.adminPubkey.set(pubkey);
-        console.log('[Admin] Loading deny list...');
-        await this.loadDenyList();
-        this.success.set('Successfully logged in');
-        setTimeout(() => this.success.set(null), 3000);
-      }
+      console.log('[Admin] Launching nostr-login...');
+      await this.nostrAuth.login('welcome');
+      // The effect will handle the rest when user logs in
     } catch (err: any) {
       this.error.set(err.message || 'Failed to login');
       console.error('[Admin] Login error:', err);
-    } finally {
       this.loading.set(false);
     }
   }
 
-  logout() {
-    this.nostrListService.logout();
-    this.isLoggedIn.set(false);
-    this.adminPubkey.set(null);
-    this.deniedProjects.set([]);
-    this.success.set('Successfully logged out');
-    setTimeout(() => this.success.set(null), 3000);
+  async logout() {
+    this.loading.set(true);
+    this.error.set(null);
+    
+    try {
+      await this.nostrAuth.logout();
+      this.success.set('Successfully logged out');
+      setTimeout(() => this.success.set(null), 3000);
+    } catch (err: any) {
+      this.error.set(err.message || 'Failed to logout');
+      console.error('[Admin] Logout error:', err);
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   async loadDenyList() {
