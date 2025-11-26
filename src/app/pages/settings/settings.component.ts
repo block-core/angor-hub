@@ -113,25 +113,35 @@ export class SettingsComponent implements OnInit {
     this.relayUrls.set(this.relayService.getRelayUrls());
   }
   
-  addRelay(): void {
+  async addRelay(): Promise<void> {
     const urlToAdd = this.newRelayUrl();
     if (urlToAdd && this.isValidUrl(urlToAdd)) {
       const urls = [...this.relayUrls()];
       if (!urls.includes(urlToAdd)) {
         urls.push(urlToAdd);
         this.relayUrls.set(urls);
+        this.relayService.setRelayUrls(urls);
+        this.relayService.saveRelaysToStorage();
+        await this.relayService.reconnectToRelays();
         this.newRelayUrl.set('');
       }
     }
   }
   
-  removeRelay(relay: string): void {
+  async removeRelay(relay: string): Promise<void> {
     const urls = this.relayUrls().filter(url => url !== relay);
     this.relayUrls.set(urls);
+    this.relayService.setRelayUrls(urls);
+    this.relayService.saveRelaysToStorage();
+    await this.relayService.reconnectToRelays();
   }
   
-  resetToDefaultRelays(): void {
-    this.relayUrls.set(this.relayService.getDefaultRelays());
+  async resetToDefaultRelays(): Promise<void> {
+    const defaultRelays = this.relayService.getDefaultRelays();
+    this.relayUrls.set(defaultRelays);
+    this.relayService.setRelayUrls(defaultRelays);
+    this.relayService.saveRelaysToStorage();
+    await this.relayService.reconnectToRelays();
   }
   
   async saveAndReloadRelays(): Promise<void> {

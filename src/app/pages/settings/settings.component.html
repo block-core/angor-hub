@@ -235,7 +235,7 @@
                   class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none z-[1]">add_link</span>
                 <input #newRelayInput type="url" placeholder="wss://relay.example.com"
                   class="w-full py-3 pl-10 pr-4 bg-transparent border-none focus:outline-none text-text"
-                  [(ngModel)]="newRelayUrl" (keyup.enter)="addRelay()" />
+                  [value]="newRelayUrl()" (input)="newRelayUrl.set($any($event.target).value)" (keyup.enter)="addRelay()" />
               </div>
               <button
                 class="px-4 bg-accent text-white border-none flex items-center justify-center hover:bg-accent-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -390,7 +390,7 @@
                     class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none z-[1]">dns</span>
                   <input #newMainnetIndexerInput type="url" placeholder="https://indexer.example.com"
                     class="w-full py-3 pl-10 pr-4 bg-transparent border-none focus:outline-none text-text"
-                    [(ngModel)]="newMainnetIndexerUrl" (keyup.enter)="addIndexer(true)" />
+                    [value]="newMainnetIndexerUrl()" (input)="newMainnetIndexerUrl.set($any($event.target).value)" (keyup.enter)="addIndexer(true)" />
                 </div>
                 <button
                   class="px-4 bg-accent text-white border-none flex items-center justify-center hover:bg-accent-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -507,7 +507,7 @@
                     class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none z-[1]">dns</span>
                   <input #newTestnetIndexerInput type="url" placeholder="https://testnet-indexer.example.com"
                     class="w-full py-3 pl-10 pr-4 bg-transparent border-none focus:outline-none text-text"
-                    [(ngModel)]="newTestnetIndexerUrl" (keyup.enter)="addIndexer(false)" />
+                    [value]="newTestnetIndexerUrl()" (input)="newTestnetIndexerUrl.set($any($event.target).value)" (keyup.enter)="addIndexer(false)" />
                 </div>
                 <button
                   class="px-4 bg-accent text-white border-none flex items-center justify-center hover:bg-accent-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
