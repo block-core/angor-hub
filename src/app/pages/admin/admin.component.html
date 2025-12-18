@@ -156,7 +156,36 @@
           </div>
         </div>
 
-        <!-- Add Project Form -->
+        <!-- Tab Navigation -->
+        <div class="flex gap-2 bg-[#043a4a]/50 rounded-xl p-1">
+          <button
+            (click)="switchTab('deny')"
+            [class.bg-gradient-to-r]="activeTab() === 'deny'"
+            [class.from-[#0ab6d9]]="activeTab() === 'deny'"
+            [class.to-[#086c81]]="activeTab() === 'deny'"
+            [class.text-white]="activeTab() === 'deny'"
+            [class.text-gray-400]="activeTab() !== 'deny'"
+            class="flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center gap-2"
+          >
+            <span class="material-icons text-sm">block</span>
+            Deny List (Private)
+          </button>
+          <button
+            (click)="switchTab('featured')"
+            [class.bg-gradient-to-r]="activeTab() === 'featured'"
+            [class.from-[#0ab6d9]]="activeTab() === 'featured'"
+            [class.to-[#086c81]]="activeTab() === 'featured'"
+            [class.text-white]="activeTab() === 'featured'"
+            [class.text-gray-400]="activeTab() !== 'featured'"
+            class="flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center gap-2"
+          >
+            <span class="material-icons text-sm">star</span>
+            Featured List (Public)
+          </button>
+        </div>
+
+        <!-- Add Project Form (Deny List) -->
+        @if (activeTab() === 'deny') {
         <div class="bg-gradient-to-br from-[#043a4a] to-[#022229] rounded-2xl shadow-xl p-6 border border-[#086c81]/30">
           <div class="flex items-center gap-2 mb-4">
             <span class="material-icons text-[#0ab6d9]">block</span>
@@ -278,7 +307,7 @@
           }
         </div>
 
-        <!-- Info Card -->
+        <!-- Info Card (Deny List) -->
         <div class="bg-gradient-to-br from-[#0ab6d9]/10 to-[#086c81]/5 backdrop-blur-sm rounded-2xl p-6 border-[#0ab6d9]">
           <div class="flex items-start gap-4">
             <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-[#0ab6d9] to-[#086c81] flex items-center justify-center">
@@ -291,7 +320,7 @@
               <ul class="space-y-2.5 text-sm text-gray-300 mb-5">
                 <li class="flex gap-3">
                   <span class="text-[#0ab6d9] mt-0.5">▪</span>
-                  <span>Projects are stored on Nostr network using NIP-51 standard</span>
+                  <span>Stored using NIP-51 Mute List (Kind 10000) - Private</span>
                 </li>
                 <li class="flex gap-3">
                   <span class="text-[#0ab6d9] mt-0.5">▪</span>
@@ -299,7 +328,7 @@
                 </li>
                 <li class="flex gap-3">
                   <span class="text-[#0ab6d9] mt-0.5">▪</span>
-                  <span>Changes sync automatically across all connected relays</span>
+                  <span>Only you can see and manage this list</span>
                 </li>
               </ul>
               <a 
@@ -312,6 +341,166 @@
             </div>
           </div>
         </div>
+        }
+
+        <!-- Add Featured Project Form (Whitelist) -->
+        @if (activeTab() === 'featured') {
+        <div class="bg-gradient-to-br from-[#043a4a] to-[#022229] rounded-2xl shadow-xl p-6 border border-[#086c81]/30">
+          <div class="flex items-center gap-2 mb-4">
+            <span class="material-icons text-[#0ab6d9]">star</span>
+            <h3 class="text-lg font-semibold text-white">
+              Add Project to Featured List
+            </h3>
+          </div>
+          <div class="flex gap-3">
+            <input
+              type="text"
+              [(ngModel)]="newFeaturedId"
+              (keyup.enter)="addFeaturedProject()"
+              placeholder="Enter project identifier..."
+              class="flex-1 px-4 py-3 border-2 border-[#086c81]/50 rounded-xl bg-[#022229]/50 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#0ab6d9] focus:border-transparent transition-all"
+            />
+            <button
+              (click)="addFeaturedProject()"
+              [disabled]="loading() || !newFeaturedId().trim()"
+              class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#0ab6d9] to-[#086c81] hover:from-[#0cc9f0] hover:to-[#0a7d94] disabled:from-gray-700 disabled:to-gray-800 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl"
+            >
+              @if (loading()) {
+                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              } @else {
+                <span class="material-icons">add_circle</span>
+                Add
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- Featured Projects List -->
+        <div class="bg-gradient-to-br from-[#043a4a] to-[#022229] rounded-2xl shadow-xl p-6 border border-[#086c81]/30">
+          <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-2">
+              <span class="material-icons text-[#0ab6d9]">star</span>
+              <h3 class="text-lg font-semibold text-white">
+                Featured Projects
+              </h3>
+              <span class="px-3 py-1 bg-[#0ab6d9]/20 text-[#0ab6d9] rounded-full text-sm font-medium">
+                {{ featuredProjects().length }}
+              </span>
+            </div>
+            <button
+              (click)="loadFeaturedList()"
+              [disabled]="loading()"
+              class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-[#086c81]/50 hover:bg-[#086c81] text-white border border-[#0ab6d9]/30 rounded-lg transition-all duration-200"
+              title="Reload from Nostr"
+            >
+              <span class="material-icons text-sm">refresh</span>
+              Reload
+            </button>
+          </div>
+
+          <!-- Search Box -->
+          <div class="mb-6 relative">
+            <span class="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">search</span>
+            <input
+              type="text"
+              [(ngModel)]="featuredSearchQuery"
+              placeholder="Search featured projects..."
+              class="w-full pl-12 pr-4 py-3 border-2 border-[#086c81]/50 rounded-xl bg-[#022229]/50 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#0ab6d9] focus:border-transparent transition-all"
+            />
+          </div>
+
+          <!-- Featured Projects List -->
+          @if (loading() && featuredProjects().length === 0) {
+            <div class="text-center py-16">
+              <svg class="animate-spin h-10 w-10 mx-auto text-[#0ab6d9]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p class="text-gray-400 mt-4">Loading featured projects...</p>
+            </div>
+          } @else if (filteredFeaturedProjects().length === 0) {
+            <div class="text-center py-16">
+              <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-[#0ab6d9]/10 text-[#0ab6d9] mb-4">
+                <span class="material-icons text-5xl">{{ featuredSearchQuery() ? 'search_off' : 'star_border' }}</span>
+              </div>
+              <p class="text-gray-400 text-lg">
+                @if (featuredSearchQuery()) {
+                  No matching featured projects found
+                } @else {
+                  No featured projects yet
+                }
+              </p>
+            </div>
+          } @else {
+            <div class="space-y-3">
+              @for (project of filteredFeaturedProjects(); track project.id) {
+                <div class="flex items-center justify-between p-4 bg-[#022229]/50 rounded-xl hover:bg-[#086c81]/30 transition-all duration-200 border border-[#086c81]/20 hover:border-[#0ab6d9]/50 group">
+                  <div class="flex-1 min-w-0">
+                    <code class="text-sm text-gray-300 font-mono break-all">
+                      {{ project.id }}
+                    </code>
+                  </div>
+                  <div class="flex items-center gap-2 ml-4 opacity-70 group-hover:opacity-100 transition-opacity">
+                    <button
+                      (click)="copyToClipboard(project.id)"
+                      class="p-2 text-gray-400 hover:text-[#0ab6d9] transition-colors rounded-lg hover:bg-[#0ab6d9]/10"
+                      title="Copy"
+                    >
+                      <span class="material-icons text-lg">content_copy</span>
+                    </button>
+                    <button
+                      (click)="removeFeaturedProject(project.id)"
+                      [disabled]="loading()"
+                      class="p-2 text-red-400 hover:text-red-300 disabled:text-gray-600 transition-colors rounded-lg hover:bg-red-500/10"
+                      title="Remove"
+                    >
+                      <span class="material-icons text-lg">delete</span>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Info Card (Featured List) -->
+        <div class="bg-gradient-to-br from-[#0ab6d9]/10 to-[#086c81]/5 backdrop-blur-sm rounded-2xl p-6 border-[#0ab6d9]">
+          <div class="flex items-start gap-4">
+            <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-[#0ab6d9] to-[#086c81] flex items-center justify-center">
+              <span class="material-icons text-white text-xl">info</span>
+            </div>
+            <div class="flex-1">
+              <h4 class="font-semibold text-white text-lg mb-3">
+                About Featured List
+              </h4>
+              <ul class="space-y-2.5 text-sm text-gray-300 mb-5">
+                <li class="flex gap-3">
+                  <span class="text-[#0ab6d9] mt-0.5">▪</span>
+                  <span>Stored using NIP-51 Pin List (Kind 10001) - Public</span>
+                </li>
+                <li class="flex gap-3">
+                  <span class="text-[#0ab6d9] mt-0.5">▪</span>
+                  <span>Featured projects appear prominently on the explore page</span>
+                </li>
+                <li class="flex gap-3">
+                  <span class="text-[#0ab6d9] mt-0.5">▪</span>
+                  <span>This list is publicly visible to all users</span>
+                </li>
+              </ul>
+              <a 
+                routerLink="/settings" 
+                class="inline-flex items-center gap-2 text-sm text-[#0ab6d9] hover:text-[#0cc9f0] transition-colors font-medium"
+              >
+                <span class="material-icons text-sm">settings</span>
+                Configure Relay Settings
+              </a>
+            </div>
+          </div>
+        </div>
+        }
       </div>
     }
   </div>

@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { NostrListService } from '../../services/nostr-list.service';
 import { RelayService } from '../../services/relay.service';
 import { NostrAuthService } from '../../services/nostr-auth.service';
@@ -13,7 +14,7 @@ interface ProjectItem {
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './admin.component.html'
 })
 export class AdminComponent implements OnInit {
@@ -24,9 +25,18 @@ export class AdminComponent implements OnInit {
   success = signal<string | null>(null);
   publishingStatus = signal<string | null>(null);
   
+  // Deny list (private - kind 10000)
   deniedProjects = signal<ProjectItem[]>([]);
   newProjectId = signal<string>('');
   searchQuery = signal<string>('');
+  
+  // Whitelist / Featured projects (public - kind 10001)
+  featuredProjects = signal<ProjectItem[]>([]);
+  newFeaturedId = signal<string>('');
+  featuredSearchQuery = signal<string>('');
+  
+  // Tab management
+  activeTab = signal<'deny' | 'featured'>('deny');
   
   // Relay connection status
   relayStatus = signal<{ url: string; connected: boolean }[]>([]);
@@ -37,6 +47,15 @@ export class AdminComponent implements OnInit {
     if (!query) return this.deniedProjects();
     
     return this.deniedProjects().filter(p => 
+      p.id.toLowerCase().includes(query)
+    );
+  });
+
+  filteredFeaturedProjects = computed(() => {
+    const query = this.featuredSearchQuery().toLowerCase();
+    if (!query) return this.featuredProjects();
+    
+    return this.featuredProjects().filter(p => 
       p.id.toLowerCase().includes(query)
     );
   });
@@ -54,11 +73,13 @@ export class AdminComponent implements OnInit {
         this.isLoggedIn.set(true);
         this.adminPubkey.set(user.pubkey);
         this.loadDenyList();
+        this.loadFeaturedList();
       } else {
         console.log('[Admin] User logged out');
         this.isLoggedIn.set(false);
         this.adminPubkey.set(null);
         this.deniedProjects.set([]);
+        this.featuredProjects.set([]);
       }
     });
   }
@@ -75,6 +96,7 @@ export class AdminComponent implements OnInit {
         this.isLoggedIn.set(true);
         this.adminPubkey.set(pubkey);
         await this.loadDenyList();
+        await this.loadFeaturedList();
       }
     }
   }
@@ -250,6 +272,116 @@ export class AdminComponent implements OnInit {
       this.loading.set(false);
     }
   }
+
+  // ==================== WHITELIST / FEATURED PROJECTS ====================
+
+  async loadFeaturedList() {
+    this.loading.set(true);
+    this.error.set(null);
+    
+    try {
+      const list = await this.nostrListService.getWhiteList();
+      const projects: ProjectItem[] = list.map(id => ({
+        id,
+        addedAt: Date.now(),
+      }));
+      this.featuredProjects.set(projects);
+      console.log('[Admin] Loaded featured list from Nostr:', list);
+    } catch (err: any) {
+      this.error.set(err.message || 'Failed to load featured list');
+      console.error('Load featured list error:', err);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async addFeaturedProject() {
+    const projectId = this.newFeaturedId().trim();
+    
+    if (!projectId) {
+      this.error.set('Please enter a project ID');
+      return;
+    }
+
+    this.loading.set(true);
+    this.error.set(null);
+    this.publishingStatus.set('Publishing to relays...');
+    
+    try {
+      await this.nostrListService.addToWhiteList(projectId);
+      this.publishingStatus.set('Waiting for event propagation...');
+      
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      this.publishingStatus.set('Reloading featured list...');
+      await this.loadFeaturedList();
+      this.newFeaturedId.set('');
+      this.publishingStatus.set(null);
+      this.success.set('✓ Project added to featured list and published successfully');
+      setTimeout(() => this.success.set(null), 4000);
+    } catch (err: any) {
+      this.publishingStatus.set(null);
+      const errorMsg = err.message || 'Failed to add featured project';
+      
+      if (errorMsg.includes('relay') || errorMsg.includes('unavailable')) {
+        this.error.set(`${errorMsg} Try clicking the "Test" button to refresh relay connections, or check Settings.`);
+      } else if (errorMsg.includes('timeout')) {
+        this.error.set(`${errorMsg} Your relays may be slow. Try again or configure different relays in Settings.`);
+      } else if (errorMsg.includes('extension')) {
+        this.error.set(`${errorMsg} Make sure your Nostr extension (Alby/nos2x) is unlocked and working.`);
+      } else {
+        this.error.set(errorMsg);
+      }
+      console.error('Add featured project error:', err);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async removeFeaturedProject(projectId: string) {
+    if (!confirm(`Are you sure you want to remove project ${projectId} from the featured list?`)) {
+      return;
+    }
+
+    this.loading.set(true);
+    this.error.set(null);
+    this.publishingStatus.set('Publishing changes to relays...');
+    
+    try {
+      await this.nostrListService.removeFromWhiteList(projectId);
+      this.publishingStatus.set('Waiting for event propagation...');
+      
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      this.publishingStatus.set('Reloading featured list...');
+      await this.loadFeaturedList();
+      this.publishingStatus.set(null);
+      this.success.set('✓ Project removed from featured list and published successfully');
+      setTimeout(() => this.success.set(null), 4000);
+    } catch (err: any) {
+      this.publishingStatus.set(null);
+      const errorMsg = err.message || 'Failed to remove featured project';
+      
+      if (errorMsg.includes('relay') || errorMsg.includes('unavailable')) {
+        this.error.set(`${errorMsg} Try clicking the "Test" button to refresh relay connections, or check Settings.`);
+      } else if (errorMsg.includes('timeout')) {
+        this.error.set(`${errorMsg} Your relays may be slow. Try again or configure different relays in Settings.`);
+      } else if (errorMsg.includes('extension')) {
+        this.error.set(`${errorMsg} Make sure your Nostr extension (Alby/nos2x) is unlocked and working.`);
+      } else {
+        this.error.set(errorMsg);
+      }
+      console.error('Remove featured project error:', err);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  switchTab(tab: 'deny' | 'featured') {
+    this.activeTab.set(tab);
+  }
+
+  // ==================== UTILITY METHODS ====================
 
   copyToClipboard(text: string) {
     navigator.clipboard.writeText(text).then(() => {

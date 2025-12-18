@@ -1,5 +1,5 @@
 import { Injectable, effect, signal } from '@angular/core';
-import NDK, { NDKEvent, NDKKind, NDKUser } from '@nostr-dev-kit/ndk';
+import NDK, { NDKEvent, NDKKind, NDKUser, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
 import { RelayService } from './relay.service';
 import { SimplePool, type Event as NostrEvent } from 'nostr-tools';
 import { NostrAuthService } from './nostr-auth.service';
@@ -23,8 +23,8 @@ export class NostrListService {
   private simplePool = new SimplePool();
   
   // NIP-51 List kinds
-  private readonly MUTE_LIST_KIND = 10000; // Mute list (NIP-51)
-  private readonly BLOCK_LIST_KIND = 10001; // Block list (custom for this app)
+  private readonly MUTE_LIST_KIND = 10000; // Mute list (NIP-51) - Used for deny/block list (private)
+  private readonly PIN_LIST_KIND = 10001; // Pin list (NIP-51) - Used for whitelist/featured projects (public)
   
   constructor(
     private relayService: RelayService,
@@ -116,17 +116,21 @@ export class NostrListService {
         const ndk = await this.relayService.ensureConnected();
 
         const filter = {
-          kinds: [this.BLOCK_LIST_KIND],
+          kinds: [this.MUTE_LIST_KIND],
           authors: [adminPubkey],
-          limit: 1,
+          limit: 10, // Get multiple events to find the latest one
         };
 
         console.log('[NostrListService] Fetching events with filter:', filter);
-        const events = await ndk.fetchEvents(filter);
+        // Disable NDK cache to get fresh events from relays
+        const events = await ndk.fetchEvents(filter, { closeOnEose: true, cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY });
         console.log('[NostrListService] Found', events.size, 'events');
         
         if (events.size > 0) {
-          const event = Array.from(events)[0];
+          // Sort events by created_at descending (newest first)
+          const sortedEvents = Array.from(events).sort((a, b) => b.created_at! - a.created_at!);
+          const event = sortedEvents[0];
+          console.log('[NostrListService] Using newest event from', new Date(event.created_at! * 1000).toISOString());
           console.log('[NostrListService] Event found:', event.id);
           const deniedProjects = this.extractDeniedProjects(event);
           this.denyList.set(deniedProjects);
@@ -150,22 +154,30 @@ export class NostrListService {
   }
 
   /**
-   * Extract denied project IDs from Nostr event(s)
+   * Extract project IDs from Nostr event(s)
+   * Works for both deny lists (mute) and whitelists (pin) using NIP-51 'e' tags
    */
   private extractDeniedProjects(eventOrEvents: NDKEvent | NDKEvent[]): string[] {
-    const deniedSet = new Set<string>();
+    const projectSet = new Set<string>();
     const events = Array.isArray(eventOrEvents) ? eventOrEvents : [eventOrEvents];
     
     events.forEach(event => {
-      // Extract project IDs from 'project' tags (custom tag for project identifiers)
-      event.tags.forEach(tag => {
-        if (tag[0] === 'project' && tag[1]) {
-          deniedSet.add(tag[1]);
+      // NDK wraps events and may not expose tags directly
+      // Use rawEvent() to get the actual Nostr event with tags
+      const rawEvent = event.rawEvent ? event.rawEvent() : event;
+      
+      // Extract project IDs from tags
+      // Support 'a' tags (addressable/arbitrary IDs), 'e' tags (event IDs), and legacy 'project' tags
+      const tags = rawEvent.tags || [];
+      
+      tags.forEach((tag: any) => {
+        if (Array.isArray(tag) && (tag[0] === 'a' || tag[0] === 'e' || tag[0] === 'project') && tag[1]) {
+          projectSet.add(tag[1]);
         }
       });
     });
     
-    return Array.from(deniedSet);
+    return Array.from(projectSet);
   }
 
   /**
@@ -245,19 +257,23 @@ export class NostrListService {
         throw new Error('No relays configured. Please add relays in settings.');
       }
 
+      // Get admin pubkey for event
+      const pubkey = this.requireAdminPubkey();
+
       // Create event following NIP-51 structure
-      // Using 'project' tag instead of 'e' tag since project IDs are not hex event IDs
+      // Using 'a' tag for addressable/arbitrary identifiers (project IDs)
       const eventTemplate = {
-        kind: this.BLOCK_LIST_KIND,
+        kind: this.MUTE_LIST_KIND,
         created_at: Math.floor(Date.now() / 1000),
-        tags: deniedProjects.map(id => ['project', id, '', 'Blocked project']),
+        tags: deniedProjects.map(id => ['a', id, '', 'Blocked project']),
         content: '', // Empty content for privacy, all data in tags
+        pubkey: pubkey, // Add pubkey to event
       };
 
       // Sign using the active signer from auth flow
-      console.log('Signing event with Nostr signer...');
+      console.log('Signing deny list event with Nostr signer...');
       const signedEvent = await this.nostrAuth.signEvent(eventTemplate);
-      console.log('Event signed successfully:', signedEvent.id);
+      console.log('✓ Event signed successfully:', signedEvent.id);
 
       // Create NDK event
       const ndkEvent = new NDKEvent(ndk, signedEvent);
@@ -341,11 +357,13 @@ export class NostrListService {
         );
       }
 
-      // Update local state
+      // Update local state immediately
       this.denyList.set(deniedProjects);
+      this.loaded.set(true);
       
-      // Reset loaded state to force fresh fetch next time
-      this.loaded.set(false);
+      // Wait a bit for event to propagate on relays
+      console.log('Waiting for event propagation...');
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Warn if not many relays received it
       if (totalPublished < Math.ceil(relayUrls.length / 2)) {
@@ -357,10 +375,11 @@ export class NostrListService {
         console.log(`✓ Deny list published successfully to ${totalPublished}/${relayUrls.length} relay(s)`);
       }
 
-      // Verify publication (don't fail if this doesn't work)
+      // Verify publication from relays (don't fail if this doesn't work)
       try {
-        console.log('Verifying publication...');
+        console.log('Verifying publication from relays...');
         await this.verifyPublication(ndkEvent.id);
+        console.log('✓ Event verified on relays');
       } catch (verifyErr) {
         console.warn('Could not verify publication immediately, but event was sent:', verifyErr);
         // Event was published, verification is just a sanity check
@@ -471,7 +490,7 @@ export class NostrListService {
       const ndk = await this.relayService.ensureConnected();
 
       const filter = {
-        kinds: [this.BLOCK_LIST_KIND],
+        kinds: [this.MUTE_LIST_KIND],
         authors: adminPubkeys,
       };
 
@@ -502,5 +521,314 @@ export class NostrListService {
     }
 
     return Array.from(allDenied);
+  }
+
+  // ==================== WHITELIST / FEATURED PROJECTS (NIP-51 Pin List - Kind 10001) ====================
+
+  private whiteList = signal<string[]>([]);
+  private whiteListLoaded = signal<boolean>(false);
+  private whiteListLoadingPromise: Promise<void> | null = null;
+
+  /**
+   * Load whitelist (featured/pinned projects) from Nostr for the current admin user
+   * Uses NIP-51 Pin List (kind 10001) - Public list
+   */
+  async loadNostrWhiteList(): Promise<void> {
+    const adminPubkey = this.requireAdminPubkey();
+
+    // Force reload every time to ensure fresh data
+    this.whiteListLoaded.set(false);
+    this.whiteListLoadingPromise = null;
+
+    this.whiteListLoadingPromise = (async () => {
+      try {
+        console.log('[NostrListService] Loading whitelist for pubkey:', adminPubkey);
+        const ndk = await this.relayService.ensureConnected();
+
+        const filter = {
+          kinds: [this.PIN_LIST_KIND],
+          authors: [adminPubkey],
+          limit: 10, // Get multiple events to find the latest one
+        };
+
+        console.log('[NostrListService] Fetching whitelist events with filter:', filter);
+        // Disable NDK cache to get fresh events from relays
+        const events = await ndk.fetchEvents(filter, { closeOnEose: true, cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY });
+        console.log('[NostrListService] Found', events.size, 'whitelist events');
+        
+        if (events.size > 0) {
+          // Sort events by created_at descending (newest first)
+          const sortedEvents = Array.from(events).sort((a: NDKEvent, b: NDKEvent) => b.created_at! - a.created_at!);
+          const event = sortedEvents[0];
+          console.log('[NostrListService] Using newest whitelist event from', new Date(event.created_at! * 1000).toISOString());
+          console.log('[NostrListService] Whitelist event found:', event.id);
+          const featuredProjects = this.extractDeniedProjects(event); // Same extraction logic
+          this.whiteList.set(featuredProjects);
+          this.whiteListLoaded.set(true);
+          console.log('[NostrListService] ✓ Whitelist loaded:', featuredProjects.length, 'entries:', featuredProjects);
+        } else {
+          console.warn('[NostrListService] ⚠ No whitelist found for this admin user.');
+          this.whiteList.set([]);
+          this.whiteListLoaded.set(true);
+        }
+      } catch (error) {
+        console.error('[NostrListService] Error loading Nostr whitelist:', error);
+        this.whiteList.set([]);
+        this.whiteListLoaded.set(true);
+      } finally {
+        this.whiteListLoadingPromise = null;
+      }
+    })();
+
+    return this.whiteListLoadingPromise;
+  }
+
+  /**
+   * Add a project to the whitelist (featured/pinned projects)
+   */
+  async addToWhiteList(projectIdentifier: string): Promise<void> {
+    this.requireAdminPubkey();
+
+    await this.loadNostrWhiteList();
+
+    if (this.whiteList().includes(projectIdentifier)) {
+      console.log('Project already in whitelist');
+      return;
+    }
+
+    const updatedList = [...this.whiteList(), projectIdentifier];
+    await this.publishWhiteList(updatedList);
+  }
+
+  /**
+   * Remove a project from the whitelist
+   */
+  async removeFromWhiteList(projectIdentifier: string): Promise<void> {
+    this.requireAdminPubkey();
+
+    await this.loadNostrWhiteList();
+
+    const updatedList = this.whiteList().filter(id => id !== projectIdentifier);
+    await this.publishWhiteList(updatedList);
+  }
+
+  /**
+   * Batch add multiple projects to whitelist
+   */
+  async batchAddToWhiteList(projectIdentifiers: string[]): Promise<void> {
+    this.requireAdminPubkey();
+
+    await this.loadNostrWhiteList();
+
+    const currentList = this.whiteList();
+    const newProjects = projectIdentifiers.filter(id => !currentList.includes(id));
+    
+    if (newProjects.length === 0) {
+      console.log('All projects already in whitelist');
+      return;
+    }
+
+    const updatedList = [...currentList, ...newProjects];
+    await this.publishWhiteList(updatedList);
+  }
+
+  /**
+   * Batch remove multiple projects from whitelist
+   */
+  async batchRemoveFromWhiteList(projectIdentifiers: string[]): Promise<void> {
+    this.requireAdminPubkey();
+
+    await this.loadNostrWhiteList();
+
+    const updatedList = this.whiteList().filter(id => !projectIdentifiers.includes(id));
+    await this.publishWhiteList(updatedList);
+  }
+
+  /**
+   * Publish whitelist to Nostr relays
+   * Uses NIP-51 Pin List (kind 10001) - Public, visible to all users
+   */
+  private async publishWhiteList(featuredProjects: string[]): Promise<void> {
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 2000;
+    const PUBLISH_TIMEOUT = 15000;
+    
+    try {
+      const ndk = await this.relayService.ensureConnected();
+      const relayUrls = this.relayService.getRelayUrls();
+
+      if (relayUrls.length === 0) {
+        throw new Error('No relays configured. Please add relays in settings.');
+      }
+
+      // Get admin pubkey for event
+      const pubkey = this.requireAdminPubkey();
+
+      // Create event following NIP-51 Pin List structure
+      const eventTemplate = {
+        kind: this.PIN_LIST_KIND,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: featuredProjects.map(id => ['a', id, '', 'Featured project']),
+        content: '', // Empty content, all data in tags
+        pubkey: pubkey, // Add pubkey to event
+      };
+
+      console.log('Signing whitelist event with Nostr signer...');
+      const signedEvent = await this.nostrAuth.signEvent(eventTemplate);
+      console.log('✓ Whitelist event signed successfully:', signedEvent.id);
+
+      const ndkEvent = new NDKEvent(ndk, signedEvent);
+      
+      let totalPublished = 0;
+      let lastError: Error | null = null;
+
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          console.log(`Publishing whitelist attempt ${attempt}/${MAX_RETRIES} to ${relayUrls.length} relays...`);
+          
+          const publishPromise = new Promise<number>(async (resolve, reject) => {
+            try {
+              const relaySet = await ndkEvent.publish();
+              const count = relaySet ? relaySet.size : 0;
+              console.log(`NDK: ${count} relays accepted the whitelist event`);
+              await new Promise(r => setTimeout(r, 500));
+              resolve(count);
+            } catch (err) {
+              reject(err);
+            }
+          });
+
+          try {
+            totalPublished = await Promise.race([
+              publishPromise,
+              new Promise<number>((_, reject) => 
+                setTimeout(() => reject(new Error('Publish timeout')), PUBLISH_TIMEOUT)
+              )
+            ]);
+          } catch (ndkError: any) {
+            console.warn('NDK publish failed for whitelist, trying SimplePool fallback:', ndkError.message);
+            totalPublished = await this.publishWithSimplePool(signedEvent);
+          }
+
+          console.log(`Published whitelist to ${totalPublished}/${relayUrls.length} relays`);
+
+          if (totalPublished >= 1) {
+            console.log(`✓ Successfully published whitelist to ${totalPublished} relay(s)`);
+            break;
+          }
+
+          if (attempt < MAX_RETRIES) {
+            console.warn(`Only ${totalPublished} relays received the whitelist event, retrying in ${RETRY_DELAY}ms...`);
+            try {
+              await this.relayService.reconnectToRelays();
+            } catch (reconnectErr) {
+              console.warn('Reconnect failed, continuing anyway:', reconnectErr);
+            }
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+          }
+        } catch (err: any) {
+          lastError = err;
+          console.error(`Whitelist publish attempt ${attempt} failed:`, err.message);
+          
+          if (attempt < MAX_RETRIES) {
+            console.log(`Retrying in ${RETRY_DELAY}ms...`);
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+          }
+        }
+      }
+
+      if (totalPublished === 0) {
+        throw new Error(
+          lastError?.message || 
+          'Failed to publish whitelist to any relay after multiple attempts.'
+        );
+      }
+
+      // Update local state immediately
+      this.whiteList.set(featuredProjects);
+      this.whiteListLoaded.set(true);
+
+      // Wait a bit for event to propagate on relays
+      console.log('Waiting for whitelist event propagation...');
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      if (totalPublished < relayUrls.length / 2) {
+        console.warn(`⚠ Whitelist published to only ${totalPublished}/${relayUrls.length} relays`);
+      } else {
+        console.log(`✓ Whitelist published successfully to ${totalPublished}/${relayUrls.length} relay(s)`);
+      }
+
+    } catch (error: any) {
+      console.error('Error publishing whitelist:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get current whitelist
+   */
+  async getWhiteList(): Promise<string[]> {
+    if (!this.adminPubkey()) {
+      const fromAuth = this.nostrAuth.getPubkey();
+      if (fromAuth) {
+        this.adminPubkey.set(fromAuth);
+      } else {
+        console.warn('[NostrListService] No admin logged in, returning empty whitelist');
+        return [];
+      }
+    }
+    await this.loadNostrWhiteList();
+    const list = this.whiteList();
+    console.log('[NostrListService] getWhiteList returning:', list);
+    return list;
+  }
+
+  /**
+   * Check if a project is in the whitelist
+   */
+  async isProjectWhiteListed(projectIdentifier: string): Promise<boolean> {
+    await this.loadNostrWhiteList();
+    return this.whiteList().includes(projectIdentifier);
+  }
+
+  /**
+   * Search all Nostr whitelists (from multiple admin users)
+   */
+  async searchAllWhiteLists(adminPubkeys: string[]): Promise<Map<string, string[]>> {
+    try {
+      const ndk = await this.relayService.ensureConnected();
+
+      const filter = {
+        kinds: [this.PIN_LIST_KIND],
+        authors: adminPubkeys,
+      };
+
+      const events = await ndk.fetchEvents(filter);
+      const whiteListMap = new Map<string, string[]>();
+
+      for (const event of events) {
+        const featuredProjects = this.extractDeniedProjects(event);
+        whiteListMap.set(event.pubkey, featuredProjects);
+      }
+
+      return whiteListMap;
+    } catch (error) {
+      console.error('Error searching whitelists:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all featured/whitelisted projects from multiple admin users
+   */
+  async getAllFeaturedProjects(adminPubkeys: string[]): Promise<string[]> {
+    const whiteListMap = await this.searchAllWhiteLists(adminPubkeys);
+    const allFeatured = new Set<string>();
+
+    for (const featuredProjects of whiteListMap.values()) {
+      featuredProjects.forEach(id => allFeatured.add(id));
+    }
+
+    return Array.from(allFeatured);
   }
 }
