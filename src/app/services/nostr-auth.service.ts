@@ -10,17 +10,83 @@ export interface NostrUser {
   providedIn: 'root',
 })
 export class NostrAuthService {
+  private static readonly STORAGE_KEY = 'angor-hub-nostr-user';
   private user = signal<NostrUser | null>(null);
   private isInitialized = false;
 
   public currentUser = this.user.asReadonly();
 
   constructor() {
+    // Restore session early so UI (e.g. Admin page) doesn't treat refresh as a logout
+    this.restoreUserFromStorage();
+
     // Initialize nostr-login
     this.initializeNostrLogin();
     
     // Listen for auth events
     this.setupAuthListener();
+
+    // Persist auth state changes
+    this.setupPersistenceEffect();
+
+    // Best-effort verification/rehydration (won't prompt the user)
+    void this.verifyStoredUserAgainstProvider();
+  }
+
+  private isBrowser(): boolean {
+    return typeof window !== 'undefined' && typeof document !== 'undefined';
+  }
+
+  private restoreUserFromStorage(): void {
+    if (!this.isBrowser()) return;
+
+    const raw = localStorage.getItem(NostrAuthService.STORAGE_KEY);
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw) as Partial<NostrUser> | null;
+      if (!parsed || typeof parsed.pubkey !== 'string' || !parsed.pubkey.trim()) {
+        localStorage.removeItem(NostrAuthService.STORAGE_KEY);
+        return;
+      }
+
+      const npub = typeof parsed.npub === 'string' ? parsed.npub : undefined;
+      this.user.set({ pubkey: parsed.pubkey, npub });
+    } catch {
+      localStorage.removeItem(NostrAuthService.STORAGE_KEY);
+    }
+  }
+
+  private setupPersistenceEffect(): void {
+    if (!this.isBrowser()) return;
+
+    effect(() => {
+      const u = this.user();
+      if (u) {
+        localStorage.setItem(NostrAuthService.STORAGE_KEY, JSON.stringify(u));
+      } else {
+        localStorage.removeItem(NostrAuthService.STORAGE_KEY);
+      }
+    });
+  }
+
+  private async verifyStoredUserAgainstProvider(): Promise<void> {
+    if (!this.isBrowser()) return;
+
+    const existing = this.user();
+    if (!existing) return;
+
+    if (!window.nostr?.getPublicKey) return;
+
+    try {
+      const pubkey = await window.nostr.getPublicKey();
+      if (pubkey && pubkey !== existing.pubkey) {
+        // Keep the UI consistent with the active signer.
+        this.user.set({ pubkey, npub: existing.npub });
+      }
+    } catch {
+      // If the extension is locked/unavailable, keep the stored session.
+    }
   }
 
   private initializeNostrLogin(): void {
@@ -29,7 +95,7 @@ export class NostrAuthService {
     }
 
     // Only initialize in browser environment
-    if (typeof window === 'undefined' || typeof document === 'undefined') {
+    if (!this.isBrowser()) {
       return;
     }
 
@@ -59,7 +125,7 @@ export class NostrAuthService {
   }
 
   private setupAuthListener(): void {
-    if (typeof document === 'undefined') {
+    if (!this.isBrowser()) {
       return;
     }
 

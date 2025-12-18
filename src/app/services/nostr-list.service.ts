@@ -1,7 +1,8 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, effect, signal } from '@angular/core';
 import NDK, { NDKEvent, NDKKind, NDKUser } from '@nostr-dev-kit/ndk';
 import { RelayService } from './relay.service';
 import { SimplePool, type Event as NostrEvent } from 'nostr-tools';
+import { NostrAuthService } from './nostr-auth.service';
 
 export interface NostrDenyList {
   pubkey: string;
@@ -25,7 +26,37 @@ export class NostrListService {
   private readonly MUTE_LIST_KIND = 10000; // Mute list (NIP-51)
   private readonly BLOCK_LIST_KIND = 10001; // Block list (custom for this app)
   
-  constructor(private relayService: RelayService) {}
+  constructor(
+    private relayService: RelayService,
+    private nostrAuth: NostrAuthService
+  ) {
+    // Keep admin pubkey in sync with the global auth state (e.g. Admin page login)
+    effect(() => {
+      const user = this.nostrAuth.currentUser();
+      const pubkey = user?.pubkey ?? null;
+      if (this.adminPubkey() !== pubkey) {
+        this.adminPubkey.set(pubkey);
+        // Reset cached list when switching users
+        this.denyList.set([]);
+        this.loaded.set(false);
+        this.loadingPromise = null;
+      }
+    });
+  }
+
+  private requireAdminPubkey(): string {
+    const current = this.adminPubkey();
+    if (current) return current;
+
+    // Fallback: the effect may not have run yet.
+    const fromAuth = this.nostrAuth.getPubkey();
+    if (fromAuth) {
+      this.adminPubkey.set(fromAuth);
+      return fromAuth;
+    }
+
+    throw new Error('No admin user logged in. Please login first.');
+  }
 
   /**
    * Login with Nostr extension (NIP-07)
@@ -73,9 +104,7 @@ export class NostrListService {
    * Load deny list from Nostr for the current admin user
    */
   async loadNostrDenyList(): Promise<void> {
-    if (!this.adminPubkey()) {
-      throw new Error('No admin user logged in');
-    }
+    const adminPubkey = this.requireAdminPubkey();
 
     // Force reload every time to ensure fresh data
     this.loaded.set(false);
@@ -83,12 +112,12 @@ export class NostrListService {
 
     this.loadingPromise = (async () => {
       try {
-        console.log('[NostrListService] Loading deny list for pubkey:', this.adminPubkey());
+        console.log('[NostrListService] Loading deny list for pubkey:', adminPubkey);
         const ndk = await this.relayService.ensureConnected();
 
         const filter = {
           kinds: [this.BLOCK_LIST_KIND],
-          authors: [this.adminPubkey()!],
+          authors: [adminPubkey],
           limit: 1,
         };
 
@@ -143,13 +172,7 @@ export class NostrListService {
    * Add a project to the deny list
    */
   async addToDenyList(projectIdentifier: string): Promise<void> {
-    if (!this.adminPubkey()) {
-      throw new Error('No admin user logged in. Please login first.');
-    }
-
-    if (!(window as any).nostr) {
-      throw new Error('Nostr extension not found. Please install Alby or nos2x.');
-    }
+    this.requireAdminPubkey();
 
     await this.loadNostrDenyList();
 
@@ -166,13 +189,7 @@ export class NostrListService {
    * Remove a project from the deny list
    */
   async removeFromDenyList(projectIdentifier: string): Promise<void> {
-    if (!this.adminPubkey()) {
-      throw new Error('No admin user logged in. Please login first.');
-    }
-
-    if (!(window as any).nostr) {
-      throw new Error('Nostr extension not found. Please install Alby or nos2x.');
-    }
+    this.requireAdminPubkey();
 
     await this.loadNostrDenyList();
 
@@ -184,13 +201,7 @@ export class NostrListService {
    * Batch add multiple projects to deny list
    */
   async batchAddToDenyList(projectIdentifiers: string[]): Promise<void> {
-    if (!this.adminPubkey()) {
-      throw new Error('No admin user logged in. Please login first.');
-    }
-
-    if (!(window as any).nostr) {
-      throw new Error('Nostr extension not found. Please install Alby or nos2x.');
-    }
+    this.requireAdminPubkey();
 
     await this.loadNostrDenyList();
 
@@ -210,13 +221,7 @@ export class NostrListService {
    * Batch remove multiple projects from deny list
    */
   async batchRemoveFromDenyList(projectIdentifiers: string[]): Promise<void> {
-    if (!this.adminPubkey()) {
-      throw new Error('No admin user logged in. Please login first.');
-    }
-
-    if (!(window as any).nostr) {
-      throw new Error('Nostr extension not found. Please install Alby or nos2x.');
-    }
+    this.requireAdminPubkey();
 
     await this.loadNostrDenyList();
 
@@ -249,9 +254,9 @@ export class NostrListService {
         content: '', // Empty content for privacy, all data in tags
       };
 
-      // Sign with Nostr extension
-      console.log('Signing event with Nostr extension...');
-      const signedEvent = await (window as any).nostr.signEvent(eventTemplate);
+      // Sign using the active signer from auth flow
+      console.log('Signing event with Nostr signer...');
+      const signedEvent = await this.nostrAuth.signEvent(eventTemplate);
       console.log('Event signed successfully:', signedEvent.id);
 
       // Create NDK event
@@ -436,8 +441,13 @@ export class NostrListService {
    */
   async getDenyList(): Promise<string[]> {
     if (!this.adminPubkey()) {
-      console.warn('[NostrListService] No admin logged in, returning empty list');
-      return [];
+      const fromAuth = this.nostrAuth.getPubkey();
+      if (fromAuth) {
+        this.adminPubkey.set(fromAuth);
+      } else {
+        console.warn('[NostrListService] No admin logged in, returning empty list');
+        return [];
+      }
     }
     await this.loadNostrDenyList();
     const list = this.denyList();
