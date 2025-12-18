@@ -33,6 +33,8 @@ import { DenyService } from '../../services/deny.service';
 import { AboutContentComponent } from '../../components/about-content.component';
 import { ShareModalComponent, ShareData } from '../../components/share-modal.component';
 import { nip19 } from 'nostr-tools';
+import { NostrListService } from '../../services/nostr-list.service';
+import { NostrAuthService } from '../../services/nostr-auth.service';
 
 @Component({
   selector: 'app-project',
@@ -102,6 +104,17 @@ export class ProjectComponent implements OnInit, OnDestroy {
   public bitcoin = inject(BitcoinUtilsService);
   public title = inject(TitleService);
   private denyService = inject(DenyService);
+  private nostrListService = inject(NostrListService);
+  public nostrAuth = inject(NostrAuthService);
+
+  // Admin controls
+  isInDenyList = signal<boolean>(false);
+  isInWhitelist = signal<boolean>(false);
+  updatingDenyList = signal<boolean>(false);
+  updatingWhitelist = signal<boolean>(false);
+  adminActionMessage = signal<string>('');
+  bannerLoaded = signal<boolean>(false);
+  profileLoaded = signal<boolean>(false);
 
   reloadPage(): void {
     window.location.reload();
@@ -551,6 +564,11 @@ export class ProjectComponent implements OnInit, OnDestroy {
           this.title.setTitle(this.project()?.metadata?.name);
         }
 
+        // Check admin list status if user is logged in
+        if (this.isCurrentUserAdmin()) {
+          await this.checkProjectListStatus();
+        }
+
       } else {
 
         if (!this.isDenied()) {
@@ -709,95 +727,11 @@ export class ProjectComponent implements OnInit, OnDestroy {
     window.open(url, '_blank');
   }
 
-  getSpentPercentage(): number {
-    const spent = (this.project()?.stats?.amountSpentSoFarByFounder ?? 0);
-    const invested = (this.project()?.stats?.amountInvested ?? 1);
-    if (invested === 0) return 0;
-    return Number(((spent / invested) * 100).toFixed(1));
-  }
-
   getWithdrawnPercentage(): number {
     const withdrawn = (this.project()?.stats?.amountInPenalties ?? 0);
     const invested = (this.project()?.stats?.amountInvested ?? 1);
     if (invested === 0) return 0;
     return Number(((withdrawn / invested) * 100).toFixed(1));
-  }
-
-  getPenaltiesPercentage(): number {
-    const penalties = (this.project()?.stats?.amountInPenalties ?? 0);
-    const invested = (this.project()?.stats?.amountInvested ?? 1);
-    if (invested === 0) return 0;
-    return Number(((penalties / invested) * 100).toFixed(1));
-  }
-
-  getSocialIcon(platform: string): string {
-    const icons: Record<string, string> = {
-      github: 'code',
-      twitter: 'flutter_dash',
-      facebook: 'facebook',
-      telegram: 'telegram',
-      instagram: 'photo_camera',
-      linkedin: 'work',
-      youtube: 'smart_display',
-      mastodon: 'forum',
-      twitch: 'videogame_asset',
-      discord: 'chat',
-      email: 'email',
-    };
-
-    return icons[platform.toLowerCase()] || 'link';
-  }
-
-  getSocialLink(identity: ExternalIdentity): string {
-    const baseUrls: Record<string, string> = {
-      github: 'https://github.com/',
-      twitter: 'https://x.com/',
-      facebook: 'https://facebook.com/',
-      telegram: 'https://t.me/',
-      instagram: 'https://instagram.com/',
-      linkedin: 'https://linkedin.com/in/',
-      youtube: 'https://youtube.com/@',
-      mastodon: '',
-      twitch: 'https://twitch.tv/',
-      discord: 'https://discord.com/users/',
-      email: 'mailto:',
-    };
-
-    if (identity.platform === 'mastodon') {
-      return `https://${identity.username}`;
-    }
-
-    const baseUrl = baseUrls[identity.platform.toLowerCase()];
-    return baseUrl ? `${baseUrl}${identity.username}` : '#';
-  }
-
-  formatUsername(username: string): string {
-
-    if (username.includes('@')) {
-      return '@' + username.split('@')[1];
-    }
-    return '@' + username;
-  }
-
-  formatWebsite(username?: string): string {
-    if (!username) return '';
-
-    // Remove protocol and www prefixes, then remove trailing slashes
-    return username.replace(/^(https?:\/\/)?(www\.)?/, '')
-      .replace(/\/+$/, '');
-  }
-
-  // Add method to get proper website URL with protocol
-  getWebsiteUrl(website?: string): string {
-    if (!website) return '';
-    
-    // If the URL already starts with http:// or https://, return as is
-    if (website.match(/^https?:\/\//)) {
-      return website;
-    }
-    
-    // Otherwise, add https:// prefix (default to secure)
-    return `https://${website}`;
   }
 
   prevSlide() {
@@ -842,21 +776,13 @@ export class ProjectComponent implements OnInit, OnDestroy {
     this.showImagePopup = true;
   }
 
-  handleBannerError(): void {
-    this.failedBannerImage.set(true);
-  }
-
-  handleProfileError(): void {
-    this.failedProfileImage.set(true);
-  }
-
   handleMediaError(imageUrl: string): void {
     const failedImages = this.failedMediaImages();
     failedImages.add(imageUrl);
     this.failedMediaImages.set(new Set(failedImages));
   }
 
-  handleVideoError(videoUrl: string): void { // New method for video errors
+  handleVideoError(videoUrl: string): void {
     const failedVideos = this.failedMediaVideos();
     failedVideos.add(videoUrl);
     this.failedMediaVideos.set(new Set(failedVideos));
@@ -866,37 +792,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
     return this.failedMediaImages().has(imageUrl);
   }
 
-  hasVideoFailed(videoUrl: string): boolean { // New method to check video errors
+  hasVideoFailed(videoUrl: string): boolean {
     return this.failedMediaVideos().has(videoUrl);
-  }
-
-  getRandomColor(seed: string): string {
-    let hash = 0;
-    for (let i = 0; i < seed.length; i++) {
-      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
-    }
-
-    const colors = [
-      '#022229',
-      '#086c81',
-      '#cbdde1',
-      '#b8c9cd'
-    ];
-
-    const index = Math.abs(hash) % colors.length;
-    return colors[index];
-  }
-
-
-  getInitial(name: string | undefined | null): string {
-    if (!name || name.trim() === '') {
-      return '#';
-    }
-    return name.trim()[0].toUpperCase();
-  }
-
-  getBannerStyle(): string {
-    return this.getRandomColor(this.projectId);
   }
 
   isStageCompleted(stageIndex: number): boolean {
@@ -1148,5 +1045,225 @@ export class ProjectComponent implements OnInit, OnDestroy {
   
   closeShareModal(): void {
     this.showShareModal.set(false);
+  }
+
+  // Admin methods
+  isCurrentUserAdmin(): boolean {
+    return this.nostrAuth.isLoggedIn();
+  }
+
+  async checkProjectListStatus(): Promise<void> {
+    if (!this.isCurrentUserAdmin() || !this.projectId) {
+      return;
+    }
+
+    try {
+      const denyList = await this.nostrListService.getDenyList();
+      const whitelist = await this.nostrListService.getWhiteList();
+      
+      this.isInDenyList.set(denyList.includes(this.projectId));
+      this.isInWhitelist.set(whitelist.includes(this.projectId));
+    } catch (error) {
+      console.error('Error checking project list status:', error);
+    }
+  }
+
+  async addToDenyList(): Promise<void> {
+    if (!this.projectId) return;
+
+    this.updatingDenyList.set(true);
+    this.adminActionMessage.set('');
+
+    try {
+      await this.nostrListService.addToDenyList(this.projectId);
+      this.isInDenyList.set(true);
+      this.adminActionMessage.set('Success: Project added to deny list');
+      setTimeout(() => this.adminActionMessage.set(''), 5000);
+    } catch (error) {
+      console.error('Error adding to deny list:', error);
+      this.adminActionMessage.set('Error: ' + (error as Error).message);
+    } finally {
+      this.updatingDenyList.set(false);
+    }
+  }
+
+  async removeFromDenyList(): Promise<void> {
+    if (!this.projectId) return;
+
+    this.updatingDenyList.set(true);
+    this.adminActionMessage.set('');
+
+    try {
+      await this.nostrListService.removeFromDenyList(this.projectId);
+      this.isInDenyList.set(false);
+      this.adminActionMessage.set('Success: Project removed from deny list');
+      setTimeout(() => this.adminActionMessage.set(''), 5000);
+    } catch (error) {
+      console.error('Error removing from deny list:', error);
+      this.adminActionMessage.set('Error: ' + (error as Error).message);
+    } finally {
+      this.updatingDenyList.set(false);
+    }
+  }
+
+  async addToWhitelist(): Promise<void> {
+    if (!this.projectId) return;
+
+    this.updatingWhitelist.set(true);
+    this.adminActionMessage.set('');
+
+    try {
+      await this.nostrListService.addToWhiteList(this.projectId);
+      this.isInWhitelist.set(true);
+      this.adminActionMessage.set('Success: Project added to whitelist');
+      setTimeout(() => this.adminActionMessage.set(''), 5000);
+    } catch (error) {
+      console.error('Error adding to whitelist:', error);
+      this.adminActionMessage.set('Error: ' + (error as Error).message);
+    } finally {
+      this.updatingWhitelist.set(false);
+    }
+  }
+
+  async removeFromWhitelist(): Promise<void> {
+    if (!this.projectId) return;
+
+    this.updatingWhitelist.set(true);
+    this.adminActionMessage.set('');
+
+    try {
+      await this.nostrListService.removeFromWhiteList(this.projectId);
+      this.isInWhitelist.set(false);
+      this.adminActionMessage.set('Success: Project removed from whitelist');
+      setTimeout(() => this.adminActionMessage.set(''), 5000);
+    } catch (error) {
+      console.error('Error removing from whitelist:', error);
+      this.adminActionMessage.set('Error: ' + (error as Error).message);
+    } finally {
+      this.updatingWhitelist.set(false);
+    }
+  }
+
+  onBannerLoad(): void {
+    this.bannerLoaded.set(true);
+  }
+
+  onProfileLoad(): void {
+    this.profileLoaded.set(true);
+  }
+
+  handleBannerError(): void {
+    this.failedBannerImage.set(true);
+    this.bannerLoaded.set(true);
+  }
+
+  handleProfileError(): void {
+    this.failedProfileImage.set(true);
+    this.profileLoaded.set(true);
+  }
+
+  shouldShowBannerImage(): boolean {
+    return !!this.project()?.metadata?.banner && !this.failedBannerImage();
+  }
+
+  shouldShowProfileImage(): boolean {
+    return !!this.project()?.metadata?.['picture'] && !this.failedProfileImage();
+  }
+
+  getRandomColor(seed: string): string {
+    let hash = 0;
+    if (!seed) return '#cbdde1';
+    for (let i = 0; i < seed.length; i++) {
+      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colors = ['#022229', '#086c81', '#b8c9cd'];
+    return colors[Math.abs(hash) % colors.length];
+  }
+
+  getInitial(name: string | undefined | null): string {
+    if (!name || name.trim() === '') return '#';
+    return name.trim()[0].toUpperCase();
+  }
+
+  getBannerStyle(): string {
+    return this.getRandomColor(this.projectId);
+  }
+
+  getProjectStatusInfo(): { label: string; type: string; icon: string } | null {
+    if (this.isProjectNotStarted()) {
+      return { label: 'Upcoming', type: 'upcoming', icon: 'schedule' };
+    }
+    
+    if (this.isProjectSuccessful()) {
+      return { label: 'Successfully Funded', type: 'success', icon: 'check_circle' };
+    }
+    
+    if (this.isProjectFailed()) {
+      return { label: 'Failed', type: 'failed', icon: 'cancel' };
+    }
+    
+    if (this.isProjectStarted() && !this.isProjectEnded()) {
+      return { label: 'Active', type: 'active', icon: 'trending_up' };
+    }
+    
+    return null;
+  }
+
+  getSpentPercentage(): number {
+    const spent = this.project()?.stats?.amountSpentSoFarByFounder ?? 0;
+    const invested = this.project()?.stats?.amountInvested ?? 1;
+    return Math.min(100, Number(((spent / invested) * 100).toFixed(1)));
+  }
+
+  getPenaltiesPercentage(): number {
+    const penalties = this.project()?.stats?.amountInPenalties ?? 0;
+    const invested = this.project()?.stats?.amountInvested ?? 1;
+    return Math.min(100, Number(((penalties / invested) * 100).toFixed(1)));
+  }
+
+  getWebsiteUrl(website: string | undefined): string {
+    if (!website) return '#';
+    if (website.startsWith('http://') || website.startsWith('https://')) {
+      return website;
+    }
+    return 'https://' + website;
+  }
+
+  formatWebsite(website: string | undefined): string {
+    if (!website) return '';
+    return website.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '');
+  }
+
+  getSocialLink(identity: ExternalIdentity): string {
+    const platform = identity.platform.toLowerCase();
+    const username = identity.username;
+    
+    const platformUrls: { [key: string]: string } = {
+      twitter: `https://twitter.com/${username}`,
+      github: `https://github.com/${username}`,
+      telegram: `https://t.me/${username}`,
+      facebook: `https://facebook.com/${username}`,
+      instagram: `https://instagram.com/${username}`,
+      linkedin: `https://linkedin.com/in/${username}`,
+    };
+    
+    return platformUrls[platform] || identity.proofUrl || '#';
+  }
+
+  getSocialIcon(platform: string): string {
+    const icons: { [key: string]: string } = {
+      twitter: 'chat',
+      github: 'code',
+      telegram: 'telegram',
+      facebook: 'facebook',
+      instagram: 'photo_camera',
+      linkedin: 'work',
+    };
+    
+    return icons[platform.toLowerCase()] || 'link';
+  }
+
+  formatUsername(username: string): string {
+    return username.startsWith('@') ? username : `@${username}`;
   }
 }
