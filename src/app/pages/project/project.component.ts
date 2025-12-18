@@ -49,9 +49,6 @@ import { NostrAuthService } from '../../services/nostr-auth.service';
     ImagePopupComponent,
     ProfileComponent,
     MarkdownModule,
-    SafeContentPipe,
-    SafePipe,  // Add SafePipe to imports
-    AboutContentComponent,
     ShareModalComponent,
   ],
   templateUrl: './project.component.html',
