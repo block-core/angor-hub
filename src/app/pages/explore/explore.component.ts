@@ -67,6 +67,8 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   
   failedBannerImages = signal<Set<string>>(new Set<string>());
   failedProfileImages = signal<Set<string>>(new Set<string>());
+  loadedBannerImages = signal<Set<string>>(new Set<string>());
+  loadedProfileImages = signal<Set<string>>(new Set<string>());
 
   
   filteredProjects: Signal<any[]> = computed(() => {
@@ -533,5 +535,25 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
 
   shouldShowProfileImage(project: any): boolean {
     return !!project.metadata?.['picture'] && !this.hasProfileFailed(project.projectIdentifier);
+  }
+
+  onBannerImageLoad(projectId: string): void {
+    const loadedImages = this.loadedBannerImages();
+    loadedImages.add(projectId);
+    this.loadedBannerImages.set(new Set(loadedImages));
+  }
+
+  onProfileImageLoad(projectId: string): void {
+    const loadedImages = this.loadedProfileImages();
+    loadedImages.add(projectId);
+    this.loadedProfileImages.set(new Set(loadedImages));
+  }
+
+  isBannerImageLoaded(projectId: string): boolean {
+    return this.loadedBannerImages().has(projectId);
+  }
+
+  isProfileImageLoaded(projectId: string): boolean {
+    return this.loadedProfileImages().has(projectId);
   }
 }
