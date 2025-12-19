@@ -4,6 +4,7 @@ import { ExploreComponent } from './pages/explore/explore.component';
 import { ProjectComponent } from './pages/project/project.component';
 import { SettingsComponent } from './pages/settings/settings.component';
 import { ReportComponent } from './pages/report/report.component';
+import { AdminComponent } from './pages/admin/admin.component';
 
 export const routes: Routes = [
   {
@@ -35,6 +36,12 @@ export const routes: Routes = [
     component: ReportComponent,
     title: 'Report Project',
     data: { animation: 'ReportPage' } 
+  },
+  {
+    path: 'admin',
+    component: AdminComponent,
+    title: 'Admin - Manage Deny Lists',
+    data: { animation: 'AdminPage' } 
   },
   {
     path: '**',

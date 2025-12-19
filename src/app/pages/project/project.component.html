@@ -1,351 +1,478 @@
-<section class="relative w-full h-[200px] sm:h-[250px] md:h-[300px] overflow-hidden">
-  <div
-    class="absolute inset-0 bg-cover bg-center transition-colors duration-300 after:content-[''] after:absolute after:inset-0 after:bg-gradient-to-b after:from-black/70 after:to-black/20"
-    [style.background-image]="project()?.metadata?.banner && !failedBannerImage() ? 'url(' + project()?.metadata?.banner + ')' : 'none'"
-    [style.background-color]="failedBannerImage() || !project()?.metadata?.banner ? getBannerStyle() : 'transparent'">
-    @if (project()?.metadata?.banner) {
-      <img [src]="project()?.metadata?.banner" class="hidden" (error)="handleBannerError()" alt="" />
-    }
-    @if (failedBannerImage() || !project()?.metadata?.banner) {
-      <div class="absolute inset-0 flex items-center justify-center">
-        <span class="material-icons text-6xl text-white/50">image_not_supported</span>
-      </div>
-    }
-  </div>
+<!-- Loading Skeleton -->
+@if (!project() && indexer.loading()) {
+  <div class="min-h-screen bg-surface-ground">
+    <!-- Banner Skeleton -->
+    <div class="w-full h-[300px] bg-surface-card animate-pulse"></div>
 
-  <div class="absolute top-0 left-0 w-full z-10">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-      <app-breadcrumb [items]="[
-          { label: 'Home', url: '/' },
-          { label: 'Explore', url: '/explore' },
-          { label: project()?.metadata?.name || 'Project', url: '' }
-        ]" class="text-white/90 text-sm sm:text-base hover:text-white transition-colors duration-200"></app-breadcrumb>
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+      <!-- Profile + Header Skeleton -->
+      <div class="bg-surface-card rounded-2xl shadow-lg p-6 mb-6">
+        <div class="flex flex-col lg:flex-row gap-6">
+          <div class="w-32 h-32 rounded-full bg-surface-hover animate-pulse"></div>
+          <div class="flex-1 space-y-4">
+            <div class="h-8 bg-surface-hover rounded animate-pulse w-2/3"></div>
+            <div class="h-4 bg-surface-hover rounded animate-pulse w-full"></div>
+            <div class="h-4 bg-surface-hover rounded animate-pulse w-3/4"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Skeleton -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+          <div class="bg-surface-card rounded-2xl p-6 space-y-4">
+            <div class="h-6 bg-surface-hover rounded animate-pulse w-1/3"></div>
+            <div class="h-4 bg-surface-hover rounded animate-pulse"></div>
+            <div class="h-4 bg-surface-hover rounded animate-pulse"></div>
+            <div class="h-4 bg-surface-hover rounded animate-pulse w-5/6"></div>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <div class="bg-surface-card rounded-2xl p-4 h-32 animate-pulse"></div>
+          <div class="bg-surface-card rounded-2xl p-4 h-32 animate-pulse"></div>
+        </div>
+      </div>
     </div>
   </div>
-</section>
+}
 
-
-<div class="container mx-auto px-4 sm:px-6 lg:px-8 relative -mt-[60px] sm:-mt-[80px] md:-mt-[30px]">
-  @if (isDenied()) {
-    <div class="flex flex-col items-center justify-center p-6 sm:p-8 mt-8 bg-surface-card rounded-lg shadow-md text-center max-w-2xl mx-auto">
-      <span class="material-icons text-5xl text-red-500 mb-4 animate-pulse">gpp_bad</span>
-      <h1 class="text-xl sm:text-2xl font-bold mb-3 text-text">Project Not Available</h1>
-      <p class="max-w-lg mb-6 text-text-secondary text-sm sm:text-base leading-relaxed">This project is currently not available for viewing due to content policy violations or other restrictions.</p>
+<!-- Project Denied -->
+@else if (isDenied()) {
+  <div class="min-h-screen bg-surface-ground flex items-center justify-center p-6">
+    <div class="bg-surface-card rounded-2xl shadow-xl p-8 max-w-md text-center">
+      <span class="material-icons text-6xl text-red-500 mb-4">gpp_bad</span>
+      <h1 class="text-2xl font-bold mb-3 text-text">Project Not Available</h1>
+      <p class="text-text-secondary mb-6 leading-relaxed">
+        This project is not available due to content policy violations.
+      </p>
       <a routerLink="/explore"
-        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
+        class="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-dark transition-all duration-300">
         <span class="material-icons text-base">explore</span>
-        Explore Other Projects
+        Explore Projects
       </a>
     </div>
-  } @else if (!project() && indexer.loading()) {
-    <div class="flex flex-col items-center justify-center p-8 mt-8 bg-surface-card rounded-lg shadow-md text-center max-w-2xl mx-auto">
-      <div class="w-10 h-10 border-4 border-accent/20 border-t-accent rounded-full animate-spin mb-4"></div>
-      <p class="text-text-secondary text-sm sm:text-base">Loading project details...</p>
-    </div>
-  } @else if (!project() && !indexer.loading() && noProjectFoundYet) {
-    <div class="flex flex-col items-center justify-center p-6 sm:p-8 mt-8 bg-surface-card rounded-lg shadow-md text-center max-w-2xl mx-auto">
-      <span class="material-icons text-5xl text-text-secondary opacity-50 mb-4">search_off</span>
-      <h1 class="text-xl sm:text-2xl font-bold mb-3 text-text">Project not found... yet</h1>
-      <p class="max-w-lg mb-6 text-text-secondary text-sm sm:text-base leading-relaxed">If you recently created a new Angor project, it might take a few minutes for it to be distributed and indexed on the decentralized infrastructure.</p>
-      <div class="flex gap-3 max-sm:flex-col">
-        <button type="button" (click)="reloadPage()" title="Reload page to check for project updates"
-          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
+  </div>
+}
+
+<!-- Project Not Found -->
+@else if (!project() && !indexer.loading() && noProjectFoundYet) {
+  <div class="min-h-screen bg-surface-ground flex items-center justify-center p-6">
+    <div class="bg-surface-card rounded-2xl shadow-xl p-8 max-w-md text-center">
+      <span class="material-icons text-6xl text-text-secondary opacity-50 mb-4">search_off</span>
+      <h1 class="text-2xl font-bold mb-3 text-text">Project Not Found</h1>
+      <p class="text-text-secondary mb-6 leading-relaxed">
+        This project may still be indexing. Please try again in a few moments.
+      </p>
+      <div class="flex gap-3 justify-center">
+        <button (click)="reloadPage()"
+          class="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-dark transition-all duration-300">
           <span class="material-icons text-base">refresh</span>
           Retry
         </button>
         <a routerLink="/explore"
-          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-surface-card text-text border border-border hover:bg-surface-hover hover:shadow-md transition-all duration-300 ease-in-out">
+          class="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-surface-hover text-text hover:bg-surface-ground transition-all duration-300">
           <span class="material-icons text-base">explore</span>
-          Explore All Projects
+          Explore
         </a>
       </div>
     </div>
-  } @else if (project()) {
+  </div>
+}
 
-    <!-- Main Project Header Card -->
-    <div class="bg-surface-card rounded-xl shadow-lg mb-6 relative">
-      <!-- Header Content Container -->
-      <div class="p-4 sm:p-6 lg:p-8 pt-[70px] sm:pt-[90px] lg:pt-8">
-        <!-- Mobile/Tablet Layout: Profile + Info Section -->
-        <div class="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">
+<!-- Main Project View -->
+@else if (project()) {
+  <div class="min-h-screen bg-surface-ground">
+    <!-- Hero Banner Section -->
+    <section class="relative w-full h-[300px] overflow-hidden">
+      @if (shouldShowBannerImage()) {
+        <img
+          [src]="project()?.metadata?.banner"
+          class="w-full h-full object-cover transition-opacity duration-500"
+          [class.opacity-0]="!bannerLoaded()"
+          [class.opacity-100]="bannerLoaded()"
+          (load)="onBannerLoad()"
+          (error)="handleBannerError()"
+          alt="Project banner"
+        />
+        @if (!bannerLoaded()) {
+          <div class="absolute inset-0 bg-surface-card animate-pulse"></div>
+        }
+      } @else {
+        <div
+          class="w-full h-full"
+          [style.background-color]="getBannerStyle()"
+        ></div>
+      }
+      <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-transparent"></div>
+      
+      <!-- Breadcrumb -->
+      <div class="absolute top-4 left-0 w-full z-10">
+        <div class="container mx-auto px-4">
+          <app-breadcrumb
+            [items]="[
+              { label: 'Home', url: '/' },
+              { label: 'Explore', url: '/explore' },
+              { label: project()?.metadata?.name || 'Project', url: '' }
+            ]"
+            class="text-white"
+          ></app-breadcrumb>
+        </div>
+      </div>
+    </section>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 mt-8 pb-12">
+      <!-- Project Header Card -->
+      <div class="bg-surface-card rounded-2xl shadow-2xl mb-6 overflow-hidden">
+        <div class="p-6 lg:p-8">
+          <div class="flex flex-col lg:flex-row gap-6 items-start">
+            <!-- Profile Image -->
+            <div class="flex-shrink-0 mx-auto lg:mx-0">
+              @if (shouldShowProfileImage()) {
+                <div class="relative w-32 h-32 rounded-full border-4 border-surface-card shadow-2xl overflow-hidden group cursor-pointer"
+                  (click)="showImagePopup = true; selectedImage = project()?.metadata?.['picture'] || null">
+                  <img
+                    [src]="project()?.metadata?.['picture']"
+                    class="w-full h-full object-cover transition-all duration-300 group-hover:scale-110"
+                    [class.opacity-0]="!profileLoaded()"
+                    [class.opacity-100]="profileLoaded()"
+                    (load)="onProfileLoad()"
+                    (error)="handleProfileError()"
+                    alt="Project profile"
+                  />
+                  @if (!profileLoaded()) {
+                    <div class="absolute inset-0 bg-surface-hover animate-pulse"></div>
+                  }
+                </div>
+              } @else {
+                <div
+                  class="w-32 h-32 rounded-full border-4 border-surface-card shadow-2xl flex items-center justify-center text-white text-4xl font-bold"
+                  [style.background-color]="getRandomColor(projectId)"
+                >
+                  {{ getInitial(project()?.metadata?.name || projectId) }}
+                </div>
+              }
+            </div>
+
+            <!-- Header Content -->
+            <div class="flex-1 min-w-0">
+              <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                <div class="flex-1">
+                  <h1 class="text-3xl lg:text-4xl font-bold text-text mb-2">
+                    {{ project()?.metadata?.name || projectId }}
+                  </h1>
+                  @if (project()?.metadata?.about) {
+                    <p class="text-text-secondary leading-relaxed line-clamp-2">
+                      {{ project()?.metadata?.about }}
+                    </p>
+                  }
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2">
+                  <button
+                    (click)="toggleFavorite()"
+                    class="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-hover hover:bg-surface-ground transition-all duration-300 shadow-md"
+                    [title]="isFavorite() ? 'Remove bookmark' : 'Add bookmark'"
+                  >
+                    <span class="material-icons text-lg transition-colors" [class.text-yellow-500]="isFavorite()">
+                      {{ isFavorite() ? 'bookmark' : 'bookmark_border' }}
+                    </span>
+                  </button>
+                  <button
+                    (click)="openShareModal()"
+                    class="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-hover hover:bg-surface-ground transition-all duration-300 shadow-md"
+                    title="Share project"
+                  >
+                    <span class="material-icons text-lg text-text-secondary hover:text-accent transition-colors">share</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Project Status -->
+              @if (getProjectStatusInfo(); as status) {
+                <div class="mb-4">
+                  <div
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border"
+                    [ngClass]="{
+                      'bg-green-500/10 border-green-500/30 text-green-600': status.type === 'success',
+                      'bg-red-500/10 border-red-500/30 text-red-600': status.type === 'failed',
+                      'bg-yellow-500/10 border-yellow-500/30 text-yellow-600': status.type === 'active',
+                      'bg-blue-500/10 border-blue-500/30 text-blue-600': status.type === 'upcoming'
+                    }"
+                  >
+                    <span class="material-icons text-base">{{ status.icon }}</span>
+                    <span>{{ status.label }}</span>
+                  </div>
+                </div>
+              }
+
+              <!-- Social Links -->
+              @if (project()?.metadata?.website || project()?.externalIdentities?.length) {
+                <div class="flex flex-wrap gap-2 mb-4">
+                  @if (project()?.metadata?.website) {
+                    <a
+                      [href]="getWebsiteUrl(project()?.metadata?.website)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-hover text-text-secondary text-sm hover:bg-surface-ground hover:text-accent transition-all"
+                    >
+                      <span class="material-icons text-sm">language</span>
+                      <span>{{ formatWebsite(project()?.metadata?.website) }}</span>
+                    </a>
+                  }
+                  @for (identity of project()?.externalIdentities; track identity.platform) {
+                    <a
+                      [href]="getSocialLink(identity)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-hover text-text-secondary text-sm hover:bg-surface-ground hover:text-accent transition-all"
+                    >
+                      <span class="material-icons text-sm">{{ getSocialIcon(identity.platform) }}</span>
+                      <span>{{ formatUsername(identity.username) }}</span>
+                    </a>
+                  }
+                </div>
+              }
+
+              <!-- Invest Button -->
+              <div class="mt-6">
+                <button
+                  class="w-full sm:w-auto px-8 py-3 text-base font-bold text-white bg-accent rounded-xl shadow-lg transition-all duration-300 hover:bg-accent-dark hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  [disabled]="!canInvest()"
+                  (click)="canInvest() && openInvestWindow()"
+                >
+                  @if (isProjectEnded()) {
+                    <span class="flex items-center justify-center gap-2">
+                      <span class="material-icons text-lg">timer_off</span>
+                      Ended {{ project()?.details?.expiryDate ?? 0 | ago }}
+                    </span>
+                  } @else {
+                    <span class="flex items-center justify-center gap-2">
+                      <span class="material-icons text-lg">account_balance_wallet</span>
+                      Invest With Angor Wallet
+                    </span>
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Panel -->
+      @if (isCurrentUserAdmin()) {
+        <div class="bg-surface-card border-2 border-yellow-500/20 rounded-2xl shadow-lg mb-6 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
+          <div class="bg-yellow-500/5 px-6 py-4 border-b border-yellow-500/10">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center">
+                  <span class="material-icons text-yellow-600 text-xl">admin_panel_settings</span>
+                </div>
+                <div>
+                  <h2 class="text-lg font-bold text-text">Admin Controls</h2>
+                  <p class="text-xs text-text-secondary">Manage project visibility and status</p>
+                </div>
+              </div>
+              <div class="px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-600 text-xs font-semibold">
+                ADMIN
+              </div>
+            </div>
+          </div>
           
-          <!-- Profile Image Section -->
-          <div class="flex-shrink-0 absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 lg:relative lg:top-auto lg:left-auto lg:transform-none lg:mt-0 mx-auto lg:mx-0">
-            @if (project()?.metadata?.['picture'] && !failedProfileImage()) {
-              <button type="button" 
-                class="block w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36 rounded-full border-4 border-surface-card shadow-2xl transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-3xl bg-transparent p-0"
-                title="View {{ project()?.metadata?.name }} profile image"
-                (click)="showImagePopup = true; selectedImage = project()?.metadata?.['picture'] || null">
-                <img [src]="project()?.metadata?.['picture']"
-                  class="w-full h-full rounded-full object-cover"
-                  alt="{{ project()?.metadata?.name }} logo" (error)="handleProfileError()" />
-              </button>
-                 
-            } @else {
-              <div
-                class="w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36 rounded-full border-4 border-surface-card shadow-2xl flex items-center justify-center text-white text-3xl sm:text-4xl lg:text-5xl font-bold cursor-default bg-blue-500 transition-all duration-300 ease-in-out hover:scale-105"
-                [style.background]="getRandomColor(projectId)">
-                {{ getInitial(project()?.metadata?.name || projectId) }}
-              </div>
-            }
-          </div>
-
-          <!-- Main Content Section -->
-          <div class="flex-1 min-w-0 space-y-4 lg:space-y-6">
-            <!-- Title and Action Buttons Row -->
-            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-              <!-- Title Section -->
-              <div class="flex-1 min-w-0 text-center lg:text-left">
-                <h1 class="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-text leading-tight break-words">
-                  {{ project()?.metadata?.name || projectId }}
-                </h1>
-              </div>
-
-              <!-- Action Buttons -->
-              <div class="flex items-center justify-center sm:justify-end gap-2 flex-shrink-0">
-                <button [title]="isFavorite() ? 'Remove from bookmarks' : 'Add to bookmarks'" (click)="toggleFavorite()"
-                  class="flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-300 ease-in-out bg-surface-hover hover:bg-surface-ground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface-card group shadow-md hover:shadow-lg"
-                  [class.focus:ring-yellow-500]="isFavorite()" [class.focus:ring-accent]="!isFavorite()"
-                  [attr.aria-pressed]="isFavorite()">
-                  <span class="material-icons text-base transition-all duration-300 group-hover:scale-110"
-                    [class.text-yellow-500]="isFavorite()" [class.text-text-secondary]="!isFavorite()"
-                    [class.group-hover:text-yellow-600]="isFavorite()" [class.group-hover:text-accent]="!isFavorite()">
-                    {{ isFavorite() ? "bookmark" : "bookmark_border" }}
-                  </span>
-                </button>
-
-                <button title="Share this project" (click)="openShareModal()"
-                  class="flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-300 ease-in-out bg-surface-hover hover:bg-surface-ground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface-card focus:ring-accent group shadow-md hover:shadow-lg">
-                  <span class="material-icons text-base text-text-secondary group-hover:text-accent transition-all duration-300 group-hover:scale-110">
-                    share
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Description Section -->
-            <div class="w-full text-center lg:text-left max-w-4xl">
-              @if (project()?.metadata?.about) {
-                <div class="prose prose-sm sm:prose-base lg:prose-lg max-w-none dark:prose-invert prose-p:text-text prose-p:leading-relaxed">
-                  <app-about-content [content]="project()?.metadata?.about"></app-about-content>
-                </div>
-              } @else {
-                <p class="text-sm sm:text-base lg:text-lg leading-relaxed text-text-secondary italic">No description provided.</p>
-              }
-            </div>
-
-            <!-- Project Status Banner -->
-            @if (isProjectSuccessful()) {
-              <div class="flex items-start p-3 sm:p-4 rounded-lg bg-gradient-to-r from-green-500/10 to-green-600/10 border border-green-500/30 shadow-md">
-                <span class="material-icons text-green-500 text-xl mr-3 flex-shrink-0 animate-pulse">check_circle</span>
-                <div class="min-w-0 flex-1">
-                  <h3 class="text-base sm:text-lg font-bold text-green-700 dark:text-green-400 mb-1">Project Successfully Funded!</h3>
-                  <p class="text-sm text-green-600 dark:text-green-500">
-                    Reached goal of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? "BTC" : "TBTC" }} 
-                    <span class="font-semibold">({{ getFundingPercentage() }}% funded)</span>
-                  </p>
-                </div>
-              </div>
-            } @else if (isProjectFailed()) {
-              <div class="flex items-start p-3 sm:p-4 rounded-lg bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/30 shadow-md">
-                <span class="material-icons text-red-500 text-xl mr-3 flex-shrink-0 animate-pulse">error</span>
-                <div class="min-w-0 flex-1">
-                  <h3 class="text-base sm:text-lg font-bold text-red-700 dark:text-red-400 mb-1">Project Did Not Reach Funding Goal</h3>
-                  <p class="text-sm text-red-600 dark:text-red-500">
-                    Raised {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }} of {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? "BTC" : "TBTC" }} 
-                    <span class="font-semibold">({{ getFundingPercentage() }}% funded)</span>
-                  </p>
-                </div>
-              </div>
-            }
-
-            <!-- Social Links Section -->
-            <div class="flex flex-wrap items-center justify-center lg:justify-start gap-2">
-              @if(project()?.metadata?.website) {
-                <a [href]="getWebsiteUrl(project()?.metadata?.website)" rel="noopener noreferrer" target="_blank"
-                  class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-hover text-text-secondary text-sm transition-all duration-300 ease-in-out hover:bg-surface-ground hover:text-accent hover:shadow-md"
-                  [title]="project()?.metadata?.website">
-                  <span class="material-icons text-base">language</span>
-                  <span class="truncate max-w-[120px] sm:max-w-[180px] lg:max-w-[200px]">{{ formatWebsite(project()?.metadata?.website) }}</span>
-                </a>
-              }
-
-              @for (identity of project()?.externalIdentities; track identity.platform) {
-                <a [href]="getSocialLink(identity)" rel="noopener noreferrer" target="_blank"
-                  class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-hover text-text-secondary text-sm transition-all duration-300 ease-in-out hover:bg-surface-ground hover:text-accent hover:shadow-md"
-                  [title]="identity.username">
-                  <span class="material-icons text-base">{{ getSocialIcon(identity.platform) }}</span>
-                  <span class="truncate max-w-[120px] sm:max-w-[180px] lg:max-w-[200px]">{{ formatUsername(identity.username) }}</span>
-                </a>
-              }
-            </div>
-          </div>
-        </div>
-
-        <!-- Invest Button Section - Full Width for Better Responsiveness -->
-        <div class="mt-6">
-          <div class="flex justify-center lg:justify-end">
-            <button
-              class="w-full sm:w-auto min-w-[280px] px-6 py-3 text-base font-bold !text-white bg-accent rounded-lg shadow-md transition-all duration-300 ease-in-out hover:enabled:shadow-lg hover:enabled:bg-accent-dark disabled:!bg-gray-400 disabled:!text-gray-200 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none"
-              [disabled]="!canInvest()" (click)="canInvest() && openInvestWindow()" type="button" title="Invest in this project">
-              @if (isProjectEnded()) { 
-                <span class="flex items-center justify-center gap-2">
-                  <span class="material-icons text-base">timer_off</span>
-                  Ended {{ project()?.details?.expiryDate ?? 0 | ago }}
-                </span>
-              } @else { 
-                <span class="flex items-center justify-center gap-2">
-                  <span class="material-icons text-base">account_balance_wallet</span>
-                  Invest With Angor Wallet
-                </span>
-              }
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-
-
-    <!-- Main Content Container -->
-    <div class="flex flex-col xl:flex-row gap-4 lg:gap-6">
-      <!-- Responsive Navigation Tabs -->
-      <div class="xl:sticky xl:top-4 z-30 xl:w-48 flex-shrink-0">
-        <div class="flex xl:flex-col gap-2 rounded-lg bg-surface-card p-3 shadow-md overflow-x-auto xl:overflow-x-visible scrollbar-thin scrollbar-thumb-surface-hover">
-          @for (tab of tabs; track tab.id) {
-            <button
-              class="flex items-center justify-center xl:justify-start gap-2 p-2.5 rounded-lg transition-all duration-200 ease-in-out text-text flex-1 xl:flex-none min-w-[80px] xl:min-w-0 whitespace-nowrap group"
-              [class.bg-accent]="activeTab === tab.id" 
-              [class.text-white]="activeTab === tab.id"
-              [class.shadow-md]="activeTab === tab.id"
-              [title]="tab.label"
-              (click)="setActiveTab(tab.id)">
-              <span class="material-icons text-base transition-all duration-200 ease-in-out group-hover:scale-110"
-                [class.text-white]="activeTab === tab.id">{{ tab.icon }}</span>
-              <span class="text-sm font-medium hidden xl:inline">{{ tab.label }}</span>
-            </button>
-          }
-        </div>
-      </div>
-
-      <!-- Tab Content Area -->
-      <div class="flex-1 min-w-0 max-w-full">
-        @if (activeTab === 'project') {
-          <div class="flex flex-col 2xl:flex-row gap-6 lg:gap-8">
-            <!-- Main Content Column -->
-            <div class="flex-1 min-w-0 space-y-6 lg:space-y-8">
-              @if (project()?.content) {
-                @if (project()?.media?.length) {
-                  <div class="relative w-full rounded-2xl overflow-hidden aspect-video shadow-xl bg-surface-hover">
-                    <div class="flex h-full transition-transform duration-500 ease-in-out"
-                      [style.transform]="'translateX(' + -currentSlide * 100 + '%)'">
-                      @for (item of project()?.media; track item.url) {
-                        <div class="min-w-full h-full flex-shrink-0">
-                          @if (item.type === 'image') {
-                            @if (!hasMediaFailed(item.url)) {
-                              <button type="button" 
-                                class="block w-full h-full bg-transparent p-0 border-0 cursor-pointer"
-                                title="View image"
-                                (click)="showImagePopup = true; selectedImage = item.url">
-                                <img [src]="item.url" alt="Project media" loading="lazy"
-                                  class="w-full h-full object-cover transition-transform duration-300 ease-in-out hover:scale-105"
-                                  (error)="handleMediaError(item.url)" />
-                              </button>
-                            } @else {
-                              <button type="button"
-                                class="w-full h-full flex items-center justify-center bg-surface-ground border-0 cursor-pointer"
-                                [style.background]="getRandomColor(item.url)"
-                                title="Close image popup"
-                                (click)="showImagePopup = false">
-                                <span class="material-icons text-5xl text-white/70">broken_image</span>
-                              </button>
-                            }
-                          } @else if (item.type === 'video') {
-                            @if (isYouTubeUrl(item.url)) {
-                              <div class="w-full h-full flex items-center justify-center bg-black">
-                                <iframe
-                                  [src]="getYouTubeEmbedUrl(item.url) | safe: 'resourceUrl'"
-                                  class="w-full h-full border-0"
-                                  title="YouTube video player"
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                  allowfullscreen>
-                                </iframe>
-                              </div>
-                            } @else if (!hasVideoFailed(item.url)) {
-                              <video [src]="item.url" controls
-                                class="w-full h-full object-contain bg-black"
-                                (error)="handleVideoError(item.url)">
-                                Your browser does not support the video tag.
-                              </video>
-                            } @else {
-                              <div class="w-full h-full flex items-center justify-center bg-surface-ground"
-                                [style.background]="getRandomColor(item.url)">
-                                <span class="material-icons text-5xl text-white/70">videocam_off</span>
-                              </div>
-                            }
-                          }
-                        </div>
-                      }
+          <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Deny List Control -->
+              <div class="bg-surface-hover rounded-xl p-5 border border-surface-ground hover:border-red-500/20 transition-all duration-300">
+                <div class="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 class="text-base font-bold text-text mb-1 flex items-center gap-2">
+                      <span class="material-icons text-red-500 text-xl">block</span>
+                      Deny List
+                    </h3>
+                    <p class="text-xs text-text-secondary">Block this project from being displayed</p>
+                  </div>
+                  @if (isInDenyList()) {
+                    <div class="px-2 py-1 rounded-md bg-red-500/10 text-red-600 text-xs font-semibold">
+                      BLOCKED
                     </div>
-                    @if ((project()?.media?.length ?? 0) > 1) {
-                      <button
-                        type="button"
-                        class="absolute top-1/2 -translate-y-1/2 left-4 w-12 h-12 bg-black/60 text-white rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-black/80 hover:shadow-lg"
-                        (click)="prevSlide()" title="Previous image">
-                        <span class="material-icons text-2xl">chevron_left</span>
-                      </button>
-                      <button
-                        type="button"
-                        class="absolute top-1/2 -translate-y-1/2 right-4 w-12 h-12 bg-black/60 text-white rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-black/80 hover:shadow-lg"
-                        (click)="nextSlide()" title="Next image">
-                        <span class="material-icons text-2xl">chevron_right</span>
-                      </button>
-                      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                        @for (item of project()?.media; track $index) {
-                          <button
-                            type="button"
-                            class="w-3 h-3 rounded-full bg-white/60 cursor-pointer transition-all duration-300 ease-in-out hover:bg-white/90 hover:scale-125"
-                            [class.bg-white]="currentSlide === $index" 
-                            (click)="currentSlide = $index"
-                            [title]="'Go to slide ' + ($index + 1)"
-                            [attr.aria-label]="'Go to slide ' + ($index + 1)">
-                            <span class="sr-only">Slide {{ $index + 1 }}</span>
-                          </button>
-                        }
-                      </div>
-                    }
-                  </div>
-                }
-                <div class="bg-surface-card rounded-2xl shadow-md p-6 sm:p-8 lg:p-10">
-                  <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-6 pb-4 border-b border-border">About This Project</h2>
-                  <div class="prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:mt-8 prose-headings:mb-4 prose-p:mb-6 prose-p:leading-relaxed prose-img:rounded-xl prose-img:my-8 prose-img:mx-auto prose-img:max-w-full prose-img:h-auto prose-img:object-cover prose-code:bg-surface-hover prose-code:px-2 prose-code:py-1 prose-code:rounded prose-pre:bg-surface-hover prose-pre:p-4 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-a:text-accent prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-4 prose-blockquote:border-accent prose-blockquote:pl-6 prose-blockquote:ml-0 prose-blockquote:text-text-secondary dark:prose-invert dark:prose-headings:text-text dark:prose-p:text-text-secondary dark:prose-a:text-accent-light dark:prose-blockquote:text-text-secondary dark:prose-code:bg-surface-ground dark:prose-pre:bg-surface-ground">
-                    <markdown [data]="project()?.content"></markdown>
-                  </div>
+                  }
                 </div>
-              } @else {
-                <div class="bg-surface-card rounded-2xl shadow-md p-8 sm:p-12 lg:p-16 text-center text-text-secondary">
-                  <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-50">description</span>
-                  <p class="text-lg sm:text-xl lg:text-2xl">No project description provided.</p>
-                </div>
-              }
-
-                @if (project()?.members?.length) {
-                  <div class="bg-surface-card rounded-2xl shadow-md p-6 sm:p-8 lg:p-10">
-                    <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-6 pb-4 border-b border-border">
-                      Project Team
-                      @if (loadingMemberBadges()) {
-                        <span class="inline-flex items-center ml-3">
-                          <div class="w-5 h-5 border-2 border-accent/30 border-t-accent rounded-full animate-spin"></div>
+                
+                @if (isInDenyList()) {
+                  <div class="space-y-3">
+                    <div class="flex items-center gap-2 text-sm text-red-600 bg-red-500/5 rounded-lg px-3 py-2">
+                      <span class="material-icons text-base">info</span>
+                      <span>This project is currently denied</span>
+                    </div>
+                    <button
+                      (click)="removeFromDenyList()"
+                      [disabled]="updatingDenyList()"
+                      class="w-full px-4 py-2.5 rounded-xl text-sm font-bold bg-green-500 text-white hover:bg-green-600 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      @if (updatingDenyList()) {
+                        <span class="flex items-center justify-center gap-2">
+                          <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                          Removing...
+                        </span>
+                      } @else {
+                        <span class="flex items-center justify-center gap-2">
+                          <span class="material-icons text-base">check_circle</span>
+                          Remove from Deny List
                         </span>
                       }
-                    </h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
+                    </button>
+                  </div>
+                } @else {
+                  <button
+                    (click)="addToDenyList()"
+                    [disabled]="updatingDenyList()"
+                    class="w-full px-4 py-2.5 rounded-xl text-sm font-bold bg-red-500 text-white hover:bg-red-600 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    @if (updatingDenyList()) {
+                      <span class="flex items-center justify-center gap-2">
+                        <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                        Adding...
+                      </span>
+                    } @else {
+                      <span class="flex items-center justify-center gap-2">
+                        <span class="material-icons text-base">block</span>
+                        Add to Deny List
+                      </span>
+                    }
+                  </button>
+                }
+              </div>
+
+              <!-- Whitelist Control -->
+              <div class="bg-surface-hover rounded-xl p-5 border border-surface-ground hover:border-green-500/20 transition-all duration-300">
+                <div class="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 class="text-base font-bold text-text mb-1 flex items-center gap-2">
+                      <span class="material-icons text-green-500 text-xl">verified</span>
+                      Whitelist
+                    </h3>
+                    <p class="text-xs text-text-secondary">Feature this project prominently</p>
+                  </div>
+                  @if (isInWhitelist()) {
+                    <div class="px-2 py-1 rounded-md bg-green-500/10 text-green-600 text-xs font-semibold">
+                      FEATURED
+                    </div>
+                  }
+                </div>
+                
+                @if (isInWhitelist()) {
+                  <div class="space-y-3">
+                    <div class="flex items-center gap-2 text-sm text-green-600 bg-green-500/5 rounded-lg px-3 py-2">
+                      <span class="material-icons text-base">info</span>
+                      <span>This project is whitelisted</span>
+                    </div>
+                    <button
+                      (click)="removeFromWhitelist()"
+                      [disabled]="updatingWhitelist()"
+                      class="w-full px-4 py-2.5 rounded-xl text-sm font-bold bg-red-500 text-white hover:bg-red-600 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      @if (updatingWhitelist()) {
+                        <span class="flex items-center justify-center gap-2">
+                          <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                          Removing...
+                        </span>
+                      } @else {
+                        <span class="flex items-center justify-center gap-2">
+                          <span class="material-icons text-base">remove_circle</span>
+                          Remove from Whitelist
+                        </span>
+                      }
+                    </button>
+                  </div>
+                } @else {
+                  <button
+                    (click)="addToWhitelist()"
+                    [disabled]="updatingWhitelist()"
+                    class="w-full px-4 py-2.5 rounded-xl text-sm font-bold bg-green-500 text-white hover:bg-green-600 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    @if (updatingWhitelist()) {
+                      <span class="flex items-center justify-center gap-2">
+                        <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                        Adding...
+                      </span>
+                    } @else {
+                      <span class="flex items-center justify-center gap-2">
+                        <span class="material-icons text-base">verified</span>
+                        Add to Whitelist
+                      </span>
+                    }
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (adminActionMessage()) {
+              <div class="mt-5 p-4 rounded-xl border animate-in fade-in slide-in-from-top-2 duration-300" [ngClass]="{
+                'bg-green-500/5 border-green-500/20': adminActionMessage().startsWith('Success'),
+                'bg-red-500/5 border-red-500/20': adminActionMessage().startsWith('Error')
+              }">
+                <p class="text-sm font-semibold flex items-center gap-3" [ngClass]="{
+                  'text-green-600': adminActionMessage().startsWith('Success'),
+                  'text-red-600': adminActionMessage().startsWith('Error')
+                }">
+                  <span class="material-icons text-lg">
+                    {{ adminActionMessage().startsWith('Success') ? 'check_circle' : 'error' }}
+                  </span>
+                  {{ adminActionMessage() }}
+                </p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Main Content Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column: Content -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Navigation Tabs -->
+          <div class="bg-surface-card rounded-2xl shadow-md overflow-hidden">
+            <div class="flex border-b border-border overflow-x-auto">
+              @for (tab of tabs; track tab.id) {
+                <button
+                  (click)="setActiveTab(tab.id)"
+                  class="flex-1 min-w-[120px] px-4 py-3 text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2"
+                  [class.bg-accent]="activeTab === tab.id"
+                  [class.text-white]="activeTab === tab.id"
+                  [class.text-text-secondary]="activeTab !== tab.id"
+                  [class.hover:bg-surface-hover]="activeTab !== tab.id"
+                >
+                  <span class="material-icons text-base">{{ tab.icon }}</span>
+                  <span>{{ tab.label }}</span>
+                </button>
+              }
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6">
+              @if (activeTab === 'project') {
+                <!-- Project Content -->
+                @if (project()?.content) {
+                  <div class="prose prose-sm sm:prose-base max-w-none dark:prose-invert prose-headings:text-text prose-p:text-text-secondary prose-a:text-accent">
+                    <markdown [data]="project()?.content"></markdown>
+                  </div>
+                } @else {
+                  <div class="text-center py-12 text-text-secondary">
+                    <span class="material-icons text-5xl mb-3 opacity-50">description</span>
+                    <p>No project description available.</p>
+                  </div>
+                }
+
+                <!-- Team Members -->
+                @if (project()?.members?.length) {
+                  <div class="mt-8 pt-8 border-t border-border">
+                    <h2 class="text-2xl font-bold mb-4 text-text">Project Team</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       @for (member of project()?.members; track member) {
-                        <div class="bg-surface-ground rounded-xl p-4 lg:p-6 transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 relative">
+                        <div class="bg-surface-hover rounded-xl p-4 hover:shadow-lg transition-all duration-300 relative">
                           @if (isMemberVerified(member)) {
-                            <div class="absolute top-3 right-3 flex items-center justify-center w-7 h-7 bg-green-500 rounded-full shadow-md" title="Verified Angor Project Member">
-                              <span class="material-icons text-white text-sm">verified</span>
+                            <div class="absolute top-3 right-3 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center" title="Verified Member">
+                              <span class="material-icons text-white text-xs">verified</span>
                             </div>
                           }
                           <app-profile [pubkey]="member"></app-profile>
@@ -354,523 +481,211 @@
                     </div>
                   </div>
                 }
-            </div>
+              }
 
-            <!-- Statistics and Details Sidebar -->
-            <div class="2xl:w-96 flex-shrink-0 space-y-4">
-              <!-- Funding Statistics -->
-              <div class="space-y-3">
-                <div
-                  class="p-4 bg-surface-card rounded-lg shadow-md transition-all duration-300 ease-in-out hover:shadow-lg relative overflow-hidden">
-                  <!-- Progress Background -->
-                  <div class="absolute inset-0 bg-surface-card">
-                    <div class="h-full transition-all duration-700 ease-out"
-                      [class]="getFundingPercentage() >= 100 ? 'bg-green-500/10' : 'bg-blue-500/10'"
-                      [style.width.%]="getFundingPercentage() > 100 ? 100 : getFundingPercentage()"></div>
+              @if (activeTab === 'faq') {
+                @if (loadingFaq()) {
+                  <div class="flex justify-center py-12">
+                    <div class="w-10 h-10 border-4 border-accent/30 border-t-accent rounded-full animate-spin"></div>
                   </div>
-                  <div class="relative flex items-start gap-3">
-                    <div
-                      class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-blue-500/10 rounded-lg">
-                      <span class="material-icons text-xl text-blue-500">campaign</span>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="flex justify-between items-center mb-1">
-                        <div class="text-sm text-text-secondary">Total Raised</div>
-                        <div class="text-xs font-bold px-2 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                          [ngClass]="getFundingPercentage() >= 100 ? 'bg-green-500/10 text-green-600 dark:text-green-400' : ''">
-                          {{ getFundingPercentage() }}%
-                        </div>
-                      </div>
-                      <div class="text-xl font-bold mb-2">
-                        {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }}
-                        <span class="text-sm font-medium text-text-secondary ml-1">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
-                      </div>
-                      <div class="relative w-full h-2 bg-surface-hover rounded-full overflow-hidden">
-                        <div class="absolute top-0 left-0 h-full transition-all duration-700 ease-out rounded-full"
-                          [class]="getFundingPercentage() >= 100 ? 'bg-green-500' : 'bg-blue-500'"
-                          [style.width.%]="getFundingPercentage() > 100 ? 100 : getFundingPercentage()"></div>
-                      </div>
-                      <div class="text-xs text-text-secondary mt-1">Goal: {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}</div>
-                    </div>
+                } @else if (errorFaq()) {
+                  <div class="text-center py-12 text-red-500">
+                    <span class="material-icons text-5xl mb-3">error</span>
+                    <p>{{ errorFaq() }}</p>
                   </div>
-                </div>
-
-                <div
-                  class="p-4 bg-surface-card rounded-lg shadow-md transition-all duration-300 ease-in-out hover:shadow-lg">
-                  <div class="flex items-start gap-3">
-                    <div
-                      class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-purple-500/10 rounded-lg">
-                      <span class="material-icons text-xl text-purple-500">people</span>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="text-sm text-text-secondary mb-1">Total Investors</div>
-                      <div class="text-xl font-bold flex items-center gap-2">
-                        {{ project()?.stats?.investorCount || '0' }}
-                        @if (project()?.stats?.investorCount) {
-                          <span class="text-green-500">
-                            <span class="material-icons text-base">trending_up</span>
-                          </span>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  class="p-4 bg-surface-card rounded-lg shadow-md transition-all duration-300 ease-in-out hover:shadow-lg relative overflow-hidden">
-                  <!-- Progress Background -->
-                  <div class="absolute inset-0 bg-surface-card">
-                    <div class="h-full bg-orange-500/10 transition-all duration-700 ease-out"
-                      [style.width.%]="getSpentPercentage()"></div>
-                  </div>
-                  <div class="relative flex items-start gap-3">
-                    <div
-                      class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-orange-500/10 rounded-lg">
-                      <span class="material-icons text-xl text-orange-500">account_balance_wallet</span>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="flex justify-between items-center mb-1">
-                        <div class="text-sm text-text-secondary">Founder Spent</div>
-                        <div
-                          class="text-xs font-bold px-2 py-1 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400">
-                          {{ getSpentPercentage() }}%
-                        </div>
-                      </div>
-                      <div class="text-xl font-bold mb-2">
-                        {{ bitcoin.toBTC(project()?.stats?.amountSpentSoFarByFounder ?? 0) }}
-                        <span class="text-sm font-medium text-text-secondary ml-1">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
-                      </div>
-                      <div class="relative w-full h-2 bg-surface-hover rounded-full overflow-hidden">
-                        <div class="absolute top-0 left-0 h-full bg-orange-500 transition-all duration-700 ease-out rounded-full"
-                          [style.width.%]="getSpentPercentage()"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  class="p-4 bg-surface-card rounded-lg shadow-md transition-all duration-300 ease-in-out hover:shadow-lg relative overflow-hidden">
-                  <!-- Progress Background -->
-                  <div class="absolute inset-0 bg-surface-card">
-                    <div class="h-full bg-red-500/10 transition-all duration-700 ease-out"
-                      [style.width.%]="getPenaltiesPercentage()"></div>
-                  </div>
-                  <div class="relative flex items-start gap-3">
-                    <div
-                      class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-red-500/10 rounded-lg">
-                      <span class="material-icons text-xl text-red-500">logout</span>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="flex justify-between items-center mb-1">
-                        <div class="text-sm text-text-secondary">Investor Withdrawals</div>
-                        <div
-                          class="text-xs font-bold px-2 py-1 rounded-full bg-red-500/10 text-red-600 dark:text-red-400">
-                          {{ project()?.stats?.countInPenalties || '0' }}
-                        </div>
-                      </div>
-                      <div class="text-xl font-bold mb-2">
-                        {{ bitcoin.toBTC(project()?.stats?.amountInPenalties ?? 0) }}
-                        <span class="text-sm font-medium text-text-secondary ml-1">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
-                      </div>
-                      <div class="relative w-full h-2 bg-surface-hover rounded-full overflow-hidden">
-                        <div class="absolute top-0 left-0 h-full bg-red-500 transition-all duration-700 ease-out rounded-full"
-                          [style.width.%]="getPenaltiesPercentage()"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <!-- Project Details Section -->
-              <div class="bg-surface-card rounded-lg shadow-md p-4">
-                <h3 class="text-lg font-bold mb-4 pb-3 border-b border-border">Project Details</h3>
-                <div class="space-y-4">
-                  <div class="flex items-start gap-3">
-                    <span class="material-icons text-base text-accent mt-1 flex-shrink-0">event_available</span>
-                    <div class="min-w-0 flex-1">
-                      <div class="text-sm text-text-secondary mb-1">Funding Start Date</div>
-                      <div class="text-sm font-semibold">
-                        {{ formatDate(project()?.details?.startDate) }}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="flex items-start gap-3">
-                    <span class="material-icons text-base text-accent mt-1 flex-shrink-0">event_available</span>
-                    <div class="min-w-0 flex-1">
-                      <div class="text-sm text-text-secondary mb-1">Funding End Date</div>
-                      <div class="text-sm font-semibold">
-                        {{ formatDate(project()?.details?.endDate || project()?.details?.stages?.[0]?.releaseDate) }}
-                      </div>
-                    </div>
-                  </div>
-
-                  @if (projectDuration()) {
-                    <div class="flex items-start gap-3">
-                      <span class="material-icons text-base text-accent mt-1 flex-shrink-0">date_range</span>
-                      <div class="min-w-0 flex-1">
-                        <div class="text-sm text-text-secondary mb-1">Project Duration</div>
-                        <div class="text-base font-semibold">
-                          {{ projectDuration() }}
-                        </div>
-                      </div>
-                    </div>
-                  }
-
-                  <div class="flex items-start gap-3">
-                    <span class="material-icons text-base text-accent mt-1 flex-shrink-0">gavel</span>
-                    <div class="min-w-0 flex-1">
-                      <div class="text-sm text-text-secondary mb-1">Penalty Period</div>
-                      <div class="text-base font-semibold">{{ project()?.details?.penaltyDays }} days</div>
-                      <div class="text-xs text-text-secondary mt-1 italic">(Investor withdrawal penalty window after expiry)</div>
-                    </div>
-                  </div>
-
-                  <div class="flex items-start gap-3">
-                    <span class="material-icons text-base text-accent mt-1 flex-shrink-0">timer</span>
-                    <div class="min-w-0 flex-1">
-                      <div class="text-sm text-text-secondary mb-1">Expiry Date</div>
-                      <div class="text-base font-semibold">
-                        {{ formatDate(project()?.details?.expiryDate) }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              @if (project()?.details?.stages?.length) {
-                <div class="bg-surface-card rounded-lg shadow-md p-4">
-                  <h3 class="text-lg font-bold mb-4 pb-3 border-b border-border">Funding Stages</h3>
-                  <div class="relative">
-                    @for (stage of project()?.details?.stages; track $index; let isLast = $last) {
-                      <div class="relative pl-10 pb-6">
-                        @if (!isLast) {
-                          <div class="absolute top-3 left-[15px] w-0.5 h-full"
-                            [class]="isStageCompleted($index) ? 'bg-accent' : 'bg-border'"></div>
-                        }
-                        <div class="absolute top-0 left-0 w-8 h-8 rounded-full z-[1] border-3 flex items-center justify-center shadow-md"
-                          [class]="isStageCompleted($index) ? 'bg-accent border-surface-card' : isCurrentStage($index) ? 'bg-yellow-500 border-surface-card' : 'bg-surface-hover border-surface-card'">
-                          @if (isStageCompleted($index)) {
-                            <span class="material-icons text-white text-base">check</span>
-                          }
-                        </div>
-                        <div class="pt-1">
-                          <div class="flex items-center justify-between mb-2">
-                            <div class="font-bold text-base">Stage {{ $index + 1 }}</div>
-                            <div class="text-xs font-bold px-2 py-1 rounded-full"
-                              [class]="isStageCompleted($index) ? 'bg-green-500/10 text-green-600 dark:text-green-400' : isCurrentStage($index) ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' : 'bg-surface-hover text-text-secondary'">
-                              {{ isStageCompleted($index) ? 'Completed' : isCurrentStage($index) ? 'Current' : 'Upcoming' }}
-                            </div>
-                          </div>
-                          <div class="flex items-end gap-2 mb-2">
-                            <div class="text-lg font-bold" [class]="isStageCompleted($index) ? 'text-accent' : 'text-text'">{{ (stage.amountToRelease | number:'1.2-2') }}%</div>
-                            <div class="text-sm text-text-secondary">({{ calculateStageAmount(stage.amountToRelease) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }})</div>
-                            @if (isCurrentStage($index)) {
-                              <div class="text-xs font-semibold text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-full ml-auto">
-                                {{ getCurrentStageProgress() }}% Complete
-                              </div>
-                            }
-                          </div>
-                          <div class="relative h-2 bg-surface-hover rounded-full overflow-hidden mb-2">
-                            <div class="absolute top-0 left-0 h-full transition-all duration-700 ease-out rounded-full"
-                              [style.width.%]="isStageCompleted($index) ? 100 : isCurrentStage($index) ? getCurrentStageProgress() : 0"
-                              [class]="isStageCompleted($index) ? 'bg-green-500' : isCurrentStage($index) ? 'bg-gradient-to-r from-blue-500 to-blue-600' : ''">
-                            </div>
-                          </div>
-                          <div class="flex justify-between text-sm">
-                            <div class="text-text-secondary">{{ formatDate(stage.releaseDate) }}</div>
-                            <div class="text-text-secondary">{{ getStageRemainingTimeText(stage.releaseDate) }}</div>
-                          </div>
-                        </div>
+                } @else if (faqItems().length) {
+                  <div class="space-y-4">
+                    @for (faq of faqItems(); track $index) {
+                      <div class="bg-surface-hover rounded-xl p-4">
+                        <h3 class="font-semibold text-text mb-2">{{ faq.question }}</h3>
+                        <p class="text-text-secondary text-sm">{{ faq.answer }}</p>
                       </div>
                     }
                   </div>
-                  <div class="mt-4 pt-4 border-t border-border">
-                    <div class="flex justify-between items-center text-base mb-2">
-                      <div class="text-text-secondary font-medium">Overall Progress</div>
-                      <div class="font-bold text-accent">{{ getOverallStageProgress() }}%</div>
-                    </div>
-                    <div class="relative h-2 bg-surface-hover rounded-full overflow-hidden">
-                      <div class="absolute top-0 left-0 h-full bg-accent transition-all duration-700 ease-out rounded-full"
-                        [style.width.%]="getOverallStageProgress()"></div>
-                    </div>
+                } @else {
+                  <div class="text-center py-12 text-text-secondary">
+                    <span class="material-icons text-5xl mb-3 opacity-50">help_outline</span>
+                    <p>No FAQ items available.</p>
                   </div>
-                </div>
+                }
               }
-              <!-- Public Keys & IDs Section -->
-              <div class="bg-surface-card rounded-lg shadow-md p-4">
-                <h3 class="text-lg font-bold mb-4 pb-3 border-b border-border">Public Keys & IDs</h3>
-                <div class="space-y-3">
-                  <div>
-                    <div class="text-sm text-text-secondary mb-2">Project ID</div>
-                    <div class="flex items-center bg-surface-hover rounded-lg p-2">
-                      <span class="material-icons text-base text-text-secondary mr-2 flex-shrink-0">fingerprint</span>
-                      <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs text-text">{{ project()?.projectIdentifier }}</div>
-                      </div>
-                      <button (click)="copyToClipboard(project()?.projectIdentifier)"
-                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-1 rounded-lg hover:bg-surface-ground transition-all duration-200"
-                        title="Copy to clipboard">
-                        <span class="material-icons text-base">content_copy</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="text-sm text-text-secondary mb-2">Founder Key</div>
-                    <div class="flex items-center bg-surface-hover rounded-lg p-2">
-                      <span class="material-icons text-base text-text-secondary mr-2 flex-shrink-0">key</span>
-                      <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs text-text">{{ project()?.founderKey }}</div>
-                      </div>
-                      <button (click)="copyToClipboard(project()?.founderKey)"
-                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-1 rounded-lg hover:bg-surface-ground transition-all duration-200"
-                        title="Copy to clipboard">
-                        <span class="material-icons text-base">content_copy</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="text-sm text-text-secondary mb-2">Recovery Key</div>
-                    <div class="flex items-center bg-surface-hover rounded-lg p-2">
-                      <span class="material-icons text-base text-text-secondary mr-2 flex-shrink-0">restore</span>
-                      <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs text-text">{{ project()?.details?.founderRecoveryKey }}</div>
-                      </div>
-                      <button (click)="copyToClipboard(project()?.details?.founderRecoveryKey)"
-                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-1 rounded-lg hover:bg-surface-ground transition-all duration-200"
-                        title="Copy to clipboard">
-                        <span class="material-icons text-base">content_copy</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="text-sm text-text-secondary mb-2">Nostr Public Key (npub)</div>
-                    <div class="flex items-center bg-surface-hover rounded-lg p-2">
-                      <span class="material-icons text-base text-text-secondary mr-2 flex-shrink-0">person</span>
-                      <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs text-text">{{ user?.npub }}</div>
-                      </div>
-                      <button (click)="copyToClipboard(user?.npub)"
-                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-1 rounded-lg hover:bg-surface-ground transition-all duration-200"
-                        title="Copy to clipboard">
-                        <span class="material-icons text-base">content_copy</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="text-sm text-text-secondary mb-2">NIP-05</div>
-                    <div class="flex items-center bg-surface-hover rounded-lg p-2">
-                      <span class="material-icons text-base text-text-secondary mr-2 flex-shrink-0">person</span>
-                      <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs text-text">{{ project()?.metadata?.nip05 }}</div>
-                      </div>
-                      <button (click)="copyToClipboard(project()?.metadata?.nip05)"
-                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-1 rounded-lg hover:bg-surface-ground transition-all duration-200"
-                        title="Copy to clipboard">
-                        <span class="material-icons text-base">content_copy</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              <!-- Blockchain Details Section -->
-              <div class="bg-surface-card rounded-lg shadow-md p-4">
-                <h3 class="text-lg font-bold mb-4 pb-3 border-b border-border">Blockchain Details</h3>
-                <div class="space-y-3">
-                  <div>
-                    <div class="text-sm text-text-secondary mb-2">Created on Bitcoin block</div>
-                    <div class="flex items-center bg-surface-hover rounded-lg p-2">
-                      <span class="material-icons text-base text-text-secondary mr-2 flex-shrink-0">layers</span>
-                      <div class="flex-1 min-w-0">
-                        <div class="font-bold text-base text-text">{{ project()?.createdOnBlock }}</div>
-                      </div>
-                      <button (click)="copyToClipboard(project()?.createdOnBlock?.toString())"
-                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-1 rounded-lg hover:bg-surface-ground transition-all duration-200"
-                        title="Copy to clipboard">
-                        <span class="material-icons text-base">content_copy</span>
-                      </button>
-                    </div>
+              @if (activeTab === 'updates') {
+                @if (loadingUpdates()) {
+                  <div class="flex justify-center py-12">
+                    <div class="w-10 h-10 border-4 border-accent/30 border-t-accent rounded-full animate-spin"></div>
                   </div>
-                  <div>
-                    <div class="text-sm text-text-secondary mb-2">Transaction ID</div>
-                    <div class="flex items-center bg-surface-hover rounded-lg p-2">
-                      <span class="material-icons text-base text-text-secondary mr-2 flex-shrink-0">receipt_long</span>
-                      <div class="flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-hover">
-                        <div class="font-mono text-xs">
-                          @if(networkService.isMain()) {
-                            <a target="_blank" [href]="'https://mempool.space/tx/' + project()?.trxId"
-                              class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors duration-200 underline">{{ project()?.trxId }}</a>
-                          } @else {
-                            <a target="_blank" [href]="'https://mempool.space/testnet/tx/' + project()?.trxId"
-                              class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors duration-200 underline">{{ project()?.trxId }}</a>
-                          }
+                } @else if (errorUpdates()) {
+                  <div class="text-center py-12 text-red-500">
+                    <span class="material-icons text-5xl mb-3">error</span>
+                    <p>{{ errorUpdates() }}</p>
+                  </div>
+                } @else if (updates().length) {
+                  <div class="space-y-4">
+                    @for (update of updates(); track update.id) {
+                      <div class="bg-surface-hover rounded-xl p-4">
+                        <div class="flex items-center gap-2 mb-2 text-sm text-text-secondary">
+                          <span class="material-icons text-sm">schedule</span>
+                          <span>{{ (update.created_at ?? 0) | ago }}</span>
                         </div>
+                        <p class="text-text">{{ update.content }}</p>
                       </div>
-                      <button (click)="copyToClipboard(project()?.trxId)"
-                        class="ml-2 text-text-secondary hover:text-accent focus:outline-none flex-shrink-0 p-1 rounded-lg hover:bg-surface-ground transition-all duration-200"
-                        title="Copy to clipboard">
-                        <span class="material-icons text-base">content_copy</span>
-                      </button>
-                    </div>
+                    }
                   </div>
+                } @else {
+                  <div class="text-center py-12 text-text-secondary">
+                    <span class="material-icons text-5xl mb-3 opacity-50">campaign</span>
+                    <p>No updates available.</p>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Stats -->
+        <div class="space-y-4">
+          <!-- Funding Progress -->
+          <div class="bg-surface-card rounded-2xl shadow-md p-4">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                <span class="material-icons text-blue-500">campaign</span>
+              </div>
+              <div class="flex-1">
+                <div class="text-sm text-text-secondary">Total Raised</div>
+                <div class="text-xl font-bold">
+                  {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }}
+                  <span class="text-sm font-normal text-text-secondary">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
                 </div>
               </div>
+              <div class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 text-sm font-bold">
+                {{ getFundingPercentage() }}%
+              </div>
+            </div>
+            <div class="relative w-full h-2 bg-surface-hover rounded-full overflow-hidden">
+              <div
+                class="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-700 rounded-full"
+                [style.width.%]="getFundingPercentage() > 100 ? 100 : getFundingPercentage()"
+              ></div>
+            </div>
+            <div class="text-xs text-text-secondary mt-2">
+              Goal: {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
+            </div>
+          </div>
 
-              <!-- Nostr & Report Section -->
-              <div class="bg-surface-card rounded-lg shadow-md p-4">
-                <h3 class="text-lg font-bold mb-4 pb-3 border-b border-border">Nostr</h3>
-                <div class="space-y-3">
-                  <div>
-                    <div class="text-sm text-text-secondary mb-2">Lookup project on Nostr network</div>
-                    <a [href]="'https://nostr.at/' + user?.npub" target="_blank"
-                      class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-surface-hover rounded-lg text-text text-sm font-medium transition-all duration-300 ease-in-out hover:bg-surface-ground hover:shadow-md">
-                      <span class="material-icons text-base">open_in_new</span> 
-                      View on nostr.at
-                    </a>
-                  </div>
-
-                  <div class="pt-2 border-t border-border">
-                    <div class="text-sm text-text-secondary mb-3">
-                      Do you find this project problematic? Click button to report:
-                    </div>
-                    <button [title]="'Report this project'" (click)="reportProject()"
-                      class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg cursor-pointer transition-all duration-300 ease-in-out bg-yellow-500/10 hover:bg-yellow-500/20 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-surface-card group">
-                      <span class="material-icons text-base text-yellow-500 group-hover:text-yellow-600 transition-all duration-300 group-hover:scale-110">
-                        report_problem
-                      </span>
-                      <span class="text-sm font-medium text-yellow-600 group-hover:text-yellow-700">
-                        Report Project
-                      </span>
-                    </button>
-                  </div>
-                </div>
+          <!-- Investors -->
+          <div class="bg-surface-card rounded-2xl shadow-md p-4">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                <span class="material-icons text-purple-500">people</span>
+              </div>
+              <div class="flex-1">
+                <div class="text-sm text-text-secondary">Investors</div>
+                <div class="text-xl font-bold">{{ project()?.stats?.investorCount || 0 }}</div>
               </div>
             </div>
           </div>
-        } @else if (activeTab === 'faq') {
-          <div class="faq-section w-full max-w-full">
-            @if (loadingFaq()) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 h-64 lg:h-80 text-text-secondary bg-surface-card rounded-2xl shadow-lg mx-auto">
-                <div class="w-12 h-12 lg:w-16 lg:h-16 border-4 border-accent/30 border-t-accent rounded-full animate-spin mb-6"></div>
-                <p class="text-lg sm:text-xl lg:text-2xl">Loading FAQ...</p>
+
+          <!-- Founder Spent -->
+          <div class="bg-surface-card rounded-2xl shadow-md p-4">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center">
+                <span class="material-icons text-orange-500">account_balance_wallet</span>
               </div>
-            } @else if (errorFaq()) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 text-center bg-red-500/5 rounded-2xl shadow-lg mx-auto">
-                <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-80 text-red-500">error_outline</span>
-                <p class="max-w-md mx-auto text-lg sm:text-xl lg:text-2xl text-red-600 dark:text-red-400 mb-6">{{ errorFaq() }}</p>
-                <button (click)="fetchFaq()" title="Retry loading FAQ"
-                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
-                  <span class="material-icons text-base">refresh</span>
-                  Retry
-                </button>
+              <div class="flex-1">
+                <div class="text-sm text-text-secondary">Founder Spent</div>
+                <div class="text-xl font-bold">
+                  {{ bitcoin.toBTC(project()?.stats?.amountSpentSoFarByFounder ?? 0) }}
+                  <span class="text-sm font-normal text-text-secondary">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+                </div>
               </div>
-            } @else if (faqItems().length === 0) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 h-64 lg:h-80 text-center text-text-secondary bg-surface-card rounded-2xl shadow-lg mx-auto">
-                <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-50">help_outline</span>
-                <p class="max-w-md mx-auto text-lg sm:text-xl lg:text-2xl">No FAQ items available for this project yet.</p>
+              <div class="px-3 py-1 rounded-full bg-orange-500/10 text-orange-600 text-sm font-bold">
+                {{ getSpentPercentage() }}%
               </div>
-            } @else {
-              <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
-                @for (faq of faqItems(); track faq.id) {
-                  <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8 transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 flex flex-col">
-                    <h3 class="text-xl lg:text-2xl font-bold mb-4 lg:mb-6 leading-tight">{{ faq.question }}</h3>
-                    <p class="text-base lg:text-lg text-text-secondary leading-relaxed whitespace-pre-wrap flex-1">{{ faq.answer }}</p>
-                  </div>
-                }
-              </div>
-            }
+            </div>
+            <div class="relative w-full h-2 bg-surface-hover rounded-full overflow-hidden">
+              <div
+                class="absolute top-0 left-0 h-full bg-orange-500 transition-all duration-700 rounded-full"
+                [style.width.%]="getSpentPercentage()"
+              ></div>
+            </div>
           </div>
-        } @else if (activeTab === 'updates') {
-          <div class="updates-section w-full max-w-full">
-            @if (loadingUpdates()) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 h-64 lg:h-80 text-text-secondary bg-surface-card rounded-2xl shadow-lg mx-auto">
-                <div class="w-12 h-12 lg:w-16 lg:h-16 border-4 border-accent/30 border-t-accent rounded-full animate-spin mb-6"></div>
-                <p class="text-lg sm:text-xl lg:text-2xl">Loading updates...</p>
+
+          <!-- Withdrawals -->
+          <div class="bg-surface-card rounded-2xl shadow-md p-4">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center">
+                <span class="material-icons text-red-500">logout</span>
               </div>
-            } @else if (errorUpdates()) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 text-center bg-red-500/5 rounded-2xl shadow-lg mx-auto">
-                <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-80 text-red-500">error_outline</span>
-                <p class="max-w-md mx-auto text-lg sm:text-xl lg:text-2xl text-red-600 dark:text-red-400 mb-6">{{ errorUpdates() }}</p>
-                <button (click)="fetchUpdates()" title="Retry loading updates"
-                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
-                  <span class="material-icons text-base">refresh</span>
-                  Retry
-                </button>
+              <div class="flex-1">
+                <div class="text-sm text-text-secondary">Withdrawals</div>
+                <div class="text-xl font-bold">
+                  {{ bitcoin.toBTC(project()?.stats?.amountInPenalties ?? 0) }}
+                  <span class="text-sm font-normal text-text-secondary">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+                </div>
               </div>
-            } @else if (updates().length === 0) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 h-64 lg:h-80 text-center text-text-secondary bg-surface-card rounded-2xl shadow-lg mx-auto">
-                <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-50">campaign</span>
-                <p class="max-w-md mx-auto text-lg sm:text-xl lg:text-2xl">No updates available for this project yet.</p>
+              <div class="px-3 py-1 rounded-full bg-red-500/10 text-red-600 text-sm font-bold">
+                {{ project()?.stats?.countInPenalties || 0 }}
               </div>
-            } @else {
-              <div class="space-y-6 lg:space-y-8">
-                @for (update of updates(); track update.id) {
-                  <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8 transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1">
-                    <div class="flex justify-between items-center mb-6 pb-4 border-b border-border flex-wrap gap-4">
-                      <app-profile [pubkey]="update.pubkey" class="text-base lg:text-lg min-w-0 flex-grow"></app-profile>
-                      <span class="text-sm lg:text-base text-text-secondary whitespace-nowrap">{{ update.created_at ?? 0 | ago }}</span>
-                    </div>
-                    <div
-                      class="prose prose-base lg:prose-lg max-w-none dark:prose-invert prose-a:text-accent hover:prose-a:underline prose-img:rounded-xl prose-img:max-h-80 prose-img:mx-auto prose-pre:overflow-x-auto break-words leading-relaxed"
-                      [innerHTML]="update.content | safeContent"></div>
-                  </div>
-                }
-              </div>
-            }
+            </div>
+            <div class="relative w-full h-2 bg-surface-hover rounded-full overflow-hidden">
+              <div
+                class="absolute top-0 left-0 h-full bg-red-500 transition-all duration-700 rounded-full"
+                [style.width.%]="getPenaltiesPercentage()"
+              ></div>
+            </div>
           </div>
-        } @else if (activeTab === 'comments') {
-          <div class="comments-section w-full max-w-full">
-            @if (loadingComments()) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 h-64 lg:h-80 text-text-secondary bg-surface-card rounded-2xl shadow-lg mx-auto">
-                <div class="w-12 h-12 lg:w-16 lg:h-16 border-4 border-accent/30 border-t-accent rounded-full animate-spin mb-6"></div>
-                <p class="text-lg sm:text-xl lg:text-2xl">Loading comments...</p>
+
+          <!-- Project Details -->
+          <div class="bg-surface-card rounded-2xl shadow-md p-4">
+            <h3 class="text-lg font-bold mb-4 pb-3 border-b border-border">Project Details</h3>
+            <div class="space-y-4">
+              <div class="flex items-start gap-3">
+                <span class="material-icons text-accent text-base mt-0.5">event_available</span>
+                <div>
+                  <div class="text-sm text-text-secondary">Start Date</div>
+                  <div class="text-sm font-semibold">{{ formatDate(project()?.details?.startDate) }}</div>
+                </div>
               </div>
-            } @else if (errorComments()) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 text-center bg-red-500/5 rounded-2xl shadow-lg mx-auto">
-                <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-80 text-red-500">error_outline</span>
-                <p class="max-w-md mx-auto text-lg sm:text-xl lg:text-2xl text-red-600 dark:text-red-400 mb-6">{{ errorComments() }}</p>
-                <button (click)="fetchComments()" title="Retry loading comments"
-                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-accent text-white hover:bg-accent-dark hover:shadow-lg transition-all duration-300 ease-in-out">
-                  <span class="material-icons text-base">refresh</span>
-                  Retry
-                </button>
+              <div class="flex items-start gap-3">
+                <span class="material-icons text-accent text-base mt-0.5">event_busy</span>
+                <div>
+                  <div class="text-sm text-text-secondary">End Date</div>
+                  <div class="text-sm font-semibold">{{ formatDate(project()?.details?.expiryDate) }}</div>
+                </div>
               </div>
-            } @else if (comments().length === 0) {
-              <div class="flex flex-col items-center justify-center p-8 sm:p-12 lg:p-16 h-64 lg:h-80 text-center text-text-secondary bg-surface-card rounded-2xl shadow-lg mx-auto">
-                <span class="material-icons text-6xl lg:text-8xl mb-6 opacity-50">chat_bubble_outline</span>
-                <p class="max-w-md mx-auto text-lg sm:text-xl lg:text-2xl">No comments available for this project yet. Be the first to comment!</p>
-              </div>
-            } @else {
-              <div class="space-y-6 lg:space-y-8">
-                @for (comment of comments(); track comment.id) {
-                  <div class="bg-surface-card rounded-2xl shadow-md p-6 lg:p-8 transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1">
-                    <div class="flex justify-between items-start mb-6 pb-4 border-b border-border gap-4 flex-wrap">
-                      <app-profile [pubkey]="comment.pubkey" class="text-base lg:text-lg flex-grow min-w-0"></app-profile>
-                      <span class="text-sm lg:text-base text-text-secondary whitespace-nowrap">{{ comment.created_at ?? 0 | ago }}</span>
-                    </div>
-                    <div
-                      class="prose prose-base lg:prose-lg max-w-none dark:prose-invert prose-a:text-accent hover:prose-a:underline prose-pre:overflow-x-auto break-words leading-relaxed"
-                      [innerHTML]="comment.content | safeContent"></div>
+              @if (projectDuration()) {
+                <div class="flex items-start gap-3">
+                  <span class="material-icons text-accent text-base mt-0.5">schedule</span>
+                  <div>
+                    <div class="text-sm text-text-secondary">Duration</div>
+                    <div class="text-sm font-semibold">{{ projectDuration() }}</div>
                   </div>
-                }
-              </div>
-            }
+                </div>
+              }
+            </div>
           </div>
-        }
+        </div>
       </div>
     </div>
+  </div>
+
+  <!-- Image Popup -->
+  @if (showImagePopup && selectedImage) {
+    <app-image-popup
+      [imageUrl]="selectedImage"
+      (closeEvent)="showImagePopup = false"
+    ></app-image-popup>
   }
 
-
-  @if (project() && showImagePopup && selectedImage) {
-    <app-image-popup [imageUrl]="selectedImage" altText="Project media"
-      (closeEvent)="showImagePopup = false; selectedImage = null"></app-image-popup>
-  }  
-
-  <app-share-modal 
-    [shareData]="shareData()"
-    [isOpen]="showShareModal"
-    (closeModal)="closeShareModal()">
-  </app-share-modal>
+  <!-- Share Modal -->
+  @if (showShareModal()) {
+    <app-share-modal
+      [isOpen]="showShareModal"
+      [shareData]="shareData()"
+      (onClose)="showShareModal.set(false)"
+    ></app-share-modal>
+  }
 
   <!-- Indexer Error Modal -->
   <app-indexer-error
@@ -879,4 +694,4 @@
     (onRetry)="retryLoadProject()"
     (onDismiss)="indexer.error.set(null)"
   ></app-indexer-error>
-</div>
+}

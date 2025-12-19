@@ -20,6 +20,12 @@
               "zone.js"
             ],
             "tsConfig": "tsconfig.app.json",
+            "allowedCommonJsDependencies": [
+              "tseep",
+              "debug",
+              "typescript-lru-cache",
+              "light-bolt11-decoder"
+            ],
             "assets": [
               {
                 "glob": "**/*",
