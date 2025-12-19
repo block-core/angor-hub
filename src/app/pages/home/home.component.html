@@ -189,11 +189,11 @@
                       <div class="flex justify-between items-center text-xs mb-2 font-medium">
                         <div class="flex items-center gap-2 text-text-secondary">
                           <span class="material-icons text-sm text-accent">people</span>
-                          <span class="text-text">{{ project.stats.investorCount ?? 0 }}</span>
+                          <span class="text-text">{{ project.stats.investorCount }}</span>
                           Investors
                         </div>
                         <div class="text-text-secondary">
-                          <span class="text-text">{{ formatBTC(project.stats.amountInvested ?? 0) }}</span>
+                          <span class="text-text">{{ formatBTC(project.stats.amountInvested) }}</span>
                           / {{ formatBTC(project.details?.targetAmount ?? 0) }}
                           {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                         </div>

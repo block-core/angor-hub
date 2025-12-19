@@ -1,9 +1,8 @@
-import { Component, OnInit, OnDestroy, inject, signal, WritableSignal, computed } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common'; 
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { NetworkService } from '../../services/network.service';
 import { BitcoinInfoService } from '../../services/bitcoin-info.service';
-import { BlogService, BlogPost } from '../../services/blog.service';
 import { TitleService } from '../../services/title.service';
 import { ThemeService } from '../../services/theme.service';
 import { FeaturedService } from '../../services/featured.service';
@@ -14,26 +13,21 @@ import { UtilsService } from '../../services/utils.service';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, DatePipe], 
+  imports: [CommonModule, RouterLink],
   templateUrl: './home.component.html',
-  providers: [DatePipe] 
+  providers: []
 })
 export class HomeComponent implements OnInit, OnDestroy {
   networkService = inject(NetworkService);
   bitcoinInfo = inject(BitcoinInfoService);
-  blogService = inject(BlogService);
   titleService = inject(TitleService);
   themeService = inject(ThemeService);
   private featuredService = inject(FeaturedService);
   private indexer = inject(IndexerService);
   private relay = inject(RelayService);
   private utils = inject(UtilsService);
- 
-  datePipe = inject(DatePipe);
   
   private subscriptions: { unsubscribe: () => void }[] = []; 
-
-  blogPosts: WritableSignal<BlogPost[]> = signal([]);
 
   featuredLoading = signal<boolean>(true);
   featuredError = signal<string | null>(null);
@@ -42,9 +36,6 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   hasFeatured = computed(() => this.featuredProjects().length > 0);
   
-  
-  currentDate = new Date(); 
-
   constructor() {
   }
 
@@ -55,7 +46,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.setupNostrSubscriptions();
     
     await Promise.all([
-      this.loadBlogPosts(),
       this.loadFeaturedProjects(),
     ]);
   }
@@ -128,17 +118,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
 
     this.subscriptions.push(projectSub, profileSub);
-  }
-
-  async loadBlogPosts() {
-    try {
-      
-      const posts = await this.blogService.getLatestPosts(); 
-      this.blogPosts.set(posts);
-    } catch (error) {
-      console.error('Error loading blog posts:', error);
-      this.blogPosts.set([]); 
-    }
   }
 
   private async loadFeaturedProjects(): Promise<void> {
