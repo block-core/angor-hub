@@ -17,10 +17,12 @@ import { filter } from 'rxjs/operators';
 import { AgoPipe } from '../../pipes/ago.pipe';
 import { formatDate } from '@angular/common';
 import { TitleCasePipe } from '@angular/common';
+import { ProjectCategoryService, CategoryId, PROJECT_CATEGORIES } from '../../services/project-category.service';
 
 
 type SortType = 'default' | 'funding' | 'endDate' | 'investors';
 type FilterType = 'all' | 'active' | 'upcoming' | 'completed';
+type FundingRangeType = 'all' | 'early' | 'midway' | 'almost' | 'funded' | 'overfunded';
 
 @Component({
   selector: 'app-explore',
@@ -54,15 +56,30 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   private utils = inject(UtilsService);
   private title = inject(TitleService);
   private denyService = inject(DenyService);
+  public categoryService = inject(ProjectCategoryService);
 
-  
+
   searchTerm = signal<string>('');
   activeFilter = signal<FilterType>('all');
   activeSort = signal<SortType>('default');
+  activeCategory = signal<CategoryId>('all');
+  activeFundingRange = signal<FundingRangeType>('all');
 
-  
+
   filterOptions: FilterType[] = ['all', 'active', 'upcoming', 'completed'];
   sortOptions: SortType[] = ['default', 'funding', 'endDate', 'investors'];
+  categoryOptions = PROJECT_CATEGORIES;
+  fundingRangeOptions: { id: FundingRangeType; name: string; icon: string }[] = [
+    { id: 'all', name: 'All Funding', icon: 'show_chart' },
+    { id: 'early', name: '0-25%', icon: 'hourglass_empty' },
+    { id: 'midway', name: '25-50%', icon: 'hourglass_bottom' },
+    { id: 'almost', name: '50-99%', icon: 'hourglass_top' },
+    { id: 'funded', name: '100%', icon: 'check_circle' },
+    { id: 'overfunded', name: '100%+', icon: 'rocket_launch' }
+  ];
+
+  showCategoryDropdown = false;
+  showFundingRangeDropdown = false;
 
   
   failedBannerImages = signal<Set<string>>(new Set<string>());
@@ -74,12 +91,13 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   filteredProjects: Signal<any[]> = computed(() => {
     const projects = this.indexer.projects();
     const search = this.searchTerm().toLowerCase().trim();
-    const filter = this.activeFilter();
+    const statusFilter = this.activeFilter();
     const sort = this.activeSort();
+    const category = this.activeCategory();
+    const fundingRange = this.activeFundingRange();
 
-    
     let filtered = projects.filter(project => {
-      
+      // Search filter
       if (search) {
         const name = (project.metadata?.['name'] || '').toLowerCase();
         const about = (project.metadata?.['about'] || '').toLowerCase();
@@ -89,42 +107,86 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
 
-      
-      if (filter === 'all') {
+      // Category filter
+      if (category !== 'all') {
+        const projectCategory = this.categoryService.categorizeProject(project);
+        if (projectCategory !== category) {
+          return false;
+        }
+      }
+
+      // Funding range filter
+      if (fundingRange !== 'all') {
+        const fundingPercent = this.getFundingPercentage(project);
+        switch (fundingRange) {
+          case 'early':
+            if (fundingPercent >= 25) return false;
+            break;
+          case 'midway':
+            if (fundingPercent < 25 || fundingPercent >= 50) return false;
+            break;
+          case 'almost':
+            if (fundingPercent < 50 || fundingPercent >= 100) return false;
+            break;
+          case 'funded':
+            if (fundingPercent < 100 || fundingPercent > 100) return false;
+            break;
+          case 'overfunded':
+            if (fundingPercent <= 100) return false;
+            break;
+        }
+      }
+
+      // Status filter
+      if (statusFilter === 'all') {
         return true;
-      } else if (filter === 'active') {
+      } else if (statusFilter === 'active') {
         return !this.isProjectNotStarted(project.details?.startDate) && !this.isProjectEnded(project.details?.expiryDate);
-      } else if (filter === 'upcoming') {
+      } else if (statusFilter === 'upcoming') {
         return this.isProjectNotStarted(project.details?.startDate);
-      } else if (filter === 'completed') {
+      } else if (statusFilter === 'completed') {
         return this.isProjectEnded(project.details?.expiryDate);
       }
 
       return true;
     });
 
-    
+    // Sorting
     if (sort === 'funding') {
       filtered = [...filtered].sort((a, b) => {
         const percentA = this.getFundingPercentage(a);
         const percentB = this.getFundingPercentage(b);
-        return percentB - percentA; 
+        return percentB - percentA;
       });
     } else if (sort === 'endDate') {
       filtered = [...filtered].sort((a, b) => {
         const dateA = a.details?.expiryDate || 0;
         const dateB = b.details?.expiryDate || 0;
-        return dateA - dateB; 
+        return dateA - dateB;
       });
     } else if (sort === 'investors') {
       filtered = [...filtered].sort((a, b) => {
         const countA = a.stats?.investorCount || 0;
         const countB = b.stats?.investorCount || 0;
-        return countB - countA; 
+        return countB - countA;
       });
     }
 
     return filtered;
+  });
+
+  // Computed signal to get category counts for filter badges
+  categoryCounts = computed(() => {
+    return this.categoryService.getCategoryCounts(this.indexer.projects());
+  });
+
+  // Check if any filters are active
+  hasActiveFilters = computed(() => {
+    return this.searchTerm() !== '' ||
+           this.activeFilter() !== 'all' ||
+           this.activeSort() !== 'default' ||
+           this.activeCategory() !== 'all' ||
+           this.activeFundingRange() !== 'all';
   });
 
   
@@ -190,7 +252,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     effect(() => {
-      console.log(`Filter/Sort changed - Filter: ${this.activeFilter()}, Sort: ${this.activeSort()}, Search: ${this.searchTerm()}`);
+      console.log(`Filters changed - Status: ${this.activeFilter()}, Sort: ${this.activeSort()}, Category: ${this.activeCategory()}, Funding: ${this.activeFundingRange()}, Search: ${this.searchTerm()}`);
       console.log(`Filtered projects count: ${this.filteredProjects().length}`);
     });
   }
@@ -258,6 +320,8 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadMoreQueued = false;
     this.document.removeEventListener('click', this.closeFilterDropdown);
     this.document.removeEventListener('click', this.closeSortDropdown);
+    this.document.removeEventListener('click', this.closeCategoryDropdown);
+    this.document.removeEventListener('click', this.closeFundingRangeDropdown);
   }
 
   private watchForScrollTrigger() {
@@ -437,15 +501,86 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     this.searchTerm.set('');
     this.activeFilter.set('all');
     this.activeSort.set('default');
+    this.activeCategory.set('all');
+    this.activeFundingRange.set('all');
     this.showFilterDropdown = false;
     this.showSortDropdown = false;
+    this.showCategoryDropdown = false;
+    this.showFundingRangeDropdown = false;
     this.showMobileFilters = false;
+  }
+
+  setCategory(category: CategoryId): void {
+    this.activeCategory.set(category);
+    this.showCategoryDropdown = false;
+  }
+
+  setFundingRange(range: FundingRangeType): void {
+    this.activeFundingRange.set(range);
+    this.showFundingRangeDropdown = false;
+  }
+
+  toggleCategoryDropdown(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.showFilterDropdown = false;
+    this.showSortDropdown = false;
+    this.showFundingRangeDropdown = false;
+    this.showCategoryDropdown = !this.showCategoryDropdown;
+    if (this.showCategoryDropdown) {
+      setTimeout(() => this.document.addEventListener('click', this.closeCategoryDropdown), 10);
+    } else {
+      this.document.removeEventListener('click', this.closeCategoryDropdown);
+    }
+  }
+
+  toggleFundingRangeDropdown(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.showFilterDropdown = false;
+    this.showSortDropdown = false;
+    this.showCategoryDropdown = false;
+    this.showFundingRangeDropdown = !this.showFundingRangeDropdown;
+    if (this.showFundingRangeDropdown) {
+      setTimeout(() => this.document.addEventListener('click', this.closeFundingRangeDropdown), 10);
+    } else {
+      this.document.removeEventListener('click', this.closeFundingRangeDropdown);
+    }
+  }
+
+  closeCategoryDropdown = () => {
+    this.showCategoryDropdown = false;
+    this.document.removeEventListener('click', this.closeCategoryDropdown);
+  };
+
+  closeFundingRangeDropdown = () => {
+    this.showFundingRangeDropdown = false;
+    this.document.removeEventListener('click', this.closeFundingRangeDropdown);
+  };
+
+  getProjectCategory(project: IndexedProject): { id: string; name: string; icon: string; color: string } {
+    const categoryId = this.categoryService.categorizeProject(project);
+    const category = this.categoryService.getCategoryById(categoryId);
+    return category || { id: 'other', name: 'Other', icon: 'category', color: 'text-gray-500' };
+  }
+
+  getActiveCategoryName(): string {
+    if (this.activeCategory() === 'all') return 'All Categories';
+    const category = this.categoryService.getCategoryById(this.activeCategory());
+    return category?.name || 'All Categories';
+  }
+
+  getActiveFundingRangeName(): string {
+    const range = this.fundingRangeOptions.find(r => r.id === this.activeFundingRange());
+    return range?.name || 'All Funding';
   }
 
   toggleFilterDropdown(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
     this.showSortDropdown = false;
+    this.showCategoryDropdown = false;
+    this.showFundingRangeDropdown = false;
     this.showFilterDropdown = !this.showFilterDropdown;
     if (this.showFilterDropdown) {
       setTimeout(() => this.document.addEventListener('click', this.closeFilterDropdown), 10);
@@ -458,6 +593,8 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     event.preventDefault();
     event.stopPropagation();
     this.showFilterDropdown = false;
+    this.showCategoryDropdown = false;
+    this.showFundingRangeDropdown = false;
     this.showSortDropdown = !this.showSortDropdown;
     if (this.showSortDropdown) {
       setTimeout(() => this.document.addEventListener('click', this.closeSortDropdown), 10);

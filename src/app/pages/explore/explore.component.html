@@ -68,13 +68,62 @@
         <span class="material-icons text-base">{{ showMobileFilters ? 'close' : 'tune' }}</span>
       </button>
 
-      
+      <!-- Desktop filters -->
       <div class="hidden md:flex items-center gap-2 flex-shrink-0">
-        
+
+        <!-- Category Filter -->
+        <div class="relative">
+          <button
+            class="h-10 px-4 flex items-center gap-2 rounded-lg bg-surface-ground hover:bg-surface-hover text-sm text-text transition-all duration-300"
+            [ngClass]="{'bg-accent/20 text-accent': activeCategory() !== 'all'}"
+            (click)="toggleCategoryDropdown($event)"
+            aria-label="Filter by category"
+          >
+            <span class="material-icons text-base text-text-secondary">category</span>
+            <span>{{ getActiveCategoryName() }}</span>
+            <span
+              class="material-icons text-base text-text-secondary transition-transform duration-300"
+              [ngClass]="{'rotate-180': showCategoryDropdown}"
+              >keyboard_arrow_down</span
+            >
+          </button>
+          @if (showCategoryDropdown) {
+            <div
+              class="absolute top-full left-0 mt-2 w-64 bg-surface-card rounded-lg shadow-xl z-10 p-3 animate-in fade-in slide-in-from-top-2 duration-300 max-h-80 overflow-y-auto"
+            >
+              <h3 class="text-xs font-semibold uppercase text-text-secondary px-2 py-1 mb-2">
+                Project Category
+              </h3>
+              <button
+                class="w-full text-left flex items-center gap-2 px-2 py-2 rounded-md hover:bg-surface-hover text-sm text-text transition-colors duration-200"
+                [ngClass]="{'bg-accent/25 text-accent font-semibold': activeCategory() === 'all'}"
+                (click)="setCategory('all')"
+              >
+                <span class="material-icons text-base">apps</span>
+                All Categories
+                <span class="ml-auto text-xs text-text-secondary bg-surface-hover px-2 py-0.5 rounded-full">{{ categoryCounts().get('all') || 0 }}</span>
+              </button>
+              @for (category of categoryOptions; track category.id) {
+                <button
+                  class="w-full text-left flex items-center gap-2 px-2 py-2 rounded-md hover:bg-surface-hover text-sm text-text transition-colors duration-200"
+                  [ngClass]="{'bg-accent/25 text-accent font-semibold': activeCategory() === category.id}"
+                  (click)="setCategory($any(category.id))"
+                >
+                  <span class="material-icons text-base" [ngClass]="category.color">{{ category.icon }}</span>
+                  {{ category.name }}
+                  <span class="ml-auto text-xs text-text-secondary bg-surface-hover px-2 py-0.5 rounded-full">{{ categoryCounts().get($any(category.id)) || 0 }}</span>
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Status Filter -->
         <div class="relative">
           <button
             #filterBtn
             class="h-10 px-4 flex items-center gap-2 rounded-lg bg-surface-ground hover:bg-surface-hover text-sm text-text transition-all duration-300"
+            [ngClass]="{'bg-accent/20 text-accent': activeFilter() !== 'all'}"
             (click)="toggleFilterDropdown($event)"
             aria-label="Filter projects"
           >
@@ -91,7 +140,7 @@
               class="absolute top-full right-0 mt-2 w-56 bg-surface-card rounded-lg shadow-xl z-10 p-3 animate-in fade-in slide-in-from-top-2 duration-300"
             >
               <h3 class="text-xs font-semibold uppercase text-text-secondary px-2 py-1 mb-2">
-                Filter By
+                Project Status
               </h3>
               @for (filter of filterOptions; track filter) {
                 <button
@@ -110,11 +159,50 @@
             </div>
           }
         </div>
-        
+
+        <!-- Funding Range Filter -->
+        <div class="relative">
+          <button
+            class="h-10 px-4 flex items-center gap-2 rounded-lg bg-surface-ground hover:bg-surface-hover text-sm text-text transition-all duration-300"
+            [ngClass]="{'bg-accent/20 text-accent': activeFundingRange() !== 'all'}"
+            (click)="toggleFundingRangeDropdown($event)"
+            aria-label="Filter by funding"
+          >
+            <span class="material-icons text-base text-text-secondary">show_chart</span>
+            <span>{{ getActiveFundingRangeName() }}</span>
+            <span
+              class="material-icons text-base text-text-secondary transition-transform duration-300"
+              [ngClass]="{'rotate-180': showFundingRangeDropdown}"
+              >keyboard_arrow_down</span
+            >
+          </button>
+          @if (showFundingRangeDropdown) {
+            <div
+              class="absolute top-full right-0 mt-2 w-56 bg-surface-card rounded-lg shadow-xl z-10 p-3 animate-in fade-in slide-in-from-top-2 duration-300"
+            >
+              <h3 class="text-xs font-semibold uppercase text-text-secondary px-2 py-1 mb-2">
+                Funding Progress
+              </h3>
+              @for (range of fundingRangeOptions; track range.id) {
+                <button
+                  class="w-full text-left flex items-center gap-2 px-2 py-2 rounded-md hover:bg-surface-hover text-sm text-text transition-colors duration-200"
+                  [ngClass]="{'bg-accent/25 text-accent font-semibold': activeFundingRange() === range.id}"
+                  (click)="setFundingRange(range.id)"
+                >
+                  <span class="material-icons text-base">{{ range.icon }}</span>
+                  {{ range.name }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Sort -->
         <div class="relative">
           <button
             #sortBtn
             class="h-10 px-4 flex items-center gap-2 rounded-lg bg-surface-ground hover:bg-surface-hover text-sm text-text transition-all duration-300"
+            [ngClass]="{'bg-accent/20 text-accent': activeSort() !== 'default'}"
             (click)="toggleSortDropdown($event)"
             aria-label="Sort projects"
           >
@@ -150,15 +238,17 @@
             </div>
           }
         </div>
-        
+
+        <!-- Project count -->
         <div
           class="h-10 px-4 flex items-center rounded-lg bg-surface-ground text-text-secondary text-sm font-medium transition-colors duration-300"
         >
           <span class="material-icons text-base mr-2">article</span>
           {{ filteredProjects().length }} {{ filteredProjects().length === 1 ? 'project' : 'projects' }}
         </div>
-        
-        @if (searchTerm() || activeFilter() !== 'all' || activeSort() !== 'default') {
+
+        <!-- Reset filters button -->
+        @if (hasActiveFilters()) {
           <button
             class="h-10 w-10 flex items-center justify-center rounded-lg bg-warning/10 text-warning hover:bg-warning/20 transition-all duration-300"
             (click)="resetFilters()"
@@ -171,10 +261,36 @@
     </div>
 
     
+    <!-- Mobile filters panel -->
     @if (showMobileFilters) {
       <div class="md:hidden p-6 animate-in slide-in-from-top-4 duration-300">
+        <!-- Category filter -->
         <div class="mb-6">
-          <h4 class="text-sm font-semibold text-text-secondary mb-3">Filter by</h4>
+          <h4 class="text-sm font-semibold text-text-secondary mb-3">Category</h4>
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              class="px-3 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 text-text hover:bg-surface-hover transition-all duration-300"
+              [ngClass]="{'bg-accent/20 text-accent font-semibold': activeCategory() === 'all'}"
+              (click)="setCategory('all')"
+            >
+              <span class="material-icons text-sm">apps</span>
+              All
+            </button>
+            @for (category of categoryOptions; track category.id) {
+              <button
+                class="px-3 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 text-text hover:bg-surface-hover transition-all duration-300"
+                [ngClass]="{'bg-accent/20 text-accent font-semibold': activeCategory() === category.id}"
+                (click)="setCategory($any(category.id))"
+              >
+                <span class="material-icons text-sm" [ngClass]="category.color">{{ category.icon }}</span>
+                {{ category.name }}
+              </button>
+            }
+          </div>
+        </div>
+        <!-- Status filter -->
+        <div class="mb-6">
+          <h4 class="text-sm font-semibold text-text-secondary mb-3">Status</h4>
           <div class="grid grid-cols-2 gap-3">
             @for (filter of filterOptions; track filter) {
               <button
@@ -192,6 +308,23 @@
             }
           </div>
         </div>
+        <!-- Funding range filter -->
+        <div class="mb-6">
+          <h4 class="text-sm font-semibold text-text-secondary mb-3">Funding Progress</h4>
+          <div class="grid grid-cols-3 gap-2">
+            @for (range of fundingRangeOptions; track range.id) {
+              <button
+                class="px-3 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 text-text hover:bg-surface-hover transition-all duration-300"
+                [ngClass]="{'bg-accent/20 text-accent font-semibold': activeFundingRange() === range.id}"
+                (click)="setFundingRange(range.id)"
+              >
+                <span class="material-icons text-sm">{{ range.icon }}</span>
+                {{ range.name }}
+              </button>
+            }
+          </div>
+        </div>
+        <!-- Sort options -->
         <div class="mb-6">
           <h4 class="text-sm font-semibold text-text-secondary mb-3">Sort by</h4>
           <div class="grid grid-cols-2 gap-3">
@@ -211,13 +344,14 @@
             }
           </div>
         </div>
-        @if (searchTerm() || activeFilter() !== 'all' || activeSort() !== 'default') {
-          <div class="flex justify-between items-center pt-4">
+        <!-- Reset and count -->
+        @if (hasActiveFilters()) {
+          <div class="flex justify-between items-center pt-4 border-t border-surface-hover">
             <button
               class="px-5 py-2 rounded-xl text-sm flex items-center gap-2 bg-warning/10 text-warning hover:bg-warning/20 transition-all duration-300"
               (click)="resetFilters()"
             >
-              <span class="material-icons text-base">restart_alt</span> Reset
+              <span class="material-icons text-base">restart_alt</span> Reset All
             </button>
             <div class="text-sm text-text-secondary font-medium">
               {{ filteredProjects().length }} {{ filteredProjects().length === 1 ? 'project' : 'projects' }}
@@ -282,7 +416,7 @@
                 ></div>
               }
 
-              
+              <!-- Status badge -->
               @let statusInfo = getProjectStatus(project);
               <div class="absolute top-4 right-4 z-10">
                 <div
@@ -299,7 +433,18 @@
                 </div>
               </div>
 
-              
+              <!-- Category badge -->
+              @let categoryInfo = getProjectCategory(project);
+              <div class="absolute bottom-4 left-4 z-10">
+                <div
+                  class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium backdrop-blur-md bg-surface-card/80 border border-surface-hover"
+                >
+                  <span class="material-icons text-sm" [ngClass]="categoryInfo.color">{{ categoryInfo.icon }}</span>
+                  <span class="text-text-secondary">{{ categoryInfo.name }}</span>
+                </div>
+              </div>
+
+              <!-- Favorite badge -->
               @if (isFavorite(project.projectIdentifier)) {
                 <span
                   class="absolute top-4 left-4 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-surface-card/95 text-primary shadow-lg transition-transform duration-300 group-hover:scale-110"
@@ -456,10 +601,10 @@
 </div>
 
 
-@if (showFilterDropdown || showSortDropdown) {
+@if (showFilterDropdown || showSortDropdown || showCategoryDropdown || showFundingRangeDropdown) {
   <div
     class="fixed inset-0 z-40 md:hidden"
-    (click)="showFilterDropdown = false; showSortDropdown = false"
+    (click)="showFilterDropdown = false; showSortDropdown = false; showCategoryDropdown = false; showFundingRangeDropdown = false"
   ></div>
 }
 
