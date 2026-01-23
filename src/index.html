@@ -2,19 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Angor Hub</title>
-    <meta name="description" content="Angor Hub is a Nostr client that is customized around the Angor protocol, a decentralized crowdfunding platform." />
+    <title>Angor</title>
+    <meta name="description" content="The Only Bitcoin Protocol For Funding Projects - Decentralized crowdfunding on Bitcoin." />
     <meta name="keywords" content="Angor, Bitcoin, Nostr, decentralized crowdfunding, crypto projects, Bitcoin crowdfunding, Angor protocol, Nostr client, blockchain funding" />    
     <meta name="robots" content="index, follow">
-    <meta property="og:title" content="Angor Hub">
-    <meta property="og:description" content="Angor Hub is a Nostr client that is customized around the Angor protocol, a decentralized crowdfunding platform.">
+    <meta property="og:title" content="Angor">
+    <meta property="og:description" content="The Only Bitcoin Protocol For Funding Projects - Decentralized crowdfunding on Bitcoin.">
     <meta property="og:image" content="https://hub.angor.io/assets/angor-hub-social.png">
     <meta property="og:image:width" content="1280">
     <meta property="og:image:height" content="640">
     <meta property="og:type" content="object">
     <meta property="og:url" content="https://hub.angor.io">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Angor Hub is a Nostr client that is customized around the Angor protocol, a decentralized crowdfunding platform.">
+    <meta name="twitter:title" content="Angor - The Only Bitcoin Protocol For Funding Projects">
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/png" href="favicon.png" />
@@ -22,31 +22,33 @@
     
     <style>
       :root { 
-        --accent: #086c81; 
-        --accent-light: #0ab6d9; 
-        --accent-dark: #022229; 
+        --accent: #4B7C5A; 
+        --accent-light: #3d6448; 
+        --accent-dark: #2d5a3d; 
         --text: #cbdde1; 
         --text-secondary: #a8b8bc; 
-        --surface-card: #043a4a; 
-        --surface-ground: #022229; 
-        --surface-hover: #065366; 
-        --border: #2a5f6a; 
-        --header-bg: #086c81; 
+        --surface-card: #0A0A0A; 
+        --surface-ground: #1a1a1a; 
+        --surface-hover: #2a2a2a; 
+        --border: #404040; 
+        --header-bg: #0A0A0A; 
         --header-text: #cbdde1; 
         --bitcoin-mainnet: #f7931a;
         --bitcoin-testnet: #28c025;
-        --warning: #f20000;
-        --success: #0f9d58;
+        --success: #22c55e;
+        --error: #ef4444;
+        --warning: #f59e0b;
+        --info: #3b82f6;
         --background: var(--surface-ground); 
       }
 
       html[data-theme="light"] {
         --text: #022229; 
         --text-secondary: #547c85; 
-        --surface-card: #ffffff; 
-        --surface-ground: #f8fafa; 
+        --surface-card: #f9fafb; 
+        --surface-ground: #ffffff; 
         --surface-hover: #eef4f5; 
-        --border: #cbdde1; 
+        --border: #e5e7eb; 
         --header-bg: #ffffff; 
         --header-text: #022229; 
         --background: var(--surface-ground); 
@@ -83,7 +85,7 @@
         content: '';
         width: 40px;
         height: 40px;
-        border: 3px solid var(--accent-light);
+        border: 3px solid var(--accent);
         border-top: 3px solid transparent;
         border-radius: 50%;
         animation: spin 1s linear infinite;

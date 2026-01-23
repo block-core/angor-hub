@@ -91,16 +91,24 @@ import { ThemeService } from '../services/theme.service';
         <div class="flex items-center gap-2">
           <!-- Desktop Navigation -->
           <nav class="hidden lg:flex items-center gap-1">
-            <a routerLink="/" routerLinkActive="bg-surface-hover text-accent" [routerLinkActiveOptions]="{exact: true}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
-              <span class="material-icons text-xl">home</span> Home
+            <a routerLink="/explore" routerLinkActive="bg-surface-hover text-accent" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
+              Projects
             </a>
-            <a routerLink="/explore" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
-              <span class="material-icons text-xl">explore</span> Explore
+            <a href="https://angor.io/app" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors">
+              App
             </a>
-            <a routerLink="/settings" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
-              <span class="material-icons text-xl">settings</span> Settings
+            <a href="https://profile.angor.io/angor-profile/" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors">
+              Profile
+            </a>
+            <a href="https://angor.io/docs" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors">
+              Docs
             </a>
           </nav>
+
+          <!-- Settings Button (Desktop) -->
+          <a routerLink="/settings" class="hidden lg:flex items-center justify-center w-10 h-10 rounded-full text-header-text hover:bg-surface-hover transition-colors" aria-label="Settings">
+            <span class="material-icons text-xl">settings</span>
+          </a>
 
           <!-- Theme Toggle (Desktop) -->
           <button class="hidden lg:flex items-center justify-center w-10 h-10 rounded-full text-header-text hover:bg-surface-hover transition-colors" (click)="toggleTheme()" aria-label="Toggle theme">
@@ -128,14 +136,17 @@ import { ThemeService } from '../services/theme.service';
         <div class="flex-grow overflow-y-auto p-4">
           <!-- Mobile Navigation -->
           <nav class="mb-6 space-y-2">
-            <a routerLink="/" routerLinkActive="bg-surface-hover text-accent" [routerLinkActiveOptions]="{exact: true}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
-              <span class="material-icons text-xl">home</span> Home
-            </a>
             <a routerLink="/explore" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
-              <span class="material-icons text-xl">explore</span> Explore
+              Projects
             </a>
-            <a routerLink="/settings" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
-              <span class="material-icons text-xl">settings</span> Settings
+            <a href="https://angor.io/app" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
+              App
+            </a>
+            <a href="https://profile.angor.io/angor-profile/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
+              Profile
+            </a>
+            <a href="https://angor.io/docs" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
+              Docs
             </a>
           </nav>
 
@@ -159,6 +170,19 @@ import { ThemeService } from '../services/theme.service';
                 </div>
                 @if (!networkService.isMain()) { <span class="material-icons text-accent text-lg">check_circle</span> }
               </button>
+            </div>
+          </div>
+
+          <div class="h-px bg-border my-4"></div>
+
+          <!-- Mobile Settings -->
+          <div class="mb-6">
+            <h4 class="px-4 mb-2 text-xs font-semibold uppercase text-text-secondary tracking-wider">Settings</h4>
+            <div class="px-1">
+              <a routerLink="/settings" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
+                <span class="material-icons text-xl">settings</span>
+                <span>Settings</span>
+              </a>
             </div>
           </div>
 

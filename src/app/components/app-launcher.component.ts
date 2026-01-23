@@ -8,8 +8,9 @@ import { RouterLink } from '@angular/router';
   imports: [CommonModule, RouterLink],
   template: `
     <div class="relative">
-      <button type="button" class="cursor-pointer group bg-transparent border-0 p-0" (click)="toggleAppMenu($event)" title="Open Angor Apps Menu">
-        <img src="images/logo-text.svg" alt="Angor Menu" class="h-8 w-auto transition-all duration-300 group-hover:scale-105 group-hover:brightness-125">
+      <button type="button" class="cursor-pointer group bg-transparent border-0 p-0 flex items-center gap-2" (click)="toggleAppMenu($event)" title="Open Angor Apps Menu">
+        <img src="/images/app-icon-dark-mode.png" alt="Angor" class="h-8 w-auto transition-all duration-300 group-hover:scale-105 group-hover:brightness-125">
+        <span class="text-header-text font-semibold text-lg transition-all duration-300 group-hover:text-accent">Angor</span>
       </button>
       @if (isAppMenuOpen() && hasBeenClicked()) {
         <div
@@ -32,11 +33,11 @@ import { RouterLink } from '@angular/router';
             <a routerLink="/" class="flex items-center gap-4 p-3 rounded-md text-text hover:bg-surface-hover transition-colors duration-200 group/item" (click)="closeMenu()">
               <i class="fa-solid fa-compass text-xl w-6 text-center text-text-secondary group-hover/item:text-accent transition-colors duration-200"></i>
               <div>
-                <span class="font-medium block text-sm">Angor Hub</span>
+                <span class="font-medium block text-sm">Angor</span>
                 <span class="text-xs text-text-secondary block">Discover projects to fund</span>
               </div>
             </a>
-            <a href="https://profile.angor.io" class="flex items-center gap-4 p-3 rounded-md text-text hover:bg-surface-hover transition-colors duration-200 group/item" target="_blank" rel="noopener noreferrer">
+            <a href="https://profile.angor.io/angor-profile/" class="flex items-center gap-4 p-3 rounded-md text-text hover:bg-surface-hover transition-colors duration-200 group/item" target="_blank" rel="noopener noreferrer">
               <i class="fa-solid fa-user text-xl w-6 text-center text-text-secondary group-hover/item:text-accent transition-colors duration-200"></i>
               <div>
                 <span class="font-medium block text-sm">Angor Profile</span>

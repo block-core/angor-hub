@@ -23,7 +23,7 @@ import { environment } from '../../environment';
         <div class="pt-4 border-t border-border text-xs opacity-70">
           <div class="flex justify-center items-center gap-1">
              <span class="material-icons text-xs">info</span>
-            Angor Hub v{{ version }}          </div>
+            Angor v{{ version }}          </div>
  
          </div>
       </div>

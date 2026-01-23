@@ -10,7 +10,7 @@ export const routes: Routes = [
   {
     path: '',
     component: HomeComponent,
-    title: 'Angor Hub',
+    title: 'Angor',
     data: { animation: 'HomePage' } 
   },
   {
