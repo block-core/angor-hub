@@ -1,3 +1,5 @@
-This is an Angular 19 project, make sure to always use signals and effects. Also always use most modern TypeScript, with async/await.
+This is an Angular 21 project. Always use signals and effects for reactive state. Use modern TypeScript with async/await.
 
-Make sure to use new flow syntax of latest Angular, which is @if instead of *ngIf, @for instead of *ngFor, and @let instead of *ngLet.
+Use modern Angular control flow syntax: `@if` instead of `*ngIf`, `@for` instead of `*ngFor`, and `@let` instead of `*ngLet`.
+
+Use `inject()` for dependency injection instead of constructor injection. All components must be standalone (no NgModules).

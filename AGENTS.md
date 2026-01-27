@@ -1,30 +1,19 @@
 # AGENTS.md - AI Coding Agent Guidelines
 
-This document provides guidelines for AI coding agents working in the Angor Hub codebase.
+Guidelines for AI coding agents working in the Angor Hub codebase.
 
 ## Build, Lint, and Test Commands
 
 ```bash
-# Install dependencies
-npm install
-
-# Development server (http://localhost:4200)
-npm start
-
-# Production build
-npm run build
-
-# Run linter (ESLint)
-npm run lint
-
-# Run all tests
-npm test
+npm install          # Install dependencies
+npm start            # Dev server at localhost:4200
+npm run build        # Production build
+npm run lint         # Run ESLint
+npm test             # Run all tests
 
 # Run a single test file
 ng test --include=**/filename.spec.ts
-
-# Example: Run only the nostr-auth service tests
-ng test --include=**/nostr-auth.service.spec.ts
+# Example: ng test --include=**/nostr-auth.service.spec.ts
 ```
 
 ## Tech Stack
@@ -32,105 +21,56 @@ ng test --include=**/nostr-auth.service.spec.ts
 - **Framework**: Angular 21 (standalone components, signals)
 - **Styling**: TailwindCSS 3.x with CSS custom properties
 - **Testing**: Karma + Jasmine
-- **Linting**: ESLint with Angular and TypeScript plugins
-- **Build**: Angular CLI with esbuild
-
-### Key Dependencies
-- `@nostr-dev-kit/ndk` - Nostr Development Kit
-- `nostr-tools` - Nostr protocol utilities
-- `nostr-login` - Authentication via Nostr
-- `rxjs` - Reactive extensions
-- `marked` / `ngx-markdown` - Markdown rendering
+- **Linting**: ESLint 9.x with Angular and TypeScript plugins
+- **Key deps**: `@nostr-dev-kit/ndk`, `nostr-tools`, `nostr-login`, `rxjs`, `ngx-markdown`
 
 ## Code Style Guidelines
 
 ### Angular Patterns (CRITICAL)
 
-1. **Use Signals and Effects** - Always use Angular signals for reactive state:
+1. **Always use Signals** for reactive state:
    ```typescript
-   // Correct
    isLoading = signal<boolean>(false);
    items = signal<Item[]>([]);
    filteredItems = computed(() => this.items().filter(i => i.active));
-
-   // Incorrect - avoid traditional properties for reactive state
-   isLoading = false;
    ```
 
-2. **Use Modern Control Flow Syntax** - Use `@if`, `@for`, `@let` instead of structural directives:
+2. **Use modern control flow** (`@if`, `@for`, `@let`) - NOT `*ngIf`/`*ngFor`:
    ```html
-   <!-- Correct -->
    @if (isLoading()) {
      <app-spinner />
    }
    @for (item of items(); track item.id) {
      <app-item [data]="item" />
    }
-
-   <!-- Incorrect - do NOT use -->
-   <div *ngIf="isLoading"></div>
-   <div *ngFor="let item of items"></div>
    ```
 
-3. **Use `inject()` for Dependency Injection**:
+3. **Use `inject()` for DI** - NOT constructor injection:
    ```typescript
-   // Correct
    private router = inject(Router);
    private http = inject(HttpClient);
-
-   // Acceptable but less preferred
-   constructor(private router: Router) {}
    ```
 
-4. **Standalone Components** - All components must be standalone:
-   ```typescript
-   @Component({
-     selector: 'app-example',
-     standalone: true,
-     imports: [CommonModule, RouterLink],
-     template: `...`
-   })
-   ```
+4. **Standalone components only** - no NgModules
 
 ### TypeScript Patterns
 
-1. **Use async/await** - Prefer over raw Promises:
-   ```typescript
-   // Correct
-   async loadData(): Promise<void> {
-     const data = await this.service.fetchData();
-     this.items.set(data);
-   }
-
-   // Avoid
-   loadData(): void {
-     this.service.fetchData().then(data => this.items = data);
-   }
-   ```
-
-2. **Strict TypeScript** - The project uses strict mode. Always provide types:
-   ```typescript
-   // Correct
-   function process(items: Item[]): ProcessedItem[] { ... }
-
-   // Avoid
-   function process(items: any): any { ... }
-   ```
-
-3. **Use single quotes** for strings (per .editorconfig)
-
-4. **2-space indentation** (per .editorconfig)
+- **async/await** over raw Promises
+- **Strict typing** - avoid `any`, provide explicit types
+- **Single quotes** for strings
+- **2-space indentation**
+- **ES2022** target with bundler module resolution
 
 ### Naming Conventions
 
 | Type | Convention | Example |
 |------|------------|---------|
-| Components | kebab-case selector, `app-` prefix | `app-header`, `app-project-card` |
-| Directives | camelCase selector, `app` prefix | `appHighlight`, `appTooltip` |
-| Services | camelCase, `.service.ts` suffix | `relay.service.ts`, `RelayService` |
-| Pipes | camelCase, `.pipe.ts` suffix | `ago.pipe.ts`, `AgoPipe` |
-| Interfaces | PascalCase | `ProjectUpdate`, `FaqItem` |
-| Signals | camelCase, descriptive | `isLoading`, `activeFilter` |
+| Components | kebab-case selector, `app-` prefix | `app-header` |
+| Directives | camelCase selector, `app` prefix | `appHighlight` |
+| Services | PascalCase, `.service.ts` suffix | `RelayService` |
+| Pipes | PascalCase, `.pipe.ts` suffix | `AgoPipe` |
+| Interfaces | PascalCase | `ProjectUpdate` |
+| Signals | camelCase | `isLoading` |
 | Files | kebab-case | `explore-state.service.ts` |
 
 ### File Organization
@@ -138,29 +78,18 @@ ng test --include=**/nostr-auth.service.spec.ts
 ```
 src/app/
 ├── components/     # Shared/reusable components
-├── pages/          # Route page components (one per route)
-│   └── explore/
-│       ├── explore.component.ts
-│       └── explore.component.html
+├── pages/          # Route page components
 ├── services/       # Injectable services (providedIn: 'root')
 ├── pipes/          # Custom pipes (standalone)
-├── models/         # TypeScript interfaces and types
+├── models/         # TypeScript interfaces
 ├── app.routes.ts   # Route definitions
-├── app.config.ts   # App configuration
-└── app.component.ts
+└── app.config.ts   # App configuration
 ```
-
-### Component Patterns
-
-- **Small components**: Use inline templates
-- **Large components**: Use external `.html` template files
-- **Services**: Always use `providedIn: 'root'` for singleton services
-- **Subscriptions**: Clean up in `ngOnDestroy` or use `takeUntilDestroyed()`
 
 ### Error Handling
 
 ```typescript
-// Service methods - use try/catch with console.error
+// Services - try/catch, log errors, rethrow
 async fetchData(): Promise<void> {
   try {
     const data = await this.api.get();
@@ -171,7 +100,7 @@ async fetchData(): Promise<void> {
   }
 }
 
-// Components - handle errors gracefully with user feedback
+// Components - handle gracefully with user feedback
 async loadProjects(): Promise<void> {
   try {
     this.loading.set(true);
@@ -185,34 +114,33 @@ async loadProjects(): Promise<void> {
 }
 ```
 
-### Styling with TailwindCSS
+### TailwindCSS Custom Colors
 
-- Use Tailwind utility classes in templates
-- Custom colors are defined via CSS variables (see `tailwind.config.js`)
-- Common custom colors: `text`, `accent`, `surface-card`, `surface-ground`, `border`
-
-```html
-<div class="bg-surface-card text-text p-4 rounded-lg border border-border">
-  <h2 class="text-accent font-semibold">Title</h2>
-</div>
-```
+Use these CSS variable-based colors:
+- **Text**: `text-text`, `text-text-secondary`, `text-accent`
+- **Backgrounds**: `bg-surface-card`, `bg-surface-ground`, `bg-surface-hover`
+- **Borders**: `border-border`
+- **Header**: `bg-header-bg`, `text-header-text`
+- **Bitcoin**: `text-bitcoin-mainnet`, `text-bitcoin-testnet`
+- **Status**: `text-success`, `text-warning`
 
 ## Testing
 
-- Test files live alongside source files: `*.spec.ts`
-- Use `TestBed.configureTestingModule()` for component/service tests
-- Use `fakeAsync` and `flushMicrotasks` for async testing
-- Mock external dependencies (localStorage, window.nostr, etc.)
+- Test files: `*.spec.ts` alongside source files
+- Use `TestBed.configureTestingModule()` with `teardown: { destroyAfterEach: true }`
+- Use `fakeAsync` + `flushMicrotasks` for async tests
+- Mock external deps: `localStorage`, `window.nostr`, etc.
 
 ```typescript
 describe('MyService', () => {
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      teardown: { destroyAfterEach: true }
-    });
+    TestBed.resetTestingModule();
+    localStorage.clear();
+    (window as any).nostr = undefined;
+    TestBed.configureTestingModule({ teardown: { destroyAfterEach: true } });
   });
 
-  it('should do something', fakeAsync(() => {
+  it('should work', fakeAsync(() => {
     const service = TestBed.inject(MyService);
     flushMicrotasks();
     expect(service.value()).toBe(expected);
@@ -220,11 +148,15 @@ describe('MyService', () => {
 });
 ```
 
-## ESLint Rules (Warnings, not Errors)
+## ESLint Rules
 
-These are configured as warnings to be less strict during development:
-- `@typescript-eslint/no-unused-vars`
-- `@typescript-eslint/no-explicit-any`
+**Errors** (must fix):
+- `@angular-eslint/component-selector`: kebab-case with `app-` prefix
+- `@angular-eslint/directive-selector`: camelCase with `app` prefix
+
+**Warnings** (fix when possible):
+- `@typescript-eslint/no-unused-vars`, `no-explicit-any`, `no-empty-function`
+- `@angular-eslint/prefer-inject`
 - `@angular-eslint/template/click-events-have-key-events`
 - `@angular-eslint/template/interactive-supports-focus`
 
@@ -232,10 +164,10 @@ These are configured as warnings to be less strict during development:
 
 | Task | Command |
 |------|---------|
-| Start dev server | `npm start` |
-| Build for production | `npm run build` |
+| Dev server | `npm start` |
+| Production build | `npm run build` |
 | Run all tests | `npm test` |
 | Run single test | `ng test --include=**/file.spec.ts` |
-| Lint code | `npm run lint` |
+| Lint | `npm run lint` |
 | Generate component | `ng generate component components/name` |
 | Generate service | `ng generate service services/name` |

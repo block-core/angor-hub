@@ -172,24 +172,24 @@ export class ProjectComponent implements OnInit, OnDestroy {
     const project = this.project();
     if (!project) {
       return {
-        title: 'Project on Angor Hub',
-        description: 'Check out this project on Angor Hub',
+        title: 'Project on Angor',
+        description: 'Check out this project on Angor',
         url: `${window.location.origin}/project/${this.projectId}`,
         projectId: this.projectId
       };
     }
 
     const about = project.metadata?.about;
-    let description = 'Check out this project on Angor Hub';
+    let description = 'Check out this project on Angor';
     if (about && about.length > 0) {
       const plainText = about.replace(/[#*_`~[\]()]/g, '').replace(/<[^>]*>/g, '');
       description = plainText.length > 100 ? plainText.substring(0, 100) + '...' : plainText;
     } else {
-      description = `${project.metadata?.name || project.metadata?.displayName || 'This project'} on Angor Hub`;
+      description = `${project.metadata?.name || project.metadata?.displayName || 'This project'} on Angor`;
     }
 
     return {
-      title: project.metadata?.name || project.metadata?.displayName || 'Project on Angor Hub',
+      title: project.metadata?.name || project.metadata?.displayName || 'Project on Angor',
       description: description,
       url: `${window.location.origin}/project/${this.projectId}`,
       imageUrl: project.metadata?.['picture'],

@@ -5,7 +5,7 @@ import { Title } from '@angular/platform-browser';
   providedIn: 'root'
 })
 export class TitleService {
-  private readonly baseTitle = 'Angor Hub';
+  private readonly baseTitle = 'Angor';
   
   constructor(private title: Title) {}
 

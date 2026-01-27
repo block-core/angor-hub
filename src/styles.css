@@ -3,34 +3,36 @@
 @tailwind utilities;
 
 :root { 
-  --accent: #086c81; 
-  --accent-light: #0ab6d9; 
-  --accent-dark: #022229; 
+  --accent: #4B7C5A; 
+  --accent-light: #3d6448; 
+  --accent-dark: #2d5a3d; 
   --text: #cbdde1; 
   --text-secondary: #a8b8bc; 
-  --surface-card: #043a4a; 
-  --surface-ground: #022229; 
-  --surface-hover: #065366; 
-  --border: #2a5f6a; 
-  --header-bg: #086c81; 
+  --surface-card: #0A0A0A; 
+  --surface-ground: #1a1a1a; 
+  --surface-hover: #2a2a2a; 
+  --border: #404040; 
+  --header-bg: #0A0A0A; 
   --header-text: #cbdde1; 
   --bitcoin-mainnet: #f7931a;
   --bitcoin-testnet: #28c025;
-  --warning: #f20000;
-  --success: #0f9d58;
+  --success: #22c55e;
+  --error: #ef4444;
+  --warning: #f59e0b;
+  --info: #3b82f6;
   --background: var(--surface-ground); 
 }
 
 html[data-theme="light"] {
-  --accent: #086c81; 
-  --accent-light: #0ab6d9; 
-  --accent-dark: #065366; 
+  --accent: #4B7C5A; 
+  --accent-light: #3d6448; 
+  --accent-dark: #2d5a3d; 
   --text: #022229; 
   --text-secondary: #547c85; 
-  --surface-card: #ffffff; 
-  --surface-ground: #f8fafa; 
+  --surface-card: #f9fafb; 
+  --surface-ground: #ffffff; 
   --surface-hover: #eef4f5; 
-  --border: #cbdde1; 
+  --border: #e5e7eb; 
   --header-bg: #ffffff; 
   --header-text: #022229; 
   --background: var(--surface-ground); 

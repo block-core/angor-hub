@@ -175,7 +175,7 @@ export class ShareModalComponent {
     }
     getDisplayDescription(): string {
         const data = this.shareData;
-        if (!data?.description) return 'Check this out on Angor Hub';
+        if (!data?.description) return 'Check this out on Angor';
 
         return data.description.length > 100
             ? data.description.substring(0, 100) + '...'
@@ -231,7 +231,7 @@ export class ShareModalComponent {
     shareOnLinkedIn(): void {
         const data = this.shareData;
         const url = this.getNetworkUrl();
-        const title = data?.title || 'Content on Angor Hub';
+        const title = data?.title || 'Content on Angor';
         const summary = this.getDisplayDescription();
         const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(summary)}`;
         window.open(linkedInUrl, '_blank', 'width=520,height=570');
@@ -239,14 +239,14 @@ export class ShareModalComponent {
     shareOnTelegram(): void {
         const data = this.shareData;
         const url = this.getNetworkUrl();
-        const text = `Check out "${data?.title || 'this content'}" on Angor Hub: ${this.getDisplayDescription()}`;
+        const text = `Check out "${data?.title || 'this content'}" on Angor: ${this.getDisplayDescription()}`;
         const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
         window.open(telegramUrl, '_blank');
     }
     shareOnWhatsApp(): void {
         const data = this.shareData;
         const url = this.getNetworkUrl();
-        const text = `Check out *"${data?.title || 'this content'}"* on Angor Hub: ${this.getDisplayDescription()} ${url}`;
+        const text = `Check out *"${data?.title || 'this content'}"* on Angor: ${this.getDisplayDescription()} ${url}`;
         const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
         window.open(whatsappUrl, '_blank');
     }
@@ -254,7 +254,7 @@ export class ShareModalComponent {
     shareOnReddit(): void {
         const data = this.shareData;
         const url = this.getNetworkUrl();
-        const title = `${data?.title || 'Content'} on Angor Hub `;
+        const title = `${data?.title || 'Content'} on Angor `;
         const redditUrl = `https://reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`;
         window.open(redditUrl, '_blank');
     }
@@ -262,7 +262,7 @@ export class ShareModalComponent {
     shareViaEmail(): void {
         const data = this.shareData;
         const url = this.getNetworkUrl();
-        const subject = `Check out "${data?.title || 'this content'}" on Angor Hub`;
+        const subject = `Check out "${data?.title || 'this content'}" on Angor`;
         const body = `Hi,
 
 I wanted to share this interesting ${data?.projectId ? 'project' : 'content'} with you:
