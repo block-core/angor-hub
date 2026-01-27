@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, effect } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
   IndexedProject,
@@ -35,6 +35,7 @@ import { ShareModalComponent, ShareData } from '../../components/share-modal.com
 import { nip19 } from 'nostr-tools';
 import { NostrListService } from '../../services/nostr-list.service';
 import { NostrAuthService } from '../../services/nostr-auth.service';
+import { MetaService } from '../../services/meta.service';
 
 @Component({
   selector: 'app-project',
@@ -103,6 +104,25 @@ export class ProjectComponent implements OnInit, OnDestroy {
   private denyService = inject(DenyService);
   private nostrListService = inject(NostrListService);
   public nostrAuth = inject(NostrAuthService);
+  private metaService = inject(MetaService);
+
+  constructor() {
+    // Update meta tags when project data changes
+    effect(() => {
+      const project = this.project();
+      const shareData = this.shareData();
+
+      if (project && shareData) {
+        this.metaService.updateMetaTags({
+          title: shareData.title,
+          description: shareData.description,
+          image: shareData.imageUrl || 'https://hub.angor.io/assets/angor-hub-social.png',
+          url: shareData.url,
+          type: 'website'
+        });
+      }
+    });
+  }
 
   // Admin controls
   isInDenyList = signal<boolean>(false);

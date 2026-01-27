@@ -6,6 +6,7 @@ import { NetworkService } from '../../services/network.service';
 import { BitcoinUtilsService } from '../../services/bitcoin.service';
 import { UtilsService } from '../../services/utils.service';
 import { TitleService } from '../../services/title.service';
+import { MetaService } from '../../services/meta.service';
 import { DenyService } from '../../services/deny.service';
 import { RouterLink } from '@angular/router';
 import { ExploreStateService } from '../../services/explore-state.service';
@@ -56,6 +57,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   public bitcoin = inject(BitcoinUtilsService);
   private utils = inject(UtilsService);
   private title = inject(TitleService);
+  private metaService = inject(MetaService);
   private denyService = inject(DenyService);
 
 
@@ -253,6 +255,12 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async ngOnInit() {
     this.title.setTitle('Explore');
+    this.metaService.updateMetaTags({
+      title: 'Explore Projects - Angor',
+      description: 'Discover Bitcoin projects on Angor.',
+      image: 'https://hub.angor.io/assets/angor-hub-social.png',
+      url: 'https://hub.angor.io/explore'
+    });
     this.favorites = JSON.parse(localStorage.getItem('angor-hub-favorites') || '[]');
     this.watchForScrollTrigger();
     this.setupProjectObserver();
