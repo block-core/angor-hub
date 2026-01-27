@@ -22,6 +22,7 @@ import { CommonModule } from '@angular/common';
           @if(profile() && profile()!['picture'] && !imageError()) {
             <img
               [src]="profile()!['picture']"
+              loading="lazy"
               alt="User avatar"
               class="w-10 h-10 rounded-full object-cover shadow-sm border-2 border-white dark:border-gray-700 transition-transform hover:scale-105"
               (error)="handleImageError($event)"
