@@ -1,4 +1,5 @@
 import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, effect, signal, computed, Signal, DOCUMENT } from '@angular/core';
+import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
 import { RelayService } from '../../services/relay.service';
 import { IndexedProject, IndexerService } from '../../services/indexer.service';
 import { NetworkService } from '../../services/network.service';
@@ -13,7 +14,8 @@ import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import { IndexerErrorComponent } from '../../components/indexer-error.component';
 import { CommonModule } from '@angular/common';
 import { Location } from '@angular/common';
-import { filter } from 'rxjs/operators';
+import { filter, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Subject, Subscription } from 'rxjs';
 import { AgoPipe } from '../../pipes/ago.pipe';
 import { formatDate } from '@angular/common';
 import { TitleCasePipe } from '@angular/common';
@@ -25,13 +27,14 @@ type FilterType = 'all' | 'active' | 'upcoming' | 'completed';
 @Component({
   selector: 'app-explore',
   standalone: true,
-  imports: [RouterLink, BreadcrumbComponent, IndexerErrorComponent, CommonModule, AgoPipe, TitleCasePipe],
+  imports: [RouterLink, BreadcrumbComponent, IndexerErrorComponent, CommonModule, AgoPipe, TitleCasePipe, ScrollingModule],
   templateUrl: './explore.component.html',
 })
 export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('scrollTrigger') scrollTrigger!: ElementRef;
   @ViewChild('filterBtn') filterBtn!: ElementRef;
   @ViewChild('sortBtn') sortBtn!: ElementRef;
+  @ViewChild(CdkVirtualScrollViewport) virtualScroll!: CdkVirtualScrollViewport;
 
   private observer: IntersectionObserver | null = null;
   private mutationObserver: MutationObserver | null = null;
@@ -55,12 +58,19 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   private title = inject(TitleService);
   private denyService = inject(DenyService);
 
-  
+
   searchTerm = signal<string>('');
   activeFilter = signal<FilterType>('all');
   activeSort = signal<SortType>('default');
 
-  
+  // Debounced search
+  private searchSubject = new Subject<string>();
+  private searchSubscription: Subscription | null = null;
+
+  // Virtual scroll
+  columnsCount = signal<number>(this.getColumnsCount());
+  viewportHeight = signal<number>(this.calculateViewportHeight());
+
   filterOptions: FilterType[] = ['all', 'active', 'upcoming', 'completed'];
   sortOptions: SortType[] = ['default', 'funding', 'endDate', 'investors'];
 
@@ -127,7 +137,17 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     return filtered;
   });
 
-  
+  // Group filtered projects
+  projectRows: Signal<any[][]> = computed(() => {
+    const projects = this.filteredProjects();
+    const cols = this.columnsCount();
+    const rows: any[][] = [];
+    for (let i = 0; i < projects.length; i += cols) {
+      rows.push(projects.slice(i, i + cols));
+    }
+    return rows;
+  });
+
   showFilterDropdown = false;
   showSortDropdown = false;
   showMobileFilters = false;
@@ -135,10 +155,18 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor() {
     effect(() => {
       const projects = this.indexer.projects();
-      
+
     });
 
-    
+    // Set up debounced search 
+    this.searchSubscription = this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe((term) => {
+      this.searchTerm.set(term);
+    });
+
+
     this.relay.projectUpdates.subscribe((event) => {
       const update = JSON.parse(event.content);
       const id = update.projectIdentifier;
@@ -209,6 +237,20 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     return project.projectIdentifier;
   }
 
+  trackByRowIndex(index: number): number {
+    return index;
+  }
+
+  onVirtualScrolled(): void {
+    if (!this.virtualScroll) return;
+    const end = this.virtualScroll.getRenderedRange().end;
+    const total = this.virtualScroll.getDataLength();
+  
+    if (end >= total - 3 && !this.indexer.loading() && !this.indexer.isComplete()) {
+      this.loadMore();
+    }
+  }
+
   async ngOnInit() {
     this.title.setTitle('Explore');
     this.favorites = JSON.parse(localStorage.getItem('angor-hub-favorites') || '[]');
@@ -238,7 +280,25 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   @HostListener('window:resize')
-  onResize() {}
+  onResize() {
+    this.columnsCount.set(this.getColumnsCount());
+    this.viewportHeight.set(this.calculateViewportHeight());
+  }
+
+  private getColumnsCount(): number {
+    if (typeof window === 'undefined') return 1;
+    const width = window.innerWidth;
+    if (width >= 1280) return 4; 
+    if (width >= 1024) return 3; 
+    if (width >= 640) return 2;  
+    return 1;
+  }
+
+  private calculateViewportHeight(): number {
+    if (typeof window === 'undefined') return 600;
+
+    return Math.max(window.innerHeight - 280, 400);
+  }
 
   ngAfterViewInit() {
     this.watchForScrollTrigger();
@@ -252,6 +312,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.indexer.projects().length === 0) this.exploreState.clearState();
     if (this.navigationSubscription) this.navigationSubscription.unsubscribe();
     if (this.routerSubscription) this.routerSubscription.unsubscribe();
+    if (this.searchSubscription) this.searchSubscription.unsubscribe();
     window.removeEventListener('popstate', () => {});
     if (this.projectObserver) this.projectObserver.disconnect();
     this.isLoadingMore = false;
@@ -487,7 +548,12 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onSearchInput(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.searchTerm.set(input.value);
+    this.searchSubject.next(input.value);
+  }
+
+  clearSearch(): void {
+    this.searchTerm.set('');
+    this.searchSubject.next('');
   }
 
   getRandomColor(seed: string): string {

@@ -129,6 +129,7 @@
                 @if (project.metadata?.['banner']) {
                   <img
                     [src]="project.metadata?.['banner']"
+                    loading="lazy"
                     class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     alt="Project banner"
                   />

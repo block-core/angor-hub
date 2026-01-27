@@ -87,6 +87,7 @@
       @if (shouldShowBannerImage()) {
         <img
           [src]="project()?.metadata?.banner"
+          loading="lazy"
           class="w-full h-full object-cover transition-opacity duration-500"
           [class.opacity-0]="!bannerLoaded()"
           [class.opacity-100]="bannerLoaded()"
@@ -132,6 +133,7 @@
                   (click)="showImagePopup = true; selectedImage = project()?.metadata?.['picture'] || null">
                   <img
                     [src]="project()?.metadata?.['picture']"
+                    loading="lazy"
                     class="w-full h-full object-cover transition-all duration-300 group-hover:scale-110"
                     [class.opacity-0]="!profileLoaded()"
                     [class.opacity-100]="profileLoaded()"
