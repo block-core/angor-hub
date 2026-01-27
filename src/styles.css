@@ -112,3 +112,35 @@ body.mobile-menu-open {
 html[data-theme="light"] .custom-modal-border {
   border-color: #cbdde1 !important;
 }
+
+/* CDK Virtual Scroll viewport styles */
+.virtual-scroll-viewport {
+  display: block;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  contain: strict;
+}
+
+.virtual-scroll-viewport .cdk-virtual-scroll-content-wrapper {
+  width: 100%;
+  padding: 0 0 1rem;
+}
+
+.virtual-scroll-viewport::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+}
+
+.virtual-scroll-viewport::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-color);
+  border-radius: var(--scrollbar-size);
+}
+
+.virtual-scroll-viewport::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb-color);
+  border-radius: var(--scrollbar-size);
+}
+
+.virtual-scroll-viewport::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover-color);
+}
