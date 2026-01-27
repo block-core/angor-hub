@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TitleService } from '../../services/title.service';
+import { MetaService } from '../../services/meta.service';
 
 @Component({
   selector: 'app-home',
@@ -129,8 +130,15 @@ import { TitleService } from '../../services/title.service';
 })
 export class HomeComponent implements OnInit {
   private titleService = inject(TitleService);
+  private metaService = inject(MetaService);
 
   async ngOnInit() {
     this.titleService.setTitle('Angor - Decentralized Bitcoin Fundraising');
+    this.metaService.updateMetaTags({
+      title: 'Angor - The Only Bitcoin Protocol For Funding Projects',
+      description: 'Decentralized crowdfunding on Bitcoin.',
+      image: 'https://hub.angor.io/assets/angor-hub-social.png',
+      url: 'https://hub.angor.io'
+    });
   }
 }
