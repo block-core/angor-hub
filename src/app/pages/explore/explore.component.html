@@ -50,7 +50,7 @@
         @if (searchTerm()) {
           <button
             class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text transition-colors duration-300"
-            (click)="searchTerm.set('')"
+            (click)="clearSearch()"
             aria-label="Clear search"
           >
             <span class="material-icons text-base">close</span>
@@ -232,203 +232,221 @@
 
 <div class="container mx-auto px-4 pb-20">
   @if (indexer.loading() && !filteredProjects().length) {
-    <div class="flex justify-center items-center py-16">
-      <div class="w-14 h-14 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+      @for (item of skeletonItems(); track $index) {
+        <div class="bg-surface-card rounded-2xl overflow-hidden shadow-md animate-pulse">
+          <!-- Banner skeleton -->
+          <div class="h-52 bg-surface-hover"></div>
+          <!-- Content skeleton -->
+          <div class="p-5 relative">
+            <!-- Profile skeleton -->
+            <div class="absolute -top-12 left-5 z-10">
+              <div class="w-20 h-20 rounded-full border-4 border-surface-card bg-surface-hover"></div>
+            </div>
+            <div class="pt-3 space-y-3">
+              <!-- Title skeleton -->
+              <div class="h-6 bg-surface-hover rounded w-3/4"></div>
+              <!-- Date skeleton -->
+              <div class="h-4 bg-surface-hover rounded w-1/2"></div>
+              <!-- Description skeleton -->
+              <div class="space-y-2">
+                <div class="h-4 bg-surface-hover rounded w-full"></div>
+                <div class="h-4 bg-surface-hover rounded w-5/6"></div>
+              </div>
+              <!-- Stats skeleton -->
+              <div class="flex justify-between items-center">
+                <div class="h-4 bg-surface-hover rounded w-24"></div>
+                <div class="h-4 bg-surface-hover rounded w-32"></div>
+              </div>
+              <!-- Progress bar skeleton -->
+              <div class="h-3 bg-surface-hover rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (filteredProjects().length === 0) {
+    <div class="text-center py-20 max-w-lg mx-auto animate-in fade-in zoom-in duration-500">
+      <span class="material-icons text-7xl text-text-secondary opacity-50 mb-6">search_off</span>
+      <h2 class="text-3xl font-semibold mb-4 text-text">No Projects Match Your Criteria</h2>
+      <p class="text-text-secondary mb-8 leading-relaxed">
+        Try adjusting your search, filter, or sort options, or check back later for new projects.
+      </p>
+      <button
+        class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold bg-accent text-white shadow-md hover:bg-accent-light hover:-translate-y-0.5 transition-all duration-300 ease-in-out transform"
+        (click)="resetFilters()"
+      >
+        <span class="material-icons text-lg">clear_all</span> Clear Filters & Search
+      </button>
     </div>
   } @else {
-    @if (filteredProjects().length === 0) {
-      <div class="text-center py-20 max-w-lg mx-auto animate-in fade-in zoom-in duration-500">
-        <span class="material-icons text-7xl text-text-secondary opacity-50 mb-6">search_off</span>
-        <h2 class="text-3xl font-semibold mb-4 text-text">No Projects Match Your Criteria</h2>
-        <p class="text-text-secondary mb-8 leading-relaxed">
-          Try adjusting your search, filter, or sort options, or check back later for new projects.
-        </p>
-        <button
-          class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold bg-accent text-white shadow-md hover:bg-accent-light hover:-translate-y-0.5 transition-all duration-300 ease-in-out transform"
-          (click)="resetFilters()"
+    <!-- Project Grid  -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+      @for (project of filteredProjects(); track project.projectIdentifier) {
+        <a
+          [routerLink]="['/project', project.projectIdentifier]"
+          [attr.data-project-id]="project.projectIdentifier"
+          class="block bg-surface-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group relative project-card"
         >
-          <span class="material-icons text-lg">clear_all</span> Clear Filters & Search
-        </button>
-      </div>
-    } @else {
-      <cdk-virtual-scroll-viewport
-        itemSize="452"
-        minBufferPx="900"
-        maxBufferPx="1800"
-        class="virtual-scroll-viewport"
-        [style.height.px]="viewportHeight()"
-        (scrolledIndexChange)="onVirtualScrolled()"
-      >
-        <div
-          *cdkVirtualFor="let row of projectRows(); trackBy: trackByRowIndex"
-          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-6 md:mb-8"
-        >
-          @for (project of row; track project.projectIdentifier) {
-            <a
-              [routerLink]="['/project', project.projectIdentifier]"
-              class="block bg-surface-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group relative project-card"
-            >
+          <!-- Banner Section -->
+          <div class="h-52 relative bg-surface-ground overflow-hidden">
+            @if (shouldShowBannerImage(project)) {
+              <img
+                [src]="project.metadata?.['banner']"
+                loading="lazy"
+                class="w-full h-full object-cover transition-opacity duration-300"
+                [class.opacity-0]="!isBannerImageLoaded(project.projectIdentifier)"
+                [class.opacity-100]="isBannerImageLoaded(project.projectIdentifier)"
+                (error)="handleBannerError(project.projectIdentifier)"
+                (load)="onBannerImageLoad(project.projectIdentifier)"
+                alt="Project banner"
+              />
+              @if (!isBannerImageLoaded(project.projectIdentifier)) {
+                <div class="absolute inset-0 bg-gradient-to-br from-surface-ground via-surface-hover to-surface-ground animate-pulse">
+                  <div class="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent"></div>
+                </div>
+              }
+            } @else {
+              <div
+                class="w-full h-full"
+                [style.background]="'linear-gradient(135deg, ' + getBannerStyle(project) + ', ' + getRandomColor(project.projectIdentifier + 'banner') + ')'"
+              ></div>
+            }
 
-              <div class="h-52 relative bg-surface-ground overflow-hidden">
-                @if (shouldShowBannerImage(project)) {
+            @let statusInfo = getProjectStatus(project);
+            <div class="absolute top-4 right-4 z-10">
+              <div
+                class="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md border"
+                [ngClass]="{
+                  'bg-yellow-500/20 border-yellow-500/30 text-yellow-400': statusInfo.class === 'active',
+                  'bg-blue-500/20 border-blue-500/30 text-blue-400': statusInfo.class === 'upcoming',
+                  'bg-success/20 border-success/30 text-success': statusInfo.class === 'funded',
+                  'bg-warning/20 border-warning/30 text-warning': statusInfo.class === 'failed'
+                }"
+              >
+                <span class="material-icons text-sm">{{ statusInfo.icon }}</span>
+                <span>{{ statusInfo.status }}</span>
+              </div>
+            </div>
+
+            @if (isFavorite(project.projectIdentifier)) {
+              <span
+                class="absolute top-4 left-4 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-surface-card/95 text-primary shadow-lg transition-transform duration-300 group-hover:scale-110"
+              >
+                <span class="material-icons text-lg">bookmark</span>
+              </span>
+            }
+          </div>
+
+          <div class="p-5 relative">
+            <div class="absolute -top-12 left-5 z-10">
+              @if (shouldShowProfileImage(project)) {
+                <div class="relative w-20 h-20 rounded-full border-4 border-surface-card shadow-2xl transition-all duration-300 group-hover:scale-110 group-hover:shadow-primary/30 overflow-hidden">
                   <img
-                    [src]="project.metadata?.['banner']"
+                    [src]="project.metadata?.['picture']"
                     loading="lazy"
-                    class="w-full h-full object-cover transition-opacity duration-300"
-                    [class.opacity-0]="!isBannerImageLoaded(project.projectIdentifier)"
-                    [class.opacity-100]="isBannerImageLoaded(project.projectIdentifier)"
-                    (error)="handleBannerError(project.projectIdentifier)"
-                    (load)="onBannerImageLoad(project.projectIdentifier)"
-                    alt="Project banner"
+                    class="w-full h-full object-cover"
+                    (error)="handleProfileError(project.projectIdentifier)"
+                    (load)="onProfileImageLoad(project.projectIdentifier)"
+                    [class.hidden]="!isProfileImageLoaded(project.projectIdentifier)"
+                    alt="Project profile"
                   />
-                  @if (!isBannerImageLoaded(project.projectIdentifier)) {
-                    <div class="absolute inset-0 bg-gradient-to-br from-surface-ground via-surface-hover to-surface-ground animate-pulse">
-                      <div class="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent"></div>
+                  @if (!isProfileImageLoaded(project.projectIdentifier)) {
+                    <div class="absolute inset-0 bg-surface-ground animate-pulse">
+                      <div class="absolute inset-2 bg-surface-hover rounded-full animate-pulse"></div>
                     </div>
+                  }
+                </div>
+              } @else {
+                <div
+                  class="w-20 h-20 rounded-full border-4 border-surface-card shadow-2xl flex items-center justify-center text-white text-2xl font-bold transition-all duration-300 group-hover:scale-110 group-hover:shadow-primary/30"
+                  [style.background]="'linear-gradient(135deg, ' + getRandomColor(project.projectIdentifier) + ', ' + getRandomColor(project.projectIdentifier + 'alt') + ')'"
+                >
+                  {{ getInitial(project.metadata?.['name'] || project.projectIdentifier) }}
+                </div>
+              }
+            </div>
+
+            <div class="pt-3">
+              <h3
+                class="font-semibold text-lg mb-2 truncate group-hover:text-primary transition-colors duration-300"
+              >
+                @if ((project.metadata?.['name'] ?? '') !== '') {
+                  {{ project.metadata?.['name'] }}
+                } @else {
+                  {{ project.projectIdentifier | slice:0:12 }}...
+                }
+              </h3>
+
+              <div class="flex items-center gap-2 text-xs text-text-secondary mb-3">
+                <span class="material-icons text-sm text-primary">event</span>
+                @if (isProjectNotStarted(project.details?.startDate)) {
+                  @if (project.details) {
+                    <span>Investment starts {{ project.details.startDate | ago }}</span>
+                  }
+                } @else if (isProjectEnded(project.details?.endDate)) {
+                  @if (project.details) {
+                    <span>Investment ended {{ project.details.endDate | ago }}</span>
                   }
                 } @else {
-                  <div
-                    class="w-full h-full"
-                    [style.background]="'linear-gradient(135deg, ' + getBannerStyle(project) + ', ' + getRandomColor(project.projectIdentifier + 'banner') + ')'"
-                  ></div>
+                  @if (project.details) {
+                    <span>Investment {{ getRemainingTimeText(project.details.endDate) }}</span>
+                  } @else {
+                    <span>Ongoing investment</span>
+                  }
                 }
+              </div>
 
-                @let statusInfo = getProjectStatus(project);
-                <div class="absolute top-4 right-4 z-10">
+              <p class="text-sm text-text-secondary mb-4 h-12 line-clamp-2 leading-relaxed">
+                @if ((project.metadata?.['about'] ?? '') !== '') {
+                  {{ project.metadata?.['about'] }}
+                } @else {
+                  <span class="italic opacity-70">No description available</span>
+                }
+              </p>
+
+              <div class="mb-4">
+                <div class="flex justify-between items-center text-xs mb-2 font-medium">
+                  <div class="flex items-center gap-2 text-text-secondary">
+                    <span class="material-icons text-sm text-primary">people</span>
+                    <span class="text-text">{{ project.stats?.investorCount ?? 0 }}</span>
+                    Investors
+                  </div>
+                  <div class="text-text-secondary">
+                    <span class="text-text">{{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}</span>
+                    / {{ bitcoin.toBTC(project.details?.targetAmount ?? 0) }}
+                    {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
+                  </div>
+                </div>
+                @let fundingPercent = getFundingPercentage(project);
+                @let displayWidth = fundingPercent > 100 ? 100 : fundingPercent;
+                <div class="relative h-3 bg-surface-hover rounded-full overflow-hidden">
                   <div
-                    class="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md border"
+                    class="absolute top-0 left-0 h-full rounded-full transition-all duration-700 ease-out"
+                    [style.width.%]="displayWidth"
                     [ngClass]="{
-                      'bg-yellow-500/20 border-yellow-500/30 text-yellow-400': statusInfo.class === 'active',
-                      'bg-blue-500/20 border-blue-500/30 text-blue-400': statusInfo.class === 'upcoming',
-                      'bg-success/20 border-success/30 text-success': statusInfo.class === 'funded',
-                      'bg-warning/20 border-warning/30 text-warning': statusInfo.class === 'failed'
+                      'bg-success': fundingPercent >= 100,
+                      'bg-yellow-500': fundingPercent > 0 && fundingPercent < 100,
+                      'bg-primary': fundingPercent === 0
+                    }"
+                  ></div>
+                  <span
+                    class="absolute top-0 right-2 -mt-5 text-xs font-bold"
+                    [ngClass]="{
+                      'text-success': fundingPercent >= 100,
+                      'text-yellow-500': fundingPercent > 0 && fundingPercent < 100,
+                      'text-primary': fundingPercent === 0
                     }"
                   >
-                    <span class="material-icons text-sm">{{ statusInfo.icon }}</span>
-                    <span>{{ statusInfo.status }}</span>
-                  </div>
-                </div>
-
-                @if (isFavorite(project.projectIdentifier)) {
-                  <span
-                    class="absolute top-4 left-4 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-surface-card/95 text-primary shadow-lg transition-transform duration-300 group-hover:scale-110"
-                  >
-                    <span class="material-icons text-lg">bookmark</span>
+                    {{ fundingPercent }}%
                   </span>
-                }
-              </div>
-
-              <div class="p-5 relative">
-                <div class="absolute -top-12 left-5 z-10">
-                  @if (shouldShowProfileImage(project)) {
-                    <div class="relative w-20 h-20 rounded-full border-4 border-surface-card shadow-2xl transition-all duration-300 group-hover:scale-110 group-hover:shadow-primary/30 overflow-hidden">
-                      <img
-                        [src]="project.metadata?.['picture']"
-                        loading="lazy"
-                        class="w-full h-full object-cover"
-                        (error)="handleProfileError(project.projectIdentifier)"
-                        (load)="onProfileImageLoad(project.projectIdentifier)"
-                        [class.hidden]="!isProfileImageLoaded(project.projectIdentifier)"
-                        alt="Project profile"
-                      />
-                      @if (!isProfileImageLoaded(project.projectIdentifier)) {
-                        <div class="absolute inset-0 bg-surface-ground animate-pulse">
-                          <div class="absolute inset-2 bg-surface-hover rounded-full animate-pulse"></div>
-                        </div>
-                      }
-                    </div>
-                  } @else {
-                    <div
-                      class="w-20 h-20 rounded-full border-4 border-surface-card shadow-2xl flex items-center justify-center text-white text-2xl font-bold transition-all duration-300 group-hover:scale-110 group-hover:shadow-primary/30"
-                      [style.background]="'linear-gradient(135deg, ' + getRandomColor(project.projectIdentifier) + ', ' + getRandomColor(project.projectIdentifier + 'alt') + ')'"
-                    >
-                      {{ getInitial(project.metadata?.['name'] || project.projectIdentifier) }}
-                    </div>
-                  }
-                </div>
-
-                <div class="pt-3">
-                  <h3
-                    class="font-semibold text-lg mb-2 truncate group-hover:text-primary transition-colors duration-300"
-                  >
-                    @if ((project.metadata?.['name'] ?? '') !== '') {
-                      {{ project.metadata?.['name'] }}
-                    } @else {
-                      {{ project.projectIdentifier | slice:0:12 }}...
-                    }
-                  </h3>
-
-                  <div class="flex items-center gap-2 text-xs text-text-secondary mb-3">
-                    <span class="material-icons text-sm text-primary">event</span>
-                    @if (isProjectNotStarted(project.details?.startDate)) {
-                      @if (project.details) {
-                        <span>Investment starts {{ project.details.startDate | ago }}</span>
-                      }
-                    } @else if (isProjectEnded(project.details?.endDate)) {
-                      @if (project.details) {
-                        <span>Investment ended {{ project.details.endDate | ago }}</span>
-                      }
-                    } @else {
-                      @if (project.details) {
-                        <span>Investment {{ getRemainingTimeText(project.details.endDate) }}</span>
-                      } @else {
-                        <span>Ongoing investment</span>
-                      }
-                    }
-                  </div>
-
-                  <p class="text-sm text-text-secondary mb-4 h-12 line-clamp-2 leading-relaxed">
-                    @if ((project.metadata?.['about'] ?? '') !== '') {
-                      {{ project.metadata?.['about'] }}
-                    } @else {
-                      <span class="italic opacity-70">No description available</span>
-                    }
-                  </p>
-
-                  <div class="mb-4">
-                    <div class="flex justify-between items-center text-xs mb-2 font-medium">
-                      <div class="flex items-center gap-2 text-text-secondary">
-                        <span class="material-icons text-sm text-primary">people</span>
-                        <span class="text-text">{{ project.stats?.investorCount ?? 0 }}</span>
-                        Investors
-                      </div>
-                      <div class="text-text-secondary">
-                        <span class="text-text">{{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}</span>
-                        / {{ bitcoin.toBTC(project.details?.targetAmount ?? 0) }}
-                        {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
-                      </div>
-                    </div>
-                    @let fundingPercent = getFundingPercentage(project);
-                    @let displayWidth = fundingPercent > 100 ? 100 : fundingPercent;
-                    <div class="relative h-3 bg-surface-hover rounded-full overflow-hidden">
-                      <div
-                        class="absolute top-0 left-0 h-full rounded-full transition-all duration-700 ease-out"
-                        [style.width.%]="displayWidth"
-                        [ngClass]="{
-                          'bg-success': fundingPercent >= 100,
-                          'bg-yellow-500': fundingPercent > 0 && fundingPercent < 100,
-                          'bg-primary': fundingPercent === 0
-                        }"
-                      ></div>
-                      <span
-                        class="absolute top-0 right-2 -mt-5 text-xs font-bold"
-                        [ngClass]="{
-                          'text-success': fundingPercent >= 100,
-                          'text-yellow-500': fundingPercent > 0 && fundingPercent < 100,
-                          'text-primary': fundingPercent === 0
-                        }"
-                      >
-                        {{ fundingPercent }}%
-                      </span>
-                    </div>
-                  </div>
                 </div>
               </div>
-            </a>
-          }
-        </div>
-
-      </cdk-virtual-scroll-viewport>
+            </div>
+          </div>
+        </a>
+      }
+    </div>
 
       @if (!indexer.isComplete()) {
         @if (indexer.loading()) {
@@ -459,7 +477,6 @@
         </div>
       }
     }
-  }
 </div>
 
 
