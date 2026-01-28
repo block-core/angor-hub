@@ -1,5 +1,4 @@
-import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, effect, signal, computed, Signal, DOCUMENT } from '@angular/core';
-import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
+import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, signal, computed, Signal, DOCUMENT } from '@angular/core';
 import { RelayService } from '../../services/relay.service';
 import { IndexedProject, IndexerService } from '../../services/indexer.service';
 import { NetworkService } from '../../services/network.service';
@@ -14,13 +13,16 @@ import { Router, NavigationEnd } from '@angular/router';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import { IndexerErrorComponent } from '../../components/indexer-error.component';
 import { CommonModule } from '@angular/common';
-import { Location } from '@angular/common';
 import { filter, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Subject, Subscription } from 'rxjs';
 import { AgoPipe } from '../../pipes/ago.pipe';
 import { formatDate } from '@angular/common';
 import { TitleCasePipe } from '@angular/common';
 
+// Constants for configuration values
+const SEARCH_DEBOUNCE_MS = 300;
+const SKELETON_COUNT = 8; // Number of skeleton cards 
+const INTERSECTION_ROOT_MARGIN = '200px'; // Trigger loading 
 
 type SortType = 'default' | 'funding' | 'endDate' | 'investors';
 type FilterType = 'all' | 'active' | 'upcoming' | 'completed';
@@ -28,26 +30,23 @@ type FilterType = 'all' | 'active' | 'upcoming' | 'completed';
 @Component({
   selector: 'app-explore',
   standalone: true,
-  imports: [RouterLink, BreadcrumbComponent, IndexerErrorComponent, CommonModule, AgoPipe, TitleCasePipe, ScrollingModule],
+  imports: [RouterLink, BreadcrumbComponent, IndexerErrorComponent, CommonModule, AgoPipe, TitleCasePipe],
   templateUrl: './explore.component.html',
 })
 export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('scrollTrigger') scrollTrigger!: ElementRef;
   @ViewChild('filterBtn') filterBtn!: ElementRef;
   @ViewChild('sortBtn') sortBtn!: ElementRef;
-  @ViewChild(CdkVirtualScrollViewport) virtualScroll!: CdkVirtualScrollViewport;
 
-  private observer: IntersectionObserver | null = null;
+  private scrollTriggerObserver: IntersectionObserver | null = null;
   private mutationObserver: MutationObserver | null = null;
-  private loadingTimeout: any = null;
+  private loadingTimeout: ReturnType<typeof setTimeout> | null = null;
   private exploreState = inject(ExploreStateService);
   private router = inject(Router);
   private relay = inject(RelayService);
-  private location = inject(Location);
-  private navigationSubscription: any;
-  private routerSubscription: any;
+  private routerSubscription: Subscription | null = null;
   private isBackNavigation = false;
-  private projectObserver: IntersectionObserver | null = null;
+  private projectStatsObserver: IntersectionObserver | null = null;
   private isLoadingMore = false;
   private loadMoreQueued = false;
   private document = inject(DOCUMENT);
@@ -60,6 +59,8 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   private metaService = inject(MetaService);
   private denyService = inject(DenyService);
 
+  // Expose skeleton count
+  readonly SKELETON_COUNT = SKELETON_COUNT;
 
   searchTerm = signal<string>('');
   activeFilter = signal<FilterType>('all');
@@ -69,9 +70,8 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   private searchSubject = new Subject<string>();
   private searchSubscription: Subscription | null = null;
 
-  // Virtual scroll
-  columnsCount = signal<number>(this.getColumnsCount());
-  viewportHeight = signal<number>(this.calculateViewportHeight());
+  // Skeleton array for loading state
+  skeletonItems = computed(() => Array(SKELETON_COUNT).fill(null));
 
   filterOptions: FilterType[] = ['all', 'active', 'upcoming', 'completed'];
   sortOptions: SortType[] = ['default', 'funding', 'endDate', 'investors'];
@@ -82,16 +82,16 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   loadedBannerImages = signal<Set<string>>(new Set<string>());
   loadedProfileImages = signal<Set<string>>(new Set<string>());
 
-  
-  filteredProjects: Signal<any[]> = computed(() => {
+
+  filteredProjects: Signal<IndexedProject[]> = computed(() => {
     const projects = this.indexer.projects();
     const search = this.searchTerm().toLowerCase().trim();
     const filter = this.activeFilter();
     const sort = this.activeSort();
 
-    
+
     let filtered = projects.filter(project => {
-      
+ 
       if (search) {
         const name = (project.metadata?.['name'] || '').toLowerCase();
         const about = (project.metadata?.['about'] || '').toLowerCase();
@@ -101,7 +101,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
 
-      
+    
       if (filter === 'all') {
         return true;
       } else if (filter === 'active') {
@@ -115,18 +115,18 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       return true;
     });
 
-    
+
     if (sort === 'funding') {
       filtered = [...filtered].sort((a, b) => {
         const percentA = this.getFundingPercentage(a);
         const percentB = this.getFundingPercentage(b);
-        return percentB - percentA; 
+        return percentB - percentA;
       });
     } else if (sort === 'endDate') {
       filtered = [...filtered].sort((a, b) => {
         const dateA = a.details?.expiryDate || 0;
         const dateB = b.details?.expiryDate || 0;
-        return dateA - dateB; 
+        return dateA - dateB;
       });
     } else if (sort === 'investors') {
       filtered = [...filtered].sort((a, b) => {
@@ -139,30 +139,14 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     return filtered;
   });
 
-  // Group filtered projects
-  projectRows: Signal<any[][]> = computed(() => {
-    const projects = this.filteredProjects();
-    const cols = this.columnsCount();
-    const rows: any[][] = [];
-    for (let i = 0; i < projects.length; i += cols) {
-      rows.push(projects.slice(i, i + cols));
-    }
-    return rows;
-  });
-
   showFilterDropdown = false;
   showSortDropdown = false;
   showMobileFilters = false;
 
   constructor() {
-    effect(() => {
-      const projects = this.indexer.projects();
-
-    });
-
-    // Set up debounced search 
+    // Set up debounced search
     this.searchSubscription = this.searchSubject.pipe(
-      debounceTime(300),
+      debounceTime(SEARCH_DEBOUNCE_MS),
       distinctUntilChanged()
     ).subscribe((term) => {
       this.searchTerm.set(term);
@@ -218,11 +202,6 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     window.addEventListener('popstate', () => {
       this.isBackNavigation = true;
     });
-
-    effect(() => {
-      console.log(`Filter/Sort changed - Filter: ${this.activeFilter()}, Sort: ${this.activeSort()}, Search: ${this.searchTerm()}`);
-      console.log(`Filtered projects count: ${this.filteredProjects().length}`);
-    });
   }
 
   formatDate(unixTimestamp: number | undefined): string {
@@ -235,22 +214,12 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     await this.indexer.loadMore();
   }
 
-  trackByProjectIdentifier(index: number, project: any): string {
+  trackByProjectIdentifier(index: number, project: IndexedProject): string {
     return project.projectIdentifier;
   }
 
-  trackByRowIndex(index: number): number {
+  trackByIndex(index: number): number {
     return index;
-  }
-
-  onVirtualScrolled(): void {
-    if (!this.virtualScroll) return;
-    const end = this.virtualScroll.getRenderedRange().end;
-    const total = this.virtualScroll.getDataLength();
-  
-    if (end >= total - 3 && !this.indexer.loading() && !this.indexer.isComplete()) {
-      this.loadMore();
-    }
   }
 
   async ngOnInit() {
@@ -263,18 +232,18 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     });
     this.favorites = JSON.parse(localStorage.getItem('angor-hub-favorites') || '[]');
     this.watchForScrollTrigger();
-    this.setupProjectObserver();
+    this.setupProjectStatsObserver();
 
     // Force reload deny list to ensure it's fresh from Nostr
     await this.denyService.reloadDenyList();
 
     if (this.exploreState.hasState && this.indexer.projects().length > 0) {
       this.indexer.restoreOffset(this.exploreState.offset);
-      this.observeProjects();
+      this.observeProjectCards();
     } else {
       this.exploreState.clearState();
       await this.indexer.fetchProjects();
-      this.observeProjects();
+      this.observeProjectCards();
     }
   }
 
@@ -287,46 +256,28 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 50);
   }
 
-  @HostListener('window:resize')
-  onResize() {
-    this.columnsCount.set(this.getColumnsCount());
-    this.viewportHeight.set(this.calculateViewportHeight());
-  }
-
-  private getColumnsCount(): number {
-    if (typeof window === 'undefined') return 1;
-    const width = window.innerWidth;
-    if (width >= 1280) return 4; 
-    if (width >= 1024) return 3; 
-    if (width >= 640) return 2;  
-    return 1;
-  }
-
-  private calculateViewportHeight(): number {
-    if (typeof window === 'undefined') return 600;
-
-    return Math.max(window.innerHeight - 280, 400);
-  }
 
   ngAfterViewInit() {
     this.watchForScrollTrigger();
-    this.observeProjects();
+    this.observeProjectCards();
   }
 
   ngOnDestroy() {
-    if (this.observer) this.observer.disconnect();
+    if (this.scrollTriggerObserver) this.scrollTriggerObserver.disconnect();
     if (this.mutationObserver) this.mutationObserver.disconnect();
+    if (this.projectStatsObserver) this.projectStatsObserver.disconnect();
+
     if (this.loadingTimeout) clearTimeout(this.loadingTimeout);
-    if (this.indexer.projects().length === 0) this.exploreState.clearState();
-    if (this.navigationSubscription) this.navigationSubscription.unsubscribe();
+
     if (this.routerSubscription) this.routerSubscription.unsubscribe();
     if (this.searchSubscription) this.searchSubscription.unsubscribe();
-    window.removeEventListener('popstate', () => {});
-    if (this.projectObserver) this.projectObserver.disconnect();
-    this.isLoadingMore = false;
-    this.loadMoreQueued = false;
+    if (this.indexer.projects().length === 0) this.exploreState.clearState();
+
     this.document.removeEventListener('click', this.closeFilterDropdown);
     this.document.removeEventListener('click', this.closeSortDropdown);
+
+    this.isLoadingMore = false
+    this.loadMoreQueued = false;
   }
 
   private watchForScrollTrigger() {
@@ -345,27 +296,37 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       console.warn('ViewChild scroll trigger not initialized');
       return;
     }
-    const options = { root: null, rootMargin: '100px', threshold: 0.1 };
-    if (this.observer) this.observer.disconnect();
-    this.observer = new IntersectionObserver((entries) => {
+
+    const options: IntersectionObserverInit = {
+      root: null,
+      rootMargin: INTERSECTION_ROOT_MARGIN,
+      threshold: 0.1
+    };
+
+    if (this.scrollTriggerObserver) this.scrollTriggerObserver.disconnect();
+
+    this.scrollTriggerObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting && !this.indexer.loading() && !this.indexer.isComplete()) {
           this.loadMore();
         }
       });
     }, options);
-    this.observer.observe(this.scrollTrigger.nativeElement);
+
+    this.scrollTriggerObserver.observe(this.scrollTrigger.nativeElement);
   }
 
-  private setupProjectObserver() {
-    this.projectObserver = new IntersectionObserver(
+  private setupProjectStatsObserver() {
+    this.projectStatsObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            const projectId = entry.target.getAttribute('data-index');
-            if (projectId !== null) {
-              const project = this.indexer.projects()[parseInt(projectId)];
-              if (project && !project.stats) this.loadProjectStats(project);
+            const projectId = entry.target.getAttribute('data-project-id');
+            if (projectId) {
+              const project = this.indexer.projects().find(p => p.projectIdentifier === projectId);
+              if (project && !project.stats) {
+                this.loadProjectStats(project);
+              }
             }
           }
         });
@@ -378,12 +339,12 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.favorites.includes(projectId);
   }
 
-  private observeProjects() {
+  private observeProjectCards(): void {
     setTimeout(() => {
       document.querySelectorAll('.project-card').forEach((card) => {
-        if (!this.projectObserver) return;
+        if (!this.projectStatsObserver) return;
         if (!card.getAttribute('data-observed')) {
-          this.projectObserver.observe(card);
+          this.projectStatsObserver.observe(card);
           card.setAttribute('data-observed', 'true');
         }
       });
@@ -466,7 +427,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     return { status: 'Active', color: 'text-yellow-500', icon: 'trending_up', class: 'active' };
   }
 
-  async loadMore() {
+  async loadMore(): Promise<void> {
     if (this.isLoadingMore) {
       this.loadMoreQueued = true;
       return;
@@ -475,7 +436,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       try {
         this.isLoadingMore = true;
         await this.indexer.loadMore();
-        this.observeProjects();
+        this.observeProjectCards();
       } finally {
         this.isLoadingMore = false;
         if (this.loadMoreQueued) {
@@ -486,10 +447,10 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  async retryLoadProjects() {
+  async retryLoadProjects(): Promise<void> {
     this.indexer.error.set(null);
     await this.indexer.fetchProjects(true);
-    this.observeProjects();
+    this.observeProjectCards();
   }
 
   setFilter(filter: FilterType): void {
