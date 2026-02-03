@@ -1,110 +1,8 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { NetworkService } from './network.service';
+import { CryptoService, initCrypto, getEcc, getBitcoin, isInitialized } from './crypto.service';
 import * as bip39 from 'bip39';
-import { BIP32Factory } from 'bip32';
-import * as bitcoin from 'bitcoinjs-lib';
-import * as secp from '@noble/secp256k1';
-
-// Create a custom ECC implementation using @noble/secp256k1
-const ecc = {
-  isPoint: (p: Uint8Array): boolean => {
-    try {
-      secp.Point.fromBytes(p);
-      return true;
-    } catch {
-      return false;
-    }
-  },
-  isPrivate: (d: Uint8Array): boolean => {
-    try {
-      const n = BigInt('0x' + Buffer.from(d).toString('hex'));
-      return n > 0n && n < secp.CURVE.n;
-    } catch {
-      return false;
-    }
-  },
-  isXOnlyPoint: (p: Uint8Array): boolean => {
-    try {
-      if (p.length !== 32) return false;
-      const x = BigInt('0x' + Buffer.from(p).toString('hex'));
-      return x > 0n && x < secp.CURVE.p;
-    } catch {
-      return false;
-    }
-  },
-  xOnlyPointAddTweak: (p: Uint8Array, tweak: Uint8Array): { parity: 0 | 1; xOnlyPubkey: Uint8Array } | null => {
-    try {
-      // For x-only points, assume even parity
-      const fullPoint = new Uint8Array(33);
-      fullPoint[0] = 0x02;
-      fullPoint.set(p, 1);
-      const point = secp.Point.fromBytes(fullPoint);
-      const tweakBigInt = BigInt('0x' + Buffer.from(tweak).toString('hex'));
-      const tweakPoint = secp.Point.BASE.multiply(tweakBigInt);
-      const result = point.add(tweakPoint);
-      const compressed = result.toBytes(true);
-      const parity = compressed[0] === 0x02 ? 0 : 1;
-      return {
-        parity: parity as 0 | 1,
-        xOnlyPubkey: compressed.slice(1)
-      };
-    } catch {
-      return null;
-    }
-  },
-  pointFromScalar: (d: Uint8Array, compressed?: boolean): Uint8Array | null => {
-    try {
-      const pubKey = secp.getPublicKey(d, compressed ?? true);
-      return pubKey;
-    } catch {
-      return null;
-    }
-  },
-  pointCompress: (p: Uint8Array, compressed?: boolean): Uint8Array => {
-    const point = secp.Point.fromBytes(p);
-    return point.toBytes(compressed ?? true);
-  },
-  pointAddScalar: (p: Uint8Array, tweak: Uint8Array, compressed?: boolean): Uint8Array | null => {
-    try {
-      const point = secp.Point.fromBytes(p);
-      const tweakBigInt = BigInt('0x' + Buffer.from(tweak).toString('hex'));
-      const tweakPoint = secp.Point.BASE.multiply(tweakBigInt);
-      const result = point.add(tweakPoint);
-      return result.toBytes(compressed ?? true);
-    } catch {
-      return null;
-    }
-  },
-  privateAdd: (d: Uint8Array, tweak: Uint8Array): Uint8Array | null => {
-    try {
-      const n1 = BigInt('0x' + Buffer.from(d).toString('hex'));
-      const n2 = BigInt('0x' + Buffer.from(tweak).toString('hex'));
-      const sum = (n1 + n2) % secp.CURVE.n;
-      if (sum === 0n) return null;
-      const hex = sum.toString(16).padStart(64, '0');
-      return Buffer.from(hex, 'hex');
-    } catch {
-      return null;
-    }
-  },
-  sign: (h: Uint8Array, d: Uint8Array): Uint8Array => {
-    const sig = secp.sign(h, d, { lowS: true });
-    return sig.toCompactRawBytes();
-  },
-  verify: (h: Uint8Array, Q: Uint8Array, signature: Uint8Array): boolean => {
-    try {
-      const sig = secp.Signature.fromCompact(signature);
-      return secp.verify(sig, h, Q, { lowS: true });
-    } catch {
-      return false;
-    }
-  }
-};
-
-const bip32 = BIP32Factory(ecc);
-
-// Initialize ECC library for bitcoinjs-lib
-bitcoin.initEccLib(ecc as Parameters<typeof bitcoin.initEccLib>[0]);
+import { BIP32Factory, BIP32Interface } from 'bip32';
 
 export interface WalletData {
   mnemonic: string;
@@ -126,21 +24,28 @@ export interface StoredWallet {
 })
 export class WalletService {
   private network = inject(NetworkService);
+  private cryptoService = inject(CryptoService);
 
   wallet = signal<WalletData | null>(null);
   loading = signal<boolean>(false);
   error = signal<string | null>(null);
 
   private readonly STORAGE_KEY = 'angor-invest-wallet';
+  private bip32Instance: ReturnType<typeof BIP32Factory> | null = null;
 
-  private getNetwork(): bitcoin.Network {
+  private async ensureInitialized(): Promise<void> {
+    await this.cryptoService.ensureInitialized();
+    if (!this.bip32Instance) {
+      this.bip32Instance = BIP32Factory(getEcc());
+    }
+  }
+
+  private getNetwork() {
+    const bitcoin = getBitcoin();
     return this.network.isMain() ? bitcoin.networks.bitcoin : bitcoin.networks.testnet;
   }
 
   private getDerivationPath(): string {
-    // BIP84 for native segwit
-    // mainnet: m/84'/0'/0'/0/0
-    // testnet: m/84'/1'/0'/0/0
     return this.network.isMain() ? "m/84'/0'/0'/0/0" : "m/84'/1'/0'/0/0";
   }
 
@@ -149,7 +54,7 @@ export class WalletService {
     this.error.set(null);
 
     try {
-      // Generate a new mnemonic (12 words)
+      await this.ensureInitialized();
       const mnemonic = bip39.generateMnemonic(128);
       return await this.restoreWallet(mnemonic);
     } catch (err) {
@@ -166,18 +71,17 @@ export class WalletService {
     this.error.set(null);
 
     try {
-      // Validate mnemonic
+      await this.ensureInitialized();
+
       if (!bip39.validateMnemonic(mnemonic)) {
         throw new Error('Invalid mnemonic phrase');
       }
 
-      // Generate seed from mnemonic
       const seed = await bip39.mnemonicToSeed(mnemonic);
+      const bitcoin = getBitcoin();
+      const network = this.getNetwork();
 
-      // Create HD wallet from seed
-      const root = bip32.fromSeed(Buffer.from(seed), this.getNetwork());
-
-      // Derive the key using the BIP84 path
+      const root = this.bip32Instance!.fromSeed(Buffer.from(seed), network);
       const path = this.getDerivationPath();
       const child = root.derivePath(path);
 
@@ -185,10 +89,9 @@ export class WalletService {
         throw new Error('Failed to derive private key');
       }
 
-      // Create P2WPKH (native segwit) address
       const { address } = bitcoin.payments.p2wpkh({
         pubkey: Buffer.from(child.publicKey),
-        network: this.getNetwork()
+        network
       });
 
       if (!address) {
@@ -228,7 +131,7 @@ export class WalletService {
 
   saveWalletToStorage(mnemonic: string, address: string): void {
     const storedWallet: StoredWallet = {
-      encryptedMnemonic: btoa(mnemonic), // Simple base64 encoding 
+      encryptedMnemonic: btoa(mnemonic),
       address,
       createdAt: Date.now(),
       network: this.network.getNetwork()
@@ -266,20 +169,24 @@ export class WalletService {
     };
   }
 
-  deriveNextAddress(index: number): string | null {
+  async deriveNextAddress(index: number): Promise<string | null> {
     const walletData = this.wallet();
     if (!walletData) return null;
 
     try {
-      const seed = bip39.mnemonicToSeedSync(walletData.mnemonic);
-      const root = bip32.fromSeed(Buffer.from(seed), this.getNetwork());
+      await this.ensureInitialized();
 
+      const seed = bip39.mnemonicToSeedSync(walletData.mnemonic);
+      const bitcoin = getBitcoin();
+      const network = this.getNetwork();
+
+      const root = this.bip32Instance!.fromSeed(Buffer.from(seed), network);
       const basePath = this.network.isMain() ? "m/84'/0'/0'/0" : "m/84'/1'/0'/0";
       const child = root.derivePath(`${basePath}/${index}`);
 
       const { address } = bitcoin.payments.p2wpkh({
         pubkey: Buffer.from(child.publicKey),
-        network: this.getNetwork()
+        network
       });
 
       return address || null;

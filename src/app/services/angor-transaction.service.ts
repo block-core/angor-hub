@@ -3,79 +3,7 @@ import { NetworkService } from './network.service';
 import { MempoolService, UTXO } from './mempool.service';
 import { WalletService } from './wallet.service';
 import { ProjectUpdate } from './relay.service';
-import * as bitcoin from 'bitcoinjs-lib';
-import * as secp from '@noble/secp256k1';
-
-// Create a custom ECC implementation using @noble/secp256k1
-const ecc = {
-  isPoint: (p: Uint8Array): boolean => {
-    try {
-      secp.Point.fromBytes(p);
-      return true;
-    } catch {
-      return false;
-    }
-  },
-  isPrivate: (d: Uint8Array): boolean => {
-    try {
-      const n = BigInt('0x' + Buffer.from(d).toString('hex'));
-      return n > 0n && n < secp.CURVE.n;
-    } catch {
-      return false;
-    }
-  },
-  isXOnlyPoint: (p: Uint8Array): boolean => {
-    try {
-      if (p.length !== 32) return false;
-      const x = BigInt('0x' + Buffer.from(p).toString('hex'));
-      return x > 0n && x < secp.CURVE.p;
-    } catch {
-      return false;
-    }
-  },
-  xOnlyPointAddTweak: (p: Uint8Array, tweak: Uint8Array): { parity: 0 | 1; xOnlyPubkey: Uint8Array } | null => {
-    try {
-      const fullPoint = new Uint8Array(33);
-      fullPoint[0] = 0x02;
-      fullPoint.set(p, 1);
-      const point = secp.Point.fromBytes(fullPoint);
-      const tweakBigInt = BigInt('0x' + Buffer.from(tweak).toString('hex'));
-      const tweakPoint = secp.Point.BASE.multiply(tweakBigInt);
-      const result = point.add(tweakPoint);
-      const compressed = result.toBytes(true);
-      const parity = compressed[0] === 0x02 ? 0 : 1;
-      return {
-        parity: parity as 0 | 1,
-        xOnlyPubkey: compressed.slice(1)
-      };
-    } catch {
-      return null;
-    }
-  },
-  pointFromScalar: (d: Uint8Array, compressed?: boolean): Uint8Array | null => {
-    try {
-      const pubKey = secp.getPublicKey(d, compressed ?? true);
-      return pubKey;
-    } catch {
-      return null;
-    }
-  },
-  sign: (h: Uint8Array, d: Uint8Array): Uint8Array => {
-    const sig = secp.sign(h, d, { lowS: true });
-    return sig.toCompactRawBytes();
-  },
-  verify: (h: Uint8Array, Q: Uint8Array, signature: Uint8Array): boolean => {
-    try {
-      const sig = secp.Signature.fromCompact(signature);
-      return secp.verify(sig, h, Q, { lowS: true });
-    } catch {
-      return false;
-    }
-  }
-};
-
-// Initialize ECC library for bitcoinjs-lib
-bitcoin.initEccLib(ecc as Parameters<typeof bitcoin.initEccLib>[0]);
+import { CryptoService, getEcc, getBitcoin } from './crypto.service';
 
 export interface InvestmentParams {
   projectDetails: ProjectUpdate;
@@ -111,11 +39,17 @@ export class AngorTransactionService {
   private network = inject(NetworkService);
   private mempool = inject(MempoolService);
   private walletService = inject(WalletService);
+  private cryptoService = inject(CryptoService);
 
   building = signal<boolean>(false);
   error = signal<string | null>(null);
 
-  private getNetwork(): bitcoin.Network {
+  private async ensureInitialized(): Promise<void> {
+    await this.cryptoService.ensureInitialized();
+  }
+
+  private getNetwork() {
+    const bitcoin = getBitcoin();
     return this.network.isMain() ? bitcoin.networks.bitcoin : bitcoin.networks.testnet;
   }
 
@@ -139,7 +73,7 @@ export class AngorTransactionService {
    * Calculate the required fee for a transaction
    */
   calculateFee(inputCount: number, outputCount: number, feeRate: number): number {
-
+    
     const estimatedVbytes = 10 + (inputCount * 68) + (outputCount * 31);
     return Math.ceil(estimatedVbytes * feeRate);
   }
@@ -153,6 +87,8 @@ export class AngorTransactionService {
     this.error.set(null);
 
     try {
+      await this.ensureInitialized();
+
       const { projectDetails, investmentAmount, utxo, feeRate } = params;
       const keyPair = this.walletService.getKeyPair();
 
@@ -160,6 +96,8 @@ export class AngorTransactionService {
         throw new Error('No wallet available');
       }
 
+      const bitcoin = getBitcoin();
+      const ecc = getEcc();
       const network = this.getNetwork();
 
       // Create the transaction builder
@@ -247,10 +185,9 @@ export class AngorTransactionService {
 
   /**
    * Create the founder recovery script for Angor investments
-   * This is a timelocked script that allows recovery after the project ends
    */
   private createFounderRecoveryScript(founderRecoveryKey: string, _founderKey: string): Buffer {
-
+    const bitcoin = getBitcoin();
     const founderRecoveryPubkey = Buffer.from(founderRecoveryKey, 'hex');
 
     const { output } = bitcoin.payments.p2wpkh({
@@ -275,21 +212,19 @@ export class AngorTransactionService {
     const outputs: { address: string; amount: number }[] = [];
     const stages = projectDetails.stages || [];
 
-    // Calculate amount for each stage based on percentage
     let totalAllocated = 0;
 
     for (const stage of stages) {
       const stageAmount = Math.floor((investmentAmount * stage.amountToRelease) / 100);
       if (stageAmount > 0) {
         outputs.push({
-          address: '', // Will be calculated based on stage script
+          address: '',
           amount: stageAmount
         });
         totalAllocated += stageAmount;
       }
     }
 
-    // Any remainder goes to the first stage
     const remainder = investmentAmount - totalAllocated;
     if (remainder > 0 && outputs.length > 0) {
       outputs[0].amount += remainder;
@@ -300,7 +235,6 @@ export class AngorTransactionService {
 
   /**
    * Simplified investment transaction for direct investment
-   * This creates a basic transaction to the founder's address
    */
   async buildSimpleInvestmentTransaction(
     founderAddress: string,
@@ -312,18 +246,19 @@ export class AngorTransactionService {
     this.error.set(null);
 
     try {
+      await this.ensureInitialized();
+
       const keyPair = this.walletService.getKeyPair();
 
       if (!keyPair) {
         throw new Error('No wallet available');
       }
 
+      const bitcoin = getBitcoin();
+      const ecc = getEcc();
       const network = this.getNetwork();
-
-      // Create the transaction builder
       const psbt = new bitcoin.Psbt({ network });
 
-      // Add the input
       psbt.addInput({
         hash: utxo.txid,
         index: utxo.vout,
@@ -336,21 +271,17 @@ export class AngorTransactionService {
         }
       });
 
-      // Calculate fee (1 input, 2 outputs)
       const fee = this.calculateFee(1, 2, feeRate);
 
-      // Validate we have enough funds
       if (utxo.value < investmentAmount + fee) {
         throw new Error(`Insufficient funds. Need ${investmentAmount + fee} sats, have ${utxo.value} sats`);
       }
 
-      // Add investment output to founder
       psbt.addOutput({
         address: founderAddress,
         value: BigInt(investmentAmount)
       });
 
-      // Add change output
       const changeAmount = utxo.value - investmentAmount - fee;
       if (changeAmount > 546) {
         const walletData = this.walletService.wallet();
@@ -362,7 +293,6 @@ export class AngorTransactionService {
         }
       }
 
-      // Sign the transaction
       psbt.signInput(0, {
         publicKey: keyPair.publicKey,
         sign: (hash: Buffer) => {
@@ -370,7 +300,6 @@ export class AngorTransactionService {
         }
       });
 
-      // Finalize and extract
       psbt.finalizeAllInputs();
       const tx = psbt.extractTransaction();
 
