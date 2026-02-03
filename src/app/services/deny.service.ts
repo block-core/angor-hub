@@ -1,6 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { NostrListService } from './nostr-list.service';
-import { environment } from '../../environment';
+import { HubConfigService } from './hub-config.service';
 
 @Injectable({
   providedIn: 'root',
@@ -10,9 +10,8 @@ export class DenyService {
   private denyList = signal<string[]>([]);
   private loaded = signal<boolean>(false);
   private loadingPromise: Promise<void> | null = null;
-  
-  // Nostr admin pubkeys that manage deny lists (from environment)
-  private adminPubkeys: string[] = environment.adminPubkeys;
+
+  private hubConfig = inject(HubConfigService);
 
   constructor(private nostrListService: NostrListService) {}
 
@@ -40,11 +39,12 @@ export class DenyService {
           // Continue with Nostr lists even if GitHub fails
         }
 
-        // Load from Nostr lists if admin pubkeys are configured
-        if (this.adminPubkeys.length > 0) {
+        // Load from Nostr lists using admin pubkeys from HubConfigService
+        const adminPubkeys = this.hubConfig.getAdminPubkeys();
+        if (adminPubkeys.length > 0) {
           try {
-            console.log('[DenyService] Loading from Nostr with admin pubkeys:', this.adminPubkeys);
-            const nostrDenied = await this.nostrListService.getAllDeniedProjects(this.adminPubkeys);
+            console.log('[DenyService] Loading from Nostr with admin pubkeys:', adminPubkeys);
+            const nostrDenied = await this.nostrListService.getAllDeniedProjects(adminPubkeys);
             nostrDenied.forEach(id => allDeniedProjects.add(id));
             console.log('[DenyService] Nostr deny lists loaded:', nostrDenied.length, 'entries:', nostrDenied);
           } catch (error) {
@@ -59,8 +59,12 @@ export class DenyService {
         const combinedList = Array.from(allDeniedProjects);
         this.denyList.set(combinedList);
         this.loaded.set(true);
+
+        // Update HubConfigService with the deny list for quick lookups
+        this.hubConfig.updateDeniedProjects(combinedList);
+
         console.log('Total deny list loaded:', combinedList.length, 'entries');
-        
+
       } catch (error) {
         console.error('Error loading deny list:', error);
         this.denyList.set([]);
@@ -73,20 +77,10 @@ export class DenyService {
   }
 
   /**
-   * Set admin pubkeys that manage Nostr deny lists
-   */
-  setAdminPubkeys(pubkeys: string[]): void {
-    this.adminPubkeys = pubkeys;
-    // Reset loaded state to force reload with new pubkeys
-    this.loaded.set(false);
-    this.loadingPromise = null;
-  }
-
-  /**
-   * Get configured admin pubkeys
+   * Get configured admin pubkeys from HubConfigService
    */
   getAdminPubkeys(): string[] {
-    return [...this.adminPubkeys];
+    return this.hubConfig.getAdminPubkeys();
   }
 
   /**
