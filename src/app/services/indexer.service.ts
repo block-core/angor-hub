@@ -3,6 +3,8 @@ import { ProfileUpdate, ProjectUpdate, RelayService } from './relay.service';
 import { NDKEvent, NDKUserProfile } from '@nostr-dev-kit/ndk';
 import { NetworkService } from './network.service';
 import { DenyService } from './deny.service';
+import { FeaturedService } from './featured.service';
+import { HubConfigService } from './hub-config.service';
 import { ExternalIdentity } from '../models/models';
 
 export interface IndexerConfig {
@@ -103,6 +105,8 @@ export class IndexerService {
   private relay = inject(RelayService);
   private readonly pageSize = 100;
   private denyService = inject(DenyService);
+  private featuredService = inject(FeaturedService);
+  private hubConfig = inject(HubConfigService);
 
   public loading = signal<boolean>(false);
   public projects = signal<IndexedProject[]>([]);
@@ -398,7 +402,14 @@ export class IndexerService {
     }
 
     try {
-      await this.denyService.loadDenyList();
+      // Load both deny list and whitelist for hub mode filtering
+      await Promise.all([
+        this.denyService.loadDenyList(),
+        this.featuredService.loadFeaturedProjects()
+      ]);
+
+      // Mark lists as loaded in hub config
+      this.hubConfig.setListsLoaded(true);
 
       this.loading.set(true);
       this.error.set(null);
@@ -433,15 +444,24 @@ export class IndexerService {
 
       if (Array.isArray(response) && response.length > 0) {
         const filteredResponse: IndexedProject[] = [];
+        const hubMode = this.hubConfig.hubMode();
+
         for (const item of response) {
-          const isDenied = await this.denyService.isEventDenied(item.projectIdentifier);
-          if (!isDenied) {
+          // Use HubConfigService for unified filtering based on hub mode
+          const shouldShow = this.hubConfig.shouldShowProject(item.projectIdentifier);
+          if (shouldShow) {
             filteredResponse.push(item);
           }
         }
 
         if (filteredResponse.length === 0 && response.length > 0) {
-          console.log(`All ${response.length} fetched projects were denied.`);
+          if (hubMode === 'whitelist') {
+            console.log(`[IndexerService] All ${response.length} projects filtered out (whitelist mode - no matching whitelisted projects)`);
+          } else {
+            console.log(`[IndexerService] All ${response.length} fetched projects were denied.`);
+          }
+        } else {
+          console.log(`[IndexerService] Showing ${filteredResponse.length}/${response.length} projects (${hubMode} mode)`);
         }
 
         if (isFirstLoad) {

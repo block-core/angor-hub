@@ -6,11 +6,12 @@ import { NetworkService } from '../../services/network.service';
 import { ThemeService } from '../../services/theme.service';
 import { RelayService } from '../../services/relay.service';
 import { IndexerService, IndexerConfig, IndexerEntry } from '../../services/indexer.service';
+import { HubConfigService, HubMode } from '../../services/hub-config.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { environment } from '../../../environment';
 
-type SettingsTabId = 'appearance' | 'network' | 'relays' | 'indexers' | 'about';
+type SettingsTabId = 'appearance' | 'network' | 'relays' | 'indexers' | 'hub' | 'about';
 
 interface SettingsTab {
   id: SettingsTabId;
@@ -41,7 +42,8 @@ export class SettingsComponent implements OnInit {
   public themeService = inject(ThemeService);
   public relayService = inject(RelayService);
   public indexerService = inject(IndexerService);
-  
+  public hubConfigService = inject(HubConfigService);
+
   appVersion = environment.appVersion || '1.0.0';
 
   activeTab = signal<SettingsTabId>('appearance');
@@ -51,8 +53,13 @@ export class SettingsComponent implements OnInit {
     { id: 'network', label: 'Network', icon: 'public' },
     { id: 'relays', label: 'Relays', icon: 'settings_input_antenna' },
     { id: 'indexers', label: 'Indexers', icon: 'storage' },
+    { id: 'hub', label: 'Hub', icon: 'hub' },
     { id: 'about', label: 'About', icon: 'info' }
   ];
+
+  // Hub configuration
+  newAdminPubkey = signal<string>('');
+  hubSaveMessage = signal<string>('');
 
   currentTheme = computed(() => {
     return this.themeService.currentTheme();
@@ -231,7 +238,64 @@ export class SettingsComponent implements OnInit {
   }
   
   isValidIndexerUrl(url: string): boolean {
-    
+
     return (url.startsWith('http://') || url.startsWith('https://')) && url.length > (url.startsWith('https://') ? 8 : 7);
+  }
+
+  getHubMode(): HubMode {
+    return this.hubConfigService.hubMode();
+  }
+
+  setHubMode(mode: HubMode): void {
+    this.hubConfigService.setHubMode(mode);
+    this.hubSaveMessage.set(`Hub mode changed to ${mode}`);
+    setTimeout(() => this.hubSaveMessage.set(''), 3000);
+  }
+
+  getAdminPubkeys(): string[] {
+    return this.hubConfigService.getAdminPubkeys();
+  }
+
+  addAdminPubkey(): void {
+    const pubkey = this.newAdminPubkey().trim();
+    if (!pubkey) {
+      this.hubSaveMessage.set('Please enter a pubkey');
+      return;
+    }
+
+    if (!this.isValidPubkey(pubkey)) {
+      this.hubSaveMessage.set('Invalid pubkey format (must be 64 hex characters)');
+      return;
+    }
+
+    if (this.hubConfigService.addAdminPubkey(pubkey)) {
+      this.newAdminPubkey.set('');
+      this.hubSaveMessage.set('Admin pubkey added successfully');
+      setTimeout(() => this.hubSaveMessage.set(''), 3000);
+    } else {
+      this.hubSaveMessage.set('Pubkey already exists');
+    }
+  }
+
+  removeAdminPubkey(pubkey: string): void {
+    if (this.hubConfigService.removeAdminPubkey(pubkey)) {
+      this.hubSaveMessage.set('Admin pubkey removed');
+      setTimeout(() => this.hubSaveMessage.set(''), 3000);
+    }
+  }
+
+  resetHubToDefaults(): void {
+    this.hubConfigService.resetToDefaults();
+    this.hubSaveMessage.set('Reset to default configuration');
+    setTimeout(() => this.hubSaveMessage.set(''), 3000);
+  }
+
+  isValidPubkey(pubkey: string): boolean {
+    // Nostr pubkeys are 64 character hex strings
+    return /^[0-9a-fA-F]{64}$/.test(pubkey);
+  }
+
+  formatPubkey(pubkey: string): string {
+    return this.hubConfigService.formatPubkey(pubkey);
   }
 }

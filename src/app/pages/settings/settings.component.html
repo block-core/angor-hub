@@ -59,6 +59,14 @@
       </div>
       <div
         class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text flex-1 md:flex-none justify-center md:justify-start"
+        [class.bg-accent]="activeTab() === 'hub'" [class.text-white]="activeTab() === 'hub'"
+        (click)="setActiveTab('hub')">
+        <span class="material-icons text-text-secondary transition duration-200 ease-in-out"
+          [class.text-white]="activeTab() === 'hub'">hub</span>
+        <span class="hidden md:inline">Hub</span>
+      </div>
+      <div
+        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text flex-1 md:flex-none justify-center md:justify-start"
         [class.bg-accent]="activeTab() === 'about'" [class.text-white]="activeTab() === 'about'"
         (click)="setActiveTab('about')">
         <span class="material-icons text-text-secondary transition duration-200 ease-in-out"
@@ -543,6 +551,138 @@
             </div>
             }
           </div>
+        </div>
+      </div>
+      }
+
+
+      @if (activeTab() === 'hub') {
+      <div class="bg-surface-card rounded-xl p-5 sm:p-6 shadow-md">
+        <h2 class="flex items-center gap-3 mt-0 mb-6 text-2xl font-semibold text-text">
+          <span class="material-icons text-accent text-3xl">hub</span>
+          Hub Configuration
+        </h2>
+
+        <!-- Hub Mode Selection -->
+        <div class="pt-5 border-t border-border">
+          <label class="block text-lg font-semibold mb-2 text-text">Hub Mode</label>
+          <p class="text-text-secondary mb-5 text-sm leading-normal">
+            Choose how projects are filtered on this hub. This setting determines which projects are visible to users.
+          </p>
+
+          <div class="flex flex-col gap-4">
+            <button
+              class="flex items-center gap-4 p-4 rounded-lg bg-surface-ground border-2 border-transparent cursor-pointer transition duration-200 ease-in-out text-left w-full hover:border-accent/50 hover:-translate-y-0.5 hover:shadow-md"
+              [class.!border-accent]="getHubMode() === 'blacklist'" [class.ring-2]="getHubMode() === 'blacklist'"
+              [class.ring-accent]="getHubMode() === 'blacklist'" (click)="setHubMode('blacklist')"
+              [attr.aria-pressed]="getHubMode() === 'blacklist'">
+              <div
+                class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-red-500/10 text-red-500 border border-red-500/20">
+                <span class="material-icons text-3xl">block</span>
+              </div>
+              <div class="flex-1">
+                <span class="block font-semibold mb-1 text-text">Blacklist Mode</span>
+                <span class="text-sm text-text-secondary">Show all projects except those in the deny list. This is the default behavior.</span>
+              </div>
+              @if (getHubMode() === 'blacklist') {
+              <span class="material-icons text-accent ml-auto text-2xl">check_circle</span>
+              }
+            </button>
+
+            <button
+              class="flex items-center gap-4 p-4 rounded-lg bg-surface-ground border-2 border-transparent cursor-pointer transition duration-200 ease-in-out text-left w-full hover:border-accent/50 hover:-translate-y-0.5 hover:shadow-md"
+              [class.!border-accent]="getHubMode() === 'whitelist'" [class.ring-2]="getHubMode() === 'whitelist'"
+              [class.ring-accent]="getHubMode() === 'whitelist'" (click)="setHubMode('whitelist')"
+              [attr.aria-pressed]="getHubMode() === 'whitelist'">
+              <div
+                class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-green-500/10 text-green-500 border border-green-500/20">
+                <span class="material-icons text-3xl">verified</span>
+              </div>
+              <div class="flex-1">
+                <span class="block font-semibold mb-1 text-text">Whitelist Mode</span>
+                <span class="text-sm text-text-secondary">Show only projects that are in the featured/whitelist. Use for curated hubs.</span>
+              </div>
+              @if (getHubMode() === 'whitelist') {
+              <span class="material-icons text-accent ml-auto text-2xl">check_circle</span>
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- Admin Pubkeys Section -->
+        <div class="pt-5 mt-6 border-t border-border">
+          <label class="block text-lg font-semibold mb-2 text-text">Admin Public Keys</label>
+          <p class="text-text-secondary mb-5 text-sm leading-normal">
+            Configure which Nostr public keys are used to manage the deny list and whitelist.
+            These admins can add or remove projects from the lists.
+          </p>
+
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-text-secondary text-sm">{{ getAdminPubkeys().length }} admin(s) configured</span>
+            <button
+              class="flex items-center dark:text-white text-gray-700 gap-2 bg-none border-none text-sm text-accent cursor-pointer p-2 rounded transition duration-200 ease-in-out hover:bg-accent/10"
+              (click)="resetHubToDefaults()">
+              <span class="material-icons text-lg">restart_alt</span>
+              Reset to defaults
+            </button>
+          </div>
+
+          <div class="max-h-72 overflow-y-auto mb-6 border border-border rounded-lg bg-surface-ground">
+            @if (getAdminPubkeys().length === 0) {
+            <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary min-h-[120px]">
+              <span class="material-icons text-4xl mb-4 opacity-50">person_off</span>
+              <p>No admin pubkeys configured. Add a pubkey or reset to defaults.</p>
+            </div>
+            }
+
+            @for (pubkey of getAdminPubkeys(); track pubkey) {
+            <div
+              class="flex items-center justify-between py-3 px-4 border-b border-border last:border-b-0 hover:bg-surface-hover transition-colors duration-150 ease-in-out"
+              [@fadeInOut]>
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="material-icons text-accent flex-shrink-0">key</span>
+                <span class="break-all font-mono text-sm text-text truncate" [title]="pubkey">{{ formatPubkey(pubkey) }}</span>
+              </div>
+              <button
+                class="bg-none border-none text-text-secondary w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition duration-200 ease-in-out flex-shrink-0 hover:bg-red-500/10 hover:text-warning"
+                (click)="removeAdminPubkey(pubkey)" title="Remove admin">
+                <span class="material-icons text-lg">close</span>
+              </button>
+            </div>
+            }
+          </div>
+
+          <div class="mb-3 w-full">
+            <div
+              class="flex rounded-lg overflow-hidden shadow-sm border border-border transition duration-300 ease-in-out w-full flex-nowrap relative focus-within:ring-2 focus-within:ring-accent focus-within:border-accent bg-surface-ground">
+              <div class="flex-1 relative min-w-0">
+                <span
+                  class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none z-[1]">person_add</span>
+                <input type="text" placeholder="64-character hex pubkey"
+                  class="w-full py-3 pl-10 pr-4 bg-transparent border-none focus:outline-none text-text font-mono text-sm"
+                  [value]="newAdminPubkey()" (input)="newAdminPubkey.set($any($event.target).value)" (keyup.enter)="addAdminPubkey()" />
+              </div>
+              <button
+                class="px-4 bg-accent text-white border-none flex items-center justify-center hover:bg-accent-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                [disabled]="!newAdminPubkey() || !isValidPubkey(newAdminPubkey())" (click)="addAdminPubkey()">
+                <span class="material-icons">add</span>
+              </button>
+            </div>
+          </div>
+
+          @if (newAdminPubkey() && !isValidPubkey(newAdminPubkey())) {
+          <div class="flex items-center gap-2 text-warning text-sm mb-4" [@fadeInOut]>
+            <span class="material-icons text-lg">error</span>
+            Must be a valid 64-character hex pubkey
+          </div>
+          }
+
+          @if (hubSaveMessage()) {
+          <div class="mt-4 text-sm p-3 rounded bg-green-500/10 text-success text-center" [@fadeInOut]>
+            <span class="material-icons align-middle mr-1 text-lg">check_circle</span>
+            {{ hubSaveMessage() }}
+          </div>
+          }
         </div>
       </div>
       }

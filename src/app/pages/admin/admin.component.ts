@@ -1,10 +1,11 @@
-import { Component, OnInit, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, signal, computed, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { NostrListService } from '../../services/nostr-list.service';
 import { RelayService } from '../../services/relay.service';
 import { NostrAuthService } from '../../services/nostr-auth.service';
+import { HubConfigService, HubMode } from '../../services/hub-config.service';
 
 interface ProjectItem {
   id: string;
@@ -59,6 +60,8 @@ export class AdminComponent implements OnInit {
       p.id.toLowerCase().includes(query)
     );
   });
+
+  public hubConfig = inject(HubConfigService);
 
   constructor(
     private nostrListService: NostrListService,
@@ -403,5 +406,21 @@ export class AdminComponent implements OnInit {
       hour: '2-digit',
       minute: '2-digit',
     });
+  }
+
+  getHubMode(): HubMode {
+    return this.hubConfig.hubMode();
+  }
+
+  setHubMode(mode: HubMode): void {
+    this.hubConfig.setHubMode(mode);
+    this.success.set(`Hub mode changed to ${mode}`);
+    setTimeout(() => this.success.set(null), 3000);
+  }
+
+  toggleHubMode(): void {
+    const current = this.hubConfig.hubMode();
+    const newMode = current === 'blacklist' ? 'whitelist' : 'blacklist';
+    this.setHubMode(newMode);
   }
 }
