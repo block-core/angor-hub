@@ -236,24 +236,34 @@
                 </div>
               }
 
-              <!-- Invest Button -->
-              <div class="mt-6">
+              <!-- Invest Buttons -->
+              <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                <!-- 1-Click Invest Button -->
+                <a
+                  [routerLink]="canInvest() ? ['/invest', projectId] : null"
+                  [queryParams]="{ network: networkService.isMain() ? 'main' : 'test' }"
+                  class="w-full sm:w-auto px-8 py-3 text-base font-bold text-white bg-green-600 rounded-xl shadow-lg transition-all duration-300 hover:bg-green-700 hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  [class.pointer-events-none]="!canInvest()"
+                  [class.opacity-50]="!canInvest()"
+                >
+                  @if (isProjectEnded()) {
+                    <span class="material-icons text-lg">timer_off</span>
+                    <span>Ended {{ project()?.details?.expiryDate ?? 0 | ago }}</span>
+                  } @else {
+                    <span class="material-icons text-lg">bolt</span>
+                    <span>1-Click Invest</span>
+                  }
+                </a>
+                <!-- Full Wallet Button -->
                 <button
-                  class="w-full sm:w-auto px-8 py-3 text-base font-bold text-white bg-accent rounded-xl shadow-lg transition-all duration-300 hover:bg-accent-dark hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  class="w-full sm:w-auto px-8 py-3 text-base font-bold text-text bg-surface-hover rounded-xl shadow-lg transition-all duration-300 hover:bg-surface-ground hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed border border-border"
                   [disabled]="!canInvest()"
                   (click)="canInvest() && openInvestWindow()"
                 >
-                  @if (isProjectEnded()) {
-                    <span class="flex items-center justify-center gap-2">
-                      <span class="material-icons text-lg">timer_off</span>
-                      Ended {{ project()?.details?.expiryDate ?? 0 | ago }}
-                    </span>
-                  } @else {
-                    <span class="flex items-center justify-center gap-2">
-                      <span class="material-icons text-lg">account_balance_wallet</span>
-                      Invest With Angor Wallet
-                    </span>
-                  }
+                  <span class="flex items-center justify-center gap-2">
+                    <span class="material-icons text-lg">account_balance_wallet</span>
+                    <span>Use Angor Wallet</span>
+                  </span>
                 </button>
               </div>
             </div>
