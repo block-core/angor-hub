@@ -233,7 +233,7 @@
 <div class="container mx-auto px-4 pb-20">
   @if (indexer.loading() && !filteredProjects().length) {
     <div class="flex justify-center items-center py-16">
-      <div class="w-14 h-14 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+      <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
     </div>
   } @else {
     @if (filteredProjects().length === 0) {
@@ -282,9 +282,7 @@
                     alt="Project banner"
                   />
                   @if (!isBannerImageLoaded(project.projectIdentifier)) {
-                    <div class="absolute inset-0 bg-gradient-to-br from-surface-ground via-surface-hover to-surface-ground animate-pulse">
-                      <div class="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent"></div>
-                    </div>
+                    <div class="absolute inset-0 bg-surface-hover animate-pulse"></div>
                   }
                 } @else {
                   <div
@@ -332,9 +330,7 @@
                         alt="Project profile"
                       />
                       @if (!isProfileImageLoaded(project.projectIdentifier)) {
-                        <div class="absolute inset-0 bg-surface-ground animate-pulse">
-                          <div class="absolute inset-2 bg-surface-hover rounded-full animate-pulse"></div>
-                        </div>
+                        <div class="absolute inset-0 bg-surface-hover animate-pulse"></div>
                       }
                     </div>
                   } @else {
@@ -433,7 +429,7 @@
       @if (!indexer.isComplete()) {
         @if (indexer.loading()) {
           <div class="flex justify-center items-center py-12">
-            <div class="w-10 h-10 border-[3px] border-primary/30 border-t-primary rounded-full animate-spin"></div>
+            <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
           </div>
         } @else {
           <div class="text-center py-12">

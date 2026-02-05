@@ -96,7 +96,7 @@
           alt="Project banner"
         />
         @if (!bannerLoaded()) {
-          <div class="absolute inset-0 bg-surface-card animate-pulse"></div>
+          <div class="absolute inset-0 bg-surface-hover animate-pulse"></div>
         }
       } @else {
         <div
@@ -488,7 +488,7 @@
               @if (activeTab === 'faq') {
                 @if (loadingFaq()) {
                   <div class="flex justify-center py-12">
-                    <div class="w-10 h-10 border-4 border-accent/30 border-t-accent rounded-full animate-spin"></div>
+                    <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
                   </div>
                 } @else if (errorFaq()) {
                   <div class="text-center py-12 text-red-500">
@@ -515,7 +515,7 @@
               @if (activeTab === 'updates') {
                 @if (loadingUpdates()) {
                   <div class="flex justify-center py-12">
-                    <div class="w-10 h-10 border-4 border-accent/30 border-t-accent rounded-full animate-spin"></div>
+                    <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
                   </div>
                 } @else if (errorUpdates()) {
                   <div class="text-center py-12 text-red-500">
