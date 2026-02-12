@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { environment } from '../../environment';
 
 export type HubMode = 'whitelist' | 'blacklist';
@@ -131,6 +131,14 @@ export class HubConfigService {
    */
   getAdminPubkeys(): string[] {
     return this._adminPubkeys();
+  }
+
+  /**
+   * Check if a given pubkey is in the configured admin pubkeys list.
+   */
+  isAdmin(pubkey: string | null): boolean {
+    if (!pubkey) return false;
+    return this._adminPubkeys().includes(pubkey);
   }
 
   /**
@@ -287,6 +295,29 @@ export class HubConfigService {
     this._listsLoaded.set(false);
 
     console.log('[HubConfigService] Reset to defaults');
+  }
+
+  /**
+   * Signal that config has changed and lists need to be reloaded.
+   * Consumers (IndexerService) can watch this to trigger a project refresh.
+   */
+  private _configVersion = signal<number>(0);
+  readonly configVersion = this._configVersion.asReadonly();
+
+
+  notifyConfigChanged(): void {
+    this._listsLoaded.set(false);
+    this._whitelistedProjects.set(new Set());
+    this._deniedProjects.set(new Set());
+    this._configVersion.update(v => v + 1);
+    console.log('[HubConfigService] Config changed, version:', this._configVersion());
+  }
+
+  isUsingDefaultAdminPubkeys(): boolean {
+    const current = this._adminPubkeys();
+    const defaults = environment.adminPubkeys;
+    if (current.length !== defaults.length) return false;
+    return defaults.every(pk => current.includes(pk));
   }
 
   /**

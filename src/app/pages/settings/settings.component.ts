@@ -7,6 +7,8 @@ import { ThemeService } from '../../services/theme.service';
 import { RelayService } from '../../services/relay.service';
 import { IndexerService, IndexerConfig, IndexerEntry } from '../../services/indexer.service';
 import { HubConfigService, HubMode } from '../../services/hub-config.service';
+import { DenyService } from '../../services/deny.service';
+import { FeaturedService } from '../../services/featured.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { environment } from '../../../environment';
@@ -43,6 +45,8 @@ export class SettingsComponent implements OnInit {
   public relayService = inject(RelayService);
   public indexerService = inject(IndexerService);
   public hubConfigService = inject(HubConfigService);
+  private denyService = inject(DenyService);
+  private featuredService = inject(FeaturedService);
 
   appVersion = environment.appVersion || '1.0.0';
 
@@ -60,6 +64,8 @@ export class SettingsComponent implements OnInit {
   // Hub configuration
   newAdminPubkey = signal<string>('');
   hubSaveMessage = signal<string>('');
+  hubApplying = signal<boolean>(false);
+  hubConfigDirty = signal<boolean>(false);
 
   currentTheme = computed(() => {
     return this.themeService.currentTheme();
@@ -248,8 +254,8 @@ export class SettingsComponent implements OnInit {
 
   setHubMode(mode: HubMode): void {
     this.hubConfigService.setHubMode(mode);
-    this.hubSaveMessage.set(`Hub mode changed to ${mode}`);
-    setTimeout(() => this.hubSaveMessage.set(''), 3000);
+    this.hubConfigDirty.set(true);
+    this.hubSaveMessage.set(`Hub mode changed to ${mode}. Click "Save & Apply" to reload projects.`);
   }
 
   getAdminPubkeys(): string[] {
@@ -257,21 +263,31 @@ export class SettingsComponent implements OnInit {
   }
 
   addAdminPubkey(): void {
-    const pubkey = this.newAdminPubkey().trim();
+    let pubkey = this.newAdminPubkey().trim();
     if (!pubkey) {
       this.hubSaveMessage.set('Please enter a pubkey');
       return;
     }
 
+    // Auto-convert npub to hex
+    if (pubkey.startsWith('npub1')) {
+      const hex = this.npubToHex(pubkey);
+      if (!hex) {
+        this.hubSaveMessage.set('Invalid npub format');
+        return;
+      }
+      pubkey = hex;
+    }
+
     if (!this.isValidPubkey(pubkey)) {
-      this.hubSaveMessage.set('Invalid pubkey format (must be 64 hex characters)');
+      this.hubSaveMessage.set('Invalid pubkey format (must be 64 hex characters or npub)');
       return;
     }
 
     if (this.hubConfigService.addAdminPubkey(pubkey)) {
       this.newAdminPubkey.set('');
-      this.hubSaveMessage.set('Admin pubkey added successfully');
-      setTimeout(() => this.hubSaveMessage.set(''), 3000);
+      this.hubConfigDirty.set(true);
+      this.hubSaveMessage.set('Admin pubkey added. Click "Save & Apply" to reload projects.');
     } else {
       this.hubSaveMessage.set('Pubkey already exists');
     }
@@ -279,23 +295,117 @@ export class SettingsComponent implements OnInit {
 
   removeAdminPubkey(pubkey: string): void {
     if (this.hubConfigService.removeAdminPubkey(pubkey)) {
-      this.hubSaveMessage.set('Admin pubkey removed');
-      setTimeout(() => this.hubSaveMessage.set(''), 3000);
+      this.hubConfigDirty.set(true);
+      this.hubSaveMessage.set('Admin pubkey removed. Click "Save & Apply" to reload projects.');
     }
   }
 
   resetHubToDefaults(): void {
     this.hubConfigService.resetToDefaults();
-    this.hubSaveMessage.set('Reset to default configuration');
-    setTimeout(() => this.hubSaveMessage.set(''), 3000);
+    this.hubConfigDirty.set(true);
+    this.hubSaveMessage.set('Reset to defaults. Click "Save & Apply" to reload projects.');
+  }
+
+
+  async applyHubConfig(): Promise<void> {
+    this.hubApplying.set(true);
+    this.hubSaveMessage.set('Applying configuration...');
+
+    try {
+      // Notify that config has changed (clears cached lists)
+      this.hubConfigService.notifyConfigChanged();
+
+      // Force reload deny list and featured list with new admin pubkeys
+      await Promise.all([
+        this.denyService.reloadDenyList(),
+        this.featuredService.reloadFeaturedProjects(),
+      ]);
+
+      // Mark lists as loaded
+      this.hubConfigService.setListsLoaded(true);
+
+      // Reset the project list so IndexerService refetches with new filters
+      this.indexerService.resetProjects();
+
+      this.hubConfigDirty.set(false);
+      this.hubSaveMessage.set('Configuration applied successfully! Projects are reloading.');
+      setTimeout(() => this.hubSaveMessage.set(''), 4000);
+    } catch (error) {
+      console.error('[Settings] Failed to apply hub config:', error);
+      this.hubSaveMessage.set('Failed to apply configuration. Check console for details.');
+    } finally {
+      this.hubApplying.set(false);
+    }
   }
 
   isValidPubkey(pubkey: string): boolean {
-    // Nostr pubkeys are 64 character hex strings
     return /^[0-9a-fA-F]{64}$/.test(pubkey);
+  }
+
+  isValidPubkeyOrNpub(value: string): boolean {
+    if (!value) return false;
+    if (this.isValidPubkey(value)) return true;
+    if (value.startsWith('npub1')) {
+      return this.npubToHex(value) !== null;
+    }
+    return false;
+  }
+
+  /**
+   * Convert npub (bech32) to hex pubkey.
+   * Uses a minimal bech32 decoder - no external dependencies needed.
+   */
+  npubToHex(npub: string): string | null {
+    try {
+      const decoded = this.bech32Decode(npub);
+      if (!decoded || decoded.prefix !== 'npub') return null;
+      const hex = Array.from(decoded.data, b => b.toString(16).padStart(2, '0')).join('');
+      if (hex.length !== 64) return null;
+      return hex;
+    } catch {
+      return null;
+    }
+  }
+
+  private bech32Decode(str: string): { prefix: string; data: Uint8Array } | null {
+    const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+    const lower = str.toLowerCase();
+    const sepIdx = lower.lastIndexOf('1');
+    if (sepIdx < 1 || sepIdx + 7 > lower.length) return null;
+
+    const prefix = lower.slice(0, sepIdx);
+    const dataStr = lower.slice(sepIdx + 1);
+    const values: number[] = [];
+    for (const c of dataStr) {
+      const v = CHARSET.indexOf(c);
+      if (v === -1) return null;
+      values.push(v);
+    }
+
+    // Remove checksum (last 6 values)
+    const data5bit = values.slice(0, -6);
+
+    // Convert from 5-bit to 8-bit
+    let acc = 0;
+    let bits = 0;
+    const result: number[] = [];
+    for (const v of data5bit) {
+      acc = (acc << 5) | v;
+      bits += 5;
+      while (bits >= 8) {
+        bits -= 8;
+        result.push((acc >> bits) & 0xff);
+      }
+    }
+
+    return { prefix, data: new Uint8Array(result) };
   }
 
   formatPubkey(pubkey: string): string {
     return this.hubConfigService.formatPubkey(pubkey);
+  }
+
+  isUsingDefaultConfig(): boolean {
+    return this.hubConfigService.isUsingDefaultAdminPubkeys();
   }
 }

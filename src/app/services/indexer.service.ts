@@ -534,9 +534,15 @@ export class IndexerService {
   }
 
   async fetchProject(id: string): Promise<IndexedProject | null> {
+    // Ensure lists are loaded for filtering
+    await Promise.all([
+      this.denyService.loadDenyList(),
+      this.featuredService.loadFeaturedProjects()
+    ]);
+    this.hubConfig.setListsLoaded(true);
 
-    await this.denyService.loadDenyList();
-    if (await this.denyService.isEventDenied(id)) {
+    // Use unified hub filtering
+    if (!this.hubConfig.shouldShowProject(id)) {
       this.error.set(`Project ${id} is not available.`);
       return null;
     }
@@ -547,8 +553,7 @@ export class IndexerService {
         `${this.indexerUrl}api/query/Angor/projects/${id}`
       );
       if (project && project.data) {
-
-        if (await this.denyService.isEventDenied(project.data.projectIdentifier)) {
+        if (!this.hubConfig.shouldShowProject(project.data.projectIdentifier)) {
           this.error.set(`Project ${id} is not available.`);
           return null;
         }

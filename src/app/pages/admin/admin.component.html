@@ -101,6 +101,28 @@
     } @else {
       <!-- Admin Panel -->
       <div class="space-y-6">
+
+        <!-- Unauthorized Warning -->
+        @if (!isAuthorizedAdmin()) {
+        <div class="p-6 bg-yellow-900/20 backdrop-blur-sm border-l-4 border-yellow-500 rounded-lg">
+          <div class="flex items-start gap-3">
+            <span class="material-icons text-yellow-400 text-2xl">gpp_bad</span>
+            <div>
+              <h3 class="text-yellow-300 font-semibold text-lg mb-2">Not Authorized</h3>
+              <p class="text-yellow-200/80 mb-3">
+                Your pubkey (<code class="text-xs font-mono">{{ formatPubkey(adminPubkey()!) }}</code>) is not in the configured admin pubkeys for this hub.
+                You cannot modify the deny list or featured list.
+              </p>
+              <p class="text-yellow-200/60 text-sm">
+                If you are the hub operator, go to
+                <a routerLink="/settings" class="text-[#0ab6d9] hover:underline font-medium">Settings → Hub</a>
+                and add your pubkey to the admin list, then click "Save & Apply".
+              </p>
+            </div>
+          </div>
+        </div>
+        }
+
         <!-- Hub Mode Status -->
         <div class="bg-gradient-to-br from-[#043a4a] to-[#022229] rounded-2xl shadow-xl p-6 border border-[#086c81]/30">
           <div class="flex items-center gap-2 mb-3">
@@ -108,6 +130,9 @@
             <h3 class="text-lg font-semibold text-white">
               Hub Mode
             </h3>
+            @if (!isUsingDefaultConfig()) {
+              <span class="px-2 py-0.5 bg-[#0ab6d9]/20 text-[#0ab6d9] text-xs rounded-full font-medium">Custom Hub</span>
+            }
           </div>
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
@@ -127,7 +152,8 @@
             </div>
             <button
               (click)="toggleHubMode()"
-              class="inline-flex items-center gap-2 px-4 py-2 bg-[#086c81]/50 hover:bg-[#086c81] text-white font-medium rounded-lg transition-all duration-200 border border-[#0ab6d9]/30"
+              [disabled]="!isAuthorizedAdmin()"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-[#086c81]/50 hover:bg-[#086c81] disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all duration-200 border border-[#0ab6d9]/30"
             >
               <span class="material-icons text-sm">swap_horiz</span>
               Switch Mode
@@ -135,7 +161,7 @@
           </div>
           <p class="text-gray-500 text-xs mt-3">
             <span class="material-icons text-xs align-middle mr-1">info</span>
-            Change hub mode in <a routerLink="/settings" class="text-[#0ab6d9] hover:underline">Settings → Hub</a> for more options
+            Manage hub configuration in <a routerLink="/settings" class="text-[#0ab6d9] hover:underline">Settings → Hub</a> (admin pubkeys, mode, apply changes)
           </p>
         </div>
 
@@ -224,6 +250,7 @@
 
         <!-- Add Project Form (Deny List) -->
         @if (activeTab() === 'deny') {
+        @if (isAuthorizedAdmin()) {
         <div class="bg-gradient-to-br from-[#043a4a] to-[#022229] rounded-2xl shadow-xl p-6 border border-[#086c81]/30">
           <div class="flex items-center gap-2 mb-4">
             <span class="material-icons text-[#0ab6d9]">block</span>
@@ -256,6 +283,7 @@
             </button>
           </div>
         </div>
+        }
 
         <!-- Search and List -->
         <div class="bg-gradient-to-br from-[#043a4a] to-[#022229] rounded-2xl shadow-xl p-6 border border-[#086c81]/30">
@@ -330,6 +358,7 @@
                     >
                       <span class="material-icons text-lg">content_copy</span>
                     </button>
+                    @if (isAuthorizedAdmin()) {
                     <button
                       (click)="removeProject(project.id)"
                       [disabled]="loading()"
@@ -338,6 +367,7 @@
                     >
                       <span class="material-icons text-lg">delete</span>
                     </button>
+                    }
                   </div>
                 </div>
               }
@@ -383,6 +413,7 @@
 
         <!-- Add Featured Project Form (Whitelist) -->
         @if (activeTab() === 'featured') {
+        @if (isAuthorizedAdmin()) {
         <div class="bg-gradient-to-br from-[#043a4a] to-[#022229] rounded-2xl shadow-xl p-6 border border-[#086c81]/30">
           <div class="flex items-center gap-2 mb-4">
             <span class="material-icons text-[#0ab6d9]">star</span>
@@ -415,6 +446,7 @@
             </button>
           </div>
         </div>
+        }
 
         <!-- Featured Projects List -->
         <div class="bg-gradient-to-br from-[#043a4a] to-[#022229] rounded-2xl shadow-xl p-6 border border-[#086c81]/30">
@@ -489,6 +521,7 @@
                     >
                       <span class="material-icons text-lg">content_copy</span>
                     </button>
+                    @if (isAuthorizedAdmin()) {
                     <button
                       (click)="removeFeaturedProject(project.id)"
                       [disabled]="loading()"
@@ -497,6 +530,7 @@
                     >
                       <span class="material-icons text-lg">delete</span>
                     </button>
+                    }
                   </div>
                 </div>
               }

@@ -62,4 +62,14 @@ export class FeaturedService {
   }
 
   constructor(private nostrListService: NostrListService) {}
+
+  /**
+   * Force reload featured projects from Nostr.
+   * Call this when admin pubkeys change or hub config is updated.
+   */
+  async reloadFeaturedProjects(): Promise<string[]> {
+    this.loadedSig.set(false);
+    this.featuredProjectIdsSig.set([]);
+    return this.loadFeaturedProjects(true);
+  }
 }

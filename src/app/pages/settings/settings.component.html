@@ -563,6 +563,25 @@
           Hub Configuration
         </h2>
 
+        <!-- Hub Identity Info -->
+        <div class="p-4 mb-6 rounded-lg border border-border bg-surface-ground">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="material-icons text-accent">info</span>
+            <span class="font-semibold text-text">Hub Identity</span>
+          </div>
+          @if (isUsingDefaultConfig()) {
+          <p class="text-text-secondary text-sm">
+            This hub is using the <strong class="text-text">default Angor</strong> admin configuration.
+            To deploy your own hub, replace the admin pubkey below with your own npub/hex pubkey.
+          </p>
+          } @else {
+          <p class="text-text-secondary text-sm">
+            This hub is using a <strong class="text-accent">custom</strong> admin configuration.
+            Projects are filtered based on your own Nostr deny/whitelist.
+          </p>
+          }
+        </div>
+
         <!-- Hub Mode Selection -->
         <div class="pt-5 border-t border-border">
           <label class="block text-lg font-semibold mb-2 text-text">Hub Mode</label>
@@ -582,7 +601,7 @@
               </div>
               <div class="flex-1">
                 <span class="block font-semibold mb-1 text-text">Blacklist Mode</span>
-                <span class="text-sm text-text-secondary">Show all projects except those in the deny list. This is the default behavior.</span>
+                <span class="text-sm text-text-secondary">Show all projects except those in the deny list. This is the default for new hubs.</span>
               </div>
               @if (getHubMode() === 'blacklist') {
               <span class="material-icons text-accent ml-auto text-2xl">check_circle</span>
@@ -613,8 +632,8 @@
         <div class="pt-5 mt-6 border-t border-border">
           <label class="block text-lg font-semibold mb-2 text-text">Admin Public Keys</label>
           <p class="text-text-secondary mb-5 text-sm leading-normal">
-            Configure which Nostr public keys are used to manage the deny list and whitelist.
-            These admins can add or remove projects from the lists.
+            Configure which Nostr public keys control project visibility on this hub.
+            Each admin's deny list and whitelist will be applied based on the hub mode.
           </p>
 
           <div class="flex items-center justify-between mb-4">
@@ -658,28 +677,55 @@
               <div class="flex-1 relative min-w-0">
                 <span
                   class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none z-[1]">person_add</span>
-                <input type="text" placeholder="64-character hex pubkey"
+                <input type="text" placeholder="Hex pubkey or npub1..."
                   class="w-full py-3 pl-10 pr-4 bg-transparent border-none focus:outline-none text-text font-mono text-sm"
                   [value]="newAdminPubkey()" (input)="newAdminPubkey.set($any($event.target).value)" (keyup.enter)="addAdminPubkey()" />
               </div>
               <button
                 class="px-4 bg-accent text-white border-none flex items-center justify-center hover:bg-accent-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                [disabled]="!newAdminPubkey() || !isValidPubkey(newAdminPubkey())" (click)="addAdminPubkey()">
+                [disabled]="!newAdminPubkey() || !isValidPubkeyOrNpub(newAdminPubkey())" (click)="addAdminPubkey()">
                 <span class="material-icons">add</span>
               </button>
             </div>
           </div>
 
-          @if (newAdminPubkey() && !isValidPubkey(newAdminPubkey())) {
+          @if (newAdminPubkey() && !isValidPubkeyOrNpub(newAdminPubkey())) {
           <div class="flex items-center gap-2 text-warning text-sm mb-4" [@fadeInOut]>
             <span class="material-icons text-lg">error</span>
-            Must be a valid 64-character hex pubkey
+            Must be a valid 64-character hex pubkey or npub1... address
           </div>
           }
 
+          <!-- Save & Apply Button -->
+          <div class="text-center mt-6">
+            <button
+              class="flex items-center justify-center gap-2 w-full max-w-xs mx-auto py-3 px-6 rounded-lg border-none font-medium cursor-pointer transition duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed"
+              [class.bg-accent]="hubConfigDirty()"
+              [class.text-white]="hubConfigDirty()"
+              [class.hover:bg-accent-light]="hubConfigDirty()"
+              [class.bg-surface-ground]="!hubConfigDirty()"
+              [class.text-text-secondary]="!hubConfigDirty()"
+              [disabled]="hubApplying() || getAdminPubkeys().length === 0"
+              (click)="applyHubConfig()">
+              @if (hubApplying()) {
+              <div class="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+              Applying...
+              } @else {
+              <span class="material-icons">save</span>
+              Save & Apply Configuration
+              }
+            </button>
+          </div>
+
           @if (hubSaveMessage()) {
-          <div class="mt-4 text-sm p-3 rounded bg-green-500/10 text-success text-center" [@fadeInOut]>
-            <span class="material-icons align-middle mr-1 text-lg">check_circle</span>
+          <div class="mt-4 text-sm p-3 rounded text-center" [@fadeInOut]
+            [class.bg-green-500/10]="!hubSaveMessage().includes('Failed')"
+            [class.text-success]="!hubSaveMessage().includes('Failed')"
+            [class.bg-red-500/10]="hubSaveMessage().includes('Failed')"
+            [class.text-warning]="hubSaveMessage().includes('Failed')">
+            <span class="material-icons align-middle mr-1 text-lg">
+              {{ hubSaveMessage().includes('Failed') ? 'error' : 'check_circle' }}
+            </span>
             {{ hubSaveMessage() }}
           </div>
           }

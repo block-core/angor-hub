@@ -1,12 +1,12 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { NostrListService } from './nostr-list.service';
 import { HubConfigService } from './hub-config.service';
+import { environment } from '../../environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class DenyService {
-  private denyListUrl = 'https://lists.blockcore.net/deny/angor.json';
   private denyList = signal<string[]>([]);
   private loaded = signal<boolean>(false);
   private loadingPromise: Promise<void> | null = null;
@@ -23,39 +23,40 @@ export class DenyService {
     this.loadingPromise = (async () => {
       try {
         const allDeniedProjects = new Set<string>();
+        const adminPubkeys = this.hubConfig.getAdminPubkeys();
 
-        // Load from GitHub URL (legacy support)
-        try {
-          const response = await fetch(this.denyListUrl, { cache: 'no-store' });
-          if (response.ok) {
-            const list = await response.json();
-            if (Array.isArray(list)) {
-              list.forEach(id => allDeniedProjects.add(id));
-              console.log('GitHub deny list loaded:', list.length, 'entries');
+        // Only load from GitHub deny list if using the default Angor admin pubkeys.
+        // Custom hub deployments should only use their own Nostr-based deny lists.
+        const isDefaultConfig = this.hubConfig.isUsingDefaultAdminPubkeys();
+        if (isDefaultConfig && environment.denyListUrl) {
+          try {
+            const response = await fetch(environment.denyListUrl, { cache: 'no-store' });
+            if (response.ok) {
+              const list = await response.json();
+              if (Array.isArray(list)) {
+                list.forEach(id => allDeniedProjects.add(id));
+                console.log('[DenyService] GitHub deny list loaded:', list.length, 'entries');
+              }
             }
+          } catch (error) {
+            console.warn('[DenyService] Failed to load GitHub deny list:', error);
           }
-        } catch (error) {
-          console.warn('Failed to load GitHub deny list:', error);
-          // Continue with Nostr lists even if GitHub fails
         }
 
         // Load from Nostr lists using admin pubkeys from HubConfigService
-        const adminPubkeys = this.hubConfig.getAdminPubkeys();
         if (adminPubkeys.length > 0) {
           try {
             console.log('[DenyService] Loading from Nostr with admin pubkeys:', adminPubkeys);
             const nostrDenied = await this.nostrListService.getAllDeniedProjects(adminPubkeys);
             nostrDenied.forEach(id => allDeniedProjects.add(id));
-            console.log('[DenyService] Nostr deny lists loaded:', nostrDenied.length, 'entries:', nostrDenied);
+            console.log('[DenyService] Nostr deny lists loaded:', nostrDenied.length, 'entries');
           } catch (error) {
             console.error('[DenyService] Failed to load Nostr deny lists:', error);
-            // Continue even if Nostr fails
           }
         } else {
           console.warn('[DenyService] No admin pubkeys configured, skipping Nostr lists');
         }
 
-        // Combine both sources
         const combinedList = Array.from(allDeniedProjects);
         this.denyList.set(combinedList);
         this.loaded.set(true);
@@ -63,10 +64,10 @@ export class DenyService {
         // Update HubConfigService with the deny list for quick lookups
         this.hubConfig.updateDeniedProjects(combinedList);
 
-        console.log('Total deny list loaded:', combinedList.length, 'entries');
+        console.log('[DenyService] Total deny list loaded:', combinedList.length, 'entries');
 
       } catch (error) {
-        console.error('Error loading deny list:', error);
+        console.error('[DenyService] Error loading deny list:', error);
         this.denyList.set([]);
       } finally {
         this.loadingPromise = null;
@@ -84,11 +85,13 @@ export class DenyService {
   }
 
   /**
-   * Force reload deny list from all sources
+   * Force reload deny list from all sources.
+   * Call this when admin pubkeys change or hub config is updated.
    */
   async reloadDenyList(): Promise<void> {
     this.loaded.set(false);
     this.loadingPromise = null;
+    this.denyList.set([]);
     await this.loadDenyList();
   }
 
