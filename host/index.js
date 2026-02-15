@@ -2,160 +2,272 @@ import express from "express";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import fs from "fs/promises";
-import NDK from "@nostr-dev-kit/ndk";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Initialize NDK with specific relays
-const ndk = new NDK({
-  explicitRelayUrls: ["wss://purplepag.es", "wss://relay.angor.io"],
-});
 
-await ndk.connect();
+const INDEXER_URL = process.env.INDEXER_URL || "https://fulcrum.angor.online/api/query/Angor/projects/";
+const BASE_URL = process.env.BASE_URL || "https://hub.angor.io";
+const DEFAULT_IMAGE = `${BASE_URL}/assets/angor-hub-social.png`;
+const INDEXER_TIMEOUT_MS = 45000; 
+const RELAY_TIMEOUT_MS = 10000;   // Nostr relay operations
 
-// Function to fetch Nostr metadata
-async function getNostrEvent(eventId) {
-  try {
-    // const filter = {
-    //   ids: eventId,
-    //   limit: 1,
-    // };
+// Relays used for fetching Nostr data (events + profiles)
+const NOSTR_RELAYS = (process.env.NOSTR_RELAYS || "wss://relay.angor.io,wss://purplepag.es").split(",");
 
-    const filter = {
-      //   kinds: [30078], // PROTOCOL CHANGES THIS KIND ID!
-      ids: [eventId],
-    };
 
-    console.log("Nostr Filter: ", JSON.stringify(filter));
+const cache = new Map();
+const CACHE_TTL_MS = 60 * 60 * 1000;
 
-    const event = await ndk.fetchEvent(filter);
-    return event;
-    console.log("EVENT ID EVENTS: ", events);
-
-    // Assuming projectId contains or maps to a Nostr pubkey
-    // const user = ndk.getUser({
-    //   pubkey: projectId,
-    // });
-
-    // await user.fetchProfile();
-
-    return {
-      name: user.profile?.name || projectId,
-      about: user.profile?.about || "No description available",
-      picture: user.profile?.picture || "https://hub.angor.io/assets/angor-hub-social.png",
-    };
-  } catch (error) {
-    console.error("Error fetching Nostr metadata:", error);
+function cacheGet(key) {
+  const entry = cache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL_MS) {
+    cache.delete(key);
     return null;
+  }
+  return entry.value;
+}
+
+function cacheSet(key, value) {
+  cache.set(key, { value, ts: Date.now() });
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of cache) {
+    if (now - entry.ts > CACHE_TTL_MS) cache.delete(key);
+  }
+}, 10 * 60 * 1000);
+
+
+/** Fetch JSON */
+async function fetchJson(url, timeoutMs = INDEXER_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
-// Function to fetch Nostr metadata
-async function getNostrMetadata(pubkey) {
-  try {
-    // Assuming projectId contains or maps to a Nostr pubkey
-    // const user = ndk.getUser({
-    //   pubkey: pubkey,
-    // });
+/** Sanitize a string for safe injection into HTML attribute values */
+function escapeHtml(str) {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
 
-    // console.log('User created: ', user);
+/** Truncate description to a reasonable length for meta tags */
+function truncate(str, maxLen = 200) {
+  if (!str || str.length <= maxLen) return str || "";
+  return str.slice(0, maxLen - 1) + "\u2026";
+}
 
-    // const ndk = await this.ensureConnected();
+const BOT_UA_PATTERN = /bot|facebookexternalhit|twitterbot|telegrambot|whatsapp|linkedin|slack|discord|signal|snapchat|pinterest|skype|googlebot|bingbot|yandexbot|duckduckbot/i;
 
-    const filter = {
-      kinds: [0],
-      authors: [pubkey],
-      limit: 1,
-    };
 
-    const event = await ndk.fetchEvent(filter);
-    return event;
-    console.log("Events:", events);
-    const sub = ndk.subscribe(filter);
+/**
+ * Fetch a single Nostr event by filter from a relay.
+ * Opens a short-lived WebSocket, sends REQ, returns the first matching event.
+ */
+function fetchFromRelay(filter, relayUrl) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      try { ws.close(); } catch {}
+      reject(new Error(`Relay ${relayUrl} timeout`));
+    }, RELAY_TIMEOUT_MS);
 
-    sub.on("event", (event) => {
-      try {
-        console.log("Profile event:", event);
-        // this.profileUpdates.next(event);
-      } catch (error) {
-        console.error("Failed to parse profile:", error);
-      }
+    const subId = `meta_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const ws = new WebSocket(relayUrl);
+
+    ws.addEventListener("open", () => {
+      ws.send(JSON.stringify(["REQ", subId, filter]));
     });
 
-    return {
-      name: user.profile?.name || pubkey,
-      about: user.profile?.about || "No description available",
-      picture: user.profile?.picture || "https://hub.angor.io/assets/angor-hub-social.png",
-    };
-  } catch (error) {
-    console.error("Error fetching Nostr metadata:", error);
+    ws.addEventListener("message", (msg) => {
+      try {
+        const raw = typeof msg.data === "string" ? msg.data : msg.data.toString();
+        const data = JSON.parse(raw);
+
+        if (data[0] === "EVENT" && data[1] === subId && data[2]) {
+          clearTimeout(timer);
+          ws.send(JSON.stringify(["CLOSE", subId]));
+          ws.close();
+          resolve(data[2]);
+        } else if (data[0] === "EOSE" && data[1] === subId) {
+          clearTimeout(timer);
+          ws.send(JSON.stringify(["CLOSE", subId]));
+          ws.close();
+          resolve(null);
+        }
+      } catch {}
+    });
+
+    ws.addEventListener("error", () => {
+      clearTimeout(timer);
+      reject(new Error(`Relay ${relayUrl} connection failed`));
+    });
+
+    ws.addEventListener("close", () => {
+      clearTimeout(timer);
+    });
+  });
+}
+
+/**
+ * Try fetching from multiple relays, return the first successful result.
+ */
+async function fetchFromRelays(filter, relayUrls = NOSTR_RELAYS) {
+  for (const relay of relayUrls) {
+    try {
+      const result = await fetchFromRelay(filter, relay);
+      if (result) return result;
+    } catch (err) {
+      console.warn(`[meta] ${relay}: ${err.message}`);
+    }
+  }
+  return null;
+}
+
+/** Fetch a Nostr event by ID */
+async function fetchNostrEvent(eventId) {
+  return fetchFromRelays({ ids: [eventId] });
+}
+
+/** Fetch a Nostr profile (kind 0) by pubkey */
+async function fetchNostrProfile(pubkey) {
+  return fetchFromRelays({ kinds: [0], authors: [pubkey], limit: 1 });
+}
+
+// Fetch project metadata
+
+async function getProjectMeta(projectId) {
+  const cached = cacheGet(`project:${projectId}`);
+  if (cached) return cached;
+
+  //  Fetch project from the indexer
+  console.log(`[meta] Fetching project ${projectId} from indexer`);
+  const project = await fetchJson(INDEXER_URL + encodeURIComponent(projectId));
+  const nostrEventId = project?.nostrEventId;
+  if (!nostrEventId) {
+    console.warn("[meta] No nostrEventId in indexer response");
     return null;
   }
+
+  //  Fetch the project's Nostr event from relays
+  console.log(`[meta] Fetching event ${nostrEventId.slice(0, 12)}...`);
+  const event = await fetchNostrEvent(nostrEventId);
+  if (!event?.content) {
+    console.warn("[meta] Event not found or has no content");
+    return null;
+  }
+
+  let eventContent;
+  try {
+    eventContent = typeof event.content === "string" ? JSON.parse(event.content) : event.content;
+  } catch {
+    console.warn("[meta] Failed to parse event content");
+    return null;
+  }
+
+  const nostrPubKey = eventContent?.nostrPubKey;
+  if (!nostrPubKey) {
+    console.warn("[meta] No nostrPubKey in event content");
+    return null;
+  }
+
+  // Fetch the founder's profile (kind 0) from relays
+  console.log(`[meta] Fetching profile ${nostrPubKey.slice(0, 12)}...`);
+  let profile = {};
+  try {
+    const profileEvent = await fetchNostrProfile(nostrPubKey);
+    if (profileEvent?.content) {
+      profile = typeof profileEvent.content === "string"
+        ? JSON.parse(profileEvent.content)
+        : profileEvent.content;
+    }
+  } catch (err) {
+    console.warn("[meta] Failed to fetch profile:", err.message);
+  }
+
+  const name = profile.display_name || profile.name || projectId;
+  const about = profile.about || "";
+  const banner = profile.banner || profile.picture || "";
+
+  const meta = {
+    title: `Angor Hub - ${name}`,
+    description: truncate(about) || "Decentralized crowdfunding on Bitcoin.",
+    image: banner || DEFAULT_IMAGE,
+    url: `${BASE_URL}/project/${projectId}`,
+  };
+
+  cacheSet(`project:${projectId}`, meta);
+  console.log(`[meta] Resolved: "${meta.title}"`);
+  return meta;
 }
+
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware for dynamic meta tags
+// Read index.html at startup
+const indexPath = join(__dirname, "dist/browser/index.html");
+const indexHtml = await fs.readFile(indexPath, "utf-8");
+
+/** Inject Open Graph / Twitter Card meta tags into the base HTML */
+function injectMetaTags(html, meta) {
+  const title = escapeHtml(meta.title);
+  const description = escapeHtml(meta.description);
+  const image = escapeHtml(meta.image);
+  const url = escapeHtml(meta.url);
+
+  return html
+    .replace(/<title>.*?<\/title>/, `<title>${title}</title>`)
+    .replace(/<meta property="og:title" content=".*?"/, `<meta property="og:title" content="${title}"`)
+    .replace(/<meta name="twitter:title" content=".*?"/, `<meta name="twitter:title" content="${title}"`)
+    .replace(/<meta property="og:description" content=".*?"/, `<meta property="og:description" content="${description}"`)
+    .replace(/<meta name="description" content=".*?"/, `<meta name="description" content="${description}"`)
+    .replace(/<meta property="og:image" content=".*?"/, `<meta property="og:image" content="${image}"`)
+    .replace(/<meta property="og:url" content=".*?"/, `<meta property="og:url" content="${url}"`);
+}
+
+// Middleware for dynamic meta tags (bot requests only)
 app.use(async (req, res, next) => {
-  // Skip if request is for a static asset
-  if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|json|svg|woff|woff2|ttf|eot)$/)) {
+  if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|json|svg|woff|woff2|ttf|eot|map)$/)) {
     return next();
   }
 
-  if (req.headers["user-agent"]?.toLowerCase().match(/(bot|facebookexternalhit|twitterbot|telegrambot|whatsapp|linkedin|slack|discord|signal|snapchat|pinterest|skype|googlebot|bingbot|yandexbot|duckduckbot)/i)) {
-    try {
-      // Extract project identifier from path
-      const projectMatch = req.path.match(/\/project\/(angor1[a-zA-Z0-9]+)/);
-      const projectId = projectMatch ? projectMatch[1] : null;
+  const ua = req.headers["user-agent"] || "";
+  if (!BOT_UA_PATTERN.test(ua)) {
+    return next();
+  }
 
-      if (!projectId) {
-        return next();
-      }
+  try {
+    const projectMatch = req.path.match(/\/project\/(angor1[a-zA-Z0-9]+)/);
+    const projectId = projectMatch ? projectMatch[1] : null;
 
-      const indexerUrl = "https://tbtc.indexer.angor.io/api/query/Angor/projects/";
-
-      // Fetch project metadata if projectId exists
-      const response = await fetch(indexerUrl + projectId);
-
-      const projectMetadata = await response.json();
-      const nostrEventId = projectMetadata.nostrEventId;
-
-      // Fetch Nostr metadata if projectId exists
-      const nostrEvent = await getNostrEvent(nostrEventId);
-      const nostrParsed = JSON.parse(nostrEvent.content);
-      const nostrPubKey = nostrParsed.nostrPubKey;
-
-      if (!nostrPubKey) {
-        return next();
-      }
-
-      // Fetch Nostr metadata if projectId exists
-      const nostrMetadata = await getNostrMetadata(nostrPubKey);
-      //   console.log("Nostr Metadata:", nostrMetadata);
-      const profile = JSON.parse(nostrMetadata.content);
-
-      const indexPath = join(__dirname, "dist/browser/index.html");
-      let html = await fs.readFile(indexPath, "utf-8");
-
-      const title = `Angor Hub - ${profile.name}`;
-      const description = `${profile.about}`;
-      const image = profile?.banner || "https://hub.angor.io/assets/angor-hub-social.png";
-
-      html = html
-        .replace(/<title>.*?<\/title>/, `<title>${title}</title>`)
-        .replace(/<meta property="og:title" content=".*?"/, `<meta property="og:title" content="${title}"`)
-        .replace(/<meta name="twitter:title" content=".*?"/, `<meta name="twitter:title" content="${title}"`)
-        .replace(/<meta property="og:description" content=".*?"/, `<meta property="og:description" content="${description}"`)
-        .replace(/<meta property="og:image" content=".*?"/, `<meta property="og:image" content="${image}"`);
-
-      return res.send(html);
-    } catch (error) {
-      console.error("Error modifying meta tags:", error);
-      next();
+    if (!projectId) {
+      return next();
     }
-  } else {
+
+    const meta = await getProjectMeta(projectId);
+    if (!meta) {
+      return next();
+    }
+
+    const html = injectMetaTags(indexHtml, meta);
+    res.set("Content-Type", "text/html");
+    return res.send(html);
+  } catch (error) {
+    console.error("[meta] Error generating meta tags for", req.path, error.message);
     next();
   }
 });
@@ -163,11 +275,15 @@ app.use(async (req, res, next) => {
 // Serve static files from the Angular app
 app.use(express.static(join(__dirname, "dist/browser")));
 
-// Handle all routes for the PWA
-app.get("*", (req, res) => {
-  res.sendFile(join(__dirname, "dist/browser/index.html"));
+// Handle all routes for the SPA
+app.get("/{*splat}", (req, res) => {
+  res.set("Content-Type", "text/html");
+  res.send(indexHtml);
 });
 
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`Angor Hub server running on port ${port}`);
+  console.log(`  Indexer:  ${INDEXER_URL}`);
+  console.log(`  Relays:   ${NOSTR_RELAYS.join(", ")}`);
+  console.log(`  Base URL: ${BASE_URL}`);
 });
