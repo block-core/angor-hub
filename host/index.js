@@ -128,11 +128,6 @@ async function fetchFromRelays(filter, relayUrls = NOSTR_RELAYS) {
   return null;
 }
 
-/** Fetch a Nostr event by ID */
-async function fetchNostrEvent(eventId) {
-  return fetchFromRelays({ ids: [eventId] });
-}
-
 /** Fetch a Nostr profile (kind 0) by pubkey */
 async function fetchNostrProfile(pubkey) {
   return fetchFromRelays({ kinds: [0], authors: [pubkey], limit: 1 });
@@ -144,34 +139,12 @@ async function getProjectMeta(projectId) {
   const cached = cacheGet(`project:${projectId}`);
   if (cached) return cached;
 
-  //  Fetch project from the indexer
+  // Fetch project from the indexer — needed to resolve projectId  to a Nostr pubkey
   console.log(`[meta] Fetching project ${projectId} from indexer`);
   const project = await fetchJson(INDEXER_URL + encodeURIComponent(projectId));
-  const nostrEventId = project?.nostrEventId;
-  if (!nostrEventId) {
-    console.warn("[meta] No nostrEventId in indexer response");
-    return null;
-  }
-
-  //  Fetch the project's Nostr event from relays
-  console.log(`[meta] Fetching event ${nostrEventId.slice(0, 12)}...`);
-  const event = await fetchNostrEvent(nostrEventId);
-  if (!event?.content) {
-    console.warn("[meta] Event not found or has no content");
-    return null;
-  }
-
-  let eventContent;
-  try {
-    eventContent = typeof event.content === "string" ? JSON.parse(event.content) : event.content;
-  } catch {
-    console.warn("[meta] Failed to parse event content");
-    return null;
-  }
-
-  const nostrPubKey = eventContent?.nostrPubKey;
+  const nostrPubKey = project?.founderKey;
   if (!nostrPubKey) {
-    console.warn("[meta] No nostrPubKey in event content");
+    console.warn("[meta] No founderKey in indexer response");
     return null;
   }
 
