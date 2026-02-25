@@ -249,36 +249,36 @@ export class HubConfigService {
   }
 
   /**
-   * Check if a project is in the deny list
+   * Check if a project's founderKey is in the deny list.
+   * The deny list (kind 30000) stores founderKey hex pubkeys.
    */
-  isProjectDenied(projectId: string): boolean {
-    return this._deniedProjects().has(projectId);
+  isProjectDenied(founderKey: string): boolean {
+    return this._deniedProjects().has(founderKey);
   }
 
   /**
-   * Determine if a project should be displayed based on hub mode
-   * This is the main filtering method used by IndexerService
+   * Determine if a project should be displayed based on hub mode.
+   * This is the main filtering method used by IndexerService.
    *
-   * Blacklist mode: Show all projects EXCEPT those in deny list
-   * Whitelist mode: Show ONLY projects in whitelist
+   * @param founderKey  Hex pubkey of the project founder (used for deny list lookup)
+   * @param projectIdentifier  Unique Angor project ID (used for whitelist lookup)
+   *
+   * Blacklist mode: Show all projects EXCEPT those whose founderKey is in the deny list
+   * Whitelist mode: Show ONLY projects whose projectIdentifier is in the whitelist
    */
-  shouldShowProject(projectId: string): boolean {
-    const mode = this._hubMode();
-    const isDenied = this._deniedProjects().has(projectId);
-
-    // Always hide denied projects regardless of mode
-    if (isDenied) {
+  shouldShowProject(founderKey: string, projectIdentifier: string): boolean {
+    // Deny list check is by founderKey (kind 30000 'p' tags)
+    if (this._deniedProjects().has(founderKey)) {
       return false;
     }
 
+    const mode = this._hubMode();
     if (mode === 'blacklist') {
-      // Blacklist mode: show all non-denied projects
       return true;
-    } else {
-      // Whitelist mode: only show whitelisted projects
-      const isWhitelisted = this._whitelistedProjects().has(projectId);
-      return isWhitelisted;
     }
+
+    // Whitelist mode: check by projectIdentifier (kind 10001 'a'/'e' tags)
+    return this._whitelistedProjects().has(projectIdentifier);
   }
 
   /**

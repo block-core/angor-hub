@@ -6,6 +6,7 @@ import { NostrListService } from '../../services/nostr-list.service';
 import { RelayService } from '../../services/relay.service';
 import { NostrAuthService } from '../../services/nostr-auth.service';
 import { HubConfigService, HubMode } from '../../services/hub-config.service';
+import { nip19 } from 'nostr-tools';
 
 interface ProjectItem {
   id: string;
@@ -230,13 +231,35 @@ export class AdminComponent implements OnInit {
     ]);
   }
 
+  /**
+   * Resolve the entered value to a hex pubkey.
+   * Accepts either a hex founderKey or an npub (bech32-encoded pubkey).
+   */
+  private resolveToHexPubkey(input: string): string | null {
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+
+    // Already hex (64-char lowercase hex)
+    if (/^[0-9a-f]{64}$/.test(trimmed)) return trimmed;
+
+    // Decode npub
+    try {
+      const decoded = nip19.decode(trimmed);
+      if (decoded.type === 'npub') return decoded.data as string;
+    } catch {
+      // Not a valid npub
+    }
+
+    return null; // Unrecognised format
+  }
+
   async addProject() {
     if (!this.requireAuthorization()) return;
 
-    const projectId = this.newProjectId().trim();
+    const founderKey = this.resolveToHexPubkey(this.newProjectId());
 
-    if (!projectId) {
-      this.error.set('Please enter a project ID');
+    if (!founderKey) {
+      this.error.set('Please enter a valid project npub or hex founderKey');
       return;
     }
 
@@ -246,7 +269,7 @@ export class AdminComponent implements OnInit {
 
     try {
       await this.withTimeout(
-        this.nostrListService.addToDenyList(projectId),
+        this.nostrListService.addToDenyList(founderKey),
         300000,
         'Publishing deny list'
       );

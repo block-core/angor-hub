@@ -413,16 +413,9 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
     this.projectId = id;
 
-    // Force reload deny list to ensure it's fresh from Nostr
-    await this.denyService.reloadDenyList();
-
-    if (await this.denyService.isEventDenied(this.projectId)) {
-      this.isDenied.set(true);
-      this.project.set(null);
-      this.title.setTitle('Project Not Available');
-      console.warn(`Access denied for project: ${this.projectId}`);
-      return;
-    }
+    // Ensure deny list is fresh from Nostr before filtering.
+    // The actual deny check (by founderKey) happens after the project data is fetched below.
+    await this.denyService.loadDenyList();
 
 
     let projectData: IndexedProject | undefined | null =
@@ -435,7 +428,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
       }
 
 
-      if (projectData && await this.denyService.isEventDenied(projectData.projectIdentifier)) {
+      if (projectData && await this.denyService.isFounderKeyDenied(projectData.founderKey)) {
         this.isDenied.set(true);
         this.project.set(null);
         this.title.setTitle('Project Not Available');
@@ -1074,11 +1067,15 @@ export class ProjectComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const founderKey = this.project()?.founderKey;
+    if (!founderKey) return;
+
     try {
       const denyList = await this.nostrListService.getDenyList();
       const whitelist = await this.nostrListService.getWhiteList();
-      
-      this.isInDenyList.set(denyList.includes(this.projectId));
+
+      // Deny list stores founderKey (hex pubkey); whitelist stores projectIdentifier
+      this.isInDenyList.set(denyList.includes(founderKey));
       this.isInWhitelist.set(whitelist.includes(this.projectId));
     } catch (error) {
       console.error('Error checking project list status:', error);
@@ -1086,13 +1083,15 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   async addToDenyList(): Promise<void> {
-    if (!this.projectId) return;
+    const founderKey = this.project()?.founderKey;
+    if (!founderKey) return;
 
     this.updatingDenyList.set(true);
     this.adminActionMessage.set('');
 
     try {
-      await this.nostrListService.addToDenyList(this.projectId);
+      // Blacklist stores the founderKey (project npub) as a 'p' tag in kind 30000
+      await this.nostrListService.addToDenyList(founderKey);
       this.isInDenyList.set(true);
       this.adminActionMessage.set('Success: Project added to deny list');
       setTimeout(() => this.adminActionMessage.set(''), 5000);
@@ -1105,13 +1104,14 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   async removeFromDenyList(): Promise<void> {
-    if (!this.projectId) return;
+    const founderKey = this.project()?.founderKey;
+    if (!founderKey) return;
 
     this.updatingDenyList.set(true);
     this.adminActionMessage.set('');
 
     try {
-      await this.nostrListService.removeFromDenyList(this.projectId);
+      await this.nostrListService.removeFromDenyList(founderKey);
       this.isInDenyList.set(false);
       this.adminActionMessage.set('Success: Project removed from deny list');
       setTimeout(() => this.adminActionMessage.set(''), 5000);

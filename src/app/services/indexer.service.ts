@@ -447,8 +447,8 @@ export class IndexerService {
         const hubMode = this.hubConfig.hubMode();
 
         for (const item of response) {
-          // Use HubConfigService for unified filtering based on hub mode
-          const shouldShow = this.hubConfig.shouldShowProject(item.projectIdentifier);
+          // Deny list uses founderKey (kind 30000 'p' tags); whitelist uses projectIdentifier
+          const shouldShow = this.hubConfig.shouldShowProject(item.founderKey, item.projectIdentifier);
           if (shouldShow) {
             filteredResponse.push(item);
           }
@@ -534,18 +534,12 @@ export class IndexerService {
   }
 
   async fetchProject(id: string): Promise<IndexedProject | null> {
-    // Ensure lists are loaded for filtering
+    // Ensure deny list and whitelist are loaded before filtering
     await Promise.all([
       this.denyService.loadDenyList(),
       this.featuredService.loadFeaturedProjects()
     ]);
     this.hubConfig.setListsLoaded(true);
-
-    // Use unified hub filtering
-    if (!this.hubConfig.shouldShowProject(id)) {
-      this.error.set(`Project ${id} is not available.`);
-      return null;
-    }
 
     try {
       this.loading.set(true);
@@ -553,7 +547,8 @@ export class IndexerService {
         `${this.indexerUrl}api/query/Angor/projects/${id}`
       );
       if (project && project.data) {
-        if (!this.hubConfig.shouldShowProject(project.data.projectIdentifier)) {
+        // Deny list checks founderKey; whitelist checks projectIdentifier
+        if (!this.hubConfig.shouldShowProject(project.data.founderKey, project.data.projectIdentifier)) {
           this.error.set(`Project ${id} is not available.`);
           return null;
         }
