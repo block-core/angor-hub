@@ -1,4 +1,5 @@
 import express from "express";
+import escapeHtml from "escape-html";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import fs from "fs/promises";
@@ -14,11 +15,11 @@ const INDEXER_TIMEOUT_MS = 45000;
 const RELAY_TIMEOUT_MS = 10000;   // Nostr relay operations
 
 // Relays used for fetching Nostr data (events + profiles)
-const NOSTR_RELAYS = (process.env.NOSTR_RELAYS || "wss://relay.angor.io,wss://purplepag.es").split(",");
+const NOSTR_RELAYS = (process.env.NOSTR_RELAYS || "wss://relay.angor.io,wss://relay2.angor.io").split(",");
 
 
 const cache = new Map();
-const CACHE_TTL_MS = 60 * 60 * 1000;
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 1 week
 
 function cacheGet(key) {
   const entry = cache.get(key);
@@ -53,16 +54,6 @@ async function fetchJson(url, timeoutMs = INDEXER_TIMEOUT_MS) {
   } finally {
     clearTimeout(timeout);
   }
-}
-
-/** Sanitize a string for safe injection into HTML attribute values */
-function escapeHtml(str) {
-  if (!str) return "";
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }
 
 /** Truncate description to a reasonable length for meta tags */
