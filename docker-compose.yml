@@ -1,0 +1,11 @@
+services:
+  angor-hub:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - INDEXER_URL=https://fulcrum.angor.online/api/query/Angor/projects/
+      - BASE_URL=https://hub.angor.io
+      - NOSTR_RELAYS=wss://relay.angor.io,wss://relay2.angor.io
+    restart: unless-stopped
