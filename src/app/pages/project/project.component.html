@@ -237,34 +237,56 @@
               }
 
               <!-- Invest Buttons -->
-              <div class="mt-6 flex flex-col sm:flex-row gap-3">
-                <!-- 1-Click Invest Button -->
-                <a
-                  [routerLink]="canInvest() ? ['/invest', projectId] : null"
-                  [queryParams]="{ network: networkService.isMain() ? 'main' : 'test' }"
-                  class="w-full sm:w-auto px-8 py-3 text-base font-bold text-white bg-green-600 rounded-xl shadow-lg transition-all duration-300 hover:bg-green-700 hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  [class.pointer-events-none]="!canInvest()"
-                  [class.opacity-50]="!canInvest()"
-                >
-                  @if (isProjectEnded()) {
-                    <span class="material-icons text-lg">timer_off</span>
-                    <span>Ended {{ project()?.details?.expiryDate ?? 0 | ago }}</span>
-                  } @else {
-                    <span class="material-icons text-lg">bolt</span>
-                    <span>1-Click Invest</span>
-                  }
-                </a>
-                <!-- Full Wallet Button -->
-                <button
-                  class="w-full sm:w-auto px-8 py-3 text-base font-bold text-text bg-surface-hover rounded-xl shadow-lg transition-all duration-300 hover:bg-surface-ground hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed border border-border"
-                  [disabled]="!canInvest()"
-                  (click)="canInvest() && openInvestWindow()"
-                >
-                  <span class="flex items-center justify-center gap-2">
-                    <span class="material-icons text-lg">account_balance_wallet</span>
-                    <span>Use Angor Wallet</span>
-                  </span>
-                </button>
+              <div class="mt-6 space-y-3">
+                @if (canInvest()) {
+                  <!-- Primary: 1-Click Invest (in-app) -->
+                  <a
+                    [routerLink]="['/invest', projectId]"
+                    [queryParams]="{ network: networkService.isMain() ? 'main' : 'test' }"
+                    class="group w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-accent to-accent-dark text-white rounded-2xl shadow-lg hover:shadow-accent/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                        <span class="material-icons text-lg">bolt</span>
+                      </div>
+                      <div class="text-left">
+                        <div class="font-bold text-base leading-tight">Invest Directly</div>
+                        <div class="text-xs text-white/70 mt-0.5">No wallet needed &middot; QR code payment</div>
+                      </div>
+                    </div>
+                    <span class="material-icons text-white/60 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                  </a>
+
+                  <!-- Use Angor Wallet -->
+                  <button
+                    (click)="openInvestWindow()"
+                    class="group w-full flex items-center justify-between px-6 py-4 bg-surface-hover border-2 border-border rounded-2xl hover:border-accent/40 hover:bg-surface-ground transition-all duration-300"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+                        <span class="material-icons text-accent text-lg">account_balance_wallet</span>
+                      </div>
+                      <div class="text-left">
+                        <div class="font-bold text-base text-text leading-tight">Use Angor Wallet</div>
+                        <div class="text-xs text-text-secondary mt-0.5">Full-featured wallet at angor.io</div>
+                      </div>
+                    </div>
+                    <span class="material-icons text-text-secondary group-hover:text-accent group-hover:translate-x-1 transition-all">open_in_new</span>
+                  </button>
+                } @else {
+                  <!-- Project ended state -->
+                  <div class="w-full flex items-center gap-3 px-6 py-4 bg-surface-hover rounded-2xl border border-border opacity-60 cursor-not-allowed">
+                    <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                      <span class="material-icons text-red-500 text-lg">timer_off</span>
+                    </div>
+                    <div class="text-left">
+                      <div class="font-bold text-base text-text">Investment Closed</div>
+                      <div class="text-xs text-text-secondary mt-0.5">
+                        Ended {{ project()?.details?.expiryDate ?? 0 | ago }}
+                      </div>
+                    </div>
+                  </div>
+                }
               </div>
             </div>
           </div>

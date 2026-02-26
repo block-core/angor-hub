@@ -176,10 +176,16 @@ export async function initCrypto(): Promise<void> {
 
   try {
     // Dynamic imports to avoid blocking app initialization
-    const [bitcoin, secp] = await Promise.all([
+    const [bitcoin, secp, { hmac }, { sha256 }] = await Promise.all([
       import('bitcoinjs-lib'),
-      import('@noble/secp256k1')
+      import('@noble/secp256k1'),
+      import('@noble/hashes/hmac'),
+      import('@noble/hashes/sha2'),
     ]);
+
+    // Required by @noble/secp256k1 v2 for synchronous signing 
+    secp.etc.hmacSha256Sync = (k: Uint8Array, ...m: Uint8Array[]) =>
+      hmac(sha256, k, secp.etc.concatBytes(...m));
 
     bitcoinLib = bitcoin;
     _secpLib = secp;
