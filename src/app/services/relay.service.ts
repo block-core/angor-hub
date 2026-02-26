@@ -293,8 +293,9 @@ export class RelayService {
     try {
       const ndk = await this.ensureConnected();
 
+      // Include both Angor project event kinds (mainnet uses 30078, testnet/newer uses 3030)
       const filter: { kinds: number[]; limit: number; until?: number } = {
-        kinds: [3030],
+        kinds: [3030, 30078],
         limit,
       };
 
@@ -302,10 +303,28 @@ export class RelayService {
         filter.until = until;
       }
 
-      const events = await ndk.fetchEvents(filter);
-      return Array.from(events);
+      // Use subscribe + EOSE rather than fetchEvents
+      const collected: NDKEvent[] = [];
+
+      const sub = ndk.subscribe(filter);
+
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(resolve, 8000);
+
+        sub.on('event', (event: NDKEvent) => {
+          collected.push(event);
+        });
+
+        sub.on('eose', () => {
+          clearTimeout(timeout);
+          resolve();
+        });
+      });
+
+      console.log(`[Angor] fetchNostrProjects: received ${collected.length} events`);
+      return collected;
     } catch (error) {
-      console.error('Error fetching Nostr projects (kind 3030):', error);
+      console.error('Error fetching Nostr projects (kind 3030/30078):', error);
       return [];
     }
   }
