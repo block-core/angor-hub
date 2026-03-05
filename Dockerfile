@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1
 
-# ─── Stage 1: Build Angular app ──────────────────────────────────────────────
+#  Build Angular app
 FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Install deps with npm cache mount (layer-cached when package files unchanged)
+# Install deps with npm cache mount 
 COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --prefer-offline
@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/root/.npm \
 COPY . .
 RUN npm run build
 
-# ─── Stage 2: Production runtime ─────────────────────────────────────────────
+#  Production runtime
 FROM node:22-alpine AS runtime
 
 ENV NODE_ENV=production \
