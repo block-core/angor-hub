@@ -1,7 +1,37 @@
+# Dependencies
 node_modules
-npm-debug.log
+host/node_modules
+
+# Build artifacts (generated during Docker build)
+host/dist
+.angular
+
+# Version control
 .git
 .gitignore
+.gitattributes
+
+# Environment / secrets
 .env
+.env.*
+
+# Editor & OS
+.vscode
+.idea
+*.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+*.log
+
+# Test output
+coverage
+karma.conf.js
+
+# Docker files themselves
+Dockerfile
 .dockerignore
-README.md
+
+# Docs
+*.md

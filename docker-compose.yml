@@ -1,0 +1,24 @@
+services:
+  angor-hub:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: angor-hub:latest
+    container_name: angor-hub
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
