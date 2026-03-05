@@ -94,7 +94,7 @@ export interface NetworkStats {
 })
 export class IndexerService {
   private readonly LIMIT = 8;
-  private indexerUrl = 'https://tbtc.indexer.angor.io/';
+  private indexerUrl = 'https://signet.angor.online/';
 
   // Offset-based pagination (same as original — restores reliable project listing)
   private offset = -1000;
@@ -117,7 +117,6 @@ export class IndexerService {
       { url: 'https://electrs.angor.online/', isPrimary: false }
     ],
     testnet: [
-      { url: 'https://tbtc.indexer.angor.io/', isPrimary: false },
       { url: 'https://signet.angor.online/', isPrimary: true }
     ]
   });
@@ -166,7 +165,7 @@ export class IndexerService {
         { url: 'https://fulcrum.angor.online/', isPrimary: true },
         { url: 'https://electrs.angor.online/', isPrimary: false }
       ],
-      testnet: [{ url: 'https://tbtc.indexer.angor.io/', isPrimary: true }]
+      testnet: [{ url: 'https://signet.angor.online/', isPrimary: true }]
     };
   }
 
@@ -185,7 +184,7 @@ export class IndexerService {
     const networkIndexers = isMainnet ? config.mainnet : config.testnet;
     const primary = networkIndexers.find(indexer => indexer.isPrimary);
     return primary ? primary.url : networkIndexers[0]?.url ||
-      (isMainnet ? 'https://explorer.angor.io/' : 'https://tbtc.indexer.angor.io/');
+      (isMainnet ? 'https://explorer.angor.io/' : 'https://signet.angor.online/');
   }
 
   updateActiveIndexer(): void {

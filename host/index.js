@@ -114,7 +114,7 @@ app.use(async (req, res, next) => {
         return next();
       }
 
-      const indexerUrl = "https://tbtc.indexer.angor.io/api/query/Angor/projects/";
+      const indexerUrl = "https://signet.angor.online/api/query/Angor/projects/";
 
       // Fetch project metadata if projectId exists
       const response = await fetch(indexerUrl + projectId);
