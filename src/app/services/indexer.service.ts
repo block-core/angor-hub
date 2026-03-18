@@ -494,11 +494,46 @@ export class IndexerService {
         return;
       }
 
-      // Step 3: Validate each project on-chain via the indexer (in parallel)
+      // Step 3: Validate each project on-chain via the indexer (in parallel).
+      // If we've previously validated a project, use the cached result
+      // instead of calling the indexer again — on-chain data is immutable.
       const validatedProjects = await Promise.all(
         candidateEvents.map(async ({ event, details }) => {
           try {
-            const url = `${this.indexerUrl}api/query/Angor/projects/${details.projectIdentifier}`;
+            const projectId = details.projectIdentifier;
+
+            // Hub mode filtering (can be checked before indexer call)
+            const nostrPubKey = details.nostrPubKey;
+            if (nostrPubKey && !this.hubConfig.shouldShowProject(nostrPubKey)) {
+              return null;
+            }
+
+            // Check validation cache first
+            const cached = this.verification.getCachedValidation(projectId);
+            if (cached) {
+              // Verify the cached event ID matches the Nostr event we discovered
+              if (cached.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
+                console.warn(
+                  `[Angor] Event ID mismatch for ${projectId}: ` +
+                  `nostr="${event.id}" vs cached="${cached.nostrEventId}" — skipping`
+                );
+                return null;
+              }
+
+              // Reconstruct the IndexedProject from cached on-chain data + Nostr details
+              return {
+                founderKey: cached.founderKey,
+                nostrEventId: event.id,
+                projectIdentifier: projectId,
+                createdOnBlock: cached.createdOnBlock,
+                trxId: cached.trxId,
+                details,
+                details_created_at: event.created_at,
+              } as IndexedProject;
+            }
+
+            // No cache — call the indexer to validate
+            const url = `${this.indexerUrl}api/query/Angor/projects/${projectId}`;
             const { data: indexerProject } = await this.fetchJson<IndexedProject>(url);
 
             if (!indexerProject) return null;
@@ -508,17 +543,19 @@ export class IndexerService {
             // the Nostr event ID we discovered.
             if (indexerProject.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
               console.warn(
-                `[Angor] Event ID mismatch for ${details.projectIdentifier}: ` +
+                `[Angor] Event ID mismatch for ${projectId}: ` +
                 `nostr="${event.id}" vs indexer="${indexerProject.nostrEventId}" — skipping`
               );
               return null;
             }
 
-            // Hub mode filtering
-            const nostrPubKey = details.nostrPubKey;
-            if (nostrPubKey && !this.hubConfig.shouldShowProject(nostrPubKey)) {
-              return null;
-            }
+            // Cache the validation result for future loads
+            this.verification.cacheValidation(projectId, {
+              founderKey: indexerProject.founderKey,
+              nostrEventId: indexerProject.nostrEventId,
+              trxId: indexerProject.trxId,
+              createdOnBlock: indexerProject.createdOnBlock,
+            });
 
             // Attach the Nostr-sourced details and event metadata
             indexerProject.nostrEventId = event.id;
