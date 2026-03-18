@@ -33,8 +33,6 @@ import { DenyService } from '../../services/deny.service';
 import { AboutContentComponent } from '../../components/about-content.component';
 import { ShareModalComponent, ShareData } from '../../components/share-modal.component';
 import { nip19 } from 'nostr-tools';
-import { NostrListService } from '../../services/nostr-list.service';
-import { NostrAuthService } from '../../services/nostr-auth.service';
 import { MetaService } from '../../services/meta.service';
 
 @Component({
@@ -102,8 +100,6 @@ export class ProjectComponent implements OnInit, OnDestroy {
   public bitcoin = inject(BitcoinUtilsService);
   public title = inject(TitleService);
   private denyService = inject(DenyService);
-  private nostrListService = inject(NostrListService);
-  public nostrAuth = inject(NostrAuthService);
   private metaService = inject(MetaService);
 
   constructor() {
@@ -124,12 +120,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Admin controls
-  isInDenyList = signal<boolean>(false);
-  isInWhitelist = signal<boolean>(false);
-  updatingDenyList = signal<boolean>(false);
-  updatingWhitelist = signal<boolean>(false);
-  adminActionMessage = signal<string>('');
+  // UI state
   bannerLoaded = signal<boolean>(false);
   profileLoaded = signal<boolean>(false);
 
@@ -246,6 +237,16 @@ export class ProjectComponent implements OnInit, OnDestroy {
       return `${diffDays} day${diffDays > 1 ? 's' : ''}`;
     } else {
       return 'Less than a day';
+    }
+  });
+
+  public projectNpub = computed(() => {
+    const hex = this.project()?.details?.nostrPubKey;
+    if (!hex) return null;
+    try {
+      return nip19.npubEncode(hex);
+    } catch {
+      return null;
     }
   });
 
@@ -413,16 +414,9 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
     this.projectId = id;
 
-    // Force reload deny list to ensure it's fresh from Nostr
-    await this.denyService.reloadDenyList();
-
-    if (await this.denyService.isEventDenied(this.projectId)) {
-      this.isDenied.set(true);
-      this.project.set(null);
-      this.title.setTitle('Project Not Available');
-      console.warn(`Access denied for project: ${this.projectId}`);
-      return;
-    }
+    // Ensure deny list is fresh from Nostr before filtering.
+    // The actual deny check (by founderKey) happens after the project data is fetched below.
+    await this.denyService.loadDenyList();
 
 
     let projectData: IndexedProject | undefined | null =
@@ -435,7 +429,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
       }
 
 
-      if (projectData && await this.denyService.isEventDenied(projectData.projectIdentifier)) {
+      if (projectData && await this.denyService.isFounderKeyDenied(projectData.founderKey)) {
         this.isDenied.set(true);
         this.project.set(null);
         this.title.setTitle('Project Not Available');
@@ -581,10 +575,6 @@ export class ProjectComponent implements OnInit, OnDestroy {
           this.title.setTitle(this.project()?.metadata?.name);
         }
 
-        // Check admin list status if user is logged in
-        if (this.isCurrentUserAdmin()) {
-          await this.checkProjectListStatus();
-        }
 
       } else {
 
@@ -1062,103 +1052,6 @@ export class ProjectComponent implements OnInit, OnDestroy {
   
   closeShareModal(): void {
     this.showShareModal.set(false);
-  }
-
-  // Admin methods
-  isCurrentUserAdmin(): boolean {
-    return this.nostrAuth.isLoggedIn();
-  }
-
-  async checkProjectListStatus(): Promise<void> {
-    if (!this.isCurrentUserAdmin() || !this.projectId) {
-      return;
-    }
-
-    try {
-      const denyList = await this.nostrListService.getDenyList();
-      const whitelist = await this.nostrListService.getWhiteList();
-      
-      this.isInDenyList.set(denyList.includes(this.projectId));
-      this.isInWhitelist.set(whitelist.includes(this.projectId));
-    } catch (error) {
-      console.error('Error checking project list status:', error);
-    }
-  }
-
-  async addToDenyList(): Promise<void> {
-    if (!this.projectId) return;
-
-    this.updatingDenyList.set(true);
-    this.adminActionMessage.set('');
-
-    try {
-      await this.nostrListService.addToDenyList(this.projectId);
-      this.isInDenyList.set(true);
-      this.adminActionMessage.set('Success: Project added to deny list');
-      setTimeout(() => this.adminActionMessage.set(''), 5000);
-    } catch (error) {
-      console.error('Error adding to deny list:', error);
-      this.adminActionMessage.set('Error: ' + (error as Error).message);
-    } finally {
-      this.updatingDenyList.set(false);
-    }
-  }
-
-  async removeFromDenyList(): Promise<void> {
-    if (!this.projectId) return;
-
-    this.updatingDenyList.set(true);
-    this.adminActionMessage.set('');
-
-    try {
-      await this.nostrListService.removeFromDenyList(this.projectId);
-      this.isInDenyList.set(false);
-      this.adminActionMessage.set('Success: Project removed from deny list');
-      setTimeout(() => this.adminActionMessage.set(''), 5000);
-    } catch (error) {
-      console.error('Error removing from deny list:', error);
-      this.adminActionMessage.set('Error: ' + (error as Error).message);
-    } finally {
-      this.updatingDenyList.set(false);
-    }
-  }
-
-  async addToWhitelist(): Promise<void> {
-    if (!this.projectId) return;
-
-    this.updatingWhitelist.set(true);
-    this.adminActionMessage.set('');
-
-    try {
-      await this.nostrListService.addToWhiteList(this.projectId);
-      this.isInWhitelist.set(true);
-      this.adminActionMessage.set('Success: Project added to whitelist');
-      setTimeout(() => this.adminActionMessage.set(''), 5000);
-    } catch (error) {
-      console.error('Error adding to whitelist:', error);
-      this.adminActionMessage.set('Error: ' + (error as Error).message);
-    } finally {
-      this.updatingWhitelist.set(false);
-    }
-  }
-
-  async removeFromWhitelist(): Promise<void> {
-    if (!this.projectId) return;
-
-    this.updatingWhitelist.set(true);
-    this.adminActionMessage.set('');
-
-    try {
-      await this.nostrListService.removeFromWhiteList(this.projectId);
-      this.isInWhitelist.set(false);
-      this.adminActionMessage.set('Success: Project removed from whitelist');
-      setTimeout(() => this.adminActionMessage.set(''), 5000);
-    } catch (error) {
-      console.error('Error removing from whitelist:', error);
-      this.adminActionMessage.set('Error: ' + (error as Error).message);
-    } finally {
-      this.updatingWhitelist.set(false);
-    }
   }
 
   onBannerLoad(): void {
