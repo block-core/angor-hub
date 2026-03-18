@@ -363,7 +363,10 @@ export class IndexerService {
 
     this._allProjects.update((projects) =>
       projects.map((project) => {
-        if (project.founderKey === pubkey) {
+        // Match by the project's Nostr pubkey (from details) since
+        // event.pubkey is a 64-char Nostr hex key, not the 66-char
+        // Bitcoin founderKey.
+        if (project.details?.nostrPubKey === pubkey) {
           if (
             !project.metadata_created_at ||
             event.created_at! > project.metadata_created_at
@@ -491,10 +494,18 @@ export class IndexerService {
 
         // OP_RETURN verification: for each project, attempt to decode the
         // OP_RETURN from its founding transaction and replace nostrEventId
-        // with the on-chain value.
+        // with the on-chain value. Results are cached in localStorage since
+        // Bitcoin transactions are immutable.
         await Promise.all(
           response.map(async (project) => {
             if (!project.trxId) return;
+
+            // Check cache first to avoid re-fetching the full tx hex
+            const cached = this.verification.getCachedEventId(project.trxId);
+            if (cached) {
+              project.nostrEventId = cached;
+              return;
+            }
 
             const txHex = await this.fetchTxHex(project.trxId);
             if (!txHex) return;
@@ -510,6 +521,7 @@ export class IndexerService {
             }
 
             project.nostrEventId = embeddedId;
+            this.verification.cacheEventId(project.trxId, embeddedId);
           })
         );
 
@@ -584,28 +596,35 @@ export class IndexerService {
 
       // Verify and correct the Nostr event ID via OP_RETURN
       if (project.trxId) {
-        try {
-          const txHex = await this.fetchTxHex(project.trxId);
+        // Check cache first
+        const cached = this.verification.getCachedEventId(project.trxId);
+        if (cached) {
+          project.nostrEventId = cached;
+        } else {
+          try {
+            const txHex = await this.fetchTxHex(project.trxId);
 
-          if (txHex) {
-            const embeddedEventId = this.verification.extractOpReturnEventId(txHex);
-            if (embeddedEventId) {
-              if (embeddedEventId !== project.nostrEventId?.toLowerCase()) {
+            if (txHex) {
+              const embeddedEventId = this.verification.extractOpReturnEventId(txHex);
+              if (embeddedEventId) {
+                if (embeddedEventId !== project.nostrEventId?.toLowerCase()) {
+                  console.warn(
+                    `[Angor] nostrEventId corrected for project ${id}: ` +
+                    `indexer="${project.nostrEventId}" -> op_return="${embeddedEventId}"`
+                  );
+                }
+                project.nostrEventId = embeddedEventId;
+                this.verification.cacheEventId(project.trxId, embeddedEventId);
+              } else {
                 console.warn(
-                  `[Angor] nostrEventId corrected for project ${id}: ` +
-                  `indexer="${project.nostrEventId}" -> op_return="${embeddedEventId}"`
+                  `[Angor] No OP_RETURN found in transaction ${project.trxId} for project ${id}`
                 );
               }
-              project.nostrEventId = embeddedEventId;
-            } else {
-              console.warn(
-                `[Angor] No OP_RETURN found in transaction ${project.trxId} for project ${id}`
-              );
             }
+          } catch (err) {
+            // Fall back to the indexer-supplied nostrEventId
+            console.warn(`[Angor] Could not verify OP_RETURN for project ${id}:`, err);
           }
-        } catch (err) {
-          // Fall back to the indexer-supplied nostrEventId
-          console.warn(`[Angor] Could not verify OP_RETURN for project ${id}:`, err);
         }
       }
 
