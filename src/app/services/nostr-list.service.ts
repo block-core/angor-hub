@@ -1,5 +1,5 @@
 import { Injectable, effect, signal } from '@angular/core';
-import NDK, { NDKEvent, NDKKind, NDKUser, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+import { NDKEvent, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
 import { RelayService } from './relay.service';
 import { SimplePool, type Event as NostrEvent } from 'nostr-tools';
 import { NostrAuthService } from './nostr-auth.service';
@@ -15,15 +15,16 @@ export interface NostrDenyList {
   providedIn: 'root',
 })
 export class NostrListService {
-  private ndk: NDK | null = null;
   private adminPubkey = signal<string | null>(null);
   private denyList = signal<string[]>([]);
   private loaded = signal<boolean>(false);
   private loadingPromise: Promise<void> | null = null;
   private simplePool = new SimplePool();
-  
+
   // NIP-51 List kinds
-  private readonly MUTE_LIST_KIND = 10000; // Mute list (NIP-51) - Used for deny/block list (private)
+  // Kind 30000: Follow Sets (parameterized replaceable) — stores project Nostr pubkeys in 'p' tags
+  private readonly BLACKLIST_KIND = 30000;
+  private readonly BLACKLIST_D_TAG = 'angor:deny'; // 'd' tag to identify this specific list
   private readonly PIN_LIST_KIND = 10001; // Pin list (NIP-51) - Used for whitelist/featured projects (public)
   
   constructor(
@@ -115,14 +116,16 @@ export class NostrListService {
         console.log('[NostrListService] Loading deny list for pubkey:', adminPubkey);
         const ndk = await this.relayService.ensureConnected();
 
+        // Kind 30000 is a parameterized replaceable event — filter by 'd' tag to find the deny list
         const filter = {
-          kinds: [this.MUTE_LIST_KIND],
+          kinds: [this.BLACKLIST_KIND],
           authors: [adminPubkey],
-          limit: 10, // Get multiple events to find the latest one
+          '#d': [this.BLACKLIST_D_TAG],
+          limit: 1, // Parameterized replaceable: only the latest per author+d matters
         };
 
-        console.log('[NostrListService] Fetching events with filter:', filter);
-        // Disable NDK cache to get fresh events from relays
+        console.log('[NostrListService] Fetching deny list events with filter:', filter);
+        // Bypass NDK cache — always fetch fresh from relays on every hub load
         const events = await ndk.fetchEvents(filter, { closeOnEose: true, cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY });
         console.log('[NostrListService] Found', events.size, 'events');
         
@@ -154,30 +157,49 @@ export class NostrListService {
   }
 
   /**
-   * Extract project IDs from Nostr event(s)
-   * Works for both deny lists (mute) and whitelists (pin) using NIP-51 'e' tags
+   * Extract denied project pubkeys from a kind 30000 event.
+   * The blacklist stores project Nostr hex pubkeys in 'p' tags.
    */
   private extractDeniedProjects(eventOrEvents: NDKEvent | NDKEvent[]): string[] {
-    const projectSet = new Set<string>();
+    const pubkeySet = new Set<string>();
     const events = Array.isArray(eventOrEvents) ? eventOrEvents : [eventOrEvents];
-    
+
     events.forEach(event => {
-      // NDK wraps events and may not expose tags directly
-      // Use rawEvent() to get the actual Nostr event with tags
       const rawEvent = event.rawEvent ? event.rawEvent() : event;
-      
-      // Extract project IDs from tags
-      // Support 'a' tags (addressable/arbitrary IDs), 'e' tags (event IDs), and legacy 'project' tags
-      const tags = rawEvent.tags || [];
-      
+      const tags: any[] = rawEvent.tags || [];
+
       tags.forEach((tag: any) => {
-        if (Array.isArray(tag) && (tag[0] === 'a' || tag[0] === 'e' || tag[0] === 'project') && tag[1]) {
-          projectSet.add(tag[1]);
+        // 'p' tags hold hex pubkeys (project Nostr pubkey)
+        if (Array.isArray(tag) && tag[0] === 'p' && tag[1]) {
+          pubkeySet.add(tag[1]);
         }
       });
     });
-    
-    return Array.from(projectSet);
+
+    return Array.from(pubkeySet);
+  }
+
+  /**
+   * Extract whitelisted project Nostr pubkeys from a kind 10001 event.
+   * The whitelist stores Nostr hex pubkeys in 'p' tags (same as deny list).
+   */
+  private extractFeaturedProjects(eventOrEvents: NDKEvent | NDKEvent[]): string[] {
+    const pubkeySet = new Set<string>();
+    const events = Array.isArray(eventOrEvents) ? eventOrEvents : [eventOrEvents];
+
+    events.forEach(event => {
+      const rawEvent = event.rawEvent ? event.rawEvent() : event;
+      const tags: any[] = rawEvent.tags || [];
+
+      tags.forEach((tag: any) => {
+        // 'p' tags hold hex pubkeys (project Nostr pubkey)
+        if (Array.isArray(tag) && tag[0] === 'p' && tag[1]) {
+          pubkeySet.add(tag[1]);
+        }
+      });
+    });
+
+    return Array.from(pubkeySet);
   }
 
   /**
@@ -260,18 +282,21 @@ export class NostrListService {
       // Get admin pubkey for event
       const pubkey = this.requireAdminPubkey();
 
-      // Create event following NIP-51 structure
-      // Using 'a' tag for addressable/arbitrary identifiers (project IDs)
+      // Kind 30000 (Follow Sets): parameterized replaceable event
+      // 'd' tag identifies this as the Angor deny list
+      // 'p' tags hold the Nostr hex pubkeys of blocked projects
       const eventTemplate = {
-        kind: this.MUTE_LIST_KIND,
+        kind: this.BLACKLIST_KIND,
         created_at: Math.floor(Date.now() / 1000),
-        tags: deniedProjects.map(id => ['a', id, '', 'Blocked project']),
-        content: '', // Empty content for privacy, all data in tags
-        pubkey: pubkey, // Add pubkey to event
+        tags: [
+          ['d', this.BLACKLIST_D_TAG],
+          ...deniedProjects.map(nostrPubKey => ['p', nostrPubKey]),
+        ],
+        content: '',
+        pubkey,
       };
 
-      // Sign using the active signer from auth flow
-      console.log('Signing deny list event with Nostr signer...');
+      console.log('Signing deny list event (kind 30000) with Nostr signer...');
       const signedEvent = await this.nostrAuth.signEvent(eventTemplate);
       console.log('✓ Event signed successfully:', signedEvent.id);
 
@@ -483,23 +508,26 @@ export class NostrListService {
   }
 
   /**
-   * Search all Nostr deny lists (from multiple admin users)
+   * Search all Nostr deny lists (kind 30000) from multiple admin users.
+   * Returns a map of adminPubkey → list of denied Nostr hex pubkeys.
    */
   async searchAllDenyLists(adminPubkeys: string[]): Promise<Map<string, string[]>> {
     try {
       const ndk = await this.relayService.ensureConnected();
 
       const filter = {
-        kinds: [this.MUTE_LIST_KIND],
+        kinds: [this.BLACKLIST_KIND],
         authors: adminPubkeys,
+        '#d': [this.BLACKLIST_D_TAG],
       };
 
-      const events = await ndk.fetchEvents(filter);
+      // Always bypass cache — fetch fresh from relays on every hub load
+      const events = await ndk.fetchEvents(filter, { closeOnEose: true, cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY });
       const denyListMap = new Map<string, string[]>();
 
       for (const event of events) {
-        const deniedProjects = this.extractDeniedProjects(event);
-        denyListMap.set(event.pubkey, deniedProjects);
+        const deniedPubkeys = this.extractDeniedProjects(event);
+        denyListMap.set(event.pubkey, deniedPubkeys);
       }
 
       return denyListMap;
@@ -524,6 +552,7 @@ export class NostrListService {
   }
 
   // ==================== WHITELIST / FEATURED PROJECTS (NIP-51 Pin List - Kind 10001) ====================
+  // Both deny list and whitelist store Nostr hex pubkeys in 'p' tags.
 
   private whiteList = signal<string[]>([]);
   private whiteListLoaded = signal<boolean>(false);
@@ -562,7 +591,7 @@ export class NostrListService {
           const event = sortedEvents[0];
           console.log('[NostrListService] Using newest whitelist event from', new Date(event.created_at! * 1000).toISOString());
           console.log('[NostrListService] Whitelist event found:', event.id);
-          const featuredProjects = this.extractDeniedProjects(event); // Same extraction logic
+          const featuredProjects = this.extractFeaturedProjects(event);
           this.whiteList.set(featuredProjects);
           this.whiteListLoaded.set(true);
           console.log('[NostrListService] ✓ Whitelist loaded:', featuredProjects.length, 'entries:', featuredProjects);
@@ -584,44 +613,44 @@ export class NostrListService {
   }
 
   /**
-   * Add a project to the whitelist (featured/pinned projects)
+   * Add a project to the whitelist by its Nostr pubkey (hex)
    */
-  async addToWhiteList(projectIdentifier: string): Promise<void> {
+  async addToWhiteList(nostrPubKey: string): Promise<void> {
     this.requireAdminPubkey();
 
     await this.loadNostrWhiteList();
 
-    if (this.whiteList().includes(projectIdentifier)) {
+    if (this.whiteList().includes(nostrPubKey)) {
       console.log('Project already in whitelist');
       return;
     }
 
-    const updatedList = [...this.whiteList(), projectIdentifier];
+    const updatedList = [...this.whiteList(), nostrPubKey];
     await this.publishWhiteList(updatedList);
   }
 
   /**
-   * Remove a project from the whitelist
+   * Remove a project from the whitelist by its Nostr pubkey (hex)
    */
-  async removeFromWhiteList(projectIdentifier: string): Promise<void> {
+  async removeFromWhiteList(nostrPubKey: string): Promise<void> {
     this.requireAdminPubkey();
 
     await this.loadNostrWhiteList();
 
-    const updatedList = this.whiteList().filter(id => id !== projectIdentifier);
+    const updatedList = this.whiteList().filter(id => id !== nostrPubKey);
     await this.publishWhiteList(updatedList);
   }
 
   /**
-   * Batch add multiple projects to whitelist
+   * Batch add multiple projects to whitelist by Nostr pubkey (hex)
    */
-  async batchAddToWhiteList(projectIdentifiers: string[]): Promise<void> {
+  async batchAddToWhiteList(nostrPubKeys: string[]): Promise<void> {
     this.requireAdminPubkey();
 
     await this.loadNostrWhiteList();
 
     const currentList = this.whiteList();
-    const newProjects = projectIdentifiers.filter(id => !currentList.includes(id));
+    const newProjects = nostrPubKeys.filter(id => !currentList.includes(id));
     
     if (newProjects.length === 0) {
       console.log('All projects already in whitelist');
@@ -633,14 +662,14 @@ export class NostrListService {
   }
 
   /**
-   * Batch remove multiple projects from whitelist
+   * Batch remove multiple projects from whitelist by Nostr pubkey (hex)
    */
-  async batchRemoveFromWhiteList(projectIdentifiers: string[]): Promise<void> {
+  async batchRemoveFromWhiteList(nostrPubKeys: string[]): Promise<void> {
     this.requireAdminPubkey();
 
     await this.loadNostrWhiteList();
 
-    const updatedList = this.whiteList().filter(id => !projectIdentifiers.includes(id));
+    const updatedList = this.whiteList().filter(id => !nostrPubKeys.includes(id));
     await this.publishWhiteList(updatedList);
   }
 
@@ -665,10 +694,11 @@ export class NostrListService {
       const pubkey = this.requireAdminPubkey();
 
       // Create event following NIP-51 Pin List structure
+      // 'p' tags hold the Nostr hex pubkeys of whitelisted projects
       const eventTemplate = {
         kind: this.PIN_LIST_KIND,
         created_at: Math.floor(Date.now() / 1000),
-        tags: featuredProjects.map(id => ['a', id, '', 'Featured project']),
+        tags: featuredProjects.map(nostrPubKey => ['p', nostrPubKey]),
         content: '', // Empty content, all data in tags
         pubkey: pubkey, // Add pubkey to event
       };
@@ -784,11 +814,11 @@ export class NostrListService {
   }
 
   /**
-   * Check if a project is in the whitelist
+   * Check if a project is in the whitelist by Nostr pubkey (hex)
    */
-  async isProjectWhiteListed(projectIdentifier: string): Promise<boolean> {
+  async isProjectWhiteListed(nostrPubKey: string): Promise<boolean> {
     await this.loadNostrWhiteList();
-    return this.whiteList().includes(projectIdentifier);
+    return this.whiteList().includes(nostrPubKey);
   }
 
   /**
@@ -807,7 +837,7 @@ export class NostrListService {
       const whiteListMap = new Map<string, string[]>();
 
       for (const event of events) {
-        const featuredProjects = this.extractDeniedProjects(event);
+        const featuredProjects = this.extractFeaturedProjects(event);
         whiteListMap.set(event.pubkey, featuredProjects);
       }
 

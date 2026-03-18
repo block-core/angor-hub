@@ -1,9 +1,12 @@
-import { Injectable, signal, inject, effect } from '@angular/core';
-import { ProfileUpdate, ProjectUpdate, RelayService } from './relay.service';
+import { Injectable, signal, inject, computed } from '@angular/core';
+import { ProjectUpdate, RelayService } from './relay.service';
 import { NDKEvent, NDKUserProfile } from '@nostr-dev-kit/ndk';
 import { NetworkService } from './network.service';
 import { DenyService } from './deny.service';
+import { FeaturedService } from './featured.service';
+import { HubConfigService } from './hub-config.service';
 import { ExternalIdentity } from '../models/models';
+import { NostrProjectVerificationService } from './nostr-project-verification.service';
 
 export interface IndexerConfig {
   mainnet: IndexerEntry[];
@@ -21,6 +24,8 @@ export interface IndexedProject {
   projectIdentifier: string;
   createdOnBlock: number;
   trxId: string;
+  /** Whether the project has been validated against the indexer (on-chain). */
+  verified?: boolean;
   profile?: {
     name?: string;
     picture?: string;
@@ -76,19 +81,16 @@ export interface AddressBalance {
 export interface Transaction {
   id: string;
   hex?: string;
-
 }
 
 export interface Block {
   hash: string;
   height: number;
-
 }
 
 export interface NetworkStats {
   connections: number;
   blockHeight: number;
-
 }
 
 @Injectable({
@@ -96,19 +98,31 @@ export interface NetworkStats {
 })
 export class IndexerService {
   private readonly LIMIT = 8;
-  private indexerUrl = 'https://tbtc.indexer.angor.io/';
-  private offset = -1000;
-  private totalItems = 0;
+  private indexerUrl = 'https://signet.angor.online/';
+
+  // Nostr-first cursor-based pagination (using `until` timestamp)
+  private oldestEventTimestamp: number | undefined;
   private totalProjectsFetched = false;
+
   private relay = inject(RelayService);
-  private readonly pageSize = 100;
   private denyService = inject(DenyService);
+  private featuredService = inject(FeaturedService);
+  private hubConfig = inject(HubConfigService);
+  private verification = inject(NostrProjectVerificationService);
 
   public loading = signal<boolean>(false);
-  public projects = signal<IndexedProject[]>([]);
+  private _allProjects = signal<IndexedProject[]>([]);
+  public projects = computed(() => {
+    const all = this._allProjects();
+    return all.filter(p => {
+      const nostrPubKey = p.details?.nostrPubKey;
+      // If details haven't loaded yet, show the project (will re-evaluate when details arrive)
+      if (!nostrPubKey) return true;
+      return this.hubConfig.shouldShowProject(nostrPubKey);
+    });
+  });
   public error = signal<string | null>(null);
   private network = inject(NetworkService);
-
 
   public indexers = signal<IndexerConfig>({
     mainnet: [
@@ -117,7 +131,6 @@ export class IndexerService {
       { url: 'https://electrs.angor.online/', isPrimary: false }
     ],
     testnet: [
-      { url: 'https://tbtc.indexer.angor.io/', isPrimary: false },
       { url: 'https://signet.angor.online/', isPrimary: true }
     ]
   });
@@ -128,17 +141,13 @@ export class IndexerService {
       this.updateProjectMetadata(update);
     });
 
-    this.relay.projectUpdates.subscribe((update) => {
-      this.updateProjectDetails(update);
+    // Update project details when a verified Nostr event is emitted.
+    this.relay.projectUpdates.subscribe((event) => {
+      this.updateProjectDetails(event);
     });
 
-
     this.loadIndexerConfig();
-
-
     this.updateActiveIndexer();
-
-
     this.denyService.loadDenyList();
   }
 
@@ -150,7 +159,6 @@ export class IndexerService {
         this.indexers.set(config);
       } catch (error) {
         console.error('Failed to parse saved indexer config', error);
-
       }
     }
   }
@@ -171,7 +179,7 @@ export class IndexerService {
         { url: 'https://fulcrum.angor.online/', isPrimary: true },
         { url: 'https://electrs.angor.online/', isPrimary: false }
       ],
-      testnet: [{ url: 'https://tbtc.indexer.angor.io/', isPrimary: true }]
+      testnet: [{ url: 'https://signet.angor.online/', isPrimary: true }]
     };
   }
 
@@ -190,14 +198,12 @@ export class IndexerService {
     const networkIndexers = isMainnet ? config.mainnet : config.testnet;
     const primary = networkIndexers.find(indexer => indexer.isPrimary);
     return primary ? primary.url : networkIndexers[0]?.url ||
-      (isMainnet ? 'https://explorer.angor.io/' : 'https://tbtc.indexer.angor.io/');
+      (isMainnet ? 'https://explorer.angor.io/' : 'https://signet.angor.online/');
   }
 
   updateActiveIndexer(): void {
     const isMain = this.network.isMain();
     this.indexerUrl = this.getPrimaryIndexerUrl(isMain);
-
-
     this.resetProjects();
   }
 
@@ -216,12 +222,10 @@ export class IndexerService {
   }
 
   addIndexer(url: string, isMainnet: boolean): boolean {
-
     let normalizedUrl = url;
     if (!normalizedUrl.endsWith('/')) {
       normalizedUrl += '/';
     }
-
 
     const networkKey = isMainnet ? 'mainnet' : 'testnet';
     const exists = this.indexers()[networkKey].some(indexer => indexer.url === normalizedUrl);
@@ -229,7 +233,6 @@ export class IndexerService {
     if (exists) {
       return false;
     }
-
 
     this.indexers.update(config => {
       const networkIndexers = config[networkKey];
@@ -249,9 +252,7 @@ export class IndexerService {
     const networkKey = isMainnet ? 'mainnet' : 'testnet';
 
     this.indexers.update(config => {
-
       const filteredIndexers = config[networkKey].filter(indexer => indexer.url !== url);
-
 
       if (filteredIndexers.length > 0 && !filteredIndexers.some(i => i.isPrimary)) {
         filteredIndexers[0].isPrimary = true;
@@ -292,13 +293,12 @@ export class IndexerService {
     return false;
   }
 
-
   async setErrorWithRetry(errorMsg: string, retryCount = 1, delayMs = 1000): Promise<void> {
     const isMainnet = this.network.isMain();
     const config = this.getIndexerConfig();
     const indexers = isMainnet ? config.mainnet : config.testnet;
     const primary = indexers.find(i => i.isPrimary) || indexers[0];
-    
+
     if (!primary) {
       this.error.set(errorMsg);
       return;
@@ -308,21 +308,18 @@ export class IndexerService {
       try {
         const isOnline = await this.testIndexerConnection(primary.url);
         if (isOnline) {
-          // Connection restored, do not show error
           console.log(`Indexer connection restored after ${i + 1} attempt(s)`);
           return;
         }
       } catch (retryError) {
         console.debug(`Retry ${i + 1} failed:`, retryError);
       }
-      
-      // Wait before next retry (except for the last attempt)
+
       if (i < retryCount - 1) {
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }
 
-    // All retries failed, show error
     console.warn(`Indexer connection failed after ${retryCount} attempts, showing error modal`);
     this.error.set(errorMsg);
   }
@@ -340,14 +337,37 @@ export class IndexerService {
     };
   }
 
+  /**
+   * Fetches a raw transaction hex string.
+   * The /hex endpoint may return a plain text hex string (not JSON).
+   */
+  private async fetchTxHex(txId: string): Promise<string | null> {
+    try {
+      const url = `${this.indexerUrl}api/query/transaction/${txId}/hex`;
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      const text = (await response.text()).trim();
+      if (!text) return null;
+      // Handle both plain hex and a JSON-encoded string
+      if (text.startsWith('"')) {
+        return JSON.parse(text) as string;
+      }
+      return text;
+    } catch {
+      return null;
+    }
+  }
+
   private updateProjectMetadata(event: NDKEvent) {
     const pubkey = event.pubkey;
     const metadata = JSON.parse(event.content) as NDKUserProfile;
 
-    this.projects.update((projects) =>
+    this._allProjects.update((projects) =>
       projects.map((project) => {
-        if (project.founderKey === pubkey) {
-
+        // Match by the project's Nostr pubkey (from details) since
+        // event.pubkey is a 64-char Nostr hex key, not the 66-char
+        // Bitcoin founderKey.
+        if (project.details?.nostrPubKey === pubkey) {
           if (
             !project.metadata_created_at ||
             event.created_at! > project.metadata_created_at
@@ -364,33 +384,57 @@ export class IndexerService {
     );
   }
 
-  private updateProjectDetails(details: any) {
-    this.projects.update((projects) =>
-      projects.map((project) => {
-        if (project.projectIdentifier === details.projectIdentifier) {
-
-          if (
-            !project.details_created_at ||
-            details.created_at > project.details_created_at
-          ) {
-            return {
-              ...project,
-              details,
-              details_created_at: details.created_at,
-            };
+  /**
+   * Updates a project's details when a kind 3030 event arrives from Nostr.
+   * Parses the event content to extract the ProjectUpdate details.
+   */
+  private updateProjectDetails(event: NDKEvent) {
+    try {
+      const details: ProjectUpdate = JSON.parse(event.content);
+      this._allProjects.update((projects) =>
+        projects.map((project) => {
+          if (project.projectIdentifier === details.projectIdentifier) {
+            if (
+              !project.details_created_at ||
+              event.created_at! > project.details_created_at
+            ) {
+              return {
+                ...project,
+                details,
+                details_created_at: event.created_at,
+              };
+            }
           }
-        }
-        return project;
-      })
-    );
+          return project;
+        })
+      );
+    } catch (error) {
+      console.error('Failed to parse project details from event:', error);
+    }
   }
 
+  /**
+   * Fetches projects using an optimistic Nostr-first discovery approach.
+   *
+   * Flow:
+   *   1. Query Nostr relays for the latest kind 3030/30078 events.
+   *   2. Parse each event — immediately add projects to the view so the
+   *      user sees content right away (with metadata/images loading).
+   *   3. Kick off profile fetches from Nostr in parallel with validation.
+   *   4. Validate each project against the indexer (cache or API) in the
+   *      background. Remove any projects that fail validation.
+   *
+   * This "show first, validate in background" approach gives near-instant
+   * rendering while still ensuring only on-chain-verified projects remain.
+   *
+   * Pagination uses Nostr's `until` parameter (timestamp cursor) instead
+   * of offset-based pagination against the indexer.
+   */
   async fetchProjects(reset = false): Promise<void> {
     if (reset) {
-      this.offset = -1000;
+      this.oldestEventTimestamp = undefined;
       this.totalProjectsFetched = false;
-      this.totalItems = 0;
-      this.projects.set([]);
+      this._allProjects.set([]);
     }
 
     if (this.loading()) {
@@ -398,89 +442,125 @@ export class IndexerService {
     }
 
     try {
-      await this.denyService.loadDenyList();
+      // Load both deny list and whitelist for hub mode filtering
+      await Promise.all([
+        this.denyService.loadDenyList(),
+        this.featuredService.loadFeaturedProjects()
+      ]);
+
+      // Mark lists as loaded in hub config
+      this.hubConfig.setListsLoaded(true);
 
       this.loading.set(true);
       this.error.set(null);
-      let limit = this.LIMIT;
 
-      const isFirstLoad = this.offset === -1000;
+      // Step 1: Discover projects from Nostr relays
+      const nostrEvents = await this.relay.fetchNostrProjects(
+        this.LIMIT,
+        this.oldestEventTimestamp
+      );
 
-      if (!isFirstLoad && this.offset < 0) {
-        limit = this.LIMIT + this.offset;
-        console.log('LIMIT SUBSTRACTED:', limit);
-        this.offset = 0;
-        this.totalProjectsFetched = true;
-      }
-
-      if (limit <= 0) {
-        this.loading.set(false);
+      if (nostrEvents.length === 0) {
         this.totalProjectsFetched = true;
         return;
       }
 
-      const params = new URLSearchParams();
-      params.append('limit', limit.toString());
+      // Update the pagination cursor to the oldest event's timestamp
+      // so the next call fetches older events.
+      const oldestEvent = nostrEvents.reduce(
+        (min, ev) => (ev.created_at! < min.created_at! ? ev : min),
+        nostrEvents[0]
+      );
+      this.oldestEventTimestamp = oldestEvent.created_at!;
 
-      if (!isFirstLoad && this.offset >= 0) {
-        params.append('offset', this.offset.toString());
-      }
-
-      const url = `${this.indexerUrl}api/query/Angor/projects?${params.toString()}`;
-
-
-      const { data: response, headers } = await this.fetchJson<IndexedProject[]>(url);
-
-      if (Array.isArray(response) && response.length > 0) {
-        const filteredResponse: IndexedProject[] = [];
-        for (const item of response) {
-          const isDenied = await this.denyService.isEventDenied(item.projectIdentifier);
-          if (!isDenied) {
-            filteredResponse.push(item);
-          }
-        }
-
-        if (filteredResponse.length === 0 && response.length > 0) {
-          console.log(`All ${response.length} fetched projects were denied.`);
-        }
-
-        if (isFirstLoad) {
-          this.totalItems = parseInt(headers.get('pagination-total') || '0');
-          
-          this.offset = Math.max(0, this.totalItems - limit);
-        } else {
-          this.offset = Math.max(0, this.offset - this.LIMIT);
-        }
-
-        if (this.offset === 0 && !isFirstLoad) {
-          this.totalProjectsFetched = true;
-          console.log('Reached beginning of projects list');
-        }
-
-        if (filteredResponse.length > 0) {
-          this.projects.update((existing) => {
-            const merged = [...existing];
-            const existingIds = new Set(existing.map(p => p.projectIdentifier));
-
-            filteredResponse.forEach((newProject) => {
-              if (!existingIds.has(newProject.projectIdentifier)) {
-                merged.push(newProject);
-                existingIds.add(newProject.projectIdentifier);
-              }
-            });
-
-            return merged;
-          });
-
-          const eventIds = filteredResponse.map((project) => project.nostrEventId);
-
-          if (eventIds.length > 0) {
-            this.relay.fetchListData(eventIds);
-          }
-        }
-      } else {
+      // If we got fewer events than requested, we've reached the end
+      if (nostrEvents.length < this.LIMIT) {
         this.totalProjectsFetched = true;
       }
+
+      // Step 2: Parse events and deduplicate against already-loaded projects
+      const existingIds = new Set(this._allProjects().map(p => p.projectIdentifier));
+      const candidateEvents: { event: NDKEvent; details: ProjectUpdate }[] = [];
+
+      for (const event of nostrEvents) {
+        try {
+          const details: ProjectUpdate = JSON.parse(event.content);
+          if (!details.projectIdentifier) continue;
+          if (existingIds.has(details.projectIdentifier)) continue;
+          candidateEvents.push({ event, details });
+        } catch {
+          // Skip events with unparseable content
+          continue;
+        }
+      }
+
+      if (candidateEvents.length === 0) {
+        return;
+      }
+
+      // Step 3: Optimistically add projects to the view immediately.
+      // Apply hub mode filtering before showing.
+      const optimisticProjects: IndexedProject[] = [];
+
+      for (const { event, details } of candidateEvents) {
+        const nostrPubKey = details.nostrPubKey;
+        if (nostrPubKey && !this.hubConfig.shouldShowProject(nostrPubKey)) {
+          continue;
+        }
+
+        optimisticProjects.push({
+          founderKey: '',
+          nostrEventId: event.id,
+          projectIdentifier: details.projectIdentifier,
+          createdOnBlock: 0,
+          trxId: '',
+          details,
+          details_created_at: event.created_at,
+          verified: false,
+          metadata: undefined,
+          metadata_created_at: undefined,
+          stats: undefined,
+          content: undefined,
+          content_created_at: undefined,
+          members: undefined,
+          members_created_at: undefined,
+          media: undefined,
+          media_created_at: undefined,
+          externalIdentities: undefined,
+          externalIdentities_created_at: undefined,
+        });
+      }
+
+      if (optimisticProjects.length > 0) {
+        // Add to the view right away — the user sees cards immediately
+        this._allProjects.update((existing) => {
+          const merged = [...existing];
+          const ids = new Set(existing.map(p => p.projectIdentifier));
+
+          for (const project of optimisticProjects) {
+            if (!ids.has(project.projectIdentifier)) {
+              merged.push(project);
+              ids.add(project.projectIdentifier);
+            }
+          }
+
+          return merged;
+        });
+
+        // Fetch profiles from Nostr immediately (for images/names)
+        const nostrPubKeys = optimisticProjects
+          .map(p => p.details?.nostrPubKey)
+          .filter((k): k is string => !!k);
+
+        if (nostrPubKeys.length > 0) {
+          this.relay.fetchProfile(nostrPubKeys);
+        }
+      }
+
+      // Step 4: Validate each project against the indexer in the background.
+      // Invalid projects are removed from the view.
+      this.validateProjectsInBackground(candidateEvents, optimisticProjects);
+
     } catch (err) {
       await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch projects'
@@ -491,50 +571,203 @@ export class IndexerService {
     }
   }
 
-  private async fetchProjectsBatch(offset: number, limit: number) {
-    console.log('fetchProjectsBatch');
+  /**
+   * Validates optimistically-displayed projects against the indexer.
+   * Runs in the background after projects are already shown to the user.
+   * Removes projects that fail validation and enriches valid ones with
+   * on-chain data (founderKey, trxId, createdOnBlock).
+   */
+  private async validateProjectsInBackground(
+    candidateEvents: { event: NDKEvent; details: ProjectUpdate }[],
+    optimisticProjects: IndexedProject[]
+  ): Promise<void> {
+    const optimisticIds = new Set(optimisticProjects.map(p => p.projectIdentifier));
 
+    const results = await Promise.allSettled(
+      candidateEvents
+        .filter(({ details }) => optimisticIds.has(details.projectIdentifier))
+        .map(async ({ event, details }) => {
+          const projectId = details.projectIdentifier;
 
+          // Check validation cache first (on-chain data is immutable)
+          const cached = this.verification.getCachedValidation(projectId);
+          if (cached) {
+            if (cached.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
+              console.warn(
+                `[Angor] Event ID mismatch for ${projectId}: ` +
+                `nostr="${event.id}" vs cached="${cached.nostrEventId}" — removing`
+              );
+              return { projectId, valid: false };
+            }
+            return {
+              projectId,
+              valid: true,
+              founderKey: cached.founderKey,
+              nostrEventId: cached.nostrEventId,
+              trxId: cached.trxId,
+              createdOnBlock: cached.createdOnBlock,
+            };
+          }
 
-    if (offset < limit) {
-      console.log('LIMIT HIGHER THAN OFFSET!!', offset, limit);
-      limit = offset;
+          // No cache — call the indexer
+          const url = `${this.indexerUrl}api/query/Angor/projects/${projectId}`;
+          const { data: indexerProject } = await this.fetchJson<IndexedProject>(url);
+
+          if (!indexerProject) {
+            return { projectId, valid: false };
+          }
+
+          // Cross-check the OP_RETURN-embedded event ID
+          if (indexerProject.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
+            console.warn(
+              `[Angor] Event ID mismatch for ${projectId}: ` +
+              `nostr="${event.id}" vs indexer="${indexerProject.nostrEventId}" — removing`
+            );
+            return { projectId, valid: false };
+          }
+
+          // Cache for future loads
+          this.verification.cacheValidation(projectId, {
+            founderKey: indexerProject.founderKey,
+            nostrEventId: indexerProject.nostrEventId,
+            trxId: indexerProject.trxId,
+            createdOnBlock: indexerProject.createdOnBlock,
+          });
+
+          return {
+            projectId,
+            valid: true,
+            founderKey: indexerProject.founderKey,
+            nostrEventId: indexerProject.nostrEventId,
+            trxId: indexerProject.trxId,
+            createdOnBlock: indexerProject.createdOnBlock,
+          };
+        })
+    );
+
+    // Collect IDs to remove and data to enrich
+    const toRemove = new Set<string>();
+    const toEnrich = new Map<string, {
+      founderKey: string;
+      nostrEventId: string;
+      trxId: string;
+      createdOnBlock: number;
+    }>();
+
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        // Network error — remove the project to be safe
+        // (the candidate that caused this rejection is unknown, so skip)
+        continue;
+      }
+      const val = result.value;
+      if (!val.valid) {
+        toRemove.add(val.projectId);
+      } else if (val.founderKey) {
+        toEnrich.set(val.projectId, {
+          founderKey: val.founderKey,
+          nostrEventId: val.nostrEventId!,
+          trxId: val.trxId!,
+          createdOnBlock: val.createdOnBlock!,
+        });
+      }
     }
 
-    const url = `${this.indexerUrl}api/query/Angor/projects?offset=${offset}&limit=${limit}`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    // Apply removals and enrichments in a single signal update
+    if (toRemove.size > 0 || toEnrich.size > 0) {
+      this._allProjects.update((projects) =>
+        projects
+          .filter(p => !toRemove.has(p.projectIdentifier))
+          .map(p => {
+            const enrichment = toEnrich.get(p.projectIdentifier);
+            if (enrichment) {
+              return {
+                ...p,
+                founderKey: enrichment.founderKey,
+                nostrEventId: enrichment.nostrEventId,
+                trxId: enrichment.trxId,
+                createdOnBlock: enrichment.createdOnBlock,
+                verified: true,
+              };
+            }
+            return p;
+          })
+      );
     }
-    return await response.json();
   }
 
   getProject(id: string): IndexedProject | undefined {
     return this.projects().find((p) => p.projectIdentifier === id);
   }
 
+  /**
+   * Fetches a single project by its identifier.
+   *
+   * The OP_RETURN of the founding transaction is decoded to obtain the
+   * blockchain-authoritative Nostr event ID, replacing whatever value the
+   * indexer stored.
+   */
   async fetchProject(id: string): Promise<IndexedProject | null> {
-
-    await this.denyService.loadDenyList();
-    if (await this.denyService.isEventDenied(id)) {
-      this.error.set(`Project ${id} is not available.`);
-      return null;
-    }
+    // Ensure deny list and whitelist are loaded before filtering
+    await Promise.all([
+      this.denyService.loadDenyList(),
+      this.featuredService.loadFeaturedProjects()
+    ]);
+    this.hubConfig.setListsLoaded(true);
 
     try {
       this.loading.set(true);
-      const project = await this.fetchJson<IndexedProject>(
+      const result = await this.fetchJson<IndexedProject>(
         `${this.indexerUrl}api/query/Angor/projects/${id}`
       );
-      if (project && project.data) {
 
-        if (await this.denyService.isEventDenied(project.data.projectIdentifier)) {
+      if (result && result.data) {
+        // Filter by the project's Nostr pubkey (from details), not founderKey
+        const nostrPubKey = result.data.details?.nostrPubKey;
+        if (nostrPubKey && !this.hubConfig.shouldShowProject(nostrPubKey)) {
           this.error.set(`Project ${id} is not available.`);
           return null;
         }
       }
 
-      return project.data;
+      const project = result.data;
+      if (!project) return null;
+
+      // Verify and correct the Nostr event ID via OP_RETURN
+      if (project.trxId) {
+        // Check cache first
+        const cached = this.verification.getCachedEventId(project.trxId);
+        if (cached) {
+          project.nostrEventId = cached;
+        } else {
+          try {
+            const txHex = await this.fetchTxHex(project.trxId);
+
+            if (txHex) {
+              const embeddedEventId = this.verification.extractOpReturnEventId(txHex);
+              if (embeddedEventId) {
+                if (embeddedEventId !== project.nostrEventId?.toLowerCase()) {
+                  console.warn(
+                    `[Angor] nostrEventId corrected for project ${id}: ` +
+                    `indexer="${project.nostrEventId}" -> op_return="${embeddedEventId}"`
+                  );
+                }
+                project.nostrEventId = embeddedEventId;
+                this.verification.cacheEventId(project.trxId, embeddedEventId);
+              } else {
+                console.warn(
+                  `[Angor] No OP_RETURN found in transaction ${project.trxId} for project ${id}`
+                );
+              }
+            }
+          } catch (err) {
+            // Fall back to the indexer-supplied nostrEventId
+            console.warn(`[Angor] Could not verify OP_RETURN for project ${id}:`, err);
+          }
+        }
+      }
+
+      return project;
     } catch (err) {
       await this.setErrorWithRetry(
         err instanceof Error ? err.message : `Failed to fetch project ${id}`
@@ -550,9 +783,7 @@ export class IndexerService {
       this.loading.set(true);
       const url = `${this.indexerUrl}api/query/Angor/projects/${id}/stats`;
 
-
       const stats = (await this.fetchJson<ProjectStats>(url)).data;
-
 
       stats.amountInvested = Number(stats.amountInvested) || 0;
       stats.amountSpentSoFarByFounder = Number(stats.amountSpentSoFarByFounder) || 0;
@@ -673,16 +904,7 @@ export class IndexerService {
   }
 
   async getTransactionHex(txId: string): Promise<string | null> {
-    try {
-      const url = `${this.indexerUrl}api/query/transaction/${txId}/hex`;
-      const response = (await this.fetchJson<string>(url)).data;
-      return response !== undefined ? response : null;
-    } catch (err) {
-      await this.setErrorWithRetry(
-        err instanceof Error ? err.message : 'Failed to fetch transaction hex'
-      );
-      return null;
-    }
+    return this.fetchTxHex(txId);
   }
 
   async getBlocks(offset?: number, limit = 10): Promise<Block[]> {
@@ -752,10 +974,9 @@ export class IndexerService {
   }
 
   resetProjects(): void {
-    this.offset = -1000;
+    this.oldestEventTimestamp = undefined;
     this.totalProjectsFetched = false;
-    this.totalItems = 0;
-    this.projects.set([]);
+    this._allProjects.set([]);
     this.fetchProjects(true);
   }
 
@@ -764,14 +985,17 @@ export class IndexerService {
   }
 
   restoreOffset(offset: number) {
-    this.offset = offset;
+    // For Nostr-first, offset is actually the `until` timestamp cursor
+    this.oldestEventTimestamp = offset || undefined;
   }
 
   getCurrentOffset(): number {
-    return this.offset;
+    // Returns the current pagination cursor (oldest event timestamp)
+    return this.oldestEventTimestamp ?? 0;
   }
 
   getTotalItems(): number {
-    return this.totalItems;
+    // With Nostr-first discovery, we don't know the total count upfront
+    return this._allProjects().length;
   }
 }

@@ -11,6 +11,13 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      INDEXER_URL: ${INDEXER_URL:-https://fulcrum.angor.online/api/query/Angor/projects/}
+      BASE_URL: ${BASE_URL:-https://hub.angor.io}
+      NOSTR_RELAYS: ${NOSTR_RELAYS:-wss://relay.angor.io,wss://relay2.angor.io}
+    # Mount a custom config.js for white-label hub settings (admin npub, hub mode)
+    # without rebuilding the image. See public/config.js for the template.
+    # volumes:
+    #   - ./config.js:/app/host/dist/browser/config.js:ro
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
       interval: 30s
