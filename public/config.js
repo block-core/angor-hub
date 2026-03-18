@@ -5,8 +5,8 @@
  * Docker deployments to override hub settings without rebuilding.
  *
  * Usage (Docker):
- *   Mount or generate this file at /usr/share/nginx/html/config.js
- *   with your own values.
+ *   Mount this file at /app/host/dist/browser/config.js
+ *   with your own values (see docker-compose.yml volumes example).
  *
  * Example:
  *   window.__ANGOR_HUB_CONFIG__ = {
