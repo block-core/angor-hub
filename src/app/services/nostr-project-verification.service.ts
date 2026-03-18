@@ -1,12 +1,5 @@
 import { Injectable } from '@angular/core';
 
-export interface VerificationResult {
-  verified: boolean;
-  eventId: string;
-  projectIdentifier: string;
-  reason?: string;
-}
-
 /**
  * On-chain project data cached after indexer validation.
  * These fields come from the Bitcoin blockchain and never change.
@@ -85,15 +78,6 @@ export class NostrProjectVerificationService {
     // Scan for OP_RETURN pattern
     const match = txHex.match(/6a20([0-9a-f]{64})/i);
     return match ? match[1].toLowerCase() : null;
-  }
-
-  /**
-   * Verifies that a transaction's OP_RETURN data matches the expected Nostr event ID.
-   */
-  verifyEventInTransaction(txHex: string, expectedEventId: string): boolean {
-    const embedded = this.extractOpReturnEventId(txHex);
-    if (!embedded) return false;
-    return embedded === expectedEventId.toLowerCase();
   }
 
   // --- OP_RETURN cache persistence ---
