@@ -26,7 +26,7 @@ export class DenyService {
 
     this.loadingPromise = (async () => {
       try {
-        const adminPubkeys = this.hubConfig.getAdminPubkeys();
+        const adminPubkeys = this.hubConfig.getAdminPubkeysHex();
 
         if (adminPubkeys.length === 0) {
           console.warn('[DenyService] No admin pubkeys configured, skipping deny list load');
@@ -68,10 +68,10 @@ export class DenyService {
   }
 
   /**
-   * Get configured admin pubkeys from HubConfigService.
+   * Get configured admin pubkeys (hex) from HubConfigService.
    */
   getAdminPubkeys(): string[] {
-    return this.hubConfig.getAdminPubkeys();
+    return this.hubConfig.getAdminPubkeysHex();
   }
 
   /**

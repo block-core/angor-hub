@@ -1,32 +1,20 @@
 import { Injectable, signal, computed } from '@angular/core';
+import { nip19 } from 'nostr-tools';
 import { environment } from '../../environment';
 
 export type HubMode = 'whitelist' | 'blacklist';
-
-export interface HubConfig {
-  hubMode: HubMode;
-  adminPubkeys: string[];
-  hubDiscovery: {
-    enabled: boolean;
-    subjectFilter: string;
-    eventLimit: number;
-  };
-}
-
-const STORAGE_KEY = 'angor-hub-config';
 
 @Injectable({
   providedIn: 'root',
 })
 export class HubConfigService {
-  // Reactive signals for hub configuration
+  // Configuration comes solely from environment.ts (which reads window.__ANGOR_HUB_CONFIG__ for Docker).
+  // There is no localStorage persistence -- other visitors wouldn't have it.
+
   private _hubMode = signal<HubMode>(environment.hubMode || 'blacklist');
   private _adminPubkeys = signal<string[]>([...environment.adminPubkeys]);
-  private _hubDiscoveryEnabled = signal<boolean>(environment.hubDiscovery?.enabled || false);
-  private _hubDiscoverySubjectFilter = signal<string>(environment.hubDiscovery?.subjectFilter || 'hub');
-  private _hubDiscoveryEventLimit = signal<number>(environment.hubDiscovery?.eventLimit || 10000);
 
-  // Whitelist cache for performance
+  // Whitelist/deny caches populated by FeaturedService and DenyService
   private _whitelistedProjects = signal<Set<string>>(new Set());
   private _deniedProjects = signal<Set<string>>(new Set());
   private _listsLoaded = signal<boolean>(false);
@@ -34,241 +22,92 @@ export class HubConfigService {
   // Public readonly signals
   readonly hubMode = this._hubMode.asReadonly();
   readonly adminPubkeys = this._adminPubkeys.asReadonly();
-  readonly hubDiscoveryEnabled = this._hubDiscoveryEnabled.asReadonly();
-  readonly hubDiscoverySubjectFilter = this._hubDiscoverySubjectFilter.asReadonly();
-  readonly hubDiscoveryEventLimit = this._hubDiscoveryEventLimit.asReadonly();
   readonly listsLoaded = this._listsLoaded.asReadonly();
 
   // Computed properties
   readonly isWhitelistMode = computed(() => this._hubMode() === 'whitelist');
   readonly isBlacklistMode = computed(() => this._hubMode() === 'blacklist');
 
-  constructor() {
-    this.loadConfig();
-  }
-
   /**
-   * Load hub configuration from localStorage
-   * Falls back to environment defaults if not found
-   */
-  loadConfig(): void {
-    try {
-      const savedConfig = localStorage.getItem(STORAGE_KEY);
-      if (savedConfig) {
-        const config: HubConfig = JSON.parse(savedConfig);
-
-        if (config.hubMode) {
-          this._hubMode.set(config.hubMode);
-        }
-        if (Array.isArray(config.adminPubkeys)) {
-          this._adminPubkeys.set(config.adminPubkeys);
-        }
-        if (config.hubDiscovery) {
-          if (typeof config.hubDiscovery.enabled === 'boolean') {
-            this._hubDiscoveryEnabled.set(config.hubDiscovery.enabled);
-          }
-          if (config.hubDiscovery.subjectFilter) {
-            this._hubDiscoverySubjectFilter.set(config.hubDiscovery.subjectFilter);
-          }
-          if (typeof config.hubDiscovery.eventLimit === 'number') {
-            this._hubDiscoveryEventLimit.set(config.hubDiscovery.eventLimit);
-          }
-        }
-
-        console.log('[HubConfigService] Loaded config from localStorage:', config);
-      } else {
-        console.log('[HubConfigService] No saved config, using environment defaults');
-      }
-    } catch (error) {
-      console.error('[HubConfigService] Error loading config:', error);
-    }
-  }
-
-  /**
-   * Save current configuration to localStorage
-   */
-  saveConfig(): void {
-    const config: HubConfig = {
-      hubMode: this._hubMode(),
-      adminPubkeys: this._adminPubkeys(),
-      hubDiscovery: {
-        enabled: this._hubDiscoveryEnabled(),
-        subjectFilter: this._hubDiscoverySubjectFilter(),
-        eventLimit: this._hubDiscoveryEventLimit(),
-      },
-    };
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-    console.log('[HubConfigService] Saved config to localStorage:', config);
-  }
-
-  /**
-   * Get the current configuration object
-   */
-  getConfig(): HubConfig {
-    return {
-      hubMode: this._hubMode(),
-      adminPubkeys: this._adminPubkeys(),
-      hubDiscovery: {
-        enabled: this._hubDiscoveryEnabled(),
-        subjectFilter: this._hubDiscoverySubjectFilter(),
-        eventLimit: this._hubDiscoveryEventLimit(),
-      },
-    };
-  }
-
-  /**
-   * Set hub mode (whitelist or blacklist)
-   */
-  setHubMode(mode: HubMode): void {
-    this._hubMode.set(mode);
-    this.saveConfig();
-    console.log('[HubConfigService] Hub mode set to:', mode);
-  }
-
-  /**
-   * Get admin pubkeys
+   * Get admin pubkeys in npub format (for display and storage).
    */
   getAdminPubkeys(): string[] {
     return this._adminPubkeys();
   }
 
   /**
+   * Get admin pubkeys decoded to hex format.
+   * Use this when passing pubkeys to NDK/Nostr protocol queries.
+   */
+  getAdminPubkeysHex(): string[] {
+    return this._adminPubkeys()
+      .map(pk => this.npubToHex(pk))
+      .filter((hex): hex is string => hex !== null);
+  }
+
+  /**
    * Check if a given pubkey is in the configured admin pubkeys list.
+   * Accepts hex or npub -- compares in npub space.
    */
   isAdmin(pubkey: string | null): boolean {
     if (!pubkey) return false;
-    return this._adminPubkeys().includes(pubkey);
+    const asNpub = this.ensureNpub(pubkey);
+    return this._adminPubkeys().includes(asNpub);
   }
 
   /**
-   * Set admin pubkeys (replaces all)
+   * Update the cached whitelist from external source.
+   * Called by FeaturedService when whitelist is loaded.
+   * Stores Nostr hex pubkeys (project nostrPubKey from 'p' tags).
    */
-  setAdminPubkeys(pubkeys: string[]): void {
-    this._adminPubkeys.set([...pubkeys]);
-    this.saveConfig();
-    // Reset loaded state to force reload with new pubkeys
-    this._listsLoaded.set(false);
-    console.log('[HubConfigService] Admin pubkeys updated:', pubkeys);
+  updateWhitelistedProjects(nostrPubKeys: string[]): void {
+    this._whitelistedProjects.set(new Set(nostrPubKeys));
   }
 
   /**
-   * Add a single admin pubkey
+   * Update the cached deny list from external source.
+   * Called by DenyService when deny list is loaded.
+   * Stores Nostr hex pubkeys (project nostrPubKey from 'p' tags).
    */
-  addAdminPubkey(pubkey: string): boolean {
-    const trimmed = pubkey.trim();
-    if (!trimmed) return false;
-
-    const current = this._adminPubkeys();
-    if (current.includes(trimmed)) {
-      console.log('[HubConfigService] Pubkey already exists:', trimmed);
-      return false;
-    }
-
-    this._adminPubkeys.set([...current, trimmed]);
-    this.saveConfig();
-    // Reset loaded state to force reload with new pubkeys
-    this._listsLoaded.set(false);
-    console.log('[HubConfigService] Added admin pubkey:', trimmed);
-    return true;
+  updateDeniedProjects(nostrPubKeys: string[]): void {
+    this._deniedProjects.set(new Set(nostrPubKeys));
   }
 
   /**
-   * Remove an admin pubkey
-   */
-  removeAdminPubkey(pubkey: string): boolean {
-    const current = this._adminPubkeys();
-    const filtered = current.filter(p => p !== pubkey);
-
-    if (filtered.length === current.length) {
-      return false;
-    }
-
-    this._adminPubkeys.set(filtered);
-    this.saveConfig();
-    // Reset loaded state to force reload with new pubkeys
-    this._listsLoaded.set(false);
-    console.log('[HubConfigService] Removed admin pubkey:', pubkey);
-    return true;
-  }
-
-  /**
-   * Set hub discovery enabled state
-   */
-  setHubDiscoveryEnabled(enabled: boolean): void {
-    this._hubDiscoveryEnabled.set(enabled);
-    this.saveConfig();
-  }
-
-  /**
-   * Set hub discovery subject filter
-   */
-  setHubDiscoverySubjectFilter(filter: string): void {
-    this._hubDiscoverySubjectFilter.set(filter);
-    this.saveConfig();
-  }
-
-  /**
-   * Set hub discovery event limit
-   */
-  setHubDiscoveryEventLimit(limit: number): void {
-    this._hubDiscoveryEventLimit.set(limit);
-    this.saveConfig();
-  }
-
-  /**
-   * Update the cached whitelist from external source
-   * Called by FeaturedService when whitelist is loaded
-   */
-  updateWhitelistedProjects(projectIds: string[]): void {
-    this._whitelistedProjects.set(new Set(projectIds));
-    console.log('[HubConfigService] Whitelist cache updated:', projectIds.length, 'projects');
-  }
-
-  /**
-   * Update the cached deny list from external source
-   * Called by DenyService when deny list is loaded
-   */
-  updateDeniedProjects(projectIds: string[]): void {
-    this._deniedProjects.set(new Set(projectIds));
-    console.log('[HubConfigService] Deny list cache updated:', projectIds.length, 'projects');
-  }
-
-  /**
-   * Mark lists as loaded
+   * Mark lists as loaded.
    */
   setListsLoaded(loaded: boolean): void {
     this._listsLoaded.set(loaded);
   }
 
   /**
-   * Check if a project is in the whitelist
+   * Check if a project is in the whitelist by its Nostr pubkey.
    */
-  isProjectWhitelisted(projectId: string): boolean {
-    return this._whitelistedProjects().has(projectId);
+  isProjectWhitelisted(nostrPubKey: string): boolean {
+    return this._whitelistedProjects().has(nostrPubKey);
   }
 
   /**
-   * Check if a project's founderKey is in the deny list.
-   * The deny list (kind 30000) stores founderKey hex pubkeys.
+   * Check if a project's Nostr pubkey is in the deny list.
+   * The deny list (kind 30000) stores Nostr hex pubkeys in 'p' tags.
    */
-  isProjectDenied(founderKey: string): boolean {
-    return this._deniedProjects().has(founderKey);
+  isProjectDenied(nostrPubKey: string): boolean {
+    return this._deniedProjects().has(nostrPubKey);
   }
 
   /**
    * Determine if a project should be displayed based on hub mode.
    * This is the main filtering method used by IndexerService.
    *
-   * @param founderKey  Hex pubkey of the project founder (used for deny list lookup)
-   * @param projectIdentifier  Unique Angor project ID (used for whitelist lookup)
+   * Both deny list and whitelist use the project's Nostr pubkey (nostrPubKey)
+   * stored in 'p' tags — NOT the founderKey (which is a 66-char compressed
+   * secp256k1 Bitcoin key and would never match).
    *
-   * Blacklist mode: Show all projects EXCEPT those whose founderKey is in the deny list
-   * Whitelist mode: Show ONLY projects whose projectIdentifier is in the whitelist
+   * Blacklist mode: Show all projects EXCEPT those in the deny list
+   * Whitelist mode: Show ONLY projects in the whitelist
    */
-  shouldShowProject(founderKey: string, projectIdentifier: string): boolean {
-    // Deny list check is by founderKey (kind 30000 'p' tags)
-    if (this._deniedProjects().has(founderKey)) {
+  shouldShowProject(nostrPubKey: string): boolean {
+    if (this._deniedProjects().has(nostrPubKey)) {
       return false;
     }
 
@@ -277,54 +116,54 @@ export class HubConfigService {
       return true;
     }
 
-    // Whitelist mode: check by projectIdentifier (kind 10001 'a'/'e' tags)
-    return this._whitelistedProjects().has(projectIdentifier);
+    // Whitelist mode
+    return this._whitelistedProjects().has(nostrPubKey);
   }
 
   /**
-   * Reset configuration to environment defaults
-   */
-  resetToDefaults(): void {
-    this._hubMode.set(environment.hubMode || 'blacklist');
-    this._adminPubkeys.set([...environment.adminPubkeys]);
-    this._hubDiscoveryEnabled.set(environment.hubDiscovery?.enabled || false);
-    this._hubDiscoverySubjectFilter.set(environment.hubDiscovery?.subjectFilter || 'hub');
-    this._hubDiscoveryEventLimit.set(environment.hubDiscovery?.eventLimit || 10000);
-
-    localStorage.removeItem(STORAGE_KEY);
-    this._listsLoaded.set(false);
-
-    console.log('[HubConfigService] Reset to defaults');
-  }
-
-  /**
-   * Signal that config has changed and lists need to be reloaded.
-   * Consumers (IndexerService) can watch this to trigger a project refresh.
-   */
-  private _configVersion = signal<number>(0);
-  readonly configVersion = this._configVersion.asReadonly();
-
-
-  notifyConfigChanged(): void {
-    this._listsLoaded.set(false);
-    this._whitelistedProjects.set(new Set());
-    this._deniedProjects.set(new Set());
-    this._configVersion.update(v => v + 1);
-    console.log('[HubConfigService] Config changed, version:', this._configVersion());
-  }
-
-  isUsingDefaultAdminPubkeys(): boolean {
-    const current = this._adminPubkeys();
-    const defaults = environment.adminPubkeys;
-    if (current.length !== defaults.length) return false;
-    return defaults.every(pk => current.includes(pk));
-  }
-
-  /**
-   * Format a pubkey for display (truncated)
+   * Format a pubkey for display (truncated).
    */
   formatPubkey(pubkey: string): string {
     if (!pubkey || pubkey.length < 16) return pubkey;
-    return `${pubkey.slice(0, 8)}...${pubkey.slice(-8)}`;
+    return `${pubkey.slice(0, 12)}...${pubkey.slice(-8)}`;
+  }
+
+  // ==================== CONVERSION HELPERS ====================
+
+  /**
+   * Convert an npub (bech32) to hex pubkey.
+   * Returns null if the input is not a valid npub.
+   */
+  npubToHex(npub: string): string | null {
+    try {
+      const decoded = nip19.decode(npub);
+      if (decoded.type !== 'npub') return null;
+      return decoded.data as string;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Convert a hex pubkey to npub (bech32).
+   * Returns null if the input is not a valid 64-char hex string.
+   */
+  hexToNpub(hex: string): string | null {
+    if (!/^[0-9a-fA-F]{64}$/.test(hex)) return null;
+    try {
+      return nip19.npubEncode(hex);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Ensure a value is in npub format.
+   * If it's already an npub, return as-is. If it's hex, convert to npub.
+   */
+  ensureNpub(value: string): string {
+    if (value.startsWith('npub1')) return value;
+    const converted = this.hexToNpub(value);
+    return converted ?? value; // fall back to original if conversion fails
   }
 }

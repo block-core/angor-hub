@@ -5,11 +5,13 @@ import { RouterModule } from '@angular/router';
 import { NostrListService } from '../../services/nostr-list.service';
 import { RelayService } from '../../services/relay.service';
 import { NostrAuthService } from '../../services/nostr-auth.service';
-import { HubConfigService, HubMode } from '../../services/hub-config.service';
+import { HubConfigService } from '../../services/hub-config.service';
 import { nip19 } from 'nostr-tools';
+import { environment } from '../../../environment';
 
 interface ProjectItem {
   id: string;
+  npub: string;
   addedAt: number;
 }
 
@@ -27,6 +29,17 @@ export class AdminComponent implements OnInit {
   success = signal<string | null>(null);
   publishingStatus = signal<string | null>(null);
 
+  // Computed npub for display — converts hex pubkey from nostr-login to npub
+  adminNpub = computed(() => {
+    const hex = this.adminPubkey();
+    if (!hex) return null;
+    try {
+      return nip19.npubEncode(hex);
+    } catch {
+      return hex; // fallback to hex if encoding fails
+    }
+  });
+
   // Authorization: true only if logged-in pubkey is in the hub's admin pubkeys
   isAuthorizedAdmin = signal<boolean>(false);
 
@@ -40,8 +53,10 @@ export class AdminComponent implements OnInit {
   newFeaturedId = signal<string>('');
   featuredSearchQuery = signal<string>('');
 
-  // Tab management
-  activeTab = signal<'deny' | 'featured'>('deny');
+  // Tab management — default to the relevant tab for the current hub mode
+  activeTab = signal<'deny' | 'featured'>(
+    environment.hubMode === 'whitelist' ? 'featured' : 'deny'
+  );
 
   // Relay connection status
   relayStatus = signal<{ url: string; connected: boolean }[]>([]);
@@ -52,7 +67,7 @@ export class AdminComponent implements OnInit {
     if (!query) return this.deniedProjects();
 
     return this.deniedProjects().filter(p =>
-      p.id.toLowerCase().includes(query)
+      p.id.toLowerCase().includes(query) || p.npub.toLowerCase().includes(query)
     );
   });
 
@@ -61,7 +76,7 @@ export class AdminComponent implements OnInit {
     if (!query) return this.featuredProjects();
 
     return this.featuredProjects().filter(p =>
-      p.id.toLowerCase().includes(query)
+      p.id.toLowerCase().includes(query) || p.npub.toLowerCase().includes(query)
     );
   });
 
@@ -199,6 +214,7 @@ export class AdminComponent implements OnInit {
       const list = await this.nostrListService.getDenyList();
       const projects: ProjectItem[] = list.map(id => ({
         id,
+        npub: nip19.npubEncode(id),
         addedAt: Date.now(), // We don't have exact timestamp, use current
       }));
       this.deniedProjects.set(projects);
@@ -233,7 +249,7 @@ export class AdminComponent implements OnInit {
 
   /**
    * Resolve the entered value to a hex pubkey.
-   * Accepts either a hex founderKey or an npub (bech32-encoded pubkey).
+   * Accepts either a 64-char hex Nostr pubkey or an npub (bech32-encoded pubkey).
    */
   private resolveToHexPubkey(input: string): string | null {
     const trimmed = input.trim();
@@ -256,10 +272,10 @@ export class AdminComponent implements OnInit {
   async addProject() {
     if (!this.requireAuthorization()) return;
 
-    const founderKey = this.resolveToHexPubkey(this.newProjectId());
+    const nostrPubKey = this.resolveToHexPubkey(this.newProjectId());
 
-    if (!founderKey) {
-      this.error.set('Please enter a valid project npub or hex founderKey');
+    if (!nostrPubKey) {
+      this.error.set('Please enter a valid project npub or hex pubkey');
       return;
     }
 
@@ -269,7 +285,7 @@ export class AdminComponent implements OnInit {
 
     try {
       await this.withTimeout(
-        this.nostrListService.addToDenyList(founderKey),
+        this.nostrListService.addToDenyList(nostrPubKey),
         300000,
         'Publishing deny list'
       );
@@ -335,6 +351,7 @@ export class AdminComponent implements OnInit {
       const list = await this.nostrListService.getWhiteList();
       const projects: ProjectItem[] = list.map(id => ({
         id,
+        npub: nip19.npubEncode(id),
         addedAt: Date.now(),
       }));
       this.featuredProjects.set(projects);
@@ -350,10 +367,10 @@ export class AdminComponent implements OnInit {
   async addFeaturedProject() {
     if (!this.requireAuthorization()) return;
 
-    const projectId = this.newFeaturedId().trim();
+    const nostrPubKey = this.resolveToHexPubkey(this.newFeaturedId());
 
-    if (!projectId) {
-      this.error.set('Please enter a project ID');
+    if (!nostrPubKey) {
+      this.error.set('Please enter a valid project npub or hex pubkey');
       return;
     }
 
@@ -363,7 +380,7 @@ export class AdminComponent implements OnInit {
 
     try {
       await this.withTimeout(
-        this.nostrListService.addToWhiteList(projectId),
+        this.nostrListService.addToWhiteList(nostrPubKey),
         300000,
         'Publishing whitelist'
       );
@@ -461,26 +478,4 @@ export class AdminComponent implements OnInit {
     });
   }
 
-  getHubMode(): HubMode {
-    return this.hubConfig.hubMode();
-  }
-
-  setHubMode(mode: HubMode): void {
-    if (!this.requireAuthorization()) return;
-    this.hubConfig.setHubMode(mode);
-    this.hubConfig.notifyConfigChanged();
-    this.success.set(`Hub mode changed to ${mode}. Reload the page or go to Settings to apply.`);
-    setTimeout(() => this.success.set(null), 5000);
-  }
-
-  toggleHubMode(): void {
-    if (!this.requireAuthorization()) return;
-    const current = this.hubConfig.hubMode();
-    const newMode = current === 'blacklist' ? 'whitelist' : 'blacklist';
-    this.setHubMode(newMode);
-  }
-
-  isUsingDefaultConfig(): boolean {
-    return this.hubConfig.isUsingDefaultAdminPubkeys();
-  }
 }

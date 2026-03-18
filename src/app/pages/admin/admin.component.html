@@ -110,13 +110,12 @@
             <div>
               <h3 class="text-yellow-300 font-semibold text-lg mb-2">Not Authorized</h3>
               <p class="text-yellow-200/80 mb-3">
-                Your pubkey (<code class="text-xs font-mono">{{ formatPubkey(adminPubkey()!) }}</code>) is not in the configured admin pubkeys for this hub.
+                Your pubkey (<code class="text-xs font-mono">{{ formatPubkey(adminNpub()!) }}</code>) is not the configured admin key for this hub.
                 You cannot modify the deny list or featured list.
               </p>
               <p class="text-yellow-200/60 text-sm">
-                If you are the hub operator, go to
-                <a routerLink="/settings" class="text-[#0ab6d9] hover:underline font-medium">Settings → Hub</a>
-                and add your pubkey to the admin list, then click "Save & Apply".
+                The admin key is set at deployment time in <code class="text-gray-400">environment.ts</code> (or via <code class="text-gray-400">config.js</code> for Docker).
+                Contact the hub operator if you believe this is an error.
               </p>
             </div>
           </div>
@@ -130,38 +129,25 @@
             <h3 class="text-lg font-semibold text-white">
               Hub Mode
             </h3>
-            @if (!isUsingDefaultConfig()) {
-              <span class="px-2 py-0.5 bg-[#0ab6d9]/20 text-[#0ab6d9] text-xs rounded-full font-medium">Custom Hub</span>
-            }
           </div>
-          <div class="flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-              @if (getHubMode() === 'blacklist') {
-                <div class="flex items-center gap-2 px-4 py-2 bg-red-500/20 rounded-lg border border-red-500/30">
-                  <span class="material-icons text-red-400">block</span>
-                  <span class="text-red-300 font-medium">Blacklist Mode</span>
-                </div>
-                <span class="text-gray-400 text-sm">Showing all projects except denied</span>
-              } @else {
-                <div class="flex items-center gap-2 px-4 py-2 bg-green-500/20 rounded-lg border border-green-500/30">
-                  <span class="material-icons text-green-400">verified</span>
-                  <span class="text-green-300 font-medium">Whitelist Mode</span>
-                </div>
-                <span class="text-gray-400 text-sm">Showing only featured projects</span>
-              }
-            </div>
-            <button
-              (click)="toggleHubMode()"
-              [disabled]="!isAuthorizedAdmin()"
-              class="inline-flex items-center gap-2 px-4 py-2 bg-[#086c81]/50 hover:bg-[#086c81] disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all duration-200 border border-[#0ab6d9]/30"
-            >
-              <span class="material-icons text-sm">swap_horiz</span>
-              Switch Mode
-            </button>
+          <div class="flex items-center gap-3">
+            @if (hubConfig.hubMode() === 'blacklist') {
+              <div class="flex items-center gap-2 px-4 py-2 bg-red-500/20 rounded-lg border border-red-500/30">
+                <span class="material-icons text-red-400">block</span>
+                <span class="text-red-300 font-medium">Blacklist Mode</span>
+              </div>
+              <span class="text-gray-400 text-sm">Showing all projects except denied</span>
+            } @else {
+              <div class="flex items-center gap-2 px-4 py-2 bg-green-500/20 rounded-lg border border-green-500/30">
+                <span class="material-icons text-green-400">verified</span>
+                <span class="text-green-300 font-medium">Whitelist Mode</span>
+              </div>
+              <span class="text-gray-400 text-sm">Showing only featured projects</span>
+            }
           </div>
           <p class="text-gray-500 text-xs mt-3">
             <span class="material-icons text-xs align-middle mr-1">info</span>
-            Manage hub configuration in <a routerLink="/settings" class="text-[#0ab6d9] hover:underline">Settings → Hub</a> (admin pubkeys, mode, apply changes)
+            Hub configuration is set at deployment time in <code class="text-gray-400">environment.ts</code>. View current settings in <a routerLink="/settings" class="text-[#0ab6d9] hover:underline">Settings → Hub</a>.
           </p>
         </div>
 
@@ -176,10 +162,10 @@
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-2 bg-[#022229]/50 rounded-lg px-3 py-2 flex-1">
               <code class="text-sm text-gray-300 font-mono">
-                {{ formatPubkey(adminPubkey()!) }}
+                {{ formatPubkey(adminNpub()!) }}
               </code>
               <button
-                (click)="copyToClipboard(adminPubkey()!)"
+                (click)="copyToClipboard(adminNpub()!)"
                 class="text-gray-400 hover:text-[#0ab6d9] transition-colors"
                 title="Copy"
               >
@@ -224,24 +210,32 @@
         <div class="flex gap-2 bg-[#043a4a]/50 rounded-xl p-1">
           <button
             (click)="switchTab('deny')"
+            [disabled]="hubConfig.isWhitelistMode()"
             [class.bg-gradient-to-r]="activeTab() === 'deny'"
             [class.from-[#0ab6d9]]="activeTab() === 'deny'"
             [class.to-[#086c81]]="activeTab() === 'deny'"
             [class.text-white]="activeTab() === 'deny'"
-            [class.text-gray-400]="activeTab() !== 'deny'"
+            [class.text-gray-400]="activeTab() !== 'deny' && !hubConfig.isWhitelistMode()"
+            [class.opacity-40]="hubConfig.isWhitelistMode()"
+            [class.cursor-not-allowed]="hubConfig.isWhitelistMode()"
             class="flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center gap-2"
+            [title]="hubConfig.isWhitelistMode() ? 'Deny list is only used in blacklist mode' : ''"
           >
             <span class="material-icons text-sm">block</span>
             Deny List (Private)
           </button>
           <button
             (click)="switchTab('featured')"
+            [disabled]="hubConfig.isBlacklistMode()"
             [class.bg-gradient-to-r]="activeTab() === 'featured'"
             [class.from-[#0ab6d9]]="activeTab() === 'featured'"
             [class.to-[#086c81]]="activeTab() === 'featured'"
             [class.text-white]="activeTab() === 'featured'"
-            [class.text-gray-400]="activeTab() !== 'featured'"
+            [class.text-gray-400]="activeTab() !== 'featured' && !hubConfig.isBlacklistMode()"
+            [class.opacity-40]="hubConfig.isBlacklistMode()"
+            [class.cursor-not-allowed]="hubConfig.isBlacklistMode()"
             class="flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center gap-2"
+            [title]="hubConfig.isBlacklistMode() ? 'Featured list is only used in whitelist mode' : ''"
           >
             <span class="material-icons text-sm">star</span>
             Featured List (Public)
@@ -347,12 +341,12 @@
                 <div class="flex items-center justify-between p-4 bg-[#022229]/50 rounded-xl hover:bg-[#086c81]/30 transition-all duration-200 border border-[#086c81]/20 hover:border-[#0ab6d9]/50 group">
                   <div class="flex-1 min-w-0">
                     <code class="text-sm text-gray-300 font-mono break-all">
-                      {{ project.id }}
+                      {{ project.npub }}
                     </code>
                   </div>
                   <div class="flex items-center gap-2 ml-4 opacity-70 group-hover:opacity-100 transition-opacity">
                     <button
-                      (click)="copyToClipboard(project.id)"
+                      (click)="copyToClipboard(project.npub)"
                       class="p-2 text-gray-400 hover:text-[#0ab6d9] transition-colors rounded-lg hover:bg-[#0ab6d9]/10"
                       title="Copy"
                     >
@@ -388,7 +382,7 @@
               <ul class="space-y-2.5 text-sm text-gray-300 mb-5">
                 <li class="flex gap-3">
                   <span class="text-[#0ab6d9] mt-0.5">▪</span>
-                  <span>Stored using NIP-51 Mute List (Kind 10000) - Private</span>
+                  <span>Stored using NIP-51 Follow Sets (Kind 30000) with 'd' tag 'angor:deny'</span>
                 </li>
                 <li class="flex gap-3">
                   <span class="text-[#0ab6d9] mt-0.5">▪</span>
@@ -510,12 +504,12 @@
                 <div class="flex items-center justify-between p-4 bg-[#022229]/50 rounded-xl hover:bg-[#086c81]/30 transition-all duration-200 border border-[#086c81]/20 hover:border-[#0ab6d9]/50 group">
                   <div class="flex-1 min-w-0">
                     <code class="text-sm text-gray-300 font-mono break-all">
-                      {{ project.id }}
+                      {{ project.npub }}
                     </code>
                   </div>
                   <div class="flex items-center gap-2 ml-4 opacity-70 group-hover:opacity-100 transition-opacity">
                     <button
-                      (click)="copyToClipboard(project.id)"
+                      (click)="copyToClipboard(project.npub)"
                       class="p-2 text-gray-400 hover:text-[#0ab6d9] transition-colors rounded-lg hover:bg-[#0ab6d9]/10"
                       title="Copy"
                     >

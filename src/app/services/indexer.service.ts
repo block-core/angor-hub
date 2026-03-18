@@ -1,5 +1,5 @@
-import { Injectable, signal, inject, effect } from '@angular/core';
-import { ProfileUpdate, ProjectUpdate, RelayService } from './relay.service';
+import { Injectable, signal, inject, computed } from '@angular/core';
+import { ProjectUpdate, RelayService } from './relay.service';
 import { NDKEvent, NDKUserProfile } from '@nostr-dev-kit/ndk';
 import { NetworkService } from './network.service';
 import { DenyService } from './deny.service';
@@ -109,7 +109,16 @@ export class IndexerService {
   private hubConfig = inject(HubConfigService);
 
   public loading = signal<boolean>(false);
-  public projects = signal<IndexedProject[]>([]);
+  private _allProjects = signal<IndexedProject[]>([]);
+  public projects = computed(() => {
+    const all = this._allProjects();
+    return all.filter(p => {
+      const nostrPubKey = p.details?.nostrPubKey;
+      // If details haven't loaded yet, show the project (will re-evaluate when details arrive)
+      if (!nostrPubKey) return true;
+      return this.hubConfig.shouldShowProject(nostrPubKey);
+    });
+  });
   public error = signal<string | null>(null);
   private network = inject(NetworkService);
 
@@ -348,7 +357,7 @@ export class IndexerService {
     const pubkey = event.pubkey;
     const metadata = JSON.parse(event.content) as NDKUserProfile;
 
-    this.projects.update((projects) =>
+    this._allProjects.update((projects) =>
       projects.map((project) => {
         if (project.founderKey === pubkey) {
 
@@ -369,7 +378,7 @@ export class IndexerService {
   }
 
   private updateProjectDetails(details: any) {
-    this.projects.update((projects) =>
+    this._allProjects.update((projects) =>
       projects.map((project) => {
         if (project.projectIdentifier === details.projectIdentifier) {
 
@@ -394,7 +403,7 @@ export class IndexerService {
       this.offset = -1000;
       this.totalProjectsFetched = false;
       this.totalItems = 0;
-      this.projects.set([]);
+      this._allProjects.set([]);
     }
 
     if (this.loading()) {
@@ -443,26 +452,6 @@ export class IndexerService {
       const { data: response, headers } = await this.fetchJson<IndexedProject[]>(url);
 
       if (Array.isArray(response) && response.length > 0) {
-        const filteredResponse: IndexedProject[] = [];
-        const hubMode = this.hubConfig.hubMode();
-
-        for (const item of response) {
-          // Deny list uses founderKey (kind 30000 'p' tags); whitelist uses projectIdentifier
-          const shouldShow = this.hubConfig.shouldShowProject(item.founderKey, item.projectIdentifier);
-          if (shouldShow) {
-            filteredResponse.push(item);
-          }
-        }
-
-        if (filteredResponse.length === 0 && response.length > 0) {
-          if (hubMode === 'whitelist') {
-            console.log(`[IndexerService] All ${response.length} projects filtered out (whitelist mode - no matching whitelisted projects)`);
-          } else {
-            console.log(`[IndexerService] All ${response.length} fetched projects were denied.`);
-          }
-        } else {
-          console.log(`[IndexerService] Showing ${filteredResponse.length}/${response.length} projects (${hubMode} mode)`);
-        }
 
         if (isFirstLoad) {
           this.totalItems = parseInt(headers.get('pagination-total') || '0');
@@ -477,26 +466,24 @@ export class IndexerService {
           console.log('Reached beginning of projects list');
         }
 
-        if (filteredResponse.length > 0) {
-          this.projects.update((existing) => {
-            const merged = [...existing];
-            const existingIds = new Set(existing.map(p => p.projectIdentifier));
+        this._allProjects.update((existing) => {
+          const merged = [...existing];
+          const existingIds = new Set(existing.map(p => p.projectIdentifier));
 
-            filteredResponse.forEach((newProject) => {
-              if (!existingIds.has(newProject.projectIdentifier)) {
-                merged.push(newProject);
-                existingIds.add(newProject.projectIdentifier);
-              }
-            });
-
-            return merged;
+          response.forEach((newProject) => {
+            if (!existingIds.has(newProject.projectIdentifier)) {
+              merged.push(newProject);
+              existingIds.add(newProject.projectIdentifier);
+            }
           });
 
-          const eventIds = filteredResponse.map((project) => project.nostrEventId);
+          return merged;
+        });
 
-          if (eventIds.length > 0) {
-            this.relay.fetchListData(eventIds);
-          }
+        const eventIds = response.map((project) => project.nostrEventId);
+
+        if (eventIds.length > 0) {
+          this.relay.fetchListData(eventIds);
         }
       } else {
         this.totalProjectsFetched = true;
@@ -547,8 +534,10 @@ export class IndexerService {
         `${this.indexerUrl}api/query/Angor/projects/${id}`
       );
       if (project && project.data) {
-        // Deny list checks founderKey; whitelist checks projectIdentifier
-        if (!this.hubConfig.shouldShowProject(project.data.founderKey, project.data.projectIdentifier)) {
+        // Filter by the project's Nostr pubkey (from details), not founderKey
+        // Note: details may not be available yet for a direct fetch, so we skip filtering if missing
+        const nostrPubKey = project.data.details?.nostrPubKey;
+        if (nostrPubKey && !this.hubConfig.shouldShowProject(nostrPubKey)) {
           this.error.set(`Project ${id} is not available.`);
           return null;
         }
@@ -775,7 +764,7 @@ export class IndexerService {
     this.offset = -1000;
     this.totalProjectsFetched = false;
     this.totalItems = 0;
-    this.projects.set([]);
+    this._allProjects.set([]);
     this.fetchProjects(true);
   }
 

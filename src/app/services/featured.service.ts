@@ -23,7 +23,7 @@ export class FeaturedService {
       return this.featuredProjectIdsSig();
     }
 
-    const adminPubkeys = this.hubConfig.getAdminPubkeys();
+    const adminPubkeys = this.hubConfig.getAdminPubkeysHex();
     if (!adminPubkeys?.length) {
       this.featuredProjectIdsSig.set([]);
       this.loadedSig.set(true);
