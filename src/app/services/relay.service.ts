@@ -280,4 +280,52 @@ export class RelayService {
   public getDefaultRelays(): string[] {
     return [...this.defaultRelays];
   }
+
+  /**
+   * Fetches kind 3030 (Angor project announcement) events directly from Nostr relays
+   * without filtering by ID. Used for Nostr-first project discovery.
+   *
+   * @param limit 
+   * @param until
+   * @returns 
+   */
+  async fetchNostrProjects(limit: number, until?: number): Promise<NDKEvent[]> {
+    try {
+      const ndk = await this.ensureConnected();
+
+      // Include both Angor project event kinds (mainnet uses 30078, testnet/newer uses 3030)
+      const filter: { kinds: number[]; limit: number; until?: number } = {
+        kinds: [3030, 30078],
+        limit,
+      };
+
+      if (until !== undefined) {
+        filter.until = until;
+      }
+
+      // Use subscribe + EOSE rather than fetchEvents
+      const collected: NDKEvent[] = [];
+
+      const sub = ndk.subscribe(filter);
+
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(resolve, 8000);
+
+        sub.on('event', (event: NDKEvent) => {
+          collected.push(event);
+        });
+
+        sub.on('eose', () => {
+          clearTimeout(timeout);
+          resolve();
+        });
+      });
+
+      console.log(`[Angor] fetchNostrProjects: received ${collected.length} events`);
+      return collected;
+    } catch (error) {
+      console.error('Error fetching Nostr projects (kind 3030/30078):', error);
+      return [];
+    }
+  }
 }
