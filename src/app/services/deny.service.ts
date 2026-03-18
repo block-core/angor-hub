@@ -1,21 +1,24 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { NostrListService } from './nostr-list.service';
-import { environment } from '../../environment';
+import { HubConfigService } from './hub-config.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class DenyService {
-  private denyListUrl = 'https://lists.blockcore.net/deny/angor.json';
   private denyList = signal<string[]>([]);
   private loaded = signal<boolean>(false);
   private loadingPromise: Promise<void> | null = null;
-  
-  // Nostr admin pubkeys that manage deny lists (from environment)
-  private adminPubkeys: string[] = environment.adminPubkeys;
+
+  private hubConfig = inject(HubConfigService);
 
   constructor(private nostrListService: NostrListService) {}
 
+  /**
+   * Load the blacklist on every hub load from the admin's Nostr relays.
+   * The list is stored as a kind 30000 event (Follow Sets) with 'p' tags
+   * containing the founderKey hex pubkeys of blocked projects.
+   */
   async loadDenyList(): Promise<void> {
     if (this.loaded() || this.loadingPromise) {
       return this.loadingPromise || Promise.resolve();
@@ -23,47 +26,28 @@ export class DenyService {
 
     this.loadingPromise = (async () => {
       try {
-        const allDeniedProjects = new Set<string>();
+        const adminPubkeys = this.hubConfig.getAdminPubkeysHex();
 
-        // Load from GitHub URL (legacy support)
-        try {
-          const response = await fetch(this.denyListUrl, { cache: 'no-store' });
-          if (response.ok) {
-            const list = await response.json();
-            if (Array.isArray(list)) {
-              list.forEach(id => allDeniedProjects.add(id));
-              console.log('GitHub deny list loaded:', list.length, 'entries');
-            }
-          }
-        } catch (error) {
-          console.warn('Failed to load GitHub deny list:', error);
-          // Continue with Nostr lists even if GitHub fails
+        if (adminPubkeys.length === 0) {
+          console.warn('[DenyService] No admin pubkeys configured, skipping deny list load');
+          this.denyList.set([]);
+          this.loaded.set(true);
+          return;
         }
 
-        // Load from Nostr lists if admin pubkeys are configured
-        if (this.adminPubkeys.length > 0) {
-          try {
-            console.log('[DenyService] Loading from Nostr with admin pubkeys:', this.adminPubkeys);
-            const nostrDenied = await this.nostrListService.getAllDeniedProjects(this.adminPubkeys);
-            nostrDenied.forEach(id => allDeniedProjects.add(id));
-            console.log('[DenyService] Nostr deny lists loaded:', nostrDenied.length, 'entries:', nostrDenied);
-          } catch (error) {
-            console.error('[DenyService] Failed to load Nostr deny lists:', error);
-            // Continue even if Nostr fails
-          }
-        } else {
-          console.warn('[DenyService] No admin pubkeys configured, skipping Nostr lists');
-        }
+        console.log('[DenyService] Loading deny list (kind 30000) from Nostr for admin pubkeys:', adminPubkeys);
+        const deniedPubkeys = await this.nostrListService.getAllDeniedProjects(adminPubkeys);
+        console.log('[DenyService] Deny list loaded:', deniedPubkeys.length, 'entries');
 
-        // Combine both sources
-        const combinedList = Array.from(allDeniedProjects);
-        this.denyList.set(combinedList);
+        this.denyList.set(deniedPubkeys);
         this.loaded.set(true);
-        console.log('Total deny list loaded:', combinedList.length, 'entries');
-        
+
+        // Sync to HubConfigService for unified filtering
+        this.hubConfig.updateDeniedProjects(deniedPubkeys);
       } catch (error) {
-        console.error('Error loading deny list:', error);
+        console.error('[DenyService] Error loading deny list:', error);
         this.denyList.set([]);
+        this.loaded.set(true);
       } finally {
         this.loadingPromise = null;
       }
@@ -73,61 +57,39 @@ export class DenyService {
   }
 
   /**
-   * Set admin pubkeys that manage Nostr deny lists
-   */
-  setAdminPubkeys(pubkeys: string[]): void {
-    this.adminPubkeys = pubkeys;
-    // Reset loaded state to force reload with new pubkeys
-    this.loaded.set(false);
-    this.loadingPromise = null;
-  }
-
-  /**
-   * Get configured admin pubkeys
-   */
-  getAdminPubkeys(): string[] {
-    return [...this.adminPubkeys];
-  }
-
-  /**
-   * Force reload deny list from all sources
+   * Force reload deny list from Nostr.
+   * Call this when admin pubkeys change or hub config is updated.
    */
   async reloadDenyList(): Promise<void> {
     this.loaded.set(false);
     this.loadingPromise = null;
+    this.denyList.set([]);
     await this.loadDenyList();
   }
 
-  async isEventDenied(projectIdentifier: string): Promise<boolean> {
-    await this.loadDenyList(); // Ensure list is loaded
-    
-    const list = this.denyList();
-    
-    // Debug logging
-    console.log(`[DenyService] Checking if project is denied: "${projectIdentifier}"`);
-    console.log(`[DenyService] Current deny list (${list.length} items):`, list);
-    
-    // Check exact match first
-    if (list.includes(projectIdentifier)) {
-      console.warn(`✗ Project ${projectIdentifier} is DENIED (exact match).`);
-      return true;
+  /**
+   * Get configured admin pubkeys (hex) from HubConfigService.
+   */
+  getAdminPubkeys(): string[] {
+    return this.hubConfig.getAdminPubkeysHex();
+  }
+
+  /**
+   * Check if a project's founderKey is on the deny list.
+   */
+  async isFounderKeyDenied(founderKey: string): Promise<boolean> {
+    await this.loadDenyList();
+    const denied = this.denyList().includes(founderKey);
+    if (denied) {
+      console.warn(`[DenyService] ✗ Project founderKey ${founderKey} is DENIED`);
     }
-    
-    // Check if any item in deny list is contained in or contains the projectIdentifier
-    // This handles cases where different formats are used (event ID vs project identifier)
-    const normalizedIdentifier = projectIdentifier.toLowerCase().trim();
-    for (const deniedItem of list) {
-      const normalizedDenied = deniedItem.toLowerCase().trim();
-      
-      // Check if either contains the other (for partial matches)
-      if (normalizedIdentifier.includes(normalizedDenied) || 
-          normalizedDenied.includes(normalizedIdentifier)) {
-        console.warn(`✗ Project ${projectIdentifier} is DENIED (matched with ${deniedItem}).`);
-        return true;
-      }
-    }
-    
-    console.log(`✓ Project ${projectIdentifier} is allowed.`);
-    return false;
+    return denied;
+  }
+
+  /**
+   * @deprecated Use isFounderKeyDenied(founderKey) instead.
+   */
+  async isEventDenied(founderKey: string): Promise<boolean> {
+    return this.isFounderKeyDenied(founderKey);
   }
 }

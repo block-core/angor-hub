@@ -1,13 +1,17 @@
-import { Component, OnInit, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, signal, computed, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { NostrListService } from '../../services/nostr-list.service';
 import { RelayService } from '../../services/relay.service';
 import { NostrAuthService } from '../../services/nostr-auth.service';
+import { HubConfigService } from '../../services/hub-config.service';
+import { nip19 } from 'nostr-tools';
+import { environment } from '../../../environment';
 
 interface ProjectItem {
   id: string;
+  npub: string;
   addedAt: number;
 }
 
@@ -24,41 +28,59 @@ export class AdminComponent implements OnInit {
   error = signal<string | null>(null);
   success = signal<string | null>(null);
   publishingStatus = signal<string | null>(null);
-  
+
+  // Computed npub for display — converts hex pubkey from nostr-login to npub
+  adminNpub = computed(() => {
+    const hex = this.adminPubkey();
+    if (!hex) return null;
+    try {
+      return nip19.npubEncode(hex);
+    } catch {
+      return hex; // fallback to hex if encoding fails
+    }
+  });
+
+  // Authorization: true only if logged-in pubkey is in the hub's admin pubkeys
+  isAuthorizedAdmin = signal<boolean>(false);
+
   // Deny list (private - kind 10000)
   deniedProjects = signal<ProjectItem[]>([]);
   newProjectId = signal<string>('');
   searchQuery = signal<string>('');
-  
+
   // Whitelist / Featured projects (public - kind 10001)
   featuredProjects = signal<ProjectItem[]>([]);
   newFeaturedId = signal<string>('');
   featuredSearchQuery = signal<string>('');
-  
-  // Tab management
-  activeTab = signal<'deny' | 'featured'>('deny');
-  
+
+  // Tab management — default to the relevant tab for the current hub mode
+  activeTab = signal<'deny' | 'featured'>(
+    environment.hubMode === 'whitelist' ? 'featured' : 'deny'
+  );
+
   // Relay connection status
   relayStatus = signal<{ url: string; connected: boolean }[]>([]);
   showRelayStatus = signal<boolean>(false);
-  
+
   filteredProjects = computed(() => {
     const query = this.searchQuery().toLowerCase();
     if (!query) return this.deniedProjects();
-    
-    return this.deniedProjects().filter(p => 
-      p.id.toLowerCase().includes(query)
+
+    return this.deniedProjects().filter(p =>
+      p.id.toLowerCase().includes(query) || p.npub.toLowerCase().includes(query)
     );
   });
 
   filteredFeaturedProjects = computed(() => {
     const query = this.featuredSearchQuery().toLowerCase();
     if (!query) return this.featuredProjects();
-    
-    return this.featuredProjects().filter(p => 
-      p.id.toLowerCase().includes(query)
+
+    return this.featuredProjects().filter(p =>
+      p.id.toLowerCase().includes(query) || p.npub.toLowerCase().includes(query)
     );
   });
+
+  public hubConfig = inject(HubConfigService);
 
   constructor(
     private nostrListService: NostrListService,
@@ -72,12 +94,23 @@ export class AdminComponent implements OnInit {
         console.log('[Admin] User authenticated via nostr-login:', user.pubkey);
         this.isLoggedIn.set(true);
         this.adminPubkey.set(user.pubkey);
-        this.loadDenyList();
-        this.loadFeaturedList();
+
+        // Check if the logged-in user is an authorized admin
+        const authorized = this.hubConfig.isAdmin(user.pubkey);
+        this.isAuthorizedAdmin.set(authorized);
+
+        if (authorized) {
+          console.log('[Admin] User IS an authorized admin');
+          this.loadDenyList();
+          this.loadFeaturedList();
+        } else {
+          console.warn('[Admin] User is NOT an authorized admin. Read-only access.');
+        }
       } else {
         console.log('[Admin] User logged out');
         this.isLoggedIn.set(false);
         this.adminPubkey.set(null);
+        this.isAuthorizedAdmin.set(false);
         this.deniedProjects.set([]);
         this.featuredProjects.set([]);
       }
@@ -87,7 +120,7 @@ export class AdminComponent implements OnInit {
   async ngOnInit() {
     // Load relay status
     this.updateRelayStatus();
-    
+
     // Check if user is already authenticated via nostr-login
     if (this.nostrAuth.isLoggedIn()) {
       const pubkey = this.nostrAuth.getPubkey();
@@ -95,8 +128,14 @@ export class AdminComponent implements OnInit {
         console.log('[Admin] Already logged in via nostr-login:', pubkey);
         this.isLoggedIn.set(true);
         this.adminPubkey.set(pubkey);
-        await this.loadDenyList();
-        await this.loadFeaturedList();
+
+        const authorized = this.hubConfig.isAdmin(pubkey);
+        this.isAuthorizedAdmin.set(authorized);
+
+        if (authorized) {
+          await this.loadDenyList();
+          await this.loadFeaturedList();
+        }
       }
     }
   }
@@ -175,6 +214,7 @@ export class AdminComponent implements OnInit {
       const list = await this.nostrListService.getDenyList();
       const projects: ProjectItem[] = list.map(id => ({
         id,
+        npub: nip19.npubEncode(id),
         addedAt: Date.now(), // We don't have exact timestamp, use current
       }));
       this.deniedProjects.set(projects);
@@ -187,52 +227,89 @@ export class AdminComponent implements OnInit {
     }
   }
 
+  /**
+   * Guard: returns true if the user is an authorized admin. Shows error otherwise.
+   */
+  private requireAuthorization(): boolean {
+    if (!this.isAuthorizedAdmin()) {
+      this.error.set('Unauthorized: Your pubkey is not in the configured admin pubkeys for this hub. Only admins can modify project lists.');
+      return false;
+    }
+    return true;
+  }
+
+  private withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s. Relays may be unreachable.`)), ms)
+      ),
+    ]);
+  }
+
+  /**
+   * Resolve the entered value to a hex pubkey.
+   * Accepts either a 64-char hex Nostr pubkey or an npub (bech32-encoded pubkey).
+   */
+  private resolveToHexPubkey(input: string): string | null {
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+
+    // Already hex (64-char lowercase hex)
+    if (/^[0-9a-f]{64}$/.test(trimmed)) return trimmed;
+
+    // Decode npub
+    try {
+      const decoded = nip19.decode(trimmed);
+      if (decoded.type === 'npub') return decoded.data as string;
+    } catch {
+      // Not a valid npub
+    }
+
+    return null; // Unrecognised format
+  }
+
   async addProject() {
-    const projectId = this.newProjectId().trim();
-    
-    if (!projectId) {
-      this.error.set('Please enter a project ID');
+    if (!this.requireAuthorization()) return;
+
+    const nostrPubKey = this.resolveToHexPubkey(this.newProjectId());
+
+    if (!nostrPubKey) {
+      this.error.set('Please enter a valid project npub or hex pubkey');
       return;
     }
 
     this.loading.set(true);
     this.error.set(null);
     this.publishingStatus.set('Publishing to relays...');
-    
+
     try {
-      await this.nostrListService.addToDenyList(projectId);
+      await this.withTimeout(
+        this.nostrListService.addToDenyList(nostrPubKey),
+        300000,
+        'Publishing deny list'
+      );
       this.publishingStatus.set('Waiting for event propagation...');
-      
-      // Wait a bit for the event to propagate to relays
+
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       this.publishingStatus.set('Reloading deny list...');
-      await this.loadDenyList();
+      await this.withTimeout(this.loadDenyList(), 300000, 'Reloading deny list');
       this.newProjectId.set('');
       this.publishingStatus.set(null);
-      this.success.set('✓ Project added and published successfully to Nostr relays');
+      this.success.set('Project added and published successfully to Nostr relays');
       setTimeout(() => this.success.set(null), 4000);
     } catch (err: any) {
       this.publishingStatus.set(null);
-      const errorMsg = err.message || 'Failed to add project';
-      
-      // Provide helpful context for different error types
-      if (errorMsg.includes('relay') || errorMsg.includes('unavailable')) {
-        this.error.set(`${errorMsg} Try clicking the "Test" button to refresh relay connections, or check Settings.`);
-      } else if (errorMsg.includes('timeout')) {
-        this.error.set(`${errorMsg} Your relays may be slow. Try again or configure different relays in Settings.`);
-      } else if (errorMsg.includes('extension')) {
-        this.error.set(`${errorMsg} Make sure your Nostr extension (Alby/nos2x) is unlocked and working.`);
-      } else {
-        this.error.set(errorMsg);
-      }
-      console.error('Add project error:', err);
+      this.handlePublishError(err, 'Failed to add project');
     } finally {
       this.loading.set(false);
     }
   }
 
   async removeProject(projectId: string) {
+    if (!this.requireAuthorization()) return;
+
     if (!confirm(`Are you sure you want to remove project ${projectId} from the list?`)) {
       return;
     }
@@ -240,34 +317,25 @@ export class AdminComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
     this.publishingStatus.set('Publishing changes to relays...');
-    
+
     try {
-      await this.nostrListService.removeFromDenyList(projectId);
+      await this.withTimeout(
+        this.nostrListService.removeFromDenyList(projectId),
+        300000,
+        'Publishing deny list'
+      );
       this.publishingStatus.set('Waiting for event propagation...');
-      
-      // Wait a bit for the event to propagate to relays
+
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       this.publishingStatus.set('Reloading deny list...');
-      await this.loadDenyList();
+      await this.withTimeout(this.loadDenyList(), 300000, 'Reloading deny list');
       this.publishingStatus.set(null);
-      this.success.set('✓ Project removed and published successfully to Nostr relays');
+      this.success.set('Project removed and published successfully to Nostr relays');
       setTimeout(() => this.success.set(null), 4000);
     } catch (err: any) {
       this.publishingStatus.set(null);
-      const errorMsg = err.message || 'Failed to remove project';
-      
-      // Provide helpful context for different error types
-      if (errorMsg.includes('relay') || errorMsg.includes('unavailable')) {
-        this.error.set(`${errorMsg} Try clicking the "Test" button to refresh relay connections, or check Settings.`);
-      } else if (errorMsg.includes('timeout')) {
-        this.error.set(`${errorMsg} Your relays may be slow. Try again or configure different relays in Settings.`);
-      } else if (errorMsg.includes('extension')) {
-        this.error.set(`${errorMsg} Make sure your Nostr extension (Alby/nos2x) is unlocked and working.`);
-      } else {
-        this.error.set(errorMsg);
-      }
-      console.error('Remove project error:', err);
+      this.handlePublishError(err, 'Failed to remove project');
     } finally {
       this.loading.set(false);
     }
@@ -283,6 +351,7 @@ export class AdminComponent implements OnInit {
       const list = await this.nostrListService.getWhiteList();
       const projects: ProjectItem[] = list.map(id => ({
         id,
+        npub: nip19.npubEncode(id),
         addedAt: Date.now(),
       }));
       this.featuredProjects.set(projects);
@@ -296,49 +365,46 @@ export class AdminComponent implements OnInit {
   }
 
   async addFeaturedProject() {
-    const projectId = this.newFeaturedId().trim();
-    
-    if (!projectId) {
-      this.error.set('Please enter a project ID');
+    if (!this.requireAuthorization()) return;
+
+    const nostrPubKey = this.resolveToHexPubkey(this.newFeaturedId());
+
+    if (!nostrPubKey) {
+      this.error.set('Please enter a valid project npub or hex pubkey');
       return;
     }
 
     this.loading.set(true);
     this.error.set(null);
     this.publishingStatus.set('Publishing to relays...');
-    
+
     try {
-      await this.nostrListService.addToWhiteList(projectId);
+      await this.withTimeout(
+        this.nostrListService.addToWhiteList(nostrPubKey),
+        300000,
+        'Publishing whitelist'
+      );
       this.publishingStatus.set('Waiting for event propagation...');
-      
+
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       this.publishingStatus.set('Reloading featured list...');
-      await this.loadFeaturedList();
+      await this.withTimeout(this.loadFeaturedList(), 300000, 'Reloading featured list');
       this.newFeaturedId.set('');
       this.publishingStatus.set(null);
-      this.success.set('✓ Project added to featured list and published successfully');
+      this.success.set('Project added to featured list and published successfully');
       setTimeout(() => this.success.set(null), 4000);
     } catch (err: any) {
       this.publishingStatus.set(null);
-      const errorMsg = err.message || 'Failed to add featured project';
-      
-      if (errorMsg.includes('relay') || errorMsg.includes('unavailable')) {
-        this.error.set(`${errorMsg} Try clicking the "Test" button to refresh relay connections, or check Settings.`);
-      } else if (errorMsg.includes('timeout')) {
-        this.error.set(`${errorMsg} Your relays may be slow. Try again or configure different relays in Settings.`);
-      } else if (errorMsg.includes('extension')) {
-        this.error.set(`${errorMsg} Make sure your Nostr extension (Alby/nos2x) is unlocked and working.`);
-      } else {
-        this.error.set(errorMsg);
-      }
-      console.error('Add featured project error:', err);
+      this.handlePublishError(err, 'Failed to add featured project');
     } finally {
       this.loading.set(false);
     }
   }
 
   async removeFeaturedProject(projectId: string) {
+    if (!this.requireAuthorization()) return;
+
     if (!confirm(`Are you sure you want to remove project ${projectId} from the featured list?`)) {
       return;
     }
@@ -346,35 +412,42 @@ export class AdminComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
     this.publishingStatus.set('Publishing changes to relays...');
-    
+
     try {
-      await this.nostrListService.removeFromWhiteList(projectId);
+      await this.withTimeout(
+        this.nostrListService.removeFromWhiteList(projectId),
+        300000,
+        'Publishing whitelist'
+      );
       this.publishingStatus.set('Waiting for event propagation...');
-      
+
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       this.publishingStatus.set('Reloading featured list...');
-      await this.loadFeaturedList();
+      await this.withTimeout(this.loadFeaturedList(), 300000, 'Reloading featured list');
       this.publishingStatus.set(null);
-      this.success.set('✓ Project removed from featured list and published successfully');
+      this.success.set('Project removed from featured list and published successfully');
       setTimeout(() => this.success.set(null), 4000);
     } catch (err: any) {
       this.publishingStatus.set(null);
-      const errorMsg = err.message || 'Failed to remove featured project';
-      
-      if (errorMsg.includes('relay') || errorMsg.includes('unavailable')) {
-        this.error.set(`${errorMsg} Try clicking the "Test" button to refresh relay connections, or check Settings.`);
-      } else if (errorMsg.includes('timeout')) {
-        this.error.set(`${errorMsg} Your relays may be slow. Try again or configure different relays in Settings.`);
-      } else if (errorMsg.includes('extension')) {
-        this.error.set(`${errorMsg} Make sure your Nostr extension (Alby/nos2x) is unlocked and working.`);
-      } else {
-        this.error.set(errorMsg);
-      }
-      console.error('Remove featured project error:', err);
+      this.handlePublishError(err, 'Failed to remove featured project');
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private handlePublishError(err: any, fallback: string): void {
+    const errorMsg = err.message || fallback;
+    if (errorMsg.includes('relay') || errorMsg.includes('unavailable')) {
+      this.error.set(`${errorMsg} Try clicking the "Test" button to refresh relay connections, or check Settings.`);
+    } else if (errorMsg.includes('timeout') || errorMsg.includes('timed out')) {
+      this.error.set(`${errorMsg} Your relays may be slow or unreachable. Try again or configure different relays in Settings.`);
+    } else if (errorMsg.includes('extension')) {
+      this.error.set(`${errorMsg} Make sure your Nostr extension (Alby/nos2x) is unlocked and working.`);
+    } else {
+      this.error.set(errorMsg);
+    }
+    console.error(fallback + ':', err);
   }
 
   switchTab(tab: 'deny' | 'featured') {
@@ -404,4 +477,5 @@ export class AdminComponent implements OnInit {
       minute: '2-digit',
     });
   }
+
 }

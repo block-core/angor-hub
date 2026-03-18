@@ -1,8 +1,10 @@
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, signal, inject, computed } from '@angular/core';
 import { ProjectUpdate, RelayService } from './relay.service';
 import { NDKEvent, NDKUserProfile } from '@nostr-dev-kit/ndk';
 import { NetworkService } from './network.service';
 import { DenyService } from './deny.service';
+import { FeaturedService } from './featured.service';
+import { HubConfigService } from './hub-config.service';
 import { ExternalIdentity } from '../models/models';
 import { NostrProjectVerificationService } from './nostr-project-verification.service';
 
@@ -96,17 +98,28 @@ export class IndexerService {
   private readonly LIMIT = 8;
   private indexerUrl = 'https://signet.angor.online/';
 
-  // Offset-based pagination (same as original — restores reliable project listing)
+  // Offset-based pagination
   private offset = -1000;
   private totalItems = 0;
   private totalProjectsFetched = false;
 
   private relay = inject(RelayService);
   private denyService = inject(DenyService);
+  private featuredService = inject(FeaturedService);
+  private hubConfig = inject(HubConfigService);
   private verification = inject(NostrProjectVerificationService);
 
   public loading = signal<boolean>(false);
-  public projects = signal<IndexedProject[]>([]);
+  private _allProjects = signal<IndexedProject[]>([]);
+  public projects = computed(() => {
+    const all = this._allProjects();
+    return all.filter(p => {
+      const nostrPubKey = p.details?.nostrPubKey;
+      // If details haven't loaded yet, show the project (will re-evaluate when details arrive)
+      if (!nostrPubKey) return true;
+      return this.hubConfig.shouldShowProject(nostrPubKey);
+    });
+  });
   public error = signal<string | null>(null);
   private network = inject(NetworkService);
 
@@ -325,7 +338,7 @@ export class IndexerService {
 
   /**
    * Fetches a raw transaction hex string.
-   * The /hex endpoint may return a plain text hex string (not JSON)
+   * The /hex endpoint may return a plain text hex string (not JSON).
    */
   private async fetchTxHex(txId: string): Promise<string | null> {
     try {
@@ -334,7 +347,7 @@ export class IndexerService {
       if (!response.ok) return null;
       const text = (await response.text()).trim();
       if (!text) return null;
-      // Handle both plain hex and a JSON-encoded string 
+      // Handle both plain hex and a JSON-encoded string
       if (text.startsWith('"')) {
         return JSON.parse(text) as string;
       }
@@ -348,7 +361,7 @@ export class IndexerService {
     const pubkey = event.pubkey;
     const metadata = JSON.parse(event.content) as NDKUserProfile;
 
-    this.projects.update((projects) =>
+    this._allProjects.update((projects) =>
       projects.map((project) => {
         if (project.founderKey === pubkey) {
           if (
@@ -368,12 +381,13 @@ export class IndexerService {
   }
 
   /**
-   * Updates a project's details when a verified kind 3030 event arrives via
+   * Updates a project's details when a kind 3030 event arrives from Nostr.
+   * Parses the event content to extract the ProjectUpdate details.
    */
   private updateProjectDetails(event: NDKEvent) {
     try {
       const details: ProjectUpdate = JSON.parse(event.content);
-      this.projects.update((projects) =>
+      this._allProjects.update((projects) =>
         projects.map((project) => {
           if (project.projectIdentifier === details.projectIdentifier) {
             if (
@@ -390,7 +404,8 @@ export class IndexerService {
           return project;
         })
       );
-    } catch {
+    } catch (error) {
+      console.error('Failed to parse project details from event:', error);
     }
   }
 
@@ -398,28 +413,25 @@ export class IndexerService {
    * Fetches a paginated batch of projects.
    *
    * Nostr-first verification flow:
-   *   Discover projects from the indexer (only the Bitcoin chain knows what
-   *     projects exist on-chain; there is no practical way to enumerate them
-   *     from Nostr without knowing the specific event IDs first).
-   *  For each project, fetch the founding transaction hex and decode the
-   *     OP_RETURN to obtain the blockchain-authoritative Nostr event ID.
-   *   Replace the indexer's nostrEventId with the OP_RETURN value whenever
-   *     it is successfully decoded — the indexer's value is never trusted blindly.
-   *  Calling relay.fetchListData() with the verified event IDs so that the
-   *     project content (profile, details) always comes from Nostr.
+   *   1. Discover projects from the indexer (only the Bitcoin chain knows what
+   *      projects exist on-chain).
+   *   2. For each project, fetch the founding transaction hex and decode the
+   *      OP_RETURN to obtain the blockchain-authoritative Nostr event ID.
+   *   3. Replace the indexer's nostrEventId with the OP_RETURN value whenever
+   *      it is successfully decoded — the indexer's value is never trusted blindly.
+   *   4. Call relay.fetchListData() with the verified event IDs so that the
+   *      project content (profile, details) always comes from Nostr.
    *
-   * Now a project whose indexer record carries a tampered nostrEventId will
-   * have it silently corrected to the real on-chain value, and the Nostr fetch
-   * will retrieve the genuine project event.  If OP_RETURN decoding fails for
-   * any reason (network error, tx not yet indexed) the original nostrEventId is
-   * used as a fallback so the page remains functional.
+   * A project whose indexer record carries a tampered nostrEventId will have it
+   * silently corrected to the real on-chain value. If OP_RETURN decoding fails
+   * for any reason the original nostrEventId is used as a fallback.
    */
   async fetchProjects(reset = false): Promise<void> {
     if (reset) {
       this.offset = -1000;
       this.totalProjectsFetched = false;
       this.totalItems = 0;
-      this.projects.set([]);
+      this._allProjects.set([]);
     }
 
     if (this.loading()) {
@@ -427,7 +439,14 @@ export class IndexerService {
     }
 
     try {
-      await this.denyService.loadDenyList();
+      // Load both deny list and whitelist for hub mode filtering
+      await Promise.all([
+        this.denyService.loadDenyList(),
+        this.featuredService.loadFeaturedProjects()
+      ]);
+
+      // Mark lists as loaded in hub config
+      this.hubConfig.setListsLoaded(true);
 
       this.loading.set(true);
       this.error.set(null);
@@ -458,14 +477,6 @@ export class IndexerService {
       const { data: response, headers } = await this.fetchJson<IndexedProject[]>(url);
 
       if (Array.isArray(response) && response.length > 0) {
-        // Filter out denied projects
-        const filteredResponse: IndexedProject[] = [];
-        for (const item of response) {
-          const isDenied = await this.denyService.isEventDenied(item.projectIdentifier);
-          if (!isDenied) {
-            filteredResponse.push(item);
-          }
-        }
 
         if (isFirstLoad) {
           this.totalItems = parseInt(headers.get('pagination-total') || '0');
@@ -478,51 +489,48 @@ export class IndexerService {
           this.totalProjectsFetched = true;
         }
 
-        if (filteredResponse.length > 0) {
-          // Nostr-first verification 
-          // For each project, attempt to decode the OP_RETURN from its founding
-          // transaction and replace nostrEventId with the on-chain value.
-          await Promise.all(
-            filteredResponse.map(async (project) => {
-              if (!project.trxId) return;
+        // OP_RETURN verification: for each project, attempt to decode the
+        // OP_RETURN from its founding transaction and replace nostrEventId
+        // with the on-chain value.
+        await Promise.all(
+          response.map(async (project) => {
+            if (!project.trxId) return;
 
-              const txHex = await this.fetchTxHex(project.trxId);
-              if (!txHex) return;
+            const txHex = await this.fetchTxHex(project.trxId);
+            if (!txHex) return;
 
-              const embeddedId = this.verification.extractOpReturnEventId(txHex);
-              if (!embeddedId) return;
+            const embeddedId = this.verification.extractOpReturnEventId(txHex);
+            if (!embeddedId) return;
 
-              if (embeddedId !== project.nostrEventId?.toLowerCase()) {
-                console.warn(
-                  `[Angor] nostrEventId corrected for ${project.projectIdentifier}: ` +
-                  `indexer="${project.nostrEventId}" → op_return="${embeddedId}"`
-                );
-              }
+            if (embeddedId !== project.nostrEventId?.toLowerCase()) {
+              console.warn(
+                `[Angor] nostrEventId corrected for ${project.projectIdentifier}: ` +
+                `indexer="${project.nostrEventId}" -> op_return="${embeddedId}"`
+              );
+            }
 
-          
-              project.nostrEventId = embeddedId;
-            })
-          );
+            project.nostrEventId = embeddedId;
+          })
+        );
 
-          this.projects.update((existing) => {
-            const merged = [...existing];
-            const existingIds = new Set(existing.map(p => p.projectIdentifier));
+        this._allProjects.update((existing) => {
+          const merged = [...existing];
+          const existingIds = new Set(existing.map(p => p.projectIdentifier));
 
-            filteredResponse.forEach((newProject) => {
-              if (!existingIds.has(newProject.projectIdentifier)) {
-                merged.push(newProject);
-                existingIds.add(newProject.projectIdentifier);
-              }
-            });
-
-            return merged;
+          response.forEach((newProject) => {
+            if (!existingIds.has(newProject.projectIdentifier)) {
+              merged.push(newProject);
+              existingIds.add(newProject.projectIdentifier);
+            }
           });
 
-          // Fetch Nostr events by the OP_RETURN-verified event IDs
-          const verifiedEventIds = filteredResponse.map((project) => project.nostrEventId);
-          if (verifiedEventIds.length > 0) {
-            this.relay.fetchListData(verifiedEventIds);
-          }
+          return merged;
+        });
+
+        // Fetch Nostr events by the OP_RETURN-verified event IDs
+        const verifiedEventIds = response.map((project) => project.nostrEventId);
+        if (verifiedEventIds.length > 0) {
+          this.relay.fetchListData(verifiedEventIds);
         }
       } else {
         this.totalProjectsFetched = true;
@@ -546,29 +554,33 @@ export class IndexerService {
    *
    * The OP_RETURN of the founding transaction is decoded to obtain the
    * blockchain-authoritative Nostr event ID, replacing whatever value the
-   * indexer stored.  The project component then fetches the Nostr event using
-   * this verified ID, so the correct event is always displayed.
+   * indexer stored.
    */
   async fetchProject(id: string): Promise<IndexedProject | null> {
-    await this.denyService.loadDenyList();
-    if (await this.denyService.isEventDenied(id)) {
-      this.error.set(`Project ${id} is not available.`);
-      return null;
-    }
+    // Ensure deny list and whitelist are loaded before filtering
+    await Promise.all([
+      this.denyService.loadDenyList(),
+      this.featuredService.loadFeaturedProjects()
+    ]);
+    this.hubConfig.setListsLoaded(true);
 
     try {
       this.loading.set(true);
       const result = await this.fetchJson<IndexedProject>(
         `${this.indexerUrl}api/query/Angor/projects/${id}`
       );
-      const project = result.data;
 
-      if (!project) return null;
-
-      if (await this.denyService.isEventDenied(project.projectIdentifier)) {
-        this.error.set(`Project ${id} is not available.`);
-        return null;
+      if (result && result.data) {
+        // Filter by the project's Nostr pubkey (from details), not founderKey
+        const nostrPubKey = result.data.details?.nostrPubKey;
+        if (nostrPubKey && !this.hubConfig.shouldShowProject(nostrPubKey)) {
+          this.error.set(`Project ${id} is not available.`);
+          return null;
+        }
       }
+
+      const project = result.data;
+      if (!project) return null;
 
       // Verify and correct the Nostr event ID via OP_RETURN
       if (project.trxId) {
@@ -581,7 +593,7 @@ export class IndexerService {
               if (embeddedEventId !== project.nostrEventId?.toLowerCase()) {
                 console.warn(
                   `[Angor] nostrEventId corrected for project ${id}: ` +
-                  `indexer="${project.nostrEventId}" → op_return="${embeddedEventId}"`
+                  `indexer="${project.nostrEventId}" -> op_return="${embeddedEventId}"`
                 );
               }
               project.nostrEventId = embeddedEventId;
@@ -592,7 +604,7 @@ export class IndexerService {
             }
           }
         } catch (err) {
-          // fall back to the indexer-supplied nostrEventId
+          // Fall back to the indexer-supplied nostrEventId
           console.warn(`[Angor] Could not verify OP_RETURN for project ${id}:`, err);
         }
       }
@@ -807,7 +819,7 @@ export class IndexerService {
     this.offset = -1000;
     this.totalProjectsFetched = false;
     this.totalItems = 0;
-    this.projects.set([]);
+    this._allProjects.set([]);
     this.fetchProjects(true);
   }
 

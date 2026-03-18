@@ -6,11 +6,12 @@ import { NetworkService } from '../../services/network.service';
 import { ThemeService } from '../../services/theme.service';
 import { RelayService } from '../../services/relay.service';
 import { IndexerService, IndexerConfig, IndexerEntry } from '../../services/indexer.service';
+import { HubConfigService, HubMode } from '../../services/hub-config.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { environment } from '../../../environment';
 
-type SettingsTabId = 'appearance' | 'network' | 'relays' | 'indexers' | 'about';
+type SettingsTabId = 'appearance' | 'network' | 'relays' | 'indexers' | 'hub' | 'about';
 
 interface SettingsTab {
   id: SettingsTabId;
@@ -41,7 +42,8 @@ export class SettingsComponent implements OnInit {
   public themeService = inject(ThemeService);
   public relayService = inject(RelayService);
   public indexerService = inject(IndexerService);
-  
+  public hubConfigService = inject(HubConfigService);
+
   appVersion = environment.appVersion || '1.0.0';
 
   activeTab = signal<SettingsTabId>('appearance');
@@ -51,8 +53,11 @@ export class SettingsComponent implements OnInit {
     { id: 'network', label: 'Network', icon: 'public' },
     { id: 'relays', label: 'Relays', icon: 'settings_input_antenna' },
     { id: 'indexers', label: 'Indexers', icon: 'storage' },
+    { id: 'hub', label: 'Hub', icon: 'hub' },
     { id: 'about', label: 'About', icon: 'info' }
   ];
+
+  // Hub configuration (read-only display)
 
   currentTheme = computed(() => {
     return this.themeService.currentTheme();
@@ -231,7 +236,15 @@ export class SettingsComponent implements OnInit {
   }
   
   isValidIndexerUrl(url: string): boolean {
-    
+
     return (url.startsWith('http://') || url.startsWith('https://')) && url.length > (url.startsWith('https://') ? 8 : 7);
+  }
+
+  getHubMode(): HubMode {
+    return this.hubConfigService.hubMode();
+  }
+
+  getAdminPubkeys(): string[] {
+    return this.hubConfigService.getAdminPubkeys();
   }
 }
