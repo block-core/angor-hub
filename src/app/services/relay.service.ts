@@ -1,13 +1,6 @@
-import { Injectable, signal, effect } from '@angular/core';
-import { SimplePool, Filter, Event, Relay } from 'nostr-tools';
-import NDK, { NDKEvent, NDKKind, NDKUserProfile } from '@nostr-dev-kit/ndk';
+import { Injectable, signal } from '@angular/core';
+import NDK, { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
 import { Subject } from 'rxjs';
-
-export interface ProfileUpdate {
-  pubkey: string;
-  profile: NDKUserProfile;
-  event: NDKEvent;
-}
 
 export interface ProjectUpdate {
   founderKey: string;
@@ -23,27 +16,15 @@ export interface ProjectUpdate {
   projectSeeders: { threshold: number; secretHashes: string[] }[];
 }
 
-// Update ProjectEvent interface to use NDKUserProfile
-interface ProjectEvent extends Event {
-  details?: {
-    nostrPubKey: string;
-    projectIdentifier: string;
-    // ...other details fields
-  };
-  metadata?: NDKUserProfile;
-}
-
 @Injectable({
   providedIn: 'root',
 })
 export class RelayService {
-  private pool = new SimplePool();
   private ndk: NDK | null = null;
   private isConnected = false;
   public relayUrls = signal<string[]>([]);
   private defaultRelays = ['wss://relay.damus.io', 'wss://relay.primal.net', 'wss://nos.lol', 'wss://relay.angor.io', 'wss://relay2.angor.io'];
 
-  public projects = signal<ProjectEvent[]>([]);
   public loading = signal<boolean>(false);
   public profileUpdates = new Subject<NDKEvent>();
   public contentUpdates = new Subject<NDKEvent>();
@@ -120,44 +101,6 @@ export class RelayService {
     }
   }
 
-  async fetchListData(ids: string[]): Promise<void> {
-    try {
-      const ndk = await this.ensureConnected();
-
-      const filter = {
-        kinds: [30078,3030],
-        ids: ids,
-      };
-
-      const sub = ndk.subscribe(filter);
-      const timeout = setTimeout(() => {
-        // sub.close();
-      }, 5000);
-
-      sub.on('event', (event: NDKEvent) => {
-        try {
-          const projectDetails = JSON.parse(event.content);
-          this.fetchProfile([projectDetails.nostrPubKey]);
-          // this.fetchContent([projectDetails.nostrPubKey]);
-          this.projectUpdates.next(event);
-        } catch (error) {
-          console.error('Failed to parse profile:', error);
-        }
-      });
-
-      // Wait for each batch to complete
-      await new Promise<void>((resolve) => {
-        sub.on('eose', () => {
-          clearTimeout(timeout);
-          // sub.close();
-          resolve();
-        });
-      });
-    } catch (error) {
-      console.error('Error fetching profiles:', error);
-    }
-  }
-
   async fetchData(ids: string[]): Promise<void> {
     try {
       const ndk = await this.ensureConnected();
@@ -186,7 +129,7 @@ export class RelayService {
       const filter = {
         kinds: [0],
         authors: pubkeys,
-        limit: 1,
+        limit: pubkeys.length,
       };
 
       const sub = ndk.subscribe(filter);
@@ -273,7 +216,6 @@ export class RelayService {
       // this.ndk.close();
       this.isConnected = false;
     }
-    this.pool.close(this.relayUrls());
   }
 
   // Add this new method to get default relays

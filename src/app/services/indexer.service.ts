@@ -24,6 +24,8 @@ export interface IndexedProject {
   projectIdentifier: string;
   createdOnBlock: number;
   trxId: string;
+  /** Whether the project has been validated against the indexer (on-chain). */
+  verified?: boolean;
   profile?: {
     name?: string;
     picture?: string;
@@ -412,16 +414,18 @@ export class IndexerService {
   }
 
   /**
-   * Fetches projects using a Nostr-first discovery approach.
+   * Fetches projects using an optimistic Nostr-first discovery approach.
    *
-   * Flow (matches the Angor desktop app):
+   * Flow:
    *   1. Query Nostr relays for the latest kind 3030/30078 events.
-   *   2. Parse each event to extract projectIdentifier and nostrPubKey.
-   *   3. For each project, call the indexer to confirm it exists on-chain
-   *      and cross-check the Nostr event ID (the indexer stores the
-   *      OP_RETURN-embedded event ID from the founding transaction).
-   *   4. Only projects that pass validation are kept.
-   *   5. Profiles are fetched from Nostr for the validated projects.
+   *   2. Parse each event — immediately add projects to the view so the
+   *      user sees content right away (with metadata/images loading).
+   *   3. Kick off profile fetches from Nostr in parallel with validation.
+   *   4. Validate each project against the indexer (cache or API) in the
+   *      background. Remove any projects that fail validation.
+   *
+   * This "show first, validate in background" approach gives near-instant
+   * rendering while still ensuring only on-chain-verified projects remain.
    *
    * Pagination uses Nostr's `until` parameter (timestamp cursor) instead
    * of offset-based pagination against the indexer.
@@ -494,113 +498,69 @@ export class IndexerService {
         return;
       }
 
-      // Step 3: Validate each project on-chain via the indexer (in parallel).
-      // If we've previously validated a project, use the cached result
-      // instead of calling the indexer again — on-chain data is immutable.
-      const validatedProjects = await Promise.all(
-        candidateEvents.map(async ({ event, details }) => {
-          try {
-            const projectId = details.projectIdentifier;
+      // Step 3: Optimistically add projects to the view immediately.
+      // Apply hub mode filtering before showing.
+      const optimisticProjects: IndexedProject[] = [];
 
-            // Hub mode filtering (can be checked before indexer call)
-            const nostrPubKey = details.nostrPubKey;
-            if (nostrPubKey && !this.hubConfig.shouldShowProject(nostrPubKey)) {
-              return null;
-            }
-
-            // Check validation cache first
-            const cached = this.verification.getCachedValidation(projectId);
-            if (cached) {
-              // Verify the cached event ID matches the Nostr event we discovered
-              if (cached.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
-                console.warn(
-                  `[Angor] Event ID mismatch for ${projectId}: ` +
-                  `nostr="${event.id}" vs cached="${cached.nostrEventId}" — skipping`
-                );
-                return null;
-              }
-
-              // Reconstruct the IndexedProject from cached on-chain data + Nostr details
-              return {
-                founderKey: cached.founderKey,
-                nostrEventId: event.id,
-                projectIdentifier: projectId,
-                createdOnBlock: cached.createdOnBlock,
-                trxId: cached.trxId,
-                details,
-                details_created_at: event.created_at,
-              } as IndexedProject;
-            }
-
-            // No cache — call the indexer to validate
-            const url = `${this.indexerUrl}api/query/Angor/projects/${projectId}`;
-            const { data: indexerProject } = await this.fetchJson<IndexedProject>(url);
-
-            if (!indexerProject) return null;
-
-            // Cross-check: the indexer's nostrEventId (derived from the
-            // OP_RETURN in the founding Bitcoin transaction) must match
-            // the Nostr event ID we discovered.
-            if (indexerProject.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
-              console.warn(
-                `[Angor] Event ID mismatch for ${projectId}: ` +
-                `nostr="${event.id}" vs indexer="${indexerProject.nostrEventId}" — skipping`
-              );
-              return null;
-            }
-
-            // Cache the validation result for future loads
-            this.verification.cacheValidation(projectId, {
-              founderKey: indexerProject.founderKey,
-              nostrEventId: indexerProject.nostrEventId,
-              trxId: indexerProject.trxId,
-              createdOnBlock: indexerProject.createdOnBlock,
-            });
-
-            // Attach the Nostr-sourced details and event metadata
-            indexerProject.nostrEventId = event.id;
-            indexerProject.details = details;
-            indexerProject.details_created_at = event.created_at;
-
-            return indexerProject;
-          } catch {
-            // Project not found on-chain or indexer unreachable — skip
-            return null;
-          }
-        })
-      );
-
-      const verified = validatedProjects.filter(
-        (p): p is IndexedProject => p !== null
-      );
-
-      if (verified.length === 0) {
-        return;
-      }
-
-      // Step 4: Add validated projects to the store
-      this._allProjects.update((existing) => {
-        const merged = [...existing];
-        const ids = new Set(existing.map(p => p.projectIdentifier));
-
-        for (const project of verified) {
-          if (!ids.has(project.projectIdentifier)) {
-            merged.push(project);
-            ids.add(project.projectIdentifier);
-          }
+      for (const { event, details } of candidateEvents) {
+        const nostrPubKey = details.nostrPubKey;
+        if (nostrPubKey && !this.hubConfig.shouldShowProject(nostrPubKey)) {
+          continue;
         }
 
-        return merged;
-      });
-
-      // Step 5: Fetch profiles from Nostr for validated projects
-      const nostrPubKeys = verified
-        .map(p => p.details?.nostrPubKey)
-        .filter((k): k is string => !!k);
-
-      if (nostrPubKeys.length > 0) {
-        this.relay.fetchProfile(nostrPubKeys);
+        optimisticProjects.push({
+          founderKey: '',
+          nostrEventId: event.id,
+          projectIdentifier: details.projectIdentifier,
+          createdOnBlock: 0,
+          trxId: '',
+          details,
+          details_created_at: event.created_at,
+          verified: false,
+          metadata: undefined,
+          metadata_created_at: undefined,
+          stats: undefined,
+          content: undefined,
+          content_created_at: undefined,
+          members: undefined,
+          members_created_at: undefined,
+          media: undefined,
+          media_created_at: undefined,
+          externalIdentities: undefined,
+          externalIdentities_created_at: undefined,
+        });
       }
+
+      if (optimisticProjects.length > 0) {
+        // Add to the view right away — the user sees cards immediately
+        this._allProjects.update((existing) => {
+          const merged = [...existing];
+          const ids = new Set(existing.map(p => p.projectIdentifier));
+
+          for (const project of optimisticProjects) {
+            if (!ids.has(project.projectIdentifier)) {
+              merged.push(project);
+              ids.add(project.projectIdentifier);
+            }
+          }
+
+          return merged;
+        });
+
+        // Fetch profiles from Nostr immediately (for images/names)
+        const nostrPubKeys = optimisticProjects
+          .map(p => p.details?.nostrPubKey)
+          .filter((k): k is string => !!k);
+
+        if (nostrPubKeys.length > 0) {
+          this.relay.fetchProfile(nostrPubKeys);
+        }
+      }
+
+      // Step 4: Validate each project against the indexer in the background.
+      // Invalid projects are removed from the view.
+      this.validateProjectsInBackground(candidateEvents, optimisticProjects);
+
     } catch (err) {
       await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch projects'
@@ -608,6 +568,131 @@ export class IndexerService {
       console.error(err);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  /**
+   * Validates optimistically-displayed projects against the indexer.
+   * Runs in the background after projects are already shown to the user.
+   * Removes projects that fail validation and enriches valid ones with
+   * on-chain data (founderKey, trxId, createdOnBlock).
+   */
+  private async validateProjectsInBackground(
+    candidateEvents: { event: NDKEvent; details: ProjectUpdate }[],
+    optimisticProjects: IndexedProject[]
+  ): Promise<void> {
+    const optimisticIds = new Set(optimisticProjects.map(p => p.projectIdentifier));
+
+    const results = await Promise.allSettled(
+      candidateEvents
+        .filter(({ details }) => optimisticIds.has(details.projectIdentifier))
+        .map(async ({ event, details }) => {
+          const projectId = details.projectIdentifier;
+
+          // Check validation cache first (on-chain data is immutable)
+          const cached = this.verification.getCachedValidation(projectId);
+          if (cached) {
+            if (cached.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
+              console.warn(
+                `[Angor] Event ID mismatch for ${projectId}: ` +
+                `nostr="${event.id}" vs cached="${cached.nostrEventId}" — removing`
+              );
+              return { projectId, valid: false };
+            }
+            return {
+              projectId,
+              valid: true,
+              founderKey: cached.founderKey,
+              nostrEventId: cached.nostrEventId,
+              trxId: cached.trxId,
+              createdOnBlock: cached.createdOnBlock,
+            };
+          }
+
+          // No cache — call the indexer
+          const url = `${this.indexerUrl}api/query/Angor/projects/${projectId}`;
+          const { data: indexerProject } = await this.fetchJson<IndexedProject>(url);
+
+          if (!indexerProject) {
+            return { projectId, valid: false };
+          }
+
+          // Cross-check the OP_RETURN-embedded event ID
+          if (indexerProject.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
+            console.warn(
+              `[Angor] Event ID mismatch for ${projectId}: ` +
+              `nostr="${event.id}" vs indexer="${indexerProject.nostrEventId}" — removing`
+            );
+            return { projectId, valid: false };
+          }
+
+          // Cache for future loads
+          this.verification.cacheValidation(projectId, {
+            founderKey: indexerProject.founderKey,
+            nostrEventId: indexerProject.nostrEventId,
+            trxId: indexerProject.trxId,
+            createdOnBlock: indexerProject.createdOnBlock,
+          });
+
+          return {
+            projectId,
+            valid: true,
+            founderKey: indexerProject.founderKey,
+            nostrEventId: indexerProject.nostrEventId,
+            trxId: indexerProject.trxId,
+            createdOnBlock: indexerProject.createdOnBlock,
+          };
+        })
+    );
+
+    // Collect IDs to remove and data to enrich
+    const toRemove = new Set<string>();
+    const toEnrich = new Map<string, {
+      founderKey: string;
+      nostrEventId: string;
+      trxId: string;
+      createdOnBlock: number;
+    }>();
+
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        // Network error — remove the project to be safe
+        // (the candidate that caused this rejection is unknown, so skip)
+        continue;
+      }
+      const val = result.value;
+      if (!val.valid) {
+        toRemove.add(val.projectId);
+      } else if (val.founderKey) {
+        toEnrich.set(val.projectId, {
+          founderKey: val.founderKey,
+          nostrEventId: val.nostrEventId!,
+          trxId: val.trxId!,
+          createdOnBlock: val.createdOnBlock!,
+        });
+      }
+    }
+
+    // Apply removals and enrichments in a single signal update
+    if (toRemove.size > 0 || toEnrich.size > 0) {
+      this._allProjects.update((projects) =>
+        projects
+          .filter(p => !toRemove.has(p.projectIdentifier))
+          .map(p => {
+            const enrichment = toEnrich.get(p.projectIdentifier);
+            if (enrichment) {
+              return {
+                ...p,
+                founderKey: enrichment.founderKey,
+                nostrEventId: enrichment.nostrEventId,
+                trxId: enrichment.trxId,
+                createdOnBlock: enrichment.createdOnBlock,
+                verified: true,
+              };
+            }
+            return p;
+          })
+      );
     }
   }
 
