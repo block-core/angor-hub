@@ -99,7 +99,7 @@
 
     <script>
       (function() {
-        let theme = localStorage.getItem('angor-theme') || 'system';
+        let theme = localStorage.getItem('angor-theme') || 'dark';
         
         if (theme === 'system') {
           theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

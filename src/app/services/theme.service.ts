@@ -46,8 +46,8 @@ export class ThemeService {
       if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system')) {
         this.currentTheme.set(savedTheme);
       } else {
-        // Default to system if no preference is saved
-        this.currentTheme.set('system');
+        // Default to dark if no preference is saved
+        this.currentTheme.set('dark');
       }
       
       // Update the effective theme based on current selection
