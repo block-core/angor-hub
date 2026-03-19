@@ -25,6 +25,7 @@ export interface ProjectUpdate {
 export class RelayService {
   private ndk: NDK | null = null;
   private isConnected = false;
+  private connectionReady: Promise<void>;
   public relayUrls = signal<string[]>([]);
   private defaultRelays = ['wss://relay.damus.io', 'wss://relay.primal.net', 'wss://nos.lol', 'wss://relay.angor.io', 'wss://relay2.angor.io'];
 
@@ -35,7 +36,7 @@ export class RelayService {
 
   constructor() {
     this.loadRelaysFromStorage();
-    this.initializeRelays();
+    this.connectionReady = this.initializeRelays();
   }
 
   private loadRelaysFromStorage(): void {
@@ -68,10 +69,14 @@ export class RelayService {
     this.isConnected = false;
 
     // Reinitialize with new relay URLs
-    await this.initializeRelays();
+    this.connectionReady = this.initializeRelays();
+    await this.connectionReady;
   }
 
   public async ensureConnected(): Promise<NDK> {
+    // Wait for the initial connection attempt to finish first
+    await this.connectionReady;
+
     if (this.ndk && this.isConnected) {
       return this.ndk;
     }

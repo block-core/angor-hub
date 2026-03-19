@@ -103,6 +103,7 @@ export class IndexerService {
   // Nostr-first cursor-based pagination (using `until` timestamp)
   private oldestEventTimestamp: number | undefined;
   private totalProjectsFetched = false;
+  private fetchPromise: Promise<void> | null = null;
 
   private relay = inject(RelayService);
   private denyService = inject(DenyService);
@@ -435,11 +436,23 @@ export class IndexerService {
       this.oldestEventTimestamp = undefined;
       this.totalProjectsFetched = false;
       this._allProjects.set([]);
+      this.fetchPromise = null;
     }
 
-    if (this.loading()) {
-      return;
+    // If a fetch is already in flight, wait for it instead of silently returning
+    if (this.fetchPromise) {
+      return this.fetchPromise;
     }
+
+    this.fetchPromise = this._doFetchProjects();
+    try {
+      await this.fetchPromise;
+    } finally {
+      this.fetchPromise = null;
+    }
+  }
+
+  private async _doFetchProjects(): Promise<void> {
 
     try {
       // Load both deny list and whitelist for hub mode filtering
@@ -988,8 +1001,9 @@ export class IndexerService {
   resetProjects(): void {
     this.oldestEventTimestamp = undefined;
     this.totalProjectsFetched = false;
+    this.fetchPromise = null;
+    this.loading.set(false);
     this._allProjects.set([]);
-    this.fetchProjects(true);
   }
 
   isComplete(): boolean {
