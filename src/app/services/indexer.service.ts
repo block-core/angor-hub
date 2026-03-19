@@ -330,12 +330,21 @@ export class IndexerService {
   ): Promise<{ data: T; headers: Headers }> {
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const err = new Error(`HTTP error! status: ${response.status}`);
+      (err as any).status = response.status;
+      throw err;
     }
     return {
       data: await response.json(),
       headers: response.headers,
     };
+  }
+
+  /**
+   * Returns true if the error represents an HTTP 404 Not Found response.
+   */
+  private isNotFoundError(err: unknown): boolean {
+    return err instanceof Error && (err as any).status === 404;
   }
 
   /**
@@ -453,6 +462,9 @@ export class IndexerService {
   }
 
   private async _doFetchProjects(): Promise<void> {
+    // Maximum number of consecutive empty batches before giving up.
+    // Prevents infinite loops when relays return only non-project events.
+    const MAX_EMPTY_BATCHES = 5;
 
     try {
       // Load both deny list and whitelist for hub mode filtering
@@ -466,125 +478,150 @@ export class IndexerService {
 
       this.loading.set(true);
       this.error.set(null);
-
-      // Step 1: Discover projects from Nostr relays
-      const nostrEvents = await this.relay.fetchNostrProjects(
-        this.LIMIT,
-        this.oldestEventTimestamp
-      );
-
-      if (nostrEvents.length === 0) {
-        this.totalProjectsFetched = true;
-        return;
-      }
-
-      // Update the pagination cursor to the oldest event's timestamp
-      // so the next call fetches older events.
-      const oldestEvent = nostrEvents.reduce(
-        (min, ev) => (ev.created_at! < min.created_at! ? ev : min),
-        nostrEvents[0]
-      );
-      this.oldestEventTimestamp = oldestEvent.created_at!;
-
-      // If we got fewer events than requested, we've reached the end
-      if (nostrEvents.length < this.LIMIT) {
-        this.totalProjectsFetched = true;
-      }
-
-      // Step 2: Parse events, filter by network, and deduplicate against already-loaded projects
-      const existingIds = new Set(this._allProjects().map(p => p.projectIdentifier));
-      const candidateEvents: { event: NDKEvent; details: ProjectUpdate }[] = [];
       const isMainnet = this.network.isMain();
+      console.log(`[Angor Debug] _doFetchProjects: network=${isMainnet ? 'main' : 'test'}, indexerUrl=${this.indexerUrl}`);
 
-      for (const event of nostrEvents) {
-        try {
-          const details: ProjectUpdate = JSON.parse(event.content);
-          if (!details.projectIdentifier) continue;
-          if (existingIds.has(details.projectIdentifier)) continue;
+      let emptyBatchCount = 0;
 
-          // Filter by network when networkName is explicitly set.
-          // If networkName is missing/empty (legacy projects), allow through on both networks
-          // — the indexer validation step will catch mismatches anyway.
-          // When present: on mainnet skip non-'Main', on testnet skip 'Main'.
-          const networkName = details.networkName;
-          if (networkName) {
-            if (isMainnet && networkName !== 'Main') continue;
-            if (!isMainnet && networkName === 'Main') continue;
+      // Loop to handle batches where all events are filtered out (parse errors, duplicates, etc.).
+      // Without this loop, a batch of only non-project events would leave the page empty.
+      while (emptyBatchCount < MAX_EMPTY_BATCHES) {
+        // Step 1: Discover projects from Nostr relays
+        const nostrEvents = await this.relay.fetchNostrProjects(
+          this.LIMIT,
+          this.oldestEventTimestamp
+        );
+
+        if (nostrEvents.length === 0) {
+          this.totalProjectsFetched = true;
+          return;
+        }
+
+        // Update the pagination cursor to the oldest event's timestamp
+        // so the next call fetches older events.
+        const oldestEvent = nostrEvents.reduce(
+          (min, ev) => (ev.created_at! < min.created_at! ? ev : min),
+          nostrEvents[0]
+        );
+        this.oldestEventTimestamp = oldestEvent.created_at!;
+
+        // If we got fewer events than requested, we've reached the end
+        if (nostrEvents.length < this.LIMIT) {
+          this.totalProjectsFetched = true;
+        }
+
+        // Step 2: Parse events, filter by network, and deduplicate against already-loaded projects
+        const existingIds = new Set(this._allProjects().map(p => p.projectIdentifier));
+        const candidateEvents: { event: NDKEvent; details: ProjectUpdate }[] = [];
+        let skipNoId = 0, skipDupe = 0, skipNetwork = 0, skipParse = 0;
+
+        for (const event of nostrEvents) {
+          try {
+            const details: ProjectUpdate = JSON.parse(event.content);
+            if (!details.projectIdentifier) { skipNoId++; continue; }
+            if (existingIds.has(details.projectIdentifier)) { skipDupe++; continue; }
+
+            // Filter by network when networkName is explicitly set.
+            // If networkName is missing/empty (legacy projects), allow through on both networks
+            // — the indexer validation step will catch mismatches anyway.
+            // When present: on mainnet skip non-'Main', on testnet skip 'Main'.
+            const networkName = details.networkName;
+            if (networkName) {
+              if (isMainnet && networkName !== 'Main') { skipNetwork++; continue; }
+              if (!isMainnet && networkName === 'Main') { skipNetwork++; continue; }
+            }
+
+            candidateEvents.push({ event, details });
+          } catch (parseErr) {
+            skipParse++;
+            console.log(`[Angor Debug] Parse error for event ${event.id?.slice(0, 8)}:`, typeof event.content, event.content?.slice(0, 80));
+            continue;
+          }
+        }
+
+        console.log(`[Angor Debug] Event filtering: ${nostrEvents.length} events → ${candidateEvents.length} candidates (skipped: ${skipNoId} no-id, ${skipDupe} duplicate, ${skipNetwork} network, ${skipParse} parse-error)`);
+
+        if (candidateEvents.length === 0) {
+          // All events in this batch were filtered out (parse errors, duplicates, wrong network).
+          // If we haven't reached the end, continue to the next batch.
+          if (!this.totalProjectsFetched) {
+            emptyBatchCount++;
+            continue;
+          }
+          return;
+        }
+
+        // Step 3: Optimistically add projects to the view immediately.
+        // Apply hub mode filtering before showing.
+        const optimisticProjects: IndexedProject[] = [];
+
+        for (const { event, details } of candidateEvents) {
+          const nostrPubKey = details.nostrPubKey;
+          if (nostrPubKey && !this.hubConfig.shouldShowProject(nostrPubKey)) {
+            continue;
           }
 
-          candidateEvents.push({ event, details });
-        } catch {
-          // Skip events with unparseable content
-          continue;
+          optimisticProjects.push({
+            founderKey: '',
+            nostrEventId: event.id,
+            projectIdentifier: details.projectIdentifier,
+            createdOnBlock: 0,
+            trxId: '',
+            details,
+            details_created_at: event.created_at,
+            verified: false,
+            metadata: undefined,
+            metadata_created_at: undefined,
+            stats: undefined,
+            content: undefined,
+            content_created_at: undefined,
+            members: undefined,
+            members_created_at: undefined,
+            media: undefined,
+            media_created_at: undefined,
+            externalIdentities: undefined,
+            externalIdentities_created_at: undefined,
+          });
         }
-      }
 
-      if (candidateEvents.length === 0) {
+        const hubModeRejected = candidateEvents.length - optimisticProjects.length;
+        console.log(`[Angor Debug] Hub mode filter: ${candidateEvents.length} candidates → ${optimisticProjects.length} optimistic (hubMode=${this.hubConfig.hubMode()}, ${hubModeRejected} rejected)`);
+
+        if (optimisticProjects.length > 0) {
+          // Add to the view right away — the user sees cards immediately
+          this._allProjects.update((existing) => {
+            const merged = [...existing];
+            const ids = new Set(existing.map(p => p.projectIdentifier));
+
+            for (const project of optimisticProjects) {
+              if (!ids.has(project.projectIdentifier)) {
+                merged.push(project);
+                ids.add(project.projectIdentifier);
+              }
+            }
+
+            return merged;
+          });
+
+          console.log(`[Angor Debug] Optimistic add complete: _allProjects total now ${this._allProjects().length}`);
+
+          // Fetch profiles from Nostr immediately (for images/names)
+          const nostrPubKeys = optimisticProjects
+            .map(p => p.details?.nostrPubKey)
+            .filter((k): k is string => !!k);
+
+          if (nostrPubKeys.length > 0) {
+            this.relay.fetchProfile(nostrPubKeys);
+          }
+        }
+
+        // Step 4: Validate each project against the indexer in the background.
+        // Invalid projects are removed from the view.
+        this.validateProjectsInBackground(candidateEvents, optimisticProjects);
+
+        // Found candidates — exit the loop
         return;
       }
-
-      // Step 3: Optimistically add projects to the view immediately.
-      // Apply hub mode filtering before showing.
-      const optimisticProjects: IndexedProject[] = [];
-
-      for (const { event, details } of candidateEvents) {
-        const nostrPubKey = details.nostrPubKey;
-        if (nostrPubKey && !this.hubConfig.shouldShowProject(nostrPubKey)) {
-          continue;
-        }
-
-        optimisticProjects.push({
-          founderKey: '',
-          nostrEventId: event.id,
-          projectIdentifier: details.projectIdentifier,
-          createdOnBlock: 0,
-          trxId: '',
-          details,
-          details_created_at: event.created_at,
-          verified: false,
-          metadata: undefined,
-          metadata_created_at: undefined,
-          stats: undefined,
-          content: undefined,
-          content_created_at: undefined,
-          members: undefined,
-          members_created_at: undefined,
-          media: undefined,
-          media_created_at: undefined,
-          externalIdentities: undefined,
-          externalIdentities_created_at: undefined,
-        });
-      }
-
-      if (optimisticProjects.length > 0) {
-        // Add to the view right away — the user sees cards immediately
-        this._allProjects.update((existing) => {
-          const merged = [...existing];
-          const ids = new Set(existing.map(p => p.projectIdentifier));
-
-          for (const project of optimisticProjects) {
-            if (!ids.has(project.projectIdentifier)) {
-              merged.push(project);
-              ids.add(project.projectIdentifier);
-            }
-          }
-
-          return merged;
-        });
-
-        // Fetch profiles from Nostr immediately (for images/names)
-        const nostrPubKeys = optimisticProjects
-          .map(p => p.details?.nostrPubKey)
-          .filter((k): k is string => !!k);
-
-        if (nostrPubKeys.length > 0) {
-          this.relay.fetchProfile(nostrPubKeys);
-        }
-      }
-
-      // Step 4: Validate each project against the indexer in the background.
-      // Invalid projects are removed from the view.
-      this.validateProjectsInBackground(candidateEvents, optimisticProjects);
 
     } catch (err) {
       await this.setErrorWithRetry(
@@ -607,66 +644,77 @@ export class IndexerService {
     optimisticProjects: IndexedProject[]
   ): Promise<void> {
     const optimisticIds = new Set(optimisticProjects.map(p => p.projectIdentifier));
+    console.log(`[Angor Debug] validateProjectsInBackground: validating ${optimisticIds.size} projects against ${this.indexerUrl}`);
 
-    const results = await Promise.allSettled(
+    const results = await Promise.all(
       candidateEvents
         .filter(({ details }) => optimisticIds.has(details.projectIdentifier))
         .map(async ({ event, details }) => {
           const projectId = details.projectIdentifier;
 
-          // Check validation cache first (on-chain data is immutable)
-          const cached = this.verification.getCachedValidation(projectId);
-          if (cached) {
-            if (cached.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
-              console.warn(
-                `[Angor] Event ID mismatch for ${projectId}: ` +
-                `nostr="${event.id}" vs cached="${cached.nostrEventId}" — removing`
-              );
+          try {
+            // Check validation cache first (on-chain data is immutable)
+            const cached = this.verification.getCachedValidation(projectId);
+            if (cached) {
+              if (cached.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
+                console.log(`[Angor Debug] Validate ${projectId}: cached-mismatch`);
+                return { projectId, valid: false };
+              }
+              console.log(`[Angor Debug] Validate ${projectId}: cached-valid`);
+              return {
+                projectId,
+                valid: true,
+                founderKey: cached.founderKey,
+                nostrEventId: cached.nostrEventId,
+                trxId: cached.trxId,
+                createdOnBlock: cached.createdOnBlock,
+              };
+            }
+
+            // No cache — call the indexer
+            const url = `${this.indexerUrl}api/query/Angor/projects/${projectId}`;
+            const { data: indexerProject } = await this.fetchJson<IndexedProject>(url);
+
+            if (!indexerProject) {
+              console.log(`[Angor Debug] Validate ${projectId}: no-data`);
               return { projectId, valid: false };
             }
+
+            // Cross-check the OP_RETURN-embedded event ID
+            if (indexerProject.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
+              console.log(`[Angor Debug] Validate ${projectId}: event-mismatch (nostr="${event.id}" vs indexer="${indexerProject.nostrEventId}")`);
+              return { projectId, valid: false };
+            }
+
+            // Cache for future loads
+            this.verification.cacheValidation(projectId, {
+              founderKey: indexerProject.founderKey,
+              nostrEventId: indexerProject.nostrEventId,
+              trxId: indexerProject.trxId,
+              createdOnBlock: indexerProject.createdOnBlock,
+            });
+
+            console.log(`[Angor Debug] Validate ${projectId}: valid`);
+
             return {
               projectId,
               valid: true,
-              founderKey: cached.founderKey,
-              nostrEventId: cached.nostrEventId,
-              trxId: cached.trxId,
-              createdOnBlock: cached.createdOnBlock,
+              founderKey: indexerProject.founderKey,
+              nostrEventId: indexerProject.nostrEventId,
+              trxId: indexerProject.trxId,
+              createdOnBlock: indexerProject.createdOnBlock,
             };
-          }
-
-          // No cache — call the indexer
-          const url = `${this.indexerUrl}api/query/Angor/projects/${projectId}`;
-          const { data: indexerProject } = await this.fetchJson<IndexedProject>(url);
-
-          if (!indexerProject) {
+          } catch (err) {
+            // 404 = project doesn't exist on this network's indexer → invalid
+            // Other errors (network failure, 500, etc.) → also mark invalid
+            // to avoid leaving unverified projects on screen
+            if (this.isNotFoundError(err)) {
+              console.log(`[Angor Debug] Validate ${projectId}: 404-not-found`);
+            } else {
+              console.warn(`[Angor Debug] Validate ${projectId}: error`, err);
+            }
             return { projectId, valid: false };
           }
-
-          // Cross-check the OP_RETURN-embedded event ID
-          if (indexerProject.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
-            console.warn(
-              `[Angor] Event ID mismatch for ${projectId}: ` +
-              `nostr="${event.id}" vs indexer="${indexerProject.nostrEventId}" — removing`
-            );
-            return { projectId, valid: false };
-          }
-
-          // Cache for future loads
-          this.verification.cacheValidation(projectId, {
-            founderKey: indexerProject.founderKey,
-            nostrEventId: indexerProject.nostrEventId,
-            trxId: indexerProject.trxId,
-            createdOnBlock: indexerProject.createdOnBlock,
-          });
-
-          return {
-            projectId,
-            valid: true,
-            founderKey: indexerProject.founderKey,
-            nostrEventId: indexerProject.nostrEventId,
-            trxId: indexerProject.trxId,
-            createdOnBlock: indexerProject.createdOnBlock,
-          };
         })
     );
 
@@ -679,13 +727,7 @@ export class IndexerService {
       createdOnBlock: number;
     }>();
 
-    for (const result of results) {
-      if (result.status === 'rejected') {
-        // Network error — remove the project to be safe
-        // (the candidate that caused this rejection is unknown, so skip)
-        continue;
-      }
-      const val = result.value;
+    for (const val of results) {
       if (!val.valid) {
         toRemove.add(val.projectId);
       } else if (val.founderKey) {
@@ -699,6 +741,7 @@ export class IndexerService {
     }
 
     // Apply removals and enrichments in a single signal update
+    const beforeCount = this._allProjects().length;
     if (toRemove.size > 0 || toEnrich.size > 0) {
       this._allProjects.update((projects) =>
         projects
@@ -719,6 +762,7 @@ export class IndexerService {
           })
       );
     }
+    console.log(`[Angor Debug] Validation complete: ${toRemove.size} removed, ${toEnrich.size} enriched, _allProjects ${beforeCount} → ${this._allProjects().length}`);
   }
 
   getProject(id: string): IndexedProject | undefined {
@@ -794,6 +838,10 @@ export class IndexerService {
 
       return project;
     } catch (err) {
+      // 404 means the project doesn't exist on this indexer — not a connectivity issue
+      if (this.isNotFoundError(err)) {
+        return null;
+      }
       await this.setErrorWithRetry(
         err instanceof Error ? err.message : `Failed to fetch project ${id}`
       );
@@ -816,6 +864,10 @@ export class IndexerService {
 
       return stats;
     } catch (err) {
+      // 404 means the project doesn't exist on this indexer — not a connectivity issue
+      if (this.isNotFoundError(err)) {
+        return null;
+      }
       await this.setErrorWithRetry(
         err instanceof Error
           ? err.message
@@ -836,6 +888,9 @@ export class IndexerService {
       const url = `${this.indexerUrl}api/query/Angor/projects/${projectId}/investments?offset=${offset}&limit=${limit}`;
       return (await this.fetchJson<ProjectInvestment[]>(url)).data;
     } catch (err) {
+      if (this.isNotFoundError(err)) {
+        return [];
+      }
       await this.setErrorWithRetry(
         err instanceof Error
           ? err.message
@@ -853,6 +908,9 @@ export class IndexerService {
       const url = `${this.indexerUrl}api/query/Angor/projects/${projectId}/investments/${investorKey}`;
       return (await this.fetchJson<ProjectInvestment>(url)).data;
     } catch (err) {
+      if (this.isNotFoundError(err)) {
+        return null;
+      }
       await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch investor details'
       );

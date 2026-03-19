@@ -231,16 +231,17 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       url: 'https://angor.io/explore'
     });
     this.favorites = JSON.parse(localStorage.getItem('angor-hub-favorites') || '[]');
-    this.watchForScrollTrigger();
     this.setupProjectStatsObserver();
 
     // Force reload deny list to ensure it's fresh from Nostr
     await this.denyService.reloadDenyList();
 
     if (this.exploreState.hasState && this.indexer.projects().length > 0) {
+      console.log(`[Angor Debug] ExploreComponent.ngOnInit: hasState=${this.exploreState.hasState}, projects.length=${this.indexer.projects().length} → restoring cached state, offset=${this.exploreState.offset}`);
       this.indexer.restoreOffset(this.exploreState.offset);
       this.observeProjectCards();
     } else {
+      console.log(`[Angor Debug] ExploreComponent.ngOnInit: hasState=${this.exploreState.hasState}, projects.length=${this.indexer.projects().length} → fresh fetch`);
       this.exploreState.clearState();
       await this.indexer.fetchProjects();
       this.observeProjectCards();
@@ -258,6 +259,9 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
   ngAfterViewInit() {
+    // Try to set up the intersection observer immediately if the element exists.
+    // Also watch for DOM mutations in case it appears later (conditional rendering).
+    this.setupIntersectionObserver();
     this.watchForScrollTrigger();
     this.observeProjectCards();
   }
@@ -281,19 +285,25 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private watchForScrollTrigger() {
+    if (this.mutationObserver) this.mutationObserver.disconnect();
     this.mutationObserver = new MutationObserver(() => {
-      const triggerElement = document.querySelector('.scroll-trigger');
-      if (triggerElement) {
+      // Try Angular ViewChild first, fall back to DOM query
+      const element = this.scrollTrigger?.nativeElement
+        ?? document.querySelector('.scroll-trigger');
+      if (element) {
         this.mutationObserver?.disconnect();
-        this.setupIntersectionObserver();
+        this.setupIntersectionObserver(element);
       }
     });
     this.mutationObserver.observe(document.body, { childList: true, subtree: true });
   }
 
-  private setupIntersectionObserver() {
-    if (!this.scrollTrigger) {
-      console.warn('ViewChild scroll trigger not initialized');
+  private setupIntersectionObserver(element?: Element) {
+    // Resolve the target element: explicit param > ViewChild > DOM query
+    const target = element
+      ?? this.scrollTrigger?.nativeElement
+      ?? document.querySelector('.scroll-trigger');
+    if (!target) {
       return;
     }
 
@@ -313,7 +323,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     }, options);
 
-    this.scrollTriggerObserver.observe(this.scrollTrigger.nativeElement);
+    this.scrollTriggerObserver.observe(target);
   }
 
   private setupProjectStatsObserver() {

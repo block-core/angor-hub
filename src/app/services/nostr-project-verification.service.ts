@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { NetworkService } from './network.service';
 
 /**
  * On-chain project data cached after indexer validation.
@@ -20,10 +21,20 @@ const PROJECT_VALIDATION_CACHE_KEY = 'angor_project_validation_cache';
 export class NostrProjectVerificationService {
   private memoryCache = new Map<string, string>();
   private projectCache = new Map<string, CachedProjectValidation>();
+  private network = inject(NetworkService);
 
   constructor() {
     this.loadCache();
     this.loadProjectCache();
+  }
+
+  /**
+   * Returns a network-scoped cache key for a project identifier.
+   * This ensures testnet validations don't pollute mainnet and vice versa.
+   */
+  private scopedKey(projectIdentifier: string): string {
+    const net = this.network.isMain() ? 'main' : 'test';
+    return `${net}:${projectIdentifier}`;
   }
 
   // --- OP_RETURN cache (keyed by txId) ---
@@ -51,18 +62,20 @@ export class NostrProjectVerificationService {
   /**
    * Returns cached on-chain data for a project that was previously
    * validated against the indexer, or null if not cached.
+   * Cache is network-scoped — a testnet validation won't match on mainnet.
    */
   getCachedValidation(projectIdentifier: string): CachedProjectValidation | null {
-    return this.projectCache.get(projectIdentifier) ?? null;
+    return this.projectCache.get(this.scopedKey(projectIdentifier)) ?? null;
   }
 
   /**
    * Caches the on-chain data for a validated project. Since Bitcoin
    * transactions are immutable, a project's founderKey, trxId,
    * createdOnBlock, and nostrEventId (from OP_RETURN) never change.
+   * Cache is network-scoped.
    */
   cacheValidation(projectIdentifier: string, data: CachedProjectValidation): void {
-    this.projectCache.set(projectIdentifier, data);
+    this.projectCache.set(this.scopedKey(projectIdentifier), data);
     this.saveProjectCache();
   }
 
