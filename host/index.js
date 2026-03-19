@@ -240,7 +240,7 @@ app.use(async (req, res, next) => {
 app.use(express.static(join(__dirname, "dist/browser")));
 
 // Handle all routes for the SPA
-app.get("/{*splat}", (req, res) => {
+app.get("*", (req, res) => {
   res.set("Content-Type", "text/html");
   res.send(indexHtml);
 });
