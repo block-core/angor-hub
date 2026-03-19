@@ -427,6 +427,15 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     return { status: 'Active', color: 'text-yellow-500', icon: 'trending_up', class: 'active' };
   }
 
+  getProjectTypeInfo(project: any): { label: string; icon: string } {
+    const projectType = project.details?.projectType;
+    switch (projectType) {
+      case 1: return { label: 'Fund', icon: 'volunteer_activism' };
+      case 2: return { label: 'Subscribe', icon: 'sync' };
+      default: return { label: 'Invest', icon: 'savings' };
+    }
+  }
+
   async loadMore(): Promise<void> {
     if (this.isLoadingMore) {
       this.loadMoreQueued = true;

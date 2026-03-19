@@ -190,9 +190,16 @@
                 </div>
               </div>
 
-              <!-- Project Status -->
-              @if (getProjectStatusInfo(); as status) {
-                <div class="mb-4">
+              <!-- Project Status & Type -->
+              <div class="flex items-center gap-2 mb-4 flex-wrap">
+                @let typeInfo = getProjectTypeInfo();
+                <div
+                  class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border bg-surface-ground border-border/40 text-text-secondary"
+                >
+                  <span class="material-icons text-base">{{ typeInfo.icon }}</span>
+                  <span>{{ typeInfo.label }}</span>
+                </div>
+                @if (getProjectStatusInfo(); as status) {
                   <div
                     class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border"
                     [ngClass]="{
@@ -205,8 +212,8 @@
                     <span class="material-icons text-base">{{ status.icon }}</span>
                     <span>{{ status.label }}</span>
                   </div>
-                </div>
-              }
+                }
+              </div>
 
               <!-- Social Links -->
               @if (project()?.metadata?.website || project()?.externalIdentities?.length) {

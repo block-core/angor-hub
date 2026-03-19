@@ -1119,6 +1119,15 @@ export class ProjectComponent implements OnInit, OnDestroy {
     return null;
   }
 
+  getProjectTypeInfo(): { label: string; icon: string } {
+    const projectType = this.project()?.details?.projectType;
+    switch (projectType) {
+      case 1: return { label: 'Fund', icon: 'volunteer_activism' };
+      case 2: return { label: 'Subscribe', icon: 'sync' };
+      default: return { label: 'Invest', icon: 'savings' };
+    }
+  }
+
   getSpentPercentage(): number {
     const spent = this.project()?.stats?.amountSpentSoFarByFounder ?? 0;
     const invested = this.project()?.stats?.amountInvested ?? 1;

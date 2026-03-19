@@ -3,10 +3,13 @@ import NDK, { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
 import { Subject } from 'rxjs';
 
 export interface ProjectUpdate {
+  version?: number;
+  projectType?: number; // 0 = Invest, 1 = Fund, 2 = Subscribe
   founderKey: string;
   founderRecoveryKey: string;
   projectIdentifier: string;
   nostrPubKey: string;
+  networkName?: string; // e.g. 'Main', 'Angornet', 'Liquid'
   startDate: number;
   endDate: number;
   penaltyDays: number;

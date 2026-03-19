@@ -478,15 +478,26 @@ export class IndexerService {
         this.totalProjectsFetched = true;
       }
 
-      // Step 2: Parse events and deduplicate against already-loaded projects
+      // Step 2: Parse events, filter by network, and deduplicate against already-loaded projects
       const existingIds = new Set(this._allProjects().map(p => p.projectIdentifier));
       const candidateEvents: { event: NDKEvent; details: ProjectUpdate }[] = [];
+      const isMainnet = this.network.isMain();
 
       for (const event of nostrEvents) {
         try {
           const details: ProjectUpdate = JSON.parse(event.content);
           if (!details.projectIdentifier) continue;
           if (existingIds.has(details.projectIdentifier)) continue;
+
+          // Filter by network: on mainnet accept 'Main' or empty (legacy v1 projects),
+          // on testnet accept anything that is NOT 'Main'.
+          const networkName = details.networkName;
+          if (isMainnet) {
+            if (networkName && networkName !== 'Main') continue;
+          } else {
+            if (networkName === 'Main') continue;
+          }
+
           candidateEvents.push({ event, details });
         } catch {
           // Skip events with unparseable content
