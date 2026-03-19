@@ -1,11 +1,33 @@
 services:
   angor-hub:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - PORT=3000
-      - INDEXER_URL=https://fulcrum.angor.online/api/query/Angor/projects/
-      - BASE_URL=https://hub.angor.io
-      - NOSTR_RELAYS=wss://relay.angor.io,wss://relay2.angor.io
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: angor-hub:latest
+    container_name: angor-hub
     restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Express server config (social preview meta tags)
+      INDEXER_URL: ${INDEXER_URL:-https://fulcrum.angor.online/api/query/Angor/projects/}
+      BASE_URL: ${BASE_URL:-https://hub.angor.io}
+      NOSTR_RELAYS: ${NOSTR_RELAYS:-wss://relay.angor.io,wss://relay2.angor.io}
+      # White-label hub config (generated into config.js at startup)
+      # HUB_MODE: blacklist or whitelist (default: blacklist)
+      # ADMIN_PUBKEY: npub of the hub admin for deny/whitelist management
+      HUB_MODE: ${HUB_MODE:-blacklist}
+      ADMIN_PUBKEY: ${ADMIN_PUBKEY:-}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
