@@ -227,8 +227,8 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     this.metaService.updateMetaTags({
       title: 'Explore Projects - Angor',
       description: 'Discover Bitcoin projects on Angor.',
-      image: 'https://hub.angor.io/assets/angor-hub-social.png',
-      url: 'https://hub.angor.io/explore'
+      image: 'https://angor.io/assets/angor-hub-social.png',
+      url: 'https://angor.io/explore'
     });
     this.favorites = JSON.parse(localStorage.getItem('angor-hub-favorites') || '[]');
     this.watchForScrollTrigger();

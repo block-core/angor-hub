@@ -13,7 +13,7 @@ services:
       PORT: 3000
       # Express server config (social preview meta tags)
       INDEXER_URL: ${INDEXER_URL:-https://fulcrum.angor.online/api/query/Angor/projects/}
-      BASE_URL: ${BASE_URL:-https://hub.angor.io}
+      BASE_URL: ${BASE_URL:-https://angor.io}
       NOSTR_RELAYS: ${NOSTR_RELAYS:-wss://relay.angor.io,wss://relay2.angor.io}
       # White-label hub config (generated into config.js at startup)
       # HUB_MODE: blacklist or whitelist (default: blacklist)

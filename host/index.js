@@ -9,7 +9,7 @@ const __dirname = dirname(__filename);
 
 
 const INDEXER_URL = process.env.INDEXER_URL || "https://fulcrum.angor.online/api/query/Angor/projects/";
-const BASE_URL = process.env.BASE_URL || "https://hub.angor.io";
+const BASE_URL = process.env.BASE_URL || "https://angor.io";
 const DEFAULT_IMAGE = `${BASE_URL}/assets/angor-hub-social.png`;
 const INDEXER_TIMEOUT_MS = 45000; 
 const RELAY_TIMEOUT_MS = 10000;   // Nostr relay operations

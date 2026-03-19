@@ -112,7 +112,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
         this.metaService.updateMetaTags({
           title: shareData.title,
           description: shareData.description,
-          image: shareData.imageUrl || 'https://hub.angor.io/assets/angor-hub-social.png',
+          image: shareData.imageUrl || 'https://angor.io/assets/angor-hub-social.png',
           url: shareData.url,
           type: 'website'
         });

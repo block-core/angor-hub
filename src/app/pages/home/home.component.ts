@@ -137,8 +137,8 @@ export class HomeComponent implements OnInit {
     this.metaService.updateMetaTags({
       title: 'Angor - The Only Bitcoin Protocol For Funding Projects',
       description: 'Decentralized crowdfunding on Bitcoin.',
-      image: 'https://hub.angor.io/assets/angor-hub-social.png',
-      url: 'https://hub.angor.io'
+      image: 'https://angor.io/assets/angor-hub-social.png',
+      url: 'https://angor.io'
     });
   }
 }
