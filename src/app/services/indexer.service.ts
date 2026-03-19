@@ -489,14 +489,14 @@ export class IndexerService {
           if (!details.projectIdentifier) continue;
           if (existingIds.has(details.projectIdentifier)) continue;
 
-          // Filter by network: empty/missing networkName is treated as testnet.
-          // On mainnet only accept projects explicitly marked 'Main'.
-          // On testnet accept anything that is NOT 'Main'.
+          // Filter by network when networkName is explicitly set.
+          // If networkName is missing/empty (legacy projects), allow through on both networks
+          // — the indexer validation step will catch mismatches anyway.
+          // When present: on mainnet skip non-'Main', on testnet skip 'Main'.
           const networkName = details.networkName;
-          if (isMainnet) {
-            if (networkName !== 'Main') continue;
-          } else {
-            if (networkName === 'Main') continue;
+          if (networkName) {
+            if (isMainnet && networkName !== 'Main') continue;
+            if (!isMainnet && networkName === 'Main') continue;
           }
 
           candidateEvents.push({ event, details });
