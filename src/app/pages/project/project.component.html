@@ -388,6 +388,14 @@
 
         <!-- Right Column: Stats -->
         <div class="space-y-4">
+          <!-- On-chain Stats Loading -->
+          @if (loadingOnChainStats()) {
+            <div class="bg-surface-card rounded-2xl shadow-md p-4 flex items-center gap-3">
+              <div class="w-5 h-5 border-2 border-accent/30 border-t-accent rounded-full animate-spin"></div>
+              <span class="text-sm text-text-secondary">Computing on-chain stats...</span>
+            </div>
+          }
+
           <!-- Funding Progress -->
           <div class="bg-surface-card rounded-2xl shadow-md p-4">
             <div class="flex items-center gap-3 mb-4">
@@ -478,6 +486,72 @@
               ></div>
             </div>
           </div>
+
+          <!-- Investors List -->
+          @if (onChainStats()?.investments?.length) {
+            <div class="bg-surface-card rounded-2xl shadow-md p-4">
+              <h3 class="text-lg font-bold mb-4 pb-3 border-b border-border flex items-center gap-2">
+                <span class="material-icons text-purple-500">groups</span>
+                Investor Transactions
+              </h3>
+              <div class="space-y-3 max-h-[400px] overflow-y-auto">
+                @for (investment of getSortedInvestments(); track investment.transactionId) {
+                  <div class="bg-surface-hover rounded-xl p-3 hover:bg-surface-ground transition-all duration-200">
+                    <div class="flex items-center justify-between mb-1.5">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="material-icons text-sm text-purple-500">person</span>
+                        <span class="text-xs font-mono text-text-secondary truncate" [title]="investment.investorPubKey">
+                          {{ formatPubKey(investment.investorPubKey) }}
+                        </span>
+                        @if (investment.isSeeder) {
+                          <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-500/10 text-green-500 border border-green-500/30">
+                            SEEDER
+                          </span>
+                        }
+                      </div>
+                      <div class="text-sm font-bold text-text whitespace-nowrap ml-2">
+                        {{ bitcoin.toBTC(investment.totalAmount) }}
+                        <span class="text-xs font-normal text-text-secondary">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs text-text-secondary">
+                      <a
+                        [href]="getExplorerTxUrl(investment.transactionId)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="flex items-center gap-1 hover:text-accent transition-colors"
+                        [title]="investment.transactionId"
+                      >
+                        <span class="material-icons text-xs">open_in_new</span>
+                        {{ formatTxId(investment.transactionId) }}
+                      </a>
+                      @if (investment.blockTime) {
+                        <span>{{ investment.blockTime | ago }}</span>
+                      } @else {
+                        <span class="text-yellow-500">Unconfirmed</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- On-chain Stats Error -->
+          @if (onChainStatsError()) {
+            <div class="bg-surface-card rounded-2xl shadow-md p-4">
+              <div class="flex items-center gap-2 text-sm text-yellow-500">
+                <span class="material-icons text-base">warning</span>
+                <span>{{ onChainStatsError() }}</span>
+              </div>
+              <button
+                (click)="loadOnChainStats()"
+                class="mt-2 text-xs text-accent hover:underline"
+              >
+                Retry
+              </button>
+            </div>
+          }
 
           <!-- Project Details -->
           <div class="bg-surface-card rounded-2xl shadow-md p-4">

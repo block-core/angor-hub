@@ -2,7 +2,6 @@ import { Component, OnInit, OnDestroy, inject, signal, computed, effect } from '
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
   IndexedProject,
-  ProjectStats,
   IndexerService,
 } from '../../services/indexer.service';
 import { CommonModule } from '@angular/common';
@@ -27,13 +26,13 @@ import { ProfileComponent } from '../../components/profile.component';
 import { BitcoinUtilsService } from '../../services/bitcoin.service';
 import { TitleService } from '../../services/title.service';
 import { MarkdownModule } from 'ngx-markdown';
-import { SafeContentPipe } from '../../pipes/safe-content.pipe';
-import { SafePipe } from '../../pipes/safe.pipe';  // Add the SafePipe import
+
 import { DenyService } from '../../services/deny.service';
-import { AboutContentComponent } from '../../components/about-content.component';
+
 import { ShareModalComponent, ShareData } from '../../components/share-modal.component';
 import { nip19 } from 'nostr-tools';
 import { MetaService } from '../../services/meta.service';
+import { InvestorService, InvestmentInfo, OnChainProjectStats } from '../../services/investor.service';
 
 @Component({
   selector: 'app-project',
@@ -101,6 +100,12 @@ export class ProjectComponent implements OnInit, OnDestroy {
   public title = inject(TitleService);
   private denyService = inject(DenyService);
   private metaService = inject(MetaService);
+  private investorService = inject(InvestorService);
+
+  // On-chain stats computed from raw blockchain data
+  onChainStats = signal<OnChainProjectStats | null>(null);
+  loadingOnChainStats = signal<boolean>(false);
+  onChainStatsError = signal<string | null>(null);
 
   constructor() {
     // Update meta tags when project data changes
@@ -151,6 +156,45 @@ export class ProjectComponent implements OnInit, OnDestroy {
   // Add these new signals for badge verification
   memberBadges = signal<Map<string, boolean>>(new Map());
   loadingMemberBadges = signal<boolean>(false);
+
+  /**
+   * Loads on-chain stats by querying the raw blockchain data via the
+   * mempool.space-compatible API. This replaces the Angor-specific
+   * indexer endpoints that are no longer available.
+   */
+  async loadOnChainStats(): Promise<void> {
+    if (!this.projectId || this.loadingOnChainStats()) return;
+
+    this.loadingOnChainStats.set(true);
+    this.onChainStatsError.set(null);
+
+    try {
+      const stats = await this.investorService.getProjectOnChainStats(this.projectId);
+
+      if (stats) {
+        this.onChainStats.set(stats);
+
+        // Update the project's stats with on-chain data
+        const project = this.project();
+        if (project) {
+          project.stats = {
+            investorCount: stats.investorCount,
+            amountInvested: stats.amountInvested,
+            amountSpentSoFarByFounder: stats.amountSpentSoFarByFounder,
+            amountInPenalties: stats.amountInPenalties,
+            countInPenalties: stats.countInPenalties,
+          };
+          // Trigger reactivity
+          this.project.set({ ...project });
+        }
+      }
+    } catch (err) {
+      console.error('[ProjectComponent] Error loading on-chain stats:', err);
+      this.onChainStatsError.set('Failed to load on-chain investor data.');
+    } finally {
+      this.loadingOnChainStats.set(false);
+    }
+  }
 
   tabs = [
     { id: 'project', label: 'Project', icon: 'description' },
@@ -444,11 +488,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
 
         if (!projectData.stats) {
-          this.indexer
-            .fetchProjectStats(id)
-            .then((stats: ProjectStats | null) => {
-              projectData!.stats = stats!;
-            });
+          // Load stats from on-chain data (raw blockchain transactions)
+          this.loadOnChainStats();
         }
 
         if (!projectData.details) {
@@ -1153,11 +1194,45 @@ export class ProjectComponent implements OnInit, OnDestroy {
     return website.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '');
   }
 
+  /**
+   * Returns the sorted list of investments from on-chain data (largest first).
+   */
+  getSortedInvestments(): InvestmentInfo[] {
+    const stats = this.onChainStats();
+    if (!stats?.investments) return [];
+    return [...stats.investments].sort((a, b) => b.totalAmount - a.totalAmount);
+  }
+
+  /**
+   * Formats a hex public key for display (truncated).
+   */
+  formatPubKey(pubkey: string): string {
+    if (!pubkey || pubkey.length < 16) return pubkey;
+    return pubkey.substring(0, 8) + '...' + pubkey.substring(pubkey.length - 8);
+  }
+
+  /**
+   * Formats a transaction ID for display (truncated).
+   */
+  formatTxId(txId: string): string {
+    if (!txId || txId.length < 16) return txId;
+    return txId.substring(0, 8) + '...' + txId.substring(txId.length - 8);
+  }
+
+  /**
+   * Gets the explorer URL for a transaction.
+   */
+  getExplorerTxUrl(txId: string): string {
+    const isMainnet = this.networkService.isMain();
+    const indexerUrl = this.indexer.getPrimaryIndexerUrl(isMainnet);
+    return `${indexerUrl}tx/${txId}`;
+  }
+
   getSocialLink(identity: ExternalIdentity): string {
     const platform = identity.platform.toLowerCase();
     const username = identity.username;
     
-    const platformUrls: { [key: string]: string } = {
+    const platformUrls: Record<string, string> = {
       twitter: `https://twitter.com/${username}`,
       github: `https://github.com/${username}`,
       telegram: `https://t.me/${username}`,
@@ -1170,7 +1245,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   getSocialIcon(platform: string): string {
-    const icons: { [key: string]: string } = {
+    const icons: Record<string, string> = {
       twitter: 'chat',
       github: 'code',
       telegram: 'telegram',
