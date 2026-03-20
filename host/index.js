@@ -12,7 +12,7 @@ const INDEXER_URL = process.env.INDEXER_URL || "https://fulcrum.angor.online/api
 const BASE_URL = process.env.BASE_URL || "https://angor.io";
 const DEFAULT_IMAGE = `${BASE_URL}/assets/angor-hub-social.png`;
 const INDEXER_TIMEOUT_MS = 45000; 
-const RELAY_TIMEOUT_MS = 10000;   // Nostr relay operations
+const RELAY_TIMEOUT_MS = 15000;   // Nostr relay operations (increased for reliability)
 
 // Relays used for fetching Nostr data (events + profiles)
 const NOSTR_RELAYS = (process.env.NOSTR_RELAYS || "wss://relay.angor.io,wss://relay2.angor.io").split(",");
@@ -114,16 +114,18 @@ function fetchFromRelay(filter, relayUrl) {
 }
 
 /**
- * Try fetching from multiple relays, return the first successful result.
+ * Try fetching from multiple relays in parallel, return the first successful result.
  */
 async function fetchFromRelays(filter, relayUrls = NOSTR_RELAYS) {
-  for (const relay of relayUrls) {
-    try {
-      const result = await fetchFromRelay(filter, relay);
-      if (result) return result;
-    } catch (err) {
-      console.warn(`[meta] ${relay}: ${err.message}`);
-    }
+  const results = await Promise.allSettled(
+    relayUrls.map(url => fetchFromRelay(filter, url))
+  );
+  for (const r of results) {
+    if (r.status === "fulfilled" && r.value) return r.value;
+  }
+  // Log failures
+  for (const r of results) {
+    if (r.status === "rejected") console.warn(`[meta] relay: ${r.reason.message}`);
   }
   return null;
 }
@@ -133,23 +135,78 @@ async function fetchNostrProfile(pubkey) {
   return fetchFromRelays({ kinds: [0], authors: [pubkey], limit: 1 });
 }
 
-// Fetch project metadata
+/** Fetch a Nostr event by its ID */
+async function fetchNostrEvent(eventId) {
+  return fetchFromRelays({ ids: [eventId], limit: 1 });
+}
+
+/** Fetch an Angor project event (kind 3030/30078) by projectIdentifier d-tag */
+async function fetchProjectByDTag(projectIdentifier) {
+  // Try kind 3030 first (newer), then 30078 (legacy)
+  const event = await fetchFromRelays({ kinds: [3030], "#d": [projectIdentifier], limit: 1 });
+  if (event) return event;
+  return fetchFromRelays({ kinds: [30078], "#d": [projectIdentifier], limit: 1 });
+}
+
+/** Parse project details from a kind 3030/30078 event content */
+function parseProjectContent(event) {
+  try {
+    const content = typeof event.content === "string" ? JSON.parse(event.content) : event.content;
+    return content;
+  } catch {
+    return null;
+  }
+}
+
+/** Format satoshis as BTC string */
+function satsToBtc(sats) {
+  if (!sats || sats <= 0) return null;
+  return (sats / 1e8).toFixed(8).replace(/\.?0+$/, "");
+}
+
+// Fetch project metadata — 3-step: indexer -> project event -> profile
 
 async function getProjectMeta(projectId) {
   const cached = cacheGet(`project:${projectId}`);
   if (cached) return cached;
 
-  // Fetch project from the indexer — needed to resolve projectId  to a Nostr pubkey
-  console.log(`[meta] Fetching project ${projectId} from indexer`);
-  const project = await fetchJson(INDEXER_URL + encodeURIComponent(projectId));
-  const nostrPubKey = project?.founderKey;
-  if (!nostrPubKey) {
-    console.warn("[meta] No founderKey in indexer response");
+  let nostrEventId = null;
+  let projectDetails = null;
+
+  // Step 1: Try the indexer to get the nostrEventId
+  try {
+    console.log(`[meta] Fetching project ${projectId} from indexer`);
+    const project = await fetchJson(INDEXER_URL + encodeURIComponent(projectId));
+    nostrEventId = project?.nostrEventId;
+  } catch (err) {
+    console.warn(`[meta] Indexer lookup failed: ${err.message}`);
+  }
+
+  // Step 2: Fetch the kind 3030 event to get nostrPubKey and project details
+  let projectEvent = null;
+  if (nostrEventId) {
+    console.log(`[meta] Fetching event ${nostrEventId.slice(0, 12)}...`);
+    projectEvent = await fetchNostrEvent(nostrEventId);
+  }
+  // Fallback: search by d-tag if indexer failed or event not found
+  if (!projectEvent) {
+    console.log(`[meta] Searching relays for project by d-tag: ${projectId}`);
+    projectEvent = await fetchProjectByDTag(projectId);
+  }
+  if (!projectEvent) {
+    console.warn("[meta] Could not find project event on relays");
     return null;
   }
 
-  // Fetch the founder's profile (kind 0) from relays
-  console.log(`[meta] Fetching profile ${nostrPubKey.slice(0, 12)}...`);
+  projectDetails = parseProjectContent(projectEvent);
+  const nostrPubKey = projectDetails?.nostrPubKey;
+  if (!nostrPubKey) {
+    console.warn("[meta] No nostrPubKey in project event content");
+    return null;
+  }
+
+  // Step 3: Fetch the profile (kind 0) using the correct Nostr pubkey
+  console.log(`[meta] Fetching profile for ${nostrPubKey.slice(0, 12)}...`);
   let profile = {};
   try {
     const profileEvent = await fetchNostrProfile(nostrPubKey);
@@ -162,19 +219,33 @@ async function getProjectMeta(projectId) {
     console.warn("[meta] Failed to fetch profile:", err.message);
   }
 
+  // Build rich description from project details
   const name = profile.display_name || profile.name || projectId;
   const about = profile.about || "";
   const banner = profile.banner || profile.picture || "";
 
+  const descParts = [];
+  if (about) descParts.push(truncate(about, 140));
+  if (projectDetails.targetAmount) {
+    descParts.push(`Target: ${satsToBtc(projectDetails.targetAmount)} BTC`);
+  }
+  const typeLabels = { 0: "Invest", 1: "Fund", 2: "Subscribe" };
+  const typeLabel = typeLabels[projectDetails.projectType] || "Invest";
+  descParts.push(`Type: ${typeLabel}`);
+  if (projectDetails.endDate) {
+    const endDate = new Date(projectDetails.endDate * 1000).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    descParts.push(`Ends: ${endDate}`);
+  }
+
   const meta = {
-    title: `Angor Hub - ${name}`,
-    description: truncate(about) || "Decentralized crowdfunding on Bitcoin.",
+    title: `${name} - Angor Hub`,
+    description: descParts.join(" | ") || "Decentralized crowdfunding on Bitcoin.",
     image: banner || DEFAULT_IMAGE,
     url: `${BASE_URL}/project/${projectId}`,
   };
 
   cacheSet(`project:${projectId}`, meta);
-  console.log(`[meta] Resolved: "${meta.title}"`);
+  console.log(`[meta] Resolved: "${meta.title}" — ${meta.description}`);
   return meta;
 }
 
