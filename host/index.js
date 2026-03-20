@@ -236,6 +236,11 @@ app.use(async (req, res, next) => {
   }
 });
 
+// Redirect legacy /docs path to docs subdomain
+app.get("/docs", (req, res) => {
+  res.redirect(301, "https://docs.angor.io");
+});
+
 // Serve static files from the Angular app
 app.use(express.static(join(__dirname, "dist/browser")));
 
