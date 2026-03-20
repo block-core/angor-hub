@@ -194,7 +194,8 @@
               <div class="flex items-center gap-2 mb-4 flex-wrap">
                 @let typeInfo = getProjectTypeInfo();
                 <div
-                  class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border bg-green-500/10 border-green-500/30 text-green-400"
+                  class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border"
+                  [ngClass]="typeInfo.colorClass"
                 >
                   <span class="material-icons text-base">{{ typeInfo.icon }}</span>
                   <span>{{ typeInfo.label }}</span>
