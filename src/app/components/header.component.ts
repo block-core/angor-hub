@@ -100,7 +100,7 @@ import { ThemeService } from '../services/theme.service';
             <a href="https://profile.angor.io/angor-profile/" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors">
               Profile
             </a>
-            <a href="https://angor.io/docs" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors">
+            <a href="https://docs.angor.io" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors">
               Docs
             </a>
           </nav>
@@ -145,7 +145,7 @@ import { ThemeService } from '../services/theme.service';
             <a href="https://profile.angor.io/angor-profile/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
               Profile
             </a>
-            <a href="https://angor.io/docs" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
+            <a href="https://docs.angor.io" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
               Docs
             </a>
           </nav>
