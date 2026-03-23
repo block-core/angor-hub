@@ -235,6 +235,11 @@ export class RelayService {
    * Fetches kind 3030 (Angor project announcement) events directly from Nostr relays
    * without filtering by ID. Used for Nostr-first project discovery.
    *
+   * Per NIP-3030, all Angor project announcements are published as kind 3030 events.
+   * Kind 30078 (NIP-78 AppSpecificData) is intentionally excluded because it is a
+   * general-purpose kind used by many unrelated Nostr applications, which would flood
+   * project discovery batches with non-Angor events.
+   *
    * @param limit 
    * @param until
    * @returns 
@@ -243,9 +248,11 @@ export class RelayService {
     try {
       const ndk = await this.ensureConnected();
 
-      // Include both Angor project event kinds (mainnet uses 30078, testnet/newer uses 3030)
+      // Only fetch Angor project announcement events (kind 3030 per NIP-3030 spec).
+      // Kind 30078 is a generic app-data kind shared by many apps and must NOT be
+      // included here — it produces only noise for project discovery.
       const filter: { kinds: number[]; limit: number; until?: number } = {
-        kinds: [3030, 30078],
+        kinds: [3030],
         limit,
       };
 
@@ -274,7 +281,7 @@ export class RelayService {
       console.log(`[Angor] fetchNostrProjects: received ${collected.length} events`);
       return collected;
     } catch (error) {
-      console.error('Error fetching Nostr projects (kind 3030/30078):', error);
+      console.error('Error fetching Nostr projects (kind 3030):', error);
       return [];
     }
   }
