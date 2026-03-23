@@ -314,8 +314,8 @@
                       @for (member of project()?.members; track member) {
                         <div class="bg-surface-hover rounded-xl p-4 hover:shadow-lg transition-all duration-300 relative">
                           @if (isMemberVerified(member)) {
-                            <div class="absolute top-3 right-3 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center" title="Verified Member">
-                              <span class="material-icons text-white text-xs">verified</span>
+                            <div class="absolute top-3 right-3" title="Verified Angor Member">
+                              <img src="/badges/badge-member-thumb.webp" alt="Angor Member Badge" class="w-8 h-8" />
                             </div>
                           }
                           <app-profile [pubkey]="member"></app-profile>
