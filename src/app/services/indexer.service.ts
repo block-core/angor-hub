@@ -427,7 +427,7 @@ export class IndexerService {
    * Fetches projects using an optimistic Nostr-first discovery approach.
    *
    * Flow:
-   *   1. Query Nostr relays for the latest kind 3030/30078 events.
+   *   1. Query Nostr relays for the latest kind 3030 events.
    *   2. Parse each event — immediately add projects to the view so the
    *      user sees content right away (with metadata/images loading).
    *   3. Kick off profile fetches from Nostr in parallel with validation.
