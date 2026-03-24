@@ -7,6 +7,7 @@ import { FeaturedService } from './featured.service';
 import { HubConfigService } from './hub-config.service';
 import { ExternalIdentity } from '../models/models';
 import { NostrProjectVerificationService } from './nostr-project-verification.service';
+import { bech32, bech32m } from '@scure/base';
 
 export interface IndexerConfig {
   mainnet: IndexerEntry[];
@@ -93,12 +94,53 @@ export interface NetworkStats {
   blockHeight: number;
 }
 
+// Minimal types for the mempool.space-compatible API responses
+// (mirrors MempoolSpaceIndexerApi.cs models)
+interface MempoolVout {
+  value: number;
+  scriptpubkey: string;
+  scriptpubkey_address: string;
+  scriptpubkey_asm: string;
+  scriptpubkey_type: string;
+}
+
+interface MempoolTxStatus {
+  confirmed: boolean;
+  block_height: number;
+  block_hash: string;
+  block_time: number;
+}
+
+interface MempoolTx {
+  txid: string;
+  vin: { txid: string; vout: number; witness?: string[]; inner_witnessscript_asm?: string }[];
+  vout: MempoolVout[];
+  status: MempoolTxStatus;
+}
+
+interface MempoolAddressStats {
+  funded_txo_sum: number;
+  spent_txo_sum: number;
+  tx_count: number;
+}
+
+interface MempoolAddressResponse {
+  address: string;
+  chain_stats: MempoolAddressStats;
+  mempool_stats: MempoolAddressStats;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class IndexerService {
   private readonly LIMIT = 8;
   private indexerUrl = 'https://signet.angor.online/';
+
+  // Mempool.space pagination — the API returns at most 25 transactions per page.
+  private readonly MEMPOOL_PAGE_SIZE = 25;
+  // Safety cap on address transaction pagination (25 × 20 = 500 txs max).
+  private readonly MEMPOOL_MAX_PAGES = 20;
 
   // Nostr-first cursor-based pagination (using `until` timestamp)
   private oldestEventTimestamp: number | undefined;
@@ -269,7 +311,8 @@ export class IndexerService {
   }
 
   async testIndexerConnection(url: string): Promise<boolean> {
-    const endpoints = ['api/stats/heartbeat', 'api/mempool'];
+    // Use mempool.space-compatible endpoints to test connectivity
+    const endpoints = ['api/v1/blocks/tip/height', 'api/v1/fees/recommended'];
 
     for (const endpoint of endpoints) {
       try {
@@ -347,28 +390,177 @@ export class IndexerService {
     return err instanceof Error && (err as any).status === 404;
   }
 
+  // ---------------------------------------------------------------------------
+  // Mempool.space-compatible API helpers
+  // These replace the dead /api/query/Angor/... endpoints with standard
+  // /api/v1/... endpoints that the Blockcore indexers expose.
+  // Mirrors the logic in MempoolIndexerAngorApi.cs + MempoolIndexerMappers.cs.
+  // ---------------------------------------------------------------------------
+
   /**
-   * Fetches a page of projects from the indexer list endpoint.
-   * Used for batch validation instead of per-project API calls.
+   * Converts an Angor project identifier (bech32 "angor" HRP) to a standard
+   * Bitcoin witness address (bech32/bech32m with "bc"/"tb" HRP) for use with
+   * the mempool.space-compatible API.
+   *
+   * Mirrors C# DerivationOperations.ConvertAngorKeyToBitcoinAddress.
    */
-  private async fetchIndexerProjectList(offset: number, limit: number): Promise<IndexedProject[]> {
+  private convertAngorKeyToBitcoinAddress(projectId: string): string {
+    let decoded: { prefix: string; words: number[] };
+    let isBech32m = false;
     try {
-      const url = `${this.indexerUrl}api/query/Angor/projects?offset=${offset}&limit=${limit}`;
-      const { data } = await this.fetchJson<IndexedProject[]>(url);
-      return Array.isArray(data) ? data : [];
-    } catch (err) {
-      console.warn('[Angor Debug] fetchIndexerProjectList: failed to fetch', err);
-      return [];
+      decoded = bech32m.decode(projectId as `angor1${string}`);
+      isBech32m = true;
+    } catch {
+      decoded = bech32.decode(projectId as `angor1${string}`);
+    }
+    const witnessVersion = decoded.words[0];
+    const dataWords = decoded.words.slice(1);
+    const hrp = this.network.isMain() ? 'bc' : 'tb';
+    return witnessVersion === 0 || !isBech32m
+      ? bech32.encode(hrp, [witnessVersion, ...dataWords])
+      : bech32m.encode(hrp, [witnessVersion, ...dataWords]);
+  }
+
+  /**
+   * Parses a Bitcoin script hex string into its pushdata operations.
+   * Returns an array where each element is the bytes of a pushdata op;
+   * OP_RETURN itself is represented as an empty Uint8Array.
+   */
+  private parseScriptOps(hex: string): Uint8Array[] {
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) {
+      bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+    }
+    const ops: Uint8Array[] = [];
+    let i = 0;
+    while (i < bytes.length) {
+      const opcode = bytes[i++];
+      if (opcode === 0x6a) { ops.push(new Uint8Array(0)); continue; } // OP_RETURN
+      if (opcode >= 0x01 && opcode <= 0x4b) { ops.push(bytes.slice(i, i + opcode)); i += opcode; continue; }
+      if (opcode === 0x4c) { const len = bytes[i++]; ops.push(bytes.slice(i, i + len)); i += len; continue; }
+      ops.push(new Uint8Array(0));
+    }
+    return ops;
+  }
+
+  /**
+   * Parses the OP_RETURN of a project-funding transaction.
+   * Format: OP_RETURN <founder_pubkey 33B> <key_type 2B> <nostr_event_id 32B>
+   */
+  private parseOpReturnFounderInfo(scriptpubkeyHex: string): { founderKey: string; nostrEventId: string } | null {
+    try {
+      const ops = this.parseScriptOps(scriptpubkeyHex);
+      if (ops.length < 4) return null;
+      if (!ops[1] || ops[1].length !== 33) return null;
+      const toHex = (b: Uint8Array) => Array.from(b).map(x => x.toString(16).padStart(2, '0')).join('');
+      return {
+        founderKey: toHex(ops[1]),
+        nostrEventId: ops[3]?.length === 32 ? toHex(ops[3]) : '',
+      };
+    } catch {
+      return null;
     }
   }
 
   /**
-   * Fetches a raw transaction hex string.
-   * The /hex endpoint may return a plain text hex string (not JSON).
+   * Parses the OP_RETURN of an investor transaction.
+   * Format: OP_RETURN <investor_pubkey 33B> [<secret_hash 32B>]
+   * Returns the investor public key hex, or null if not an investment tx.
+   */
+  private parseOpReturnInvestorInfo(scriptpubkeyHex: string): string | null {
+    try {
+      const ops = this.parseScriptOps(scriptpubkeyHex);
+      if (ops.length < 2) return null;
+      if (!ops[1] || ops[1].length !== 33) return null;
+      return Array.from(ops[1]).map(x => x.toString(16).padStart(2, '0')).join('');
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Fetches all transactions for a Bitcoin address from the mempool.space-
+   * compatible API, paginating with ?after_txid= as needed.
+   */
+  private async fetchMempoolAddressTxs(address: string): Promise<MempoolTx[]> {
+    const all: MempoolTx[] = [];
+    let lastTxId: string | undefined;
+
+    for (let page = 0; page < this.MEMPOOL_MAX_PAGES; page++) {
+      let url = `${this.indexerUrl}api/v1/address/${address}/txs`;
+      if (lastTxId) url += `?after_txid=${lastTxId}`;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          if (response.status === 404) break;
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const txs: MempoolTx[] = await response.json();
+        if (!txs || txs.length === 0) break;
+        all.push(...txs);
+        if (txs.length < this.MEMPOOL_PAGE_SIZE) break;
+        lastTxId = txs[txs.length - 1].txid;
+      } catch (err) {
+        console.warn('[Angor Debug] fetchMempoolAddressTxs error:', err);
+        break;
+      }
+    }
+    return all;
+  }
+
+  /**
+   * Looks up a project's on-chain data from the mempool API.
+   * Fetches transactions at the project's Bitcoin address, finds the funding
+   * transaction, and extracts founderKey, nostrEventId, trxId, and block height.
+   *
+   * Mirrors MempoolIndexerAngorApi.GetProjectByIdAsync (ReadFromAngorApi=false).
+   */
+  private async fetchProjectFromMempool(projectId: string): Promise<{
+    founderKey: string;
+    nostrEventId: string;
+    trxId: string;
+    createdOnBlock: number;
+  } | null> {
+    try {
+      const address = this.convertAngorKeyToBitcoinAddress(projectId);
+      const txs = await this.fetchMempoolAddressTxs(address);
+      if (!txs.length) return null;
+
+      // Sort oldest-first — the funding transaction is the first at this address
+      const sorted = [...txs].sort((a, b) => {
+        const aH = a.status.confirmed ? a.status.block_height : Number.MAX_SAFE_INTEGER;
+        const bH = b.status.confirmed ? b.status.block_height : Number.MAX_SAFE_INTEGER;
+        return aH - bH;
+      });
+
+      for (const tx of sorted) {
+        if (tx.vout.length < 2) continue;
+        const opReturn = tx.vout[1];
+        if (opReturn.scriptpubkey_type !== 'op_return' && opReturn.scriptpubkey_type !== 'nulldata') continue;
+        const parsed = this.parseOpReturnFounderInfo(opReturn.scriptpubkey);
+        if (parsed) {
+          return {
+            founderKey: parsed.founderKey,
+            nostrEventId: parsed.nostrEventId,
+            trxId: tx.txid,
+            createdOnBlock: tx.status.confirmed ? tx.status.block_height : 0,
+          };
+        }
+      }
+      return null;
+    } catch (err) {
+      console.warn(`[Angor Debug] fetchProjectFromMempool ${projectId}: error`, err);
+      return null;
+    }
+  }
+
+  /**
+   * Fetches a raw transaction hex string from the mempool.space-compatible API.
+   * The /hex endpoint returns a plain text hex string.
    */
   private async fetchTxHex(txId: string): Promise<string | null> {
     try {
-      const url = `${this.indexerUrl}api/query/transaction/${txId}/hex`;
+      const url = `${this.indexerUrl}api/v1/tx/${txId}/hex`;
       const response = await fetch(url);
       if (!response.ok) return null;
       const text = (await response.text()).trim();
@@ -649,115 +841,81 @@ export class IndexerService {
   }
 
   /**
-   * Validates optimistically-displayed projects against the indexer.
+   * Validates optimistically-displayed projects against the blockchain.
    * Runs in the background after projects are already shown to the user.
    * Removes projects that fail validation and enriches valid ones with
    * on-chain data (founderKey, trxId, createdOnBlock).
    *
-   * Uses the paginated list endpoint instead of per-project API calls to
-   * avoid making requests to endpoints that may no longer exist.
+   * Uses the mempool.space-compatible API (/api/v1/address/{address}/txs)
+   * to validate each project individually, replacing the dead Angor list API.
+   * Cached projects skip the API call entirely.
+   *
+   * Mirrors MempoolIndexerAngorApi.GetProjectByIdAsync (ReadFromAngorApi=false).
    */
   private async validateProjectsInBackground(
     candidateEvents: { event: NDKEvent; details: ProjectUpdate }[],
     optimisticProjects: IndexedProject[]
   ): Promise<void> {
     const optimisticIds = new Set(optimisticProjects.map(p => p.projectIdentifier));
-    console.log(`[Angor Debug] validateProjectsInBackground: validating ${optimisticIds.size} projects against ${this.indexerUrl}`);
+    console.log(`[Angor Debug] validateProjectsInBackground: validating ${optimisticIds.size} projects via mempool API`);
 
-    // Identify uncached projects that need indexer lookup
-    const uncachedIds = new Set<string>();
-    for (const { details } of candidateEvents) {
-      if (
-        optimisticIds.has(details.projectIdentifier) &&
-        !this.verification.getCachedValidation(details.projectIdentifier)
-      ) {
-        uncachedIds.add(details.projectIdentifier);
-      }
-    }
+    // Validate each project in parallel — cached projects skip the network call.
+    const results = await Promise.all(
+      candidateEvents
+        .filter(({ details }) => optimisticIds.has(details.projectIdentifier))
+        .map(async ({ event, details }) => {
+          const projectId = details.projectIdentifier;
 
-    // Fetch indexer project list in pages to validate uncached projects.
-    // This replaces per-project API calls with batch list calls.
-    // The API supports a maximum of 50 projects per page; fetching up to 10 pages
-    // covers 500 projects. Projects beyond this cap remain unverified and will be
-    // removed from the view — an acceptable trade-off since only recent Nostr
-    // events are validated per batch, and validated data is cached for future loads.
-    const indexerProjectMap = new Map<string, IndexedProject>();
-    if (uncachedIds.size > 0) {
-      const pageLimit = 50; // max allowed by the API
-      const maxPages = 10;  // safety cap — covers up to 500 on-chain projects
-      let offset = 0;
-
-      for (let page = 0; page < maxPages && uncachedIds.size > 0; page++) {
-        const batch = await this.fetchIndexerProjectList(offset, pageLimit);
-        if (batch.length === 0) break;
-
-        for (const project of batch) {
-          if (project.projectIdentifier) {
-            indexerProjectMap.set(project.projectIdentifier, project);
-            uncachedIds.delete(project.projectIdentifier);
+          // Check validation cache first (on-chain data is immutable)
+          const cached = this.verification.getCachedValidation(projectId);
+          if (cached) {
+            if (cached.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
+              console.log(`[Angor Debug] Validate ${projectId}: cached-mismatch`);
+              return { projectId, valid: false };
+            }
+            console.log(`[Angor Debug] Validate ${projectId}: cached-valid`);
+            return {
+              projectId,
+              valid: true,
+              founderKey: cached.founderKey,
+              nostrEventId: cached.nostrEventId,
+              trxId: cached.trxId,
+              createdOnBlock: cached.createdOnBlock,
+            };
           }
-        }
 
-        if (batch.length < pageLimit) break; // reached the last page
-        offset += pageLimit;
-      }
-    }
-
-    const results = candidateEvents
-      .filter(({ details }) => optimisticIds.has(details.projectIdentifier))
-      .map(({ event, details }) => {
-        const projectId = details.projectIdentifier;
-
-        // Check validation cache first (on-chain data is immutable)
-        const cached = this.verification.getCachedValidation(projectId);
-        if (cached) {
-          if (cached.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
-            console.log(`[Angor Debug] Validate ${projectId}: cached-mismatch`);
+          // Not cached — fetch funding info from the mempool API
+          const onChain = await this.fetchProjectFromMempool(projectId);
+          if (!onChain) {
+            console.log(`[Angor Debug] Validate ${projectId}: not-found-in-mempool`);
             return { projectId, valid: false };
           }
-          console.log(`[Angor Debug] Validate ${projectId}: cached-valid`);
+
+          // Cross-check the OP_RETURN-embedded nostrEventId with the Nostr event
+          if (onChain.nostrEventId.toLowerCase() !== event.id?.toLowerCase()) {
+            console.log(`[Angor Debug] Validate ${projectId}: event-mismatch (nostr="${event.id}" vs mempool="${onChain.nostrEventId}")`);
+            return { projectId, valid: false };
+          }
+
+          // Cache the result for future loads
+          this.verification.cacheValidation(projectId, {
+            founderKey: onChain.founderKey,
+            nostrEventId: onChain.nostrEventId,
+            trxId: onChain.trxId,
+            createdOnBlock: onChain.createdOnBlock,
+          });
+
+          console.log(`[Angor Debug] Validate ${projectId}: valid`);
           return {
             projectId,
             valid: true,
-            founderKey: cached.founderKey,
-            nostrEventId: cached.nostrEventId,
-            trxId: cached.trxId,
-            createdOnBlock: cached.createdOnBlock,
+            founderKey: onChain.founderKey,
+            nostrEventId: onChain.nostrEventId,
+            trxId: onChain.trxId,
+            createdOnBlock: onChain.createdOnBlock,
           };
-        }
-
-        // Look up in the pre-fetched indexer list
-        const indexerProject = indexerProjectMap.get(projectId);
-        if (!indexerProject) {
-          console.log(`[Angor Debug] Validate ${projectId}: not-in-indexer`);
-          return { projectId, valid: false };
-        }
-
-        // Cross-check the OP_RETURN-embedded event ID
-        if (indexerProject.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
-          console.log(`[Angor Debug] Validate ${projectId}: event-mismatch (nostr="${event.id}" vs indexer="${indexerProject.nostrEventId}")`);
-          return { projectId, valid: false };
-        }
-
-        // Cache for future loads
-        this.verification.cacheValidation(projectId, {
-          founderKey: indexerProject.founderKey,
-          nostrEventId: indexerProject.nostrEventId,
-          trxId: indexerProject.trxId,
-          createdOnBlock: indexerProject.createdOnBlock,
-        });
-
-        console.log(`[Angor Debug] Validate ${projectId}: valid`);
-
-        return {
-          projectId,
-          valid: true,
-          founderKey: indexerProject.founderKey,
-          nostrEventId: indexerProject.nostrEventId,
-          trxId: indexerProject.trxId,
-          createdOnBlock: indexerProject.createdOnBlock,
-        };
-      });
+        })
+    );
 
     // Collect IDs to remove and data to enrich
     const toRemove = new Set<string>();
@@ -811,16 +969,14 @@ export class IndexerService {
   }
 
   /**
-   * Fetches a single project by its identifier.
+   * Fetches a single project by its identifier from the blockchain.
    *
-   * First tries the individual project endpoint. If that returns 404
-   * (endpoint removed or project not found), falls back to scanning the
-   * paginated list endpoint so that the project detail page still works
-   * even when the per-project endpoint is unavailable.
+   * Uses the mempool.space-compatible API to find the project's funding
+   * transaction at the project's Bitcoin address, then builds an IndexedProject
+   * with the on-chain data. The Nostr details (name, description etc.) are
+   * fetched separately by the calling component via the relay service.
    *
-   * The OP_RETURN of the founding transaction is decoded to obtain the
-   * blockchain-authoritative Nostr event ID, replacing whatever value the
-   * indexer stored.
+   * Mirrors MempoolIndexerAngorApi.GetProjectByIdAsync (ReadFromAngorApi=false).
    */
   async fetchProject(id: string): Promise<IndexedProject | null> {
     // Ensure deny list and whitelist are loaded before filtering
@@ -833,94 +989,107 @@ export class IndexerService {
     try {
       this.loading.set(true);
 
-      // Try to find the project in the indexer list (avoids dead per-project endpoint)
-      let project: IndexedProject | null = null;
-      const pageLimit = 50;
-      const maxPages = 10;
+      const onChain = await this.fetchProjectFromMempool(id);
+      if (!onChain) return null;
 
-      for (let page = 0; page < maxPages; page++) {
-        const batch = await this.fetchIndexerProjectList(page * pageLimit, pageLimit);
-        if (batch.length === 0) break;
-
-        const found = batch.find(p => p.projectIdentifier === id);
-        if (found) {
-          project = found;
-          break;
-        }
-
-        if (batch.length < pageLimit) break; // last page reached
-      }
-
-      if (!project) return null;
-
-      // Filter by the project's Nostr pubkey (from details), not founderKey
-      const nostrPubKey = project.details?.nostrPubKey;
-      if (nostrPubKey && !this.hubConfig.shouldShowProject(nostrPubKey)) {
-        this.error.set(`Project ${id} is not available.`);
-        return null;
-      }
-
-      // Verify and correct the Nostr event ID via OP_RETURN
-      if (project.trxId) {
-        // Check cache first
-        const cached = this.verification.getCachedEventId(project.trxId);
-        if (cached) {
-          project.nostrEventId = cached;
-        } else {
-          try {
-            const txHex = await this.fetchTxHex(project.trxId);
-
-            if (txHex) {
-              const embeddedEventId = this.verification.extractOpReturnEventId(txHex);
-              if (embeddedEventId) {
-                if (embeddedEventId !== project.nostrEventId?.toLowerCase()) {
-                  console.warn(
-                    `[Angor] nostrEventId corrected for project ${id}: ` +
-                    `indexer="${project.nostrEventId}" -> op_return="${embeddedEventId}"`
-                  );
-                }
-                project.nostrEventId = embeddedEventId;
-                this.verification.cacheEventId(project.trxId, embeddedEventId);
-              } else {
-                console.warn(
-                  `[Angor] No OP_RETURN found in transaction ${project.trxId} for project ${id}`
-                );
-              }
-            }
-          } catch (err) {
-            // Fall back to the indexer-supplied nostrEventId
-            console.warn(`[Angor] Could not verify OP_RETURN for project ${id}:`, err);
-          }
-        }
-      }
-
-      return project;
+      return {
+        founderKey: onChain.founderKey,
+        nostrEventId: onChain.nostrEventId,
+        projectIdentifier: id,
+        createdOnBlock: onChain.createdOnBlock,
+        trxId: onChain.trxId,
+        verified: true,
+        details: undefined,
+        details_created_at: undefined,
+        metadata: undefined,
+        metadata_created_at: undefined,
+        stats: undefined,
+        content: undefined,
+        content_created_at: undefined,
+        members: undefined,
+        members_created_at: undefined,
+        media: undefined,
+        media_created_at: undefined,
+        externalIdentities: undefined,
+        externalIdentities_created_at: undefined,
+      };
     } finally {
       this.loading.set(false);
     }
   }
 
+  /**
+   * Computes basic project statistics from on-chain transaction data.
+   *
+   * Fetches all transactions at the project's Bitcoin address, finds the
+   * funding transaction, then counts unique investors and sums the invested
+   * amounts (taproot outputs from index 2 onwards in each investment tx).
+   *
+   * Note: amountSpentSoFarByFounder and penalty fields require outspend
+   * analysis — use InvestorService.getProjectOnChainStats() for full stats.
+   *
+   * Mirrors MempoolIndexerAngorApi.GetProjectStatsAsync (ReadFromAngorApi=false).
+   */
   async fetchProjectStats(id: string): Promise<ProjectStats | null> {
     try {
       this.loading.set(true);
-      const url = `${this.indexerUrl}api/query/Angor/projects/${id}/stats`;
+      const address = this.convertAngorKeyToBitcoinAddress(id);
+      const txs = await this.fetchMempoolAddressTxs(address);
+      if (!txs.length) return null;
 
-      const stats = (await this.fetchJson<ProjectStats>(url)).data;
+      const sorted = [...txs].sort((a, b) => {
+        const aH = a.status.confirmed ? a.status.block_height : Number.MAX_SAFE_INTEGER;
+        const bH = b.status.confirmed ? b.status.block_height : Number.MAX_SAFE_INTEGER;
+        return aH - bH;
+      });
 
-      stats.amountInvested = Number(stats.amountInvested) || 0;
-      stats.amountSpentSoFarByFounder = Number(stats.amountSpentSoFarByFounder) || 0;
-      stats.amountInPenalties = Number(stats.amountInPenalties) || 0;
-
-      return stats;
-    } catch (err) {
-      // 404 means the project doesn't exist on this indexer — not a connectivity issue
-      if (this.isNotFoundError(err)) {
-        return null;
+      // Find the funding transaction
+      let fundingTxId: string | null = null;
+      for (const tx of sorted) {
+        if (tx.vout.length < 2) continue;
+        const type = tx.vout[1].scriptpubkey_type;
+        if (type !== 'op_return' && type !== 'nulldata') continue;
+        if (this.parseOpReturnFounderInfo(tx.vout[1].scriptpubkey)) {
+          fundingTxId = tx.txid;
+          break;
+        }
       }
+      if (!fundingTxId) return null;
+
+      // Count unique investors and sum invested amounts
+      const uniqueInvestors = new Set<string>();
+      let totalAmountInvested = 0;
+
+      for (const tx of sorted) {
+        if (tx.txid === fundingTxId) continue;
+        if (tx.vout.length < 2) continue;
+        const type = tx.vout[1].scriptpubkey_type;
+        if (type !== 'op_return' && type !== 'nulldata') continue;
+        const investorKey = this.parseOpReturnInvestorInfo(tx.vout[1].scriptpubkey);
+        if (!investorKey) continue;
+
+        uniqueInvestors.add(investorKey);
+        // Sum taproot outputs (skip index 0 = Angor fee, index 1 = OP_RETURN)
+        for (let i = 2; i < tx.vout.length; i++) {
+          if (tx.vout[i].scriptpubkey_type === 'v1_p2tr') {
+            totalAmountInvested += tx.vout[i].value;
+          }
+        }
+      }
+
+      return {
+        investorCount: uniqueInvestors.size,
+        amountInvested: totalAmountInvested,
+        // Penalty/founder-spend data requires outspend analysis;
+        // use InvestorService.getProjectOnChainStats() for full detail-page stats.
+        amountSpentSoFarByFounder: 0,
+        amountInPenalties: 0,
+        countInPenalties: 0,
+      };
+    } catch (err) {
+      if (this.isNotFoundError(err)) return null;
       await this.setErrorWithRetry(
-        err instanceof Error
-          ? err.message
-          : `Failed to fetch stats for project ${id}`
+        err instanceof Error ? err.message : `Failed to fetch stats for project ${id}`
       );
       return null;
     } finally {
@@ -928,38 +1097,88 @@ export class IndexerService {
     }
   }
 
+  /**
+   * Extracts investment records from on-chain transaction data.
+   *
+   * Mirrors MempoolIndexerAngorApi.GetInvestmentsAsync (ReadFromAngorApi=false).
+   */
   async fetchProjectInvestments(
     projectId: string,
     offset = 0,
     limit = 10
   ): Promise<ProjectInvestment[]> {
     try {
-      const url = `${this.indexerUrl}api/query/Angor/projects/${projectId}/investments?offset=${offset}&limit=${limit}`;
-      return (await this.fetchJson<ProjectInvestment[]>(url)).data;
-    } catch (err) {
-      if (this.isNotFoundError(err)) {
-        return [];
+      const address = this.convertAngorKeyToBitcoinAddress(projectId);
+      const txs = await this.fetchMempoolAddressTxs(address);
+      if (!txs.length) return [];
+
+      const sorted = [...txs].sort((a, b) => {
+        const aH = a.status.confirmed ? a.status.block_height : Number.MAX_SAFE_INTEGER;
+        const bH = b.status.confirmed ? b.status.block_height : Number.MAX_SAFE_INTEGER;
+        return aH - bH;
+      });
+
+      // Find the funding transaction ID
+      let fundingTxId: string | null = null;
+      for (const tx of sorted) {
+        if (tx.vout.length < 2) continue;
+        const type = tx.vout[1].scriptpubkey_type;
+        if (type !== 'op_return' && type !== 'nulldata') continue;
+        if (this.parseOpReturnFounderInfo(tx.vout[1].scriptpubkey)) {
+          fundingTxId = tx.txid;
+          break;
+        }
       }
+      if (!fundingTxId) return [];
+
+      const investments: ProjectInvestment[] = [];
+      for (const tx of sorted) {
+        if (tx.txid === fundingTxId) continue;
+        if (tx.vout.length < 2) continue;
+        const type = tx.vout[1].scriptpubkey_type;
+        if (type !== 'op_return' && type !== 'nulldata') continue;
+        const investorKey = this.parseOpReturnInvestorInfo(tx.vout[1].scriptpubkey);
+        if (!investorKey) continue;
+
+        let amount = 0;
+        for (let i = 2; i < tx.vout.length; i++) {
+          if (tx.vout[i].scriptpubkey_type === 'v1_p2tr') amount += tx.vout[i].value;
+        }
+
+        investments.push({
+          investorKey,
+          amount,
+          trxId: tx.txid,
+          blockHeight: tx.status.confirmed ? tx.status.block_height : 0,
+        });
+      }
+
+      return investments.slice(offset, offset + limit);
+    } catch (err) {
+      if (this.isNotFoundError(err)) return [];
       await this.setErrorWithRetry(
-        err instanceof Error
-          ? err.message
-          : `Failed to fetch investments for project ${projectId}`
+        err instanceof Error ? err.message : `Failed to fetch investments for project ${projectId}`
       );
       return [];
     }
   }
 
+  /**
+   * Fetches a specific investor's investment details for a project.
+   *
+   * Mirrors MempoolIndexerAngorApi.GetInvestmentAsync (ReadFromAngorApi=false).
+   */
   async fetchInvestorDetails(
     projectId: string,
     investorKey: string
   ): Promise<ProjectInvestment | null> {
     try {
-      const url = `${this.indexerUrl}api/query/Angor/projects/${projectId}/investments/${investorKey}`;
-      return (await this.fetchJson<ProjectInvestment>(url)).data;
+      const investments = await this.fetchProjectInvestments(projectId);
+      return investments.find(
+        inv => inv.investorKey.toLowerCase() === investorKey.toLowerCase()
+      ) ?? null;
     } catch (err) {
-      if (this.isNotFoundError(err)) {
-        return null;
-      }
+      if (this.isNotFoundError(err)) return null;
       await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch investor details'
       );
@@ -968,35 +1187,28 @@ export class IndexerService {
   }
 
   async getSupply(): Promise<Supply | null> {
-    try {
-      const url = `${this.indexerUrl}api/insight/supply`;
-      return (await this.fetchJson<Supply>(url)).data;
-    } catch (err) {
-      await this.setErrorWithRetry(
-        err instanceof Error ? err.message : 'Failed to fetch supply'
-      );
-      return null;
-    }
+    // The /api/insight/supply endpoint is Blockcore-specific and may not be
+    // available on all mempool-compatible indexers. Return null gracefully.
+    return null;
   }
 
   async getCirculatingSupply(): Promise<number> {
-    try {
-      const url = `${this.indexerUrl}api/insight/supply/circulating`;
-      return (await this.fetchJson<number>(url)).data;
-    } catch (err) {
-      await this.setErrorWithRetry(
-        err instanceof Error
-          ? err.message
-          : 'Failed to fetch circulating supply'
-      );
-      return 0;
-    }
+    return 0;
   }
 
+  /**
+   * Fetches the balance for a Bitcoin address from the mempool.space-compatible API.
+   * Adapts the mempool response format to the AddressBalance interface.
+   */
   async getAddressBalance(address: string): Promise<AddressBalance | null> {
     try {
-      const url = `${this.indexerUrl}api/query/address/${address}`;
-      return (await this.fetchJson<AddressBalance>(url)).data;
+      const url = `${this.indexerUrl}api/v1/address/${address}`;
+      const { data } = await this.fetchJson<MempoolAddressResponse>(url);
+      return {
+        address: data.address,
+        balance: data.chain_stats.funded_txo_sum - data.chain_stats.spent_txo_sum,
+        unconfirmedBalance: data.mempool_stats.funded_txo_sum - data.mempool_stats.spent_txo_sum,
+      };
     } catch (err) {
       await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch address balance'
@@ -1005,28 +1217,36 @@ export class IndexerService {
     }
   }
 
+  /**
+   * Fetches recent transactions for a Bitcoin address from the mempool.space API.
+   * Note: mempool.space does not support offset-based pagination; this returns
+   * the most recent transactions sliced to the requested range.
+   */
   async getAddressTransactions(
     address: string,
     offset = 0,
     limit = 10
   ): Promise<Transaction[]> {
     try {
-      const url = `${this.indexerUrl}api/query/address/${address}/transactions?offset=${offset}&limit=${limit}`;
-      return (await this.fetchJson<Transaction[]>(url)).data;
+      const url = `${this.indexerUrl}api/v1/address/${address}/txs`;
+      const { data } = await this.fetchJson<{ txid: string }[]>(url);
+      return (Array.isArray(data) ? data : [])
+        .slice(offset, offset + limit)
+        .map(tx => ({ id: tx.txid }));
     } catch (err) {
       await this.setErrorWithRetry(
-        err instanceof Error
-          ? err.message
-          : 'Failed to fetch address transactions'
+        err instanceof Error ? err.message : 'Failed to fetch address transactions'
       );
       return [];
     }
   }
 
+  /** Fetches basic transaction info by ID from the mempool.space-compatible API. */
   async getTransaction(txId: string): Promise<Transaction | null> {
     try {
-      const url = `${this.indexerUrl}api/query/transaction/${txId}`;
-      return (await this.fetchJson<Transaction>(url)).data;
+      const url = `${this.indexerUrl}api/v1/tx/${txId}`;
+      const { data } = await this.fetchJson<{ txid: string }>(url);
+      return data ? { id: data.txid } : null;
     } catch (err) {
       await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch transaction'
@@ -1039,11 +1259,19 @@ export class IndexerService {
     return this.fetchTxHex(txId);
   }
 
-  async getBlocks(offset?: number, limit = 10): Promise<Block[]> {
+  /**
+   * Fetches recent blocks from the mempool.space-compatible API.
+   * The optional startHeight maps to /api/v1/blocks/{startHeight}.
+   */
+  async getBlocks(startHeight?: number, limit = 10): Promise<Block[]> {
     try {
-      const url = `${this.indexerUrl}api/query/block?${offset !== undefined ? `offset=${offset}&` : ''
-        }limit=${limit}`;
-      return (await this.fetchJson<Block[]>(url)).data;
+      const url = startHeight !== undefined
+        ? `${this.indexerUrl}api/v1/blocks/${startHeight}`
+        : `${this.indexerUrl}api/v1/blocks`;
+      const { data } = await this.fetchJson<{ id: string; height: number }[]>(url);
+      return (Array.isArray(data) ? data : [])
+        .slice(0, limit)
+        .map(b => ({ hash: b.id, height: b.height }));
     } catch (err) {
       await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch blocks'
@@ -1052,10 +1280,12 @@ export class IndexerService {
     }
   }
 
+  /** Fetches a block by its hash from the mempool.space-compatible API. */
   async getBlockByHash(hash: string): Promise<Block | null> {
     try {
-      const url = `${this.indexerUrl}api/query/block/${hash}`;
-      return (await this.fetchJson<Block>(url)).data;
+      const url = `${this.indexerUrl}api/v1/block/${hash}`;
+      const { data } = await this.fetchJson<{ id: string; height: number }>(url);
+      return data ? { hash: data.id, height: data.height } : null;
     } catch (err) {
       await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch block'
@@ -1064,10 +1294,18 @@ export class IndexerService {
     }
   }
 
+  /**
+   * Fetches a block by height from the mempool.space-compatible API.
+   * /api/v1/block-height/{height} returns the block hash as a plain string.
+   */
   async getBlockByHeight(height: number): Promise<Block | null> {
     try {
-      const url = `${this.indexerUrl}api/query/block/index/${height}`;
-      return (await this.fetchJson<Block>(url)).data;
+      const url = `${this.indexerUrl}api/v1/block-height/${height}`;
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      // Strip surrounding JSON quotes if the API returns a quoted string (e.g. `"abcd1234..."`)
+      const hash = (await response.text()).trim().replace(/^"|"$/g, '');
+      return { hash, height };
     } catch (err) {
       await this.setErrorWithRetry(
         err instanceof Error ? err.message : 'Failed to fetch block by height'
@@ -1076,22 +1314,24 @@ export class IndexerService {
     }
   }
 
+  /**
+   * Returns basic network stats using the mempool.space tip height endpoint.
+   */
   async getNetworkStats(): Promise<NetworkStats | null> {
     try {
-      const url = `${this.indexerUrl}api/stats`;
-      const response = (await this.fetchJson<NetworkStats>(url)).data;
-      return response !== undefined ? response : null;
-    } catch (err) {
-      await this.setErrorWithRetry(
-        err instanceof Error ? err.message : 'Failed to fetch network stats'
-      );
+      const url = `${this.indexerUrl}api/v1/blocks/tip/height`;
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      const blockHeight = Number(await response.text());
+      return { connections: 0, blockHeight };
+    } catch {
       return null;
     }
   }
 
   async getHeartbeat(): Promise<boolean> {
     try {
-      const url = `${this.indexerUrl}api/stats/heartbeat`;
+      const url = `${this.indexerUrl}api/v1/blocks/tip/height`;
       await fetch(url);
       return true;
     } catch {

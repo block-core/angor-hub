@@ -3,6 +3,7 @@ import escapeHtml from "escape-html";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import fs from "fs/promises";
+import { bech32, bech32m } from "@scure/base";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -13,6 +14,11 @@ const BASE_URL = process.env.BASE_URL || "https://angor.io";
 const DEFAULT_IMAGE = `${BASE_URL}/assets/angor-hub-social.png`;
 const INDEXER_TIMEOUT_MS = 45000; 
 const RELAY_TIMEOUT_MS = 15000;   // Nostr relay operations (increased for reliability)
+
+// Determine the Bitcoin network from the indexer URL:
+// URLs containing 'signet' or 'testnet' are treated as testnet (HRP 'tb'),
+// everything else is mainnet (HRP 'bc').
+const BITCOIN_HRP = (INDEXER_URL.includes("signet") || INDEXER_URL.includes("testnet")) ? "tb" : "bc";
 
 // Relays used for fetching Nostr data (events + profiles)
 const NOSTR_RELAYS = (process.env.NOSTR_RELAYS || "wss://relay.angor.io,wss://relay2.angor.io").split(",");
@@ -164,35 +170,114 @@ function satsToBtc(sats) {
   return (sats / 1e8).toFixed(8).replace(/\.?0+$/, "");
 }
 
-// Fetch project metadata — 3-step: indexer -> project event -> profile
+// Fetch project metadata — 3-step: mempool indexer -> project event -> profile
+
+// Bitcoin script opcode constants
+const OP_RETURN_OPCODE = 0x6a;
+const OP_PUSHDATA1_OPCODE = 0x4c;
 
 /**
- * Scans the indexer's paginated project list to find a single project by ID.
- * Uses the list endpoint instead of the (potentially unavailable) per-project endpoint.
- * PAGE_LIMIT and MAX_PAGES match the constants used in the Angular IndexerService.
+ * Converts an Angor project identifier (bech32 with "angor" HRP)
+ * to a standard Bitcoin witness address for use with the mempool.space API.
+ * Mirrors InvestorService.convertAngorKeyToBitcoinAddress in the Angular app.
  */
-async function findProjectInIndexer(projectId) {
-  const PAGE_LIMIT = 50; // max page size allowed by the API
-  const MAX_PAGES = 10;  // safety cap: covers up to 500 on-chain projects
-
-  for (let page = 0; page < MAX_PAGES; page++) {
-    const offset = page * PAGE_LIMIT;
-    try {
-      const batch = await fetchJson(
-        `${INDEXER_URL}api/query/Angor/projects?offset=${offset}&limit=${PAGE_LIMIT}`
-      );
-      if (!Array.isArray(batch) || batch.length === 0) break;
-
-      const found = batch.find(p => p.projectIdentifier === projectId);
-      if (found) return found;
-
-      if (batch.length < PAGE_LIMIT) break; // last page
-    } catch (err) {
-      console.warn(`[meta] Indexer list lookup failed (page ${page}): ${err.message}`);
-      break;
-    }
+function convertAngorKeyToBitcoinAddress(projectId) {
+  let decoded;
+  let isBech32m = false;
+  try {
+    decoded = bech32m.decode(projectId);
+    isBech32m = true;
+  } catch {
+    decoded = bech32.decode(projectId);
   }
-  return null;
+  const witnessVersion = decoded.words[0];
+  const dataWords = decoded.words.slice(1);
+  if (witnessVersion === 0 || !isBech32m) {
+    return bech32.encode(BITCOIN_HRP, [witnessVersion, ...dataWords]);
+  } else {
+    return bech32m.encode(BITCOIN_HRP, [witnessVersion, ...dataWords]);
+  }
+}
+
+/**
+ * Parses the OP_RETURN of a project funding transaction to extract
+ * the founder public key and the embedded Nostr event ID.
+ * Format: OP_RETURN <founder_pubkey 33B> <key_type 2B> <nostr_event_id 32B>
+ */
+function parseFounderInfoFromOpReturn(scriptpubkeyHex) {
+  try {
+    const bytes = [];
+    for (let i = 0; i < scriptpubkeyHex.length; i += 2) {
+      bytes.push(parseInt(scriptpubkeyHex.substring(i, i + 2), 16));
+    }
+
+    const ops = [];
+    let i = 0;
+    while (i < bytes.length) {
+      const opcode = bytes[i++];
+      if (opcode === OP_RETURN_OPCODE) { ops.push([]); continue; } // OP_RETURN
+      if (opcode >= 0x01 && opcode <= 0x4b) {
+        ops.push(bytes.slice(i, i + opcode)); i += opcode; continue;
+      }
+      if (opcode === OP_PUSHDATA1_OPCODE) { const len = bytes[i++]; ops.push(bytes.slice(i, i + len)); i += len; continue; }
+      ops.push([]);
+    }
+
+    // ops[0]=OP_RETURN, ops[1]=33B founder key, ops[2]=2B key type, ops[3]=32B nostr event id
+    if (ops.length < 4 || ops[1].length !== 33) return null;
+    const toHex = (b) => b.map(x => x.toString(16).padStart(2, "0")).join("");
+    return {
+      founderKey: toHex(ops[1]),
+      nostrEventId: ops[3].length === 32 ? toHex(ops[3]) : "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Looks up project on-chain data using the mempool.space-compatible API.
+ * Fetches all transactions at the project's Bitcoin address, finds the
+ * funding transaction (first tx with OP_RETURN containing founderKey +
+ * nostrEventId), and returns the extracted data.
+ *
+ * Mirrors IndexerService.fetchProjectFromMempool in the Angular app.
+ */
+async function findProjectInMempool(projectId) {
+  try {
+    const bitcoinAddress = convertAngorKeyToBitcoinAddress(projectId);
+    console.log(`[meta] Querying mempool for ${projectId} -> ${bitcoinAddress}`);
+
+    const txs = await fetchJson(`${INDEXER_URL}api/v1/address/${bitcoinAddress}/txs`);
+    if (!Array.isArray(txs) || txs.length === 0) return null;
+
+    // Sort oldest-first — the funding transaction is the first at this address
+    const sorted = [...txs].sort((a, b) => {
+      const aH = a.status?.confirmed ? a.status.block_height : Number.MAX_SAFE_INTEGER;
+      const bH = b.status?.confirmed ? b.status.block_height : Number.MAX_SAFE_INTEGER;
+      return aH - bH;
+    });
+
+    for (const tx of sorted) {
+      if (!tx.vout || tx.vout.length < 2) continue;
+      const opReturn = tx.vout[1];
+      if (opReturn.scriptpubkey_type !== "op_return" && opReturn.scriptpubkey_type !== "nulldata") continue;
+      const parsed = parseFounderInfoFromOpReturn(opReturn.scriptpubkey);
+      if (parsed) {
+        return {
+          projectIdentifier: projectId,
+          founderKey: parsed.founderKey,
+          nostrEventId: parsed.nostrEventId,
+          trxId: tx.txid,
+          createdOnBlock: tx.status?.block_height ?? 0,
+        };
+      }
+    }
+    return null;
+  } catch (err) {
+    console.warn(`[meta] Mempool lookup failed for ${projectId}: ${err.message}`);
+    return null;
+  }
 }
 
 async function getProjectMeta(projectId) {
@@ -202,13 +287,14 @@ async function getProjectMeta(projectId) {
   let nostrEventId = null;
   let projectDetails = null;
 
-  // Step 1: Try the indexer list to get the nostrEventId
+  // Step 1: Fetch the project's funding transaction from the blockchain
+  // to get the blockchain-authoritative nostrEventId.
   try {
-    console.log(`[meta] Fetching project ${projectId} from indexer list`);
-    const project = await findProjectInIndexer(projectId);
+    console.log(`[meta] Fetching project ${projectId} from mempool API`);
+    const project = await findProjectInMempool(projectId);
     nostrEventId = project?.nostrEventId;
   } catch (err) {
-    console.warn(`[meta] Indexer lookup failed: ${err.message}`);
+    console.warn(`[meta] Mempool lookup failed: ${err.message}`);
   }
 
   // Step 2: Fetch the kind 3030 event to get nostrPubKey and project details
@@ -217,7 +303,7 @@ async function getProjectMeta(projectId) {
     console.log(`[meta] Fetching event ${nostrEventId.slice(0, 12)}...`);
     projectEvent = await fetchNostrEvent(nostrEventId);
   }
-  // Fallback: search by d-tag if indexer failed or event not found
+  // Fallback: search by d-tag if mempool lookup failed or event not found
   if (!projectEvent) {
     console.log(`[meta] Searching relays for project by d-tag: ${projectId}`);
     projectEvent = await fetchProjectByDTag(projectId);
