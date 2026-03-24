@@ -139,12 +139,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
       const project = await this.indexer.fetchProject(this.projectId);
       if (project) {
         this.project.set(project);
-        if (!project.stats) {
-          const stats = await this.indexer.fetchProjectStats(this.projectId);
-          if (stats) {
-            project.stats = stats;
-          }
-        }
+        // Always load full on-chain stats (including founder spend & penalties)
+        this.loadOnChainStats();
       }
     }
   }
@@ -169,7 +165,10 @@ export class ProjectComponent implements OnInit, OnDestroy {
     this.onChainStatsError.set(null);
 
     try {
-      const stats = await this.investorService.getProjectOnChainStats(this.projectId);
+      const stats = await this.investorService.getProjectOnChainStats(
+        this.projectId,
+        this.project()?.details
+      );
 
       if (stats) {
         this.onChainStats.set(stats);
@@ -487,10 +486,12 @@ export class ProjectComponent implements OnInit, OnDestroy {
         this.project.set(projectData);
 
 
-        if (!projectData.stats) {
-          // Load stats from on-chain data (raw blockchain transactions)
-          this.loadOnChainStats();
-        }
+        // Always load full on-chain stats on the detail page.
+        // The explore page sets lightweight stats (investorCount + amountInvested)
+        // but leaves amountSpentSoFarByFounder and amountInPenalties as 0 because
+        // computing those requires expensive outspend analysis. The detail page
+        // needs the full stats so we always call loadOnChainStats() here.
+        this.loadOnChainStats();
 
         if (!projectData.details) {
 

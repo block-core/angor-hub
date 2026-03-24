@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { NetworkService } from './network.service';
 import { IndexerService } from './indexer.service';
+import { ProjectUpdate } from './relay.service';
 import { bech32, bech32m } from '@scure/base';
 
 /**
@@ -335,13 +336,111 @@ export class InvestorService {
   }
 
   /**
+   * Extracts the CLTV timestamp from the witness script ASM.
+   *
+   * The ASM looks like: "OP_PUSHBYTES_32 <key> OP_CHECKSIGVERIFY OP_PUSHBYTES_4 <hex> OP_CLTV"
+   * The CLTV value is the little-endian hex immediately before OP_CLTV / OP_CHECKLOCKTIMEVERIFY.
+   */
+  private extractCltvTimestamp(witnessScriptAsm: string): number | null {
+    // Match the hex value pushed right before OP_CLTV or OP_CHECKLOCKTIMEVERIFY
+    const match = witnessScriptAsm.match(/OP_PUSHBYTES_\d+\s+([0-9a-f]+)\s+(?:OP_CLTV|OP_CHECKLOCKTIMEVERIFY)/i);
+    if (!match) return null;
+
+    const hex = match[1];
+    // Parse as little-endian unsigned integer
+    let value = 0;
+    for (let i = 0; i < hex.length; i += 2) {
+      const byte = parseInt(hex.substring(i, i + 2), 16);
+      value += byte * Math.pow(256, i / 2);
+    }
+    return value;
+  }
+
+  /**
+   * Classifies an OP_CLTV spend (3 witness items) as founder or investor withdrawal.
+   *
+   * Heuristic 1 - Multi-input: If the spending tx has inputs from multiple
+   * different investment txs, the founder is collecting from several investors
+   * → founder spend. If all inputs reference the same investment tx, the
+   * investor is reclaiming their own stage outputs → investor withdrawal.
+   *
+   * Heuristic 2 - CLTV date (when project details are available):
+   *   - For "fund" projects (type 1): investor CLTV = startDate.
+   *     If CLTV matches startDate → investor withdrawal.
+   *   - For "invest" projects (type 0/default): founder CLTV = stage releaseDates.
+   *     If CLTV matches a stage releaseDate → founder spend.
+   *
+   * Returns true if this is a founder spend, false if investor withdrawal.
+   */
+  private classifyCltvSpend(
+    spendTx: MempoolTransaction,
+    investmentTxId: string,
+    allInvestmentTxIds: Set<string>,
+    witnessScriptAsm: string,
+    projectType: number,
+    projectStartDate: number | undefined,
+    stageReleaseDates: Set<number>
+  ): boolean {
+    // --- Heuristic 1: Multi-input analysis ---
+    // Collect all unique source investment txids from the spending tx's inputs
+    const sourceTxIds = new Set<string>();
+    for (const vin of spendTx.vin) {
+      if (allInvestmentTxIds.has(vin.txid)) {
+        sourceTxIds.add(vin.txid);
+      }
+    }
+
+    // If the spending tx pulls inputs from multiple different investment txs,
+    // only the founder would do that (collecting stage payments from many investors).
+    if (sourceTxIds.size > 1) {
+      return true; // founder
+    }
+
+    // If all inputs are from the same investment tx (and there's more than one),
+    // that's the investor reclaiming their own UTXOs.
+    const inputsFromSameTx = spendTx.vin.filter(vin => vin.txid === investmentTxId).length;
+    if (sourceTxIds.size === 1 && inputsFromSameTx > 1) {
+      return false; // investor
+    }
+
+    // --- Heuristic 2: CLTV date comparison ---
+    const cltvTimestamp = this.extractCltvTimestamp(witnessScriptAsm);
+
+    if (cltvTimestamp && projectStartDate) {
+      if (projectType === 1) {
+        // Fund-type project: investor's CLTV is set to startDate
+        if (cltvTimestamp === projectStartDate) {
+          return false; // investor withdrawal
+        }
+        // If CLTV doesn't match startDate, it's a founder spend
+        return true;
+      } else {
+        // Invest-type project (default): founder's CLTV matches stage releaseDates
+        if (stageReleaseDates.has(cltvTimestamp)) {
+          return true; // founder spend
+        }
+        // If CLTV doesn't match any stage date, it's an investor withdrawal
+        return false;
+      }
+    }
+
+    // --- Fallback: single input, no date info ---
+    // Default to founder spend (preserves existing behavior)
+    console.warn(
+      `[InvestorService] Ambiguous CLTV spend in tx ${spendTx.txid}, ` +
+      `defaulting to founder spend (no project details available for date comparison)`
+    );
+    return true;
+  }
+
+  /**
    * Main method: fetches all blockchain data for a project and computes
    * investor stats, investment list, and founder spending.
    *
    * This mirrors the logic in the Angor C# MempoolIndexerMappers when
    * ReadFromAngorApi is false.
    */
-  async getProjectOnChainStats(projectId: string): Promise<OnChainProjectStats | null> {
+  async getProjectOnChainStats(projectId: string, details?: ProjectUpdate): Promise<OnChainProjectStats | null> {
     try {
       const address = this.convertAngorKeyToBitcoinAddress(projectId);
       console.log(`[InvestorService] Project ${projectId} -> address ${address}`);
@@ -425,56 +524,117 @@ export class InvestorService {
         });
       }
 
-      // Step 3: Calculate founder spending and penalties by checking outspends
+      // Step 3: Calculate founder spending and investor withdrawals by finding
+      // spending transactions for each investment's taproot outputs.
+      //
+      // The Blockcore indexer's /outspends endpoint returns only { spent: true/false }
+      // without the spending txid, so we cannot use it to look up spending transactions.
+      // Instead, we fetch all transactions for each taproot output address — any
+      // transaction beyond the original investment tx is a spending transaction whose
+      // witness data reveals the spend type.
+      //
+      // Classification of OP_CLTV spends (3 witness items):
+      //   Both founder and investor withdrawals use OP_CHECKSIGVERIFY + OP_CLTV with
+      //   3 witness items. To distinguish them we use two heuristics:
+      //
+      //   1. Multi-input heuristic: The founder typically spends one UTXO from each
+      //      of several different investment txs in a single spending tx (collecting
+      //      from many investors). An investor spends multiple UTXOs from the SAME
+      //      investment tx (reclaiming their own stage outputs). If a spending tx
+      //      references inputs from more than one investment tx → founder.
+      //
+      //   2. CLTV date heuristic (when project details are available):
+      //      - For "fund" projects (projectType === 1): the investor's CLTV is the
+      //        project startDate. If the CLTV value matches startDate → investor.
+      //      - For "invest" projects (default): the founder's CLTV is set to the
+      //        stage releaseDates. If CLTV matches a stage releaseDate → founder.
+      //
+      // OP_CHECKSIGVERIFY spends with 4 witness items are always investor penalties.
       let amountSpentByFounder = 0;
       let amountInPenalties = 0;
       let countInPenalties = 0;
 
-      // Check outspends for each investment transaction's taproot outputs
+      // Build a set of all known investment txids for the multi-input heuristic
+      const investmentTxIds = new Set(investments.map(inv => inv.transactionId));
+
+      // Build a set of stage releaseDates and the startDate for CLTV comparison
+      const stageReleaseDates = new Set<number>();
+      let projectStartDate: number | undefined;
+      const projectType = details?.projectType ?? 0; // 0 = invest (default)
+
+      if (details) {
+        projectStartDate = details.startDate;
+        if (details.stages) {
+          for (const stage of details.stages) {
+            stageReleaseDates.add(stage.releaseDate);
+          }
+        }
+      }
+
       for (const investment of investments) {
         const tx = sortedTxs.find((t) => t.txid === investment.transactionId);
         if (!tx) continue;
 
-        try {
-          const outspends = await this.fetchOutspends(tx.txid);
+        // Collect all unique taproot output addresses from this investment tx
+        const taprootOutputs: { index: number; address: string; value: number }[] = [];
+        for (let i = 2; i < tx.vout.length; i++) {
+          if (tx.vout[i].scriptpubkey_type !== 'v1_p2tr') continue;
+          const addr = tx.vout[i].scriptpubkey_address;
+          if (!addr) continue;
+          taprootOutputs.push({ index: i, address: addr, value: tx.vout[i].value });
+        }
 
-          for (let i = 2; i < tx.vout.length; i++) {
-            if (tx.vout[i].scriptpubkey_type !== 'v1_p2tr') continue;
-            if (!outspends[i] || !outspends[i].spent) continue;
+        if (taprootOutputs.length === 0) continue;
 
-            const spendTxId = outspends[i].txid;
-            if (!spendTxId) continue;
+        // Fetch spending transactions for each taproot output address in parallel
+        const addressTxsResults = await Promise.all(
+          taprootOutputs.map(async (output) => {
+            try {
+              const txs = await this.fetchAddressTransactions(output.address);
+              return { output, txs };
+            } catch (err) {
+              console.warn(`[InvestorService] Error fetching txs for ${output.address}:`, err);
+              return { output, txs: [] as MempoolTransaction[] };
+            }
+          })
+        );
 
-            // Fetch the spending transaction to analyze the witness
-            const spendTxResponse = await fetch(`${this.getApiBaseUrl()}/tx/${spendTxId}`);
-            if (!spendTxResponse.ok) continue;
-            const spendTx: MempoolTransaction = await spendTxResponse.json();
+        for (const { output, txs } of addressTxsResults) {
+          // Find spending transactions (any tx that is NOT the original investment tx)
+          for (const spendTx of txs) {
+            if (spendTx.txid === tx.txid) continue;
 
-            // Find the input that spends our output
+            // Find the input that spends our specific output
             const spendingInput = spendTx.vin.find(
-              (vin) => vin.txid === tx.txid && vin.vout === i
+              (vin) => vin.txid === tx.txid && vin.vout === output.index
             );
             if (!spendingInput || !spendingInput.witness) continue;
 
-            // Analyze witness to determine spend type:
-            // - Founder spend (withdrawal): 3 witness items, script contains OP_CLTV
-            // - Investor penalty: 4 witness items, script contains OP_CHECKSIGVERIFY + OP_CHECKSIG
-            // - Investor end-of-project reclaim: 3 witness items, different timelock
             const witnessCount = spendingInput.witness.length;
             const witnessScriptAsm = spendingInput.inner_witnessscript_asm || '';
 
-            if (witnessCount === 3 && witnessScriptAsm.includes('OP_CHECKLOCKTIMEVERIFY')) {
-              // Founder withdrawal
-              amountSpentByFounder += tx.vout[i].value;
-            } else if (witnessCount === 4 && witnessScriptAsm.includes('OP_CHECKSIGVERIFY')) {
-              // Investor penalty (early exit)
-              amountInPenalties += tx.vout[i].value;
+            if (witnessCount === 4 && witnessScriptAsm.includes('OP_CHECKSIGVERIFY')) {
+              // 4 witness items + OP_CHECKSIGVERIFY = investor penalty (early exit)
+              amountInPenalties += output.value;
               countInPenalties++;
+            } else if (witnessCount === 3 &&
+                       (witnessScriptAsm.includes('OP_CLTV') ||
+                        witnessScriptAsm.includes('OP_CHECKLOCKTIMEVERIFY'))) {
+              // 3 witness items + OP_CLTV: could be founder OR investor withdrawal.
+              // Use heuristics to classify.
+              const isFounderSpend = this.classifyCltvSpend(
+                spendTx, tx.txid, investmentTxIds, witnessScriptAsm,
+                projectType, projectStartDate, stageReleaseDates
+              );
+
+              if (isFounderSpend) {
+                amountSpentByFounder += output.value;
+              } else {
+                amountInPenalties += output.value;
+                countInPenalties++;
+              }
             }
           }
-        } catch (err) {
-          console.warn(`[InvestorService] Error checking outspends for ${tx.txid}:`, err);
-          // Continue processing other investments
         }
       }
 
