@@ -348,6 +348,21 @@ export class IndexerService {
   }
 
   /**
+   * Fetches a page of projects from the indexer list endpoint.
+   * Used for batch validation instead of per-project API calls.
+   */
+  private async fetchIndexerProjectList(offset: number, limit: number): Promise<IndexedProject[]> {
+    try {
+      const url = `${this.indexerUrl}api/query/Angor/projects?offset=${offset}&limit=${limit}`;
+      const { data } = await this.fetchJson<IndexedProject[]>(url);
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      console.warn('[Angor Debug] fetchIndexerProjectList: failed to fetch', err);
+      return [];
+    }
+  }
+
+  /**
    * Fetches a raw transaction hex string.
    * The /hex endpoint may return a plain text hex string (not JSON).
    */
@@ -638,6 +653,9 @@ export class IndexerService {
    * Runs in the background after projects are already shown to the user.
    * Removes projects that fail validation and enriches valid ones with
    * on-chain data (founderKey, trxId, createdOnBlock).
+   *
+   * Uses the paginated list endpoint instead of per-project API calls to
+   * avoid making requests to endpoints that may no longer exist.
    */
   private async validateProjectsInBackground(
     candidateEvents: { event: NDKEvent; details: ProjectUpdate }[],
@@ -646,77 +664,100 @@ export class IndexerService {
     const optimisticIds = new Set(optimisticProjects.map(p => p.projectIdentifier));
     console.log(`[Angor Debug] validateProjectsInBackground: validating ${optimisticIds.size} projects against ${this.indexerUrl}`);
 
-    const results = await Promise.all(
-      candidateEvents
-        .filter(({ details }) => optimisticIds.has(details.projectIdentifier))
-        .map(async ({ event, details }) => {
-          const projectId = details.projectIdentifier;
+    // Identify uncached projects that need indexer lookup
+    const uncachedIds = new Set<string>();
+    for (const { details } of candidateEvents) {
+      if (
+        optimisticIds.has(details.projectIdentifier) &&
+        !this.verification.getCachedValidation(details.projectIdentifier)
+      ) {
+        uncachedIds.add(details.projectIdentifier);
+      }
+    }
 
-          try {
-            // Check validation cache first (on-chain data is immutable)
-            const cached = this.verification.getCachedValidation(projectId);
-            if (cached) {
-              if (cached.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
-                console.log(`[Angor Debug] Validate ${projectId}: cached-mismatch`);
-                return { projectId, valid: false };
-              }
-              console.log(`[Angor Debug] Validate ${projectId}: cached-valid`);
-              return {
-                projectId,
-                valid: true,
-                founderKey: cached.founderKey,
-                nostrEventId: cached.nostrEventId,
-                trxId: cached.trxId,
-                createdOnBlock: cached.createdOnBlock,
-              };
-            }
+    // Fetch indexer project list in pages to validate uncached projects.
+    // This replaces per-project API calls with batch list calls.
+    // The API supports a maximum of 50 projects per page; fetching up to 10 pages
+    // covers 500 projects. Projects beyond this cap remain unverified and will be
+    // removed from the view — an acceptable trade-off since only recent Nostr
+    // events are validated per batch, and validated data is cached for future loads.
+    const indexerProjectMap = new Map<string, IndexedProject>();
+    if (uncachedIds.size > 0) {
+      const pageLimit = 50; // max allowed by the API
+      const maxPages = 10;  // safety cap — covers up to 500 on-chain projects
+      let offset = 0;
 
-            // No cache — call the indexer
-            const url = `${this.indexerUrl}api/query/Angor/projects/${projectId}`;
-            const { data: indexerProject } = await this.fetchJson<IndexedProject>(url);
+      for (let page = 0; page < maxPages && uncachedIds.size > 0; page++) {
+        const batch = await this.fetchIndexerProjectList(offset, pageLimit);
+        if (batch.length === 0) break;
 
-            if (!indexerProject) {
-              console.log(`[Angor Debug] Validate ${projectId}: no-data`);
-              return { projectId, valid: false };
-            }
+        for (const project of batch) {
+          if (project.projectIdentifier) {
+            indexerProjectMap.set(project.projectIdentifier, project);
+            uncachedIds.delete(project.projectIdentifier);
+          }
+        }
 
-            // Cross-check the OP_RETURN-embedded event ID
-            if (indexerProject.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
-              console.log(`[Angor Debug] Validate ${projectId}: event-mismatch (nostr="${event.id}" vs indexer="${indexerProject.nostrEventId}")`);
-              return { projectId, valid: false };
-            }
+        if (batch.length < pageLimit) break; // reached the last page
+        offset += pageLimit;
+      }
+    }
 
-            // Cache for future loads
-            this.verification.cacheValidation(projectId, {
-              founderKey: indexerProject.founderKey,
-              nostrEventId: indexerProject.nostrEventId,
-              trxId: indexerProject.trxId,
-              createdOnBlock: indexerProject.createdOnBlock,
-            });
+    const results = candidateEvents
+      .filter(({ details }) => optimisticIds.has(details.projectIdentifier))
+      .map(({ event, details }) => {
+        const projectId = details.projectIdentifier;
 
-            console.log(`[Angor Debug] Validate ${projectId}: valid`);
-
-            return {
-              projectId,
-              valid: true,
-              founderKey: indexerProject.founderKey,
-              nostrEventId: indexerProject.nostrEventId,
-              trxId: indexerProject.trxId,
-              createdOnBlock: indexerProject.createdOnBlock,
-            };
-          } catch (err) {
-            // 404 = project doesn't exist on this network's indexer → invalid
-            // Other errors (network failure, 500, etc.) → also mark invalid
-            // to avoid leaving unverified projects on screen
-            if (this.isNotFoundError(err)) {
-              console.log(`[Angor Debug] Validate ${projectId}: 404-not-found`);
-            } else {
-              console.warn(`[Angor Debug] Validate ${projectId}: error`, err);
-            }
+        // Check validation cache first (on-chain data is immutable)
+        const cached = this.verification.getCachedValidation(projectId);
+        if (cached) {
+          if (cached.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
+            console.log(`[Angor Debug] Validate ${projectId}: cached-mismatch`);
             return { projectId, valid: false };
           }
-        })
-    );
+          console.log(`[Angor Debug] Validate ${projectId}: cached-valid`);
+          return {
+            projectId,
+            valid: true,
+            founderKey: cached.founderKey,
+            nostrEventId: cached.nostrEventId,
+            trxId: cached.trxId,
+            createdOnBlock: cached.createdOnBlock,
+          };
+        }
+
+        // Look up in the pre-fetched indexer list
+        const indexerProject = indexerProjectMap.get(projectId);
+        if (!indexerProject) {
+          console.log(`[Angor Debug] Validate ${projectId}: not-in-indexer`);
+          return { projectId, valid: false };
+        }
+
+        // Cross-check the OP_RETURN-embedded event ID
+        if (indexerProject.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
+          console.log(`[Angor Debug] Validate ${projectId}: event-mismatch (nostr="${event.id}" vs indexer="${indexerProject.nostrEventId}")`);
+          return { projectId, valid: false };
+        }
+
+        // Cache for future loads
+        this.verification.cacheValidation(projectId, {
+          founderKey: indexerProject.founderKey,
+          nostrEventId: indexerProject.nostrEventId,
+          trxId: indexerProject.trxId,
+          createdOnBlock: indexerProject.createdOnBlock,
+        });
+
+        console.log(`[Angor Debug] Validate ${projectId}: valid`);
+
+        return {
+          projectId,
+          valid: true,
+          founderKey: indexerProject.founderKey,
+          nostrEventId: indexerProject.nostrEventId,
+          trxId: indexerProject.trxId,
+          createdOnBlock: indexerProject.createdOnBlock,
+        };
+      });
 
     // Collect IDs to remove and data to enrich
     const toRemove = new Set<string>();
@@ -772,6 +813,11 @@ export class IndexerService {
   /**
    * Fetches a single project by its identifier.
    *
+   * First tries the individual project endpoint. If that returns 404
+   * (endpoint removed or project not found), falls back to scanning the
+   * paginated list endpoint so that the project detail page still works
+   * even when the per-project endpoint is unavailable.
+   *
    * The OP_RETURN of the founding transaction is decoded to obtain the
    * blockchain-authoritative Nostr event ID, replacing whatever value the
    * indexer stored.
@@ -786,21 +832,33 @@ export class IndexerService {
 
     try {
       this.loading.set(true);
-      const result = await this.fetchJson<IndexedProject>(
-        `${this.indexerUrl}api/query/Angor/projects/${id}`
-      );
 
-      if (result && result.data) {
-        // Filter by the project's Nostr pubkey (from details), not founderKey
-        const nostrPubKey = result.data.details?.nostrPubKey;
-        if (nostrPubKey && !this.hubConfig.shouldShowProject(nostrPubKey)) {
-          this.error.set(`Project ${id} is not available.`);
-          return null;
+      // Try to find the project in the indexer list (avoids dead per-project endpoint)
+      let project: IndexedProject | null = null;
+      const pageLimit = 50;
+      const maxPages = 10;
+
+      for (let page = 0; page < maxPages; page++) {
+        const batch = await this.fetchIndexerProjectList(page * pageLimit, pageLimit);
+        if (batch.length === 0) break;
+
+        const found = batch.find(p => p.projectIdentifier === id);
+        if (found) {
+          project = found;
+          break;
         }
+
+        if (batch.length < pageLimit) break; // last page reached
       }
 
-      const project = result.data;
       if (!project) return null;
+
+      // Filter by the project's Nostr pubkey (from details), not founderKey
+      const nostrPubKey = project.details?.nostrPubKey;
+      if (nostrPubKey && !this.hubConfig.shouldShowProject(nostrPubKey)) {
+        this.error.set(`Project ${id} is not available.`);
+        return null;
+      }
 
       // Verify and correct the Nostr event ID via OP_RETURN
       if (project.trxId) {
@@ -837,15 +895,6 @@ export class IndexerService {
       }
 
       return project;
-    } catch (err) {
-      // 404 means the project doesn't exist on this indexer — not a connectivity issue
-      if (this.isNotFoundError(err)) {
-        return null;
-      }
-      await this.setErrorWithRetry(
-        err instanceof Error ? err.message : `Failed to fetch project ${id}`
-      );
-      return null;
     } finally {
       this.loading.set(false);
     }

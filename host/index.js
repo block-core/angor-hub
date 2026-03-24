@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 
-const INDEXER_URL = process.env.INDEXER_URL || "https://fulcrum.angor.online/api/query/Angor/projects/";
+const INDEXER_URL = process.env.INDEXER_URL || "https://fulcrum.angor.online/";
 const BASE_URL = process.env.BASE_URL || "https://angor.io";
 const DEFAULT_IMAGE = `${BASE_URL}/assets/angor-hub-social.png`;
 const INDEXER_TIMEOUT_MS = 45000; 
@@ -166,6 +166,35 @@ function satsToBtc(sats) {
 
 // Fetch project metadata — 3-step: indexer -> project event -> profile
 
+/**
+ * Scans the indexer's paginated project list to find a single project by ID.
+ * Uses the list endpoint instead of the (potentially unavailable) per-project endpoint.
+ * PAGE_LIMIT and MAX_PAGES match the constants used in the Angular IndexerService.
+ */
+async function findProjectInIndexer(projectId) {
+  const PAGE_LIMIT = 50; // max page size allowed by the API
+  const MAX_PAGES = 10;  // safety cap: covers up to 500 on-chain projects
+
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const offset = page * PAGE_LIMIT;
+    try {
+      const batch = await fetchJson(
+        `${INDEXER_URL}api/query/Angor/projects?offset=${offset}&limit=${PAGE_LIMIT}`
+      );
+      if (!Array.isArray(batch) || batch.length === 0) break;
+
+      const found = batch.find(p => p.projectIdentifier === projectId);
+      if (found) return found;
+
+      if (batch.length < PAGE_LIMIT) break; // last page
+    } catch (err) {
+      console.warn(`[meta] Indexer list lookup failed (page ${page}): ${err.message}`);
+      break;
+    }
+  }
+  return null;
+}
+
 async function getProjectMeta(projectId) {
   const cached = cacheGet(`project:${projectId}`);
   if (cached) return cached;
@@ -173,10 +202,10 @@ async function getProjectMeta(projectId) {
   let nostrEventId = null;
   let projectDetails = null;
 
-  // Step 1: Try the indexer to get the nostrEventId
+  // Step 1: Try the indexer list to get the nostrEventId
   try {
-    console.log(`[meta] Fetching project ${projectId} from indexer`);
-    const project = await fetchJson(INDEXER_URL + encodeURIComponent(projectId));
+    console.log(`[meta] Fetching project ${projectId} from indexer list`);
+    const project = await findProjectInIndexer(projectId);
     nostrEventId = project?.nostrEventId;
   } catch (err) {
     console.warn(`[meta] Indexer lookup failed: ${err.message}`);
