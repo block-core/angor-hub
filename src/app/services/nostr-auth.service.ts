@@ -13,6 +13,7 @@ export class NostrAuthService {
   private static readonly STORAGE_KEY = 'angor-hub-nostr-user';
   private user = signal<NostrUser | null>(null);
   private isInitialized = false;
+  private initializationPromise: Promise<void> | null = null;
 
   public currentUser = this.user.asReadonly();
 
@@ -20,9 +21,6 @@ export class NostrAuthService {
     // Restore session early so UI (e.g. Admin page) doesn't treat refresh as a logout
     this.restoreUserFromStorage();
 
-    // Initialize nostr-login
-    this.initializeNostrLogin();
-    
     // Listen for auth events
     this.setupAuthListener();
 
@@ -124,6 +122,22 @@ export class NostrAuthService {
     }
   }
 
+  private async ensureInitialized(): Promise<void> {
+    if (this.isInitialized) {
+      return;
+    }
+
+    if (!this.initializationPromise) {
+      this.initializationPromise = Promise.resolve().then(() => {
+        this.initializeNostrLogin();
+      }).finally(() => {
+        this.initializationPromise = null;
+      });
+    }
+
+    await this.initializationPromise;
+  }
+
   private setupAuthListener(): void {
     if (!this.isBrowser()) {
       return;
@@ -149,6 +163,7 @@ export class NostrAuthService {
 
   public async login(startScreen?: string): Promise<void> {
     try {
+      await this.ensureInitialized();
       await launchNostrLoginDialog(startScreen as any);
     } catch (error) {
       console.error('[NostrAuth] Failed to launch login dialog:', error);
@@ -158,6 +173,7 @@ export class NostrAuthService {
 
   public async logout(): Promise<void> {
     try {
+      await this.ensureInitialized();
       await nostrLogout();
       this.user.set(null);
     } catch (error) {

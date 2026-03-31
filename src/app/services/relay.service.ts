@@ -84,6 +84,7 @@ export class RelayService {
     if (!this.ndk) {
       this.ndk = new NDK({
         explicitRelayUrls: this.relayUrls(),
+        enableOutboxModel: false,
       });
     }
 
