@@ -26,6 +26,7 @@ export class RelayService {
   private ndk: NDK | null = null;
   private isConnected = false;
   private connectionReady: Promise<void>;
+  private readonly relayConnectTimeoutMs = 4000;
   public relayUrls = signal<string[]>([]);
   private defaultRelays = ['wss://relay.damus.io', 'wss://relay.primal.net', 'wss://nos.lol', 'wss://relay.angor.io', 'wss://relay2.angor.io'];
 
@@ -77,10 +78,24 @@ export class RelayService {
     // Wait for the initial connection attempt to finish first
     await this.connectionReady;
 
-    if (this.ndk && this.isConnected) {
-      return this.ndk;
+    const ndk = this.getOrCreateNdk();
+
+    if (this.hasConnectedRelays(ndk)) {
+      this.isConnected = true;
+      return ndk;
     }
 
+    try {
+      await this.connectWithRetry(ndk);
+      this.isConnected = true;
+      return ndk;
+    } catch (error) {
+      console.error('Failed to connect to relays:', error);
+      throw error;
+    }
+  }
+
+  private getOrCreateNdk(): NDK {
     if (!this.ndk) {
       this.ndk = new NDK({
         explicitRelayUrls: this.relayUrls(),
@@ -88,14 +103,51 @@ export class RelayService {
       });
     }
 
-    try {
-      await this.ndk.connect();
-      this.isConnected = true;
-      return this.ndk;
-    } catch (error) {
-      console.error('Failed to connect to relays:', error);
-      throw error;
+    return this.ndk;
+  }
+
+  private hasConnectedRelays(ndk: NDK): boolean {
+    return ndk.pool.connectedRelays().length > 0;
+  }
+
+  private async connectWithRetry(ndk: NDK, maxRetries = 3, retryDelay = 1000): Promise<void> {
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const configuredRelays = this.relayUrls().map((url) => ndk.pool.getRelay(url, false));
+
+      if (configuredRelays.length === 0) {
+        throw new Error('No relays configured');
+      }
+
+      const results = await Promise.allSettled(
+        configuredRelays.map((relay) => relay.connect(this.relayConnectTimeoutMs, false))
+      );
+
+      const connectedCount = ndk.pool.connectedRelays().length;
+      const failedCount = results.filter((result) => result.status === 'rejected').length;
+
+      if (connectedCount > 0) {
+        if (failedCount > 0) {
+          console.warn(`Connected to ${connectedCount}/${configuredRelays.length} relays; continuing without ${failedCount} unavailable relay(s)`);
+        } else {
+          console.log(`Connected to ${connectedCount} relays`);
+        }
+        return;
+      }
+
+      const rejectedResult = results.find(
+        (result): result is PromiseRejectedResult => result.status === 'rejected'
+      );
+      lastError = rejectedResult?.reason ?? new Error('No relays connected');
+      console.warn(`Connection attempt ${attempt} failed:`, lastError);
+
+      if (attempt < maxRetries) {
+        await new Promise<void>((resolve) => setTimeout(resolve, retryDelay));
+      }
     }
+
+    throw lastError instanceof Error ? lastError : new Error('Failed to connect to any relay');
   }
 
   private async initializeRelays() {
@@ -245,7 +297,7 @@ export class RelayService {
    * @param until
    * @returns 
    */
-  async fetchNostrProjects(limit: number, until?: number): Promise<NDKEvent[]> {
+  async fetchNostrProjects(limit: number, until?: number, retryCount = 0): Promise<NDKEvent[]> {
     try {
       const ndk = await this.ensureConnected();
 
@@ -267,7 +319,10 @@ export class RelayService {
       const sub = ndk.subscribe(filter);
 
       await new Promise<void>((resolve) => {
-        const timeout = setTimeout(resolve, 8000);
+        const timeout = setTimeout(() => {
+          console.warn('fetchNostrProjects: timeout reached, resolving with partial results');
+          resolve();
+        }, 8000);
 
         sub.on('event', (event: NDKEvent) => {
           collected.push(event);
@@ -277,13 +332,28 @@ export class RelayService {
           clearTimeout(timeout);
           resolve();
         });
+
+        sub.on('close', () => {
+          clearTimeout(timeout);
+          resolve();
+        });
       });
 
       console.log(`[Angor] fetchNostrProjects: received ${collected.length} events`);
       return collected;
     } catch (error) {
       console.error('Error fetching Nostr projects (kind 3030):', error);
-      return [];
+      if (retryCount >= 1) {
+        return [];
+      }
+
+      try {
+        await this.reconnectToRelays();
+        return await this.fetchNostrProjects(limit, until, retryCount + 1);
+      } catch (retryError) {
+        console.error('Retry failed for fetchNostrProjects:', retryError);
+        return [];
+      }
     }
   }
 }

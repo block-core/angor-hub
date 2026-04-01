@@ -694,10 +694,30 @@ export class IndexerService {
       // Without this loop, a batch of only non-project events would leave the page empty.
       while (emptyBatchCount < MAX_EMPTY_BATCHES) {
         // Step 1: Discover projects from Nostr relays
-        const nostrEvents = await this.relay.fetchNostrProjects(
+        let nostrEvents = await this.relay.fetchNostrProjects(
           this.LIMIT,
           this.oldestEventTimestamp
         );
+
+        // If no events and we have relays configured, it might be a connection issue
+        if (nostrEvents.length === 0) {
+          const relayUrls = this.relay.getRelayUrls();
+
+          if (relayUrls.length > 0) {
+            console.log('No projects received, attempting to reconnect to relays...');
+            try {
+              await this.relay.reconnectToRelays();
+              nostrEvents = await this.relay.fetchNostrProjects(
+                this.LIMIT,
+                this.oldestEventTimestamp
+              );
+            } catch (reconnectError) {
+              console.error('Failed to reconnect to relays:', reconnectError);
+              this.totalProjectsFetched = true;
+              return;
+            }
+          }
+        }
 
         if (nostrEvents.length === 0) {
           this.totalProjectsFetched = true;
