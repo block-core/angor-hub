@@ -37,14 +37,20 @@ import { CommonModule } from '@angular/common';
 
         <!-- Info -->
         <div class="flex flex-col min-w-0 flex-1">
-          <a [href]="'https://nostr.at/' + npub" target="_blank" rel="noopener noreferrer"
-             class="font-semibold text-accent hover:underline text-sm truncate"
-             [title]="profile()?.displayName || profile()?.name || formatNpub()">
-            {{ profile()?.displayName || profile()?.name || formatNpub() }}
-          </a>
+          <div class="flex items-center gap-1 min-w-0">
+            <a [href]="'https://nostr.at/' + npub" target="_blank" rel="noopener noreferrer"
+               class="font-semibold text-accent hover:underline text-sm truncate"
+               [title]="profile()?.displayName || profile()?.name || formatNpub()">
+              {{ profile()?.displayName || profile()?.name || formatNpub() }}
+            </a>
+            @if (profile()?.nip05) {
+              <span class="material-icons text-blue-500 flex-shrink-0 text-[14px]"
+                    [title]="'NIP-05 Verified: ' + profile()!.nip05">verified</span>
+            }
+          </div>
           @if (profile()?.nip05) {
             <p class="text-xs text-text-secondary truncate mt-0.5" [title]="profile()!.nip05">
-            {{ formatNip05(profile()!.nip05) }}
+              {{ formatNip05(profile()!.nip05) }}
             </p>
           }
         </div>
