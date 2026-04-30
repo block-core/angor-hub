@@ -247,4 +247,20 @@ export class SettingsComponent implements OnInit {
   getAdminPubkeys(): string[] {
     return this.hubConfigService.getAdminPubkeys();
   }
+
+  cacheClearMessage = signal<string>('');
+
+  clearCache(): void {
+    // Clear project-related caches
+    localStorage.removeItem('angor_projects_cache_main');
+    localStorage.removeItem('angor_projects_cache_test');
+    localStorage.removeItem('angor_project_validation_cache');
+    localStorage.removeItem('angor_opreturn_cache');
+
+    // Reset in-memory state
+    this.indexerService.resetProjects();
+
+    this.cacheClearMessage.set('Cache cleared successfully');
+    setTimeout(() => this.cacheClearMessage.set(''), 3000);
+  }
 }

@@ -243,6 +243,14 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       console.log(`[Angor Debug] ExploreComponent.ngOnInit: hasState=${this.exploreState.hasState}, projects.length=${this.indexer.projects().length} → fresh fetch`);
       this.exploreState.clearState();
+
+      // Load cached projects from localStorage for instant display
+      const hasCached = this.indexer.loadCachedProjects();
+      if (hasCached) {
+        this.observeProjectCards();
+      }
+
+      // Always fetch fresh data (will deduplicate against cached projects)
       await this.indexer.fetchProjects();
       this.observeProjectCards();
     }

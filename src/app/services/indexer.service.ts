@@ -147,6 +147,14 @@ export class IndexerService {
   private totalProjectsFetched = false;
   private fetchPromise: Promise<void> | null = null;
 
+  // In-memory cache for mempool address transactions (avoids duplicate fetches
+  // between validation and stats loading). Keyed by Bitcoin address.
+  private mempoolTxCache = new Map<string, { txs: MempoolTx[]; timestamp: number }>();
+  private readonly MEMPOOL_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+  // localStorage key for persisting validated projects across page reloads
+  private readonly PROJECTS_CACHE_KEY = 'angor_projects_cache';
+
   private relay = inject(RelayService);
   private denyService = inject(DenyService);
   private featuredService = inject(FeaturedService);
@@ -154,6 +162,8 @@ export class IndexerService {
   private verification = inject(NostrProjectVerificationService);
 
   public loading = signal<boolean>(false);
+  /** Number of projects currently being validated (for skeleton display). */
+  public validatingCount = signal<number>(0);
   private _allProjects = signal<IndexedProject[]>([]);
   public projects = computed(() => {
     const all = this._allProjects();
@@ -192,6 +202,58 @@ export class IndexerService {
     this.loadIndexerConfig();
     this.updateActiveIndexer();
     this.denyService.loadDenyList();
+  }
+
+  /**
+   * Returns the network-scoped localStorage key for the projects cache.
+   */
+  private getProjectsCacheKey(): string {
+    const net = this.network.isMain() ? 'main' : 'test';
+    return `${this.PROJECTS_CACHE_KEY}_${net}`;
+  }
+
+  /**
+   * Loads validated projects from localStorage for instant display on page refresh.
+   * Only loads projects that are verified (have on-chain validation data).
+   */
+  loadCachedProjects(): boolean {
+    try {
+      const raw = localStorage.getItem(this.getProjectsCacheKey());
+      if (!raw) return false;
+      const cached: IndexedProject[] = JSON.parse(raw);
+      if (!Array.isArray(cached) || cached.length === 0) return false;
+
+      // Only restore verified projects
+      const verified = cached.filter(p => p.verified);
+      if (verified.length === 0) return false;
+
+      this._allProjects.set(verified);
+      console.log(`[Angor Debug] Loaded ${verified.length} cached projects from localStorage`);
+      return true;
+    } catch {
+      localStorage.removeItem(this.getProjectsCacheKey());
+      return false;
+    }
+  }
+
+  /**
+   * Persists the current validated projects to localStorage.
+   * Called after validation completes or profiles update.
+   */
+  private saveProjectsToCache(): void {
+    try {
+      const projects = this._allProjects().filter(p => p.verified);
+      if (projects.length === 0) return;
+
+      // Strip stats (they change frequently) and keep essential data small
+      const toCache = projects.map(p => ({
+        ...p,
+        stats: undefined,
+      }));
+      localStorage.setItem(this.getProjectsCacheKey(), JSON.stringify(toCache));
+    } catch {
+      // localStorage full — silently fail
+    }
   }
 
   private loadIndexerConfig(): void {
@@ -483,6 +545,12 @@ export class IndexerService {
    * compatible API, paginating with ?after_txid= as needed.
    */
   private async fetchMempoolAddressTxs(address: string): Promise<MempoolTx[]> {
+    // Check in-memory cache first
+    const cached = this.mempoolTxCache.get(address);
+    if (cached && (Date.now() - cached.timestamp) < this.MEMPOOL_CACHE_TTL_MS) {
+      return cached.txs;
+    }
+
     const all: MempoolTx[] = [];
     let lastTxId: string | undefined;
 
@@ -504,6 +572,11 @@ export class IndexerService {
         console.warn('[Angor Debug] fetchMempoolAddressTxs error:', err);
         break;
       }
+    }
+
+    // Cache the result for reuse by stats loading
+    if (all.length > 0) {
+      this.mempoolTxCache.set(address, { txs: all, timestamp: Date.now() });
     }
     return all;
   }
@@ -581,9 +654,6 @@ export class IndexerService {
 
     this._allProjects.update((projects) =>
       projects.map((project) => {
-        // Match by the project's Nostr pubkey (from details) since
-        // event.pubkey is a 64-char Nostr hex key, not the 66-char
-        // Bitcoin founderKey.
         if (project.details?.nostrPubKey === pubkey) {
           if (
             !project.metadata_created_at ||
@@ -599,6 +669,9 @@ export class IndexerService {
         return project;
       })
     );
+
+    // Persist updated metadata to cache for instant display on refresh
+    this.saveProjectsToCache();
   }
 
   /**
@@ -778,73 +851,91 @@ export class IndexerService {
           return;
         }
 
-        // Step 3: Optimistically add projects to the view immediately.
-        // Apply hub mode filtering before showing.
-        const optimisticProjects: IndexedProject[] = [];
-
-        for (const { event, details } of candidateEvents) {
+        // Step 3: Apply hub mode filtering.
+        const filteredCandidates = candidateEvents.filter(({ details }) => {
           const nostrPubKey = details.nostrPubKey;
           if (nostrPubKey && !this.hubConfig.shouldShowProject(nostrPubKey)) {
+            return false;
+          }
+          return true;
+        });
+
+        const hubModeRejected = candidateEvents.length - filteredCandidates.length;
+        console.log(`[Angor Debug] Hub mode filter: ${candidateEvents.length} candidates → ${filteredCandidates.length} (hubMode=${this.hubConfig.hubMode()}, ${hubModeRejected} rejected)`);
+
+        if (filteredCandidates.length === 0) {
+          if (!this.totalProjectsFetched) {
+            emptyBatchCount++;
             continue;
           }
-
-          optimisticProjects.push({
-            founderKey: '',
-            nostrEventId: event.id,
-            projectIdentifier: details.projectIdentifier,
-            createdOnBlock: 0,
-            trxId: '',
-            details,
-            details_created_at: event.created_at,
-            verified: false,
-            metadata: undefined,
-            metadata_created_at: undefined,
-            stats: undefined,
-            content: undefined,
-            content_created_at: undefined,
-            members: undefined,
-            members_created_at: undefined,
-            media: undefined,
-            media_created_at: undefined,
-            externalIdentities: undefined,
-            externalIdentities_created_at: undefined,
-          });
+          return;
         }
 
-        const hubModeRejected = candidateEvents.length - optimisticProjects.length;
-        console.log(`[Angor Debug] Hub mode filter: ${candidateEvents.length} candidates → ${optimisticProjects.length} optimistic (hubMode=${this.hubConfig.hubMode()}, ${hubModeRejected} rejected)`);
+        // Step 4: Separate cached-valid projects (show instantly) from uncached (validate first).
+        const instantProjects: IndexedProject[] = [];
+        const toValidate: { event: NDKEvent; details: ProjectUpdate }[] = [];
 
-        if (optimisticProjects.length > 0) {
-          // Add to the view right away — the user sees cards immediately
+        for (const candidate of filteredCandidates) {
+          const { event, details } = candidate;
+          const cached = this.verification.getCachedValidation(details.projectIdentifier);
+          if (cached && cached.nostrEventId?.toLowerCase() === event.id?.toLowerCase()) {
+            // Already validated on-chain — show immediately
+            instantProjects.push({
+              founderKey: cached.founderKey,
+              nostrEventId: cached.nostrEventId,
+              projectIdentifier: details.projectIdentifier,
+              createdOnBlock: cached.createdOnBlock,
+              trxId: cached.trxId,
+              details,
+              details_created_at: event.created_at,
+              verified: true,
+              metadata: undefined,
+              metadata_created_at: undefined,
+              stats: undefined,
+              content: undefined,
+              content_created_at: undefined,
+              members: undefined,
+              members_created_at: undefined,
+              media: undefined,
+              media_created_at: undefined,
+              externalIdentities: undefined,
+              externalIdentities_created_at: undefined,
+            });
+          } else {
+            toValidate.push(candidate);
+          }
+        }
+
+        // Show cached projects immediately
+        if (instantProjects.length > 0) {
           this._allProjects.update((existing) => {
             const merged = [...existing];
             const ids = new Set(existing.map(p => p.projectIdentifier));
-
-            for (const project of optimisticProjects) {
+            for (const project of instantProjects) {
               if (!ids.has(project.projectIdentifier)) {
                 merged.push(project);
                 ids.add(project.projectIdentifier);
               }
             }
-
             return merged;
           });
+          console.log(`[Angor Debug] Instant (cached) add: ${instantProjects.length} projects, total now ${this._allProjects().length}`);
 
-          console.log(`[Angor Debug] Optimistic add complete: _allProjects total now ${this._allProjects().length}`);
-
-          // Fetch profiles from Nostr immediately (for images/names)
-          const nostrPubKeys = optimisticProjects
+          // Fetch profiles for instant projects
+          const nostrPubKeys = instantProjects
             .map(p => p.details?.nostrPubKey)
             .filter((k): k is string => !!k);
-
           if (nostrPubKeys.length > 0) {
             this.relay.fetchProfile(nostrPubKeys);
           }
         }
 
-        // Step 4: Validate each project against the indexer in the background.
-        // Invalid projects are removed from the view.
-        this.validateProjectsInBackground(candidateEvents, optimisticProjects);
+        // Step 5: Validate uncached projects in background — only add them after validation passes.
+        // Show skeleton placeholders while validating.
+        if (toValidate.length > 0) {
+          this.validatingCount.update(c => c + toValidate.length);
+          this.validateAndAddProjects(toValidate);
+        }
 
         // Found candidates — exit the loop
         return;
@@ -861,127 +952,102 @@ export class IndexerService {
   }
 
   /**
-   * Validates optimistically-displayed projects against the blockchain.
-   * Runs in the background after projects are already shown to the user.
-   * Removes projects that fail validation and enriches valid ones with
-   * on-chain data (founderKey, trxId, createdOnBlock).
-   *
-   * Uses the mempool.space-compatible API (/api/v1/address/{address}/txs)
-   * to validate each project individually, replacing the dead Angor list API.
-   * Cached projects skip the API call entirely.
-   *
-   * Mirrors MempoolIndexerAngorApi.GetProjectByIdAsync (ReadFromAngorApi=false).
+   * Validates uncached projects against the blockchain and adds valid ones to the view.
+   * Projects that fail validation are simply not added (no more disappearing).
+   * Runs in the background after cached projects are already shown.
    */
-  private async validateProjectsInBackground(
-    candidateEvents: { event: NDKEvent; details: ProjectUpdate }[],
-    optimisticProjects: IndexedProject[]
+  private async validateAndAddProjects(
+    candidates: { event: NDKEvent; details: ProjectUpdate }[]
   ): Promise<void> {
-    const optimisticIds = new Set(optimisticProjects.map(p => p.projectIdentifier));
-    console.log(`[Angor Debug] validateProjectsInBackground: validating ${optimisticIds.size} projects via mempool API`);
+    console.log(`[Angor Debug] validateAndAddProjects: validating ${candidates.length} projects via mempool API`);
 
-    // Validate each project in parallel — cached projects skip the network call.
     const results = await Promise.all(
-      candidateEvents
-        .filter(({ details }) => optimisticIds.has(details.projectIdentifier))
-        .map(async ({ event, details }) => {
-          const projectId = details.projectIdentifier;
+      candidates.map(async ({ event, details }) => {
+        const projectId = details.projectIdentifier;
 
-          // Check validation cache first (on-chain data is immutable)
-          const cached = this.verification.getCachedValidation(projectId);
-          if (cached) {
-            if (cached.nostrEventId?.toLowerCase() !== event.id?.toLowerCase()) {
-              console.log(`[Angor Debug] Validate ${projectId}: cached-mismatch`);
-              return { projectId, valid: false };
-            }
-            console.log(`[Angor Debug] Validate ${projectId}: cached-valid`);
-            return {
-              projectId,
-              valid: true,
-              founderKey: cached.founderKey,
-              nostrEventId: cached.nostrEventId,
-              trxId: cached.trxId,
-              createdOnBlock: cached.createdOnBlock,
-            };
-          }
+        const onChain = await this.fetchProjectFromMempool(projectId);
+        if (!onChain) {
+          console.log(`[Angor Debug] Validate ${projectId}: not-found-in-mempool`);
+          return null;
+        }
 
-          // Not cached — fetch funding info from the mempool API
-          const onChain = await this.fetchProjectFromMempool(projectId);
-          if (!onChain) {
-            console.log(`[Angor Debug] Validate ${projectId}: not-found-in-mempool`);
-            return { projectId, valid: false };
-          }
+        if (onChain.nostrEventId.toLowerCase() !== event.id?.toLowerCase()) {
+          console.log(`[Angor Debug] Validate ${projectId}: event-mismatch`);
+          return null;
+        }
 
-          // Cross-check the OP_RETURN-embedded nostrEventId with the Nostr event
-          if (onChain.nostrEventId.toLowerCase() !== event.id?.toLowerCase()) {
-            console.log(`[Angor Debug] Validate ${projectId}: event-mismatch (nostr="${event.id}" vs mempool="${onChain.nostrEventId}")`);
-            return { projectId, valid: false };
-          }
+        // Cache for future loads
+        this.verification.cacheValidation(projectId, {
+          founderKey: onChain.founderKey,
+          nostrEventId: onChain.nostrEventId,
+          trxId: onChain.trxId,
+          createdOnBlock: onChain.createdOnBlock,
+        });
 
-          // Cache the result for future loads
-          this.verification.cacheValidation(projectId, {
-            founderKey: onChain.founderKey,
-            nostrEventId: onChain.nostrEventId,
-            trxId: onChain.trxId,
-            createdOnBlock: onChain.createdOnBlock,
-          });
-
-          console.log(`[Angor Debug] Validate ${projectId}: valid`);
-          return {
-            projectId,
-            valid: true,
-            founderKey: onChain.founderKey,
-            nostrEventId: onChain.nostrEventId,
-            trxId: onChain.trxId,
-            createdOnBlock: onChain.createdOnBlock,
-          };
-        })
+        console.log(`[Angor Debug] Validate ${projectId}: valid`);
+        return {
+          event,
+          details,
+          onChain,
+        };
+      })
     );
 
-    // Collect IDs to remove and data to enrich
-    const toRemove = new Set<string>();
-    const toEnrich = new Map<string, {
-      founderKey: string;
-      nostrEventId: string;
-      trxId: string;
-      createdOnBlock: number;
-    }>();
+    // Add valid projects to the view
+    const validProjects: IndexedProject[] = [];
+    for (const result of results) {
+      if (!result) continue;
+      validProjects.push({
+        founderKey: result.onChain.founderKey,
+        nostrEventId: result.onChain.nostrEventId,
+        projectIdentifier: result.details.projectIdentifier,
+        createdOnBlock: result.onChain.createdOnBlock,
+        trxId: result.onChain.trxId,
+        details: result.details,
+        details_created_at: result.event.created_at,
+        verified: true,
+        metadata: undefined,
+        metadata_created_at: undefined,
+        stats: undefined,
+        content: undefined,
+        content_created_at: undefined,
+        members: undefined,
+        members_created_at: undefined,
+        media: undefined,
+        media_created_at: undefined,
+        externalIdentities: undefined,
+        externalIdentities_created_at: undefined,
+      });
+    }
 
-    for (const val of results) {
-      if (!val.valid) {
-        toRemove.add(val.projectId);
-      } else if (val.founderKey) {
-        toEnrich.set(val.projectId, {
-          founderKey: val.founderKey,
-          nostrEventId: val.nostrEventId!,
-          trxId: val.trxId!,
-          createdOnBlock: val.createdOnBlock!,
-        });
+    if (validProjects.length > 0) {
+      this._allProjects.update((existing) => {
+        const merged = [...existing];
+        const ids = new Set(existing.map(p => p.projectIdentifier));
+        for (const project of validProjects) {
+          if (!ids.has(project.projectIdentifier)) {
+            merged.push(project);
+            ids.add(project.projectIdentifier);
+          }
+        }
+        return merged;
+      });
+
+      // Fetch profiles for newly validated projects
+      const nostrPubKeys = validProjects
+        .map(p => p.details?.nostrPubKey)
+        .filter((k): k is string => !!k);
+      if (nostrPubKeys.length > 0) {
+        this.relay.fetchProfile(nostrPubKeys);
       }
     }
 
-    // Apply removals and enrichments in a single signal update
-    const beforeCount = this._allProjects().length;
-    if (toRemove.size > 0 || toEnrich.size > 0) {
-      this._allProjects.update((projects) =>
-        projects
-          .filter(p => !toRemove.has(p.projectIdentifier))
-          .map(p => {
-            const enrichment = toEnrich.get(p.projectIdentifier);
-            if (enrichment) {
-              return {
-                ...p,
-                founderKey: enrichment.founderKey,
-                nostrEventId: enrichment.nostrEventId,
-                trxId: enrichment.trxId,
-                createdOnBlock: enrichment.createdOnBlock,
-                verified: true,
-              };
-            }
-            return p;
-          })
-      );
-    }
-    console.log(`[Angor Debug] Validation complete: ${toRemove.size} removed, ${toEnrich.size} enriched, _allProjects ${beforeCount} → ${this._allProjects().length}`);
+    // Decrease validating count
+    this.validatingCount.update(c => Math.max(0, c - candidates.length));
+    console.log(`[Angor Debug] Validation complete: ${validProjects.length}/${candidates.length} valid, total projects now ${this._allProjects().length}`);
+
+    // Persist validated projects for instant display on next page load
+    this.saveProjectsToCache();
   }
 
   getProject(id: string): IndexedProject | undefined {
@@ -1370,7 +1436,9 @@ export class IndexerService {
     this.totalProjectsFetched = false;
     this.fetchPromise = null;
     this.loading.set(false);
+    this.validatingCount.set(0);
     this._allProjects.set([]);
+    this.mempoolTxCache.clear();
   }
 
   isComplete(): boolean {
