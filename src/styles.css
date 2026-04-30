@@ -53,8 +53,8 @@ body {
 }
 
 html.dark {
-  --scrollbar-thumb-color: rgba(255, 255, 255, 0.1); 
-  --scrollbar-thumb-hover-color: rgba(255, 255, 255, 0.25);
+  --scrollbar-thumb-color: rgba(255, 255, 255, 0.3); 
+  --scrollbar-thumb-hover-color: rgba(255, 255, 255, 0.5);
 }
 
 html {
