@@ -52,7 +52,7 @@ body {
   --scrollbar-size: 8px; 
 }
 
-html.dark {
+html:not([data-theme="light"]) {
   --scrollbar-thumb-color: rgba(255, 255, 255, 0.3); 
   --scrollbar-thumb-hover-color: rgba(255, 255, 255, 0.5);
 }
