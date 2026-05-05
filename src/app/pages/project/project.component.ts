@@ -494,9 +494,10 @@ export class ProjectComponent implements OnInit, OnDestroy {
         this.loadOnChainStats();
 
         if (!projectData.details) {
-
-          this.relay.fetchData([projectData.nostrEventId]);
-
+          // Guard: only fetch from Nostr if we have a valid event ID
+          if (projectData.nostrEventId) {
+            this.relay.fetchData([projectData.nostrEventId]);
+          }
         } else {
           this.user = new NDKUser({
             pubkey: projectData.details.nostrPubKey,
@@ -526,14 +527,22 @@ export class ProjectComponent implements OnInit, OnDestroy {
             }
 
             this.projectEvent = event;
-            projectData!.details = details;
 
+            // Update through signal to avoid closure divergence
+            const current = this.project()!;
+            current.details = details;
+            current.details_created_at = event.created_at;
 
             this.user = new NDKUser({
-              pubkey: projectData!.details.nostrPubKey,
+              pubkey: details.nostrPubKey,
               relayUrls: this.relay.relayUrls(),
             });
 
+            // Trigger signal reactivity so the template updates
+            this.project.set({ ...current });
+
+            // Re-trigger stats now that details are available
+            this.loadOnChainStats();
 
             this.relay.fetchProfile([details.nostrPubKey]);
           }
@@ -547,7 +556,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
           const update: NDKUserProfile = JSON.parse(event.content);
 
-          if (event.pubkey == projectData!.details?.nostrPubKey) {
+          const current = this.project();
+          if (event.pubkey == current?.details?.nostrPubKey) {
             if (this.profileEvent) {
               if (this.profileEvent.created_at! > event.created_at!) {
                 {
@@ -557,13 +567,16 @@ export class ProjectComponent implements OnInit, OnDestroy {
             }
 
             this.profileEvent = event;
-            projectData!.metadata = update;
+            current.metadata = update;
 
             this.title.setTitle(update.name);
 
-            projectData!.externalIdentities =
+            current.externalIdentities =
               this.utils.getExternalIdentities(event);
-            projectData!.externalIdentities_created_at = event.created_at;
+            current.externalIdentities_created_at = event.created_at;
+
+            // Trigger signal reactivity so the template updates
+            this.project.set({ ...current });
           }
         });
 
@@ -607,6 +620,9 @@ export class ProjectComponent implements OnInit, OnDestroy {
           } else {
             console.warn('Unknown tag:', tag);
           }
+
+          // Trigger signal reactivity so the template updates
+          this.project.set({ ...project });
         });
 
         this.subscriptions.push(projectSub, profileSub, contentSub);

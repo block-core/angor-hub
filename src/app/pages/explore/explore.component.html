@@ -37,17 +37,24 @@
       <div class="relative flex-grow">
         <input
           type="text"
-          placeholder="Search projects..."
+          placeholder="Search projects or enter project ID (angor1...)..."
           class="w-full h-10 pl-10 pr-10 rounded-lg bg-surface-ground focus:outline-none focus:bg-surface-ground text-sm text-text placeholder-text-secondary hover:bg-surface-hover"
           [value]="searchTerm()"
           (input)="onSearchInput($event)"
-          aria-label="Search projects"
+          (keydown.enter)="onSearchSubmit($event)"
+          aria-label="Search projects or enter project ID"
         />
         <span
           class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-base"
           >search</span
         >
-        @if (searchTerm()) {
+        @if (isSearchingProject()) {
+          <span
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-accent animate-spin"
+          >
+            <span class="material-icons text-base">autorenew</span>
+          </span>
+        } @else if (searchTerm()) {
           <button
             class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text transition-colors duration-300"
             (click)="clearSearch()"
@@ -169,6 +176,15 @@
         }
       </div>
     </div>
+
+    @if (searchError()) {
+      <div class="px-3 pb-3">
+        <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-warning/10 text-warning text-sm">
+          <span class="material-icons text-base">error_outline</span>
+          {{ searchError() }}
+        </div>
+      </div>
+    }
 
     
     @if (showMobileFilters) {

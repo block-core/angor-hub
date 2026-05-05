@@ -150,6 +150,11 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       distinctUntilChanged()
     ).subscribe((term) => {
       this.searchTerm.set(term);
+
+      // Auto-trigger project lookup when a project ID is pasted/typed
+      if (term.trim().startsWith('angor1')) {
+        this.lookupProjectById(term.trim());
+      }
     });
 
 
@@ -542,14 +547,60 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     else this.showSortDropdown = false;
   }
 
+  searchError = signal<string>('');
+  isSearchingProject = signal<boolean>(false);
+
   onSearchInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.searchSubject.next(input.value);
+    this.searchError.set('');
+  }
+
+  async onSearchSubmit(event: Event): Promise<void> {
+    event.preventDefault();
+    const term = this.searchTerm().trim();
+    if (!term) return;
+
+    if (!term.startsWith('angor1')) {
+      return;
+    }
+
+    await this.lookupProjectById(term);
+  }
+
+  private async lookupProjectById(term: string): Promise<void> {
+    if (this.isSearchingProject()) return;
+
+    this.searchError.set('');
+    this.isSearchingProject.set(true);
+
+    try {
+      // First check if we already have it loaded
+      const project = this.indexer.getProject(term);
+      if (project) {
+        this.router.navigate(['/project', term]);
+        return;
+      }
+
+      // Fetch from blockchain
+      const fetched = await this.indexer.fetchProject(term);
+      if (fetched) {
+        this.router.navigate(['/project', term]);
+      } else {
+        this.searchError.set('Project not found. Please check the project ID and try again.');
+      }
+    } catch (error) {
+      console.error('Error searching for project:', error);
+      this.searchError.set('Failed to look up project. Please try again.');
+    } finally {
+      this.isSearchingProject.set(false);
+    }
   }
 
   clearSearch(): void {
     this.searchTerm.set('');
     this.searchSubject.next('');
+    this.searchError.set('');
   }
 
   getRandomColor(seed: string): string {
