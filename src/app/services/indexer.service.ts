@@ -741,6 +741,18 @@ export class IndexerService {
     }
   }
 
+  /**
+   * Fetches the newest projects from Nostr, starting from the top.
+   * Unlike fetchProjects / loadMore, this always resets the pagination
+   * cursor so newly created projects are discovered even when cached
+   * projects are already loaded.
+   */
+  async fetchLatestProjects(): Promise<void> {
+    this.oldestEventTimestamp = undefined;
+    this.totalProjectsFetched = false;
+    await this.fetchProjects();
+  }
+
   private async _doFetchProjects(): Promise<void> {
     // Maximum number of consecutive empty batches before giving up.
     // Prevents infinite loops when relays return only non-project events.
