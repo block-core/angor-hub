@@ -116,7 +116,14 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
 
-    if (sort === 'funding') {
+    if (sort === 'default') {
+      // Chronological order: newest first by Nostr event creation time
+      filtered = [...filtered].sort((a, b) => {
+        const timeA = a.details_created_at || 0;
+        const timeB = b.details_created_at || 0;
+        return timeB - timeA;
+      });
+    } else if (sort === 'funding') {
       filtered = [...filtered].sort((a, b) => {
         const percentA = this.getFundingPercentage(a);
         const percentB = this.getFundingPercentage(b);
@@ -245,6 +252,9 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       console.log(`[Angor Debug] ExploreComponent.ngOnInit: hasState=${this.exploreState.hasState}, projects.length=${this.indexer.projects().length} → restoring cached state, offset=${this.exploreState.offset}`);
       this.indexer.restoreOffset(this.exploreState.offset);
       this.observeProjectCards();
+
+      // Still fetch latest data so newly created projects appear
+      this.indexer.fetchLatestProjects();
     } else {
       console.log(`[Angor Debug] ExploreComponent.ngOnInit: hasState=${this.exploreState.hasState}, projects.length=${this.indexer.projects().length} → fresh fetch`);
       this.exploreState.clearState();
@@ -255,8 +265,8 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
         this.observeProjectCards();
       }
 
-      // Always fetch fresh data (will deduplicate against cached projects)
-      await this.indexer.fetchProjects();
+      // Always fetch fresh data from newest (will deduplicate against cached projects)
+      await this.indexer.fetchLatestProjects();
       this.observeProjectCards();
     }
   }
