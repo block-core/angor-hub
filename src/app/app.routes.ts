@@ -5,6 +5,7 @@ import { ProjectComponent } from './pages/project/project.component';
 import { SettingsComponent } from './pages/settings/settings.component';
 import { ReportComponent } from './pages/report/report.component';
 import { AdminComponent } from './pages/admin/admin.component';
+import { DownloadComponent } from './pages/download/download.component';
 
 export const routes: Routes = [
   {
@@ -42,6 +43,12 @@ export const routes: Routes = [
     component: AdminComponent,
     title: 'Admin - Manage Deny Lists',
     data: { animation: 'AdminPage' } 
+  },
+  {
+    path: 'app',
+    component: DownloadComponent,
+    title: 'Download Angor',
+    data: { animation: 'DownloadPage' } 
   },
   {
     path: '**',
