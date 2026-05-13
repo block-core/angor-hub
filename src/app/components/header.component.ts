@@ -94,7 +94,7 @@ import { ThemeService } from '../services/theme.service';
             <a routerLink="/explore" routerLinkActive="bg-surface-hover text-accent" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
               Projects
             </a>
-            <a href="https://angor.io/app" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors">
+            <a routerLink="/app" routerLinkActive="bg-surface-hover text-accent" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
               App
             </a>
             <a href="https://profile.angor.io/angor-profile/" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors">
@@ -139,7 +139,7 @@ import { ThemeService } from '../services/theme.service';
             <a routerLink="/explore" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
               Projects
             </a>
-            <a href="https://angor.io/app" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
+            <a routerLink="/app" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
               App
             </a>
             <a href="https://profile.angor.io/angor-profile/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">

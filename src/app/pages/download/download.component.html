@@ -1,0 +1,53 @@
+<section class="download-section">
+  <!-- Background pattern -->
+  <div class="download-background"></div>
+
+  <div class="download-content">
+    <!-- App icon -->
+    <img src="/images/app-icon-dark-mode.png" alt="Angor" class="download-logo" />
+
+    <!-- Title -->
+    <h1 class="download-headline">
+      Download <span class="emphasis">Angor</span>
+    </h1>
+
+    <!-- Security advisory -->
+    <div class="security-badge">
+      <span class="material-icons security-icon">verified_user</span>
+      <span>We advise downloading the app for the best security</span>
+    </div>
+
+    <!-- Primary download button -->
+    <a [href]="primaryDownloadUrl()" target="_blank" rel="noopener noreferrer" class="btn-download">
+      <span class="material-icons">download</span>
+      <span>Download for {{ detectedPlatform() }}</span>
+    </a>
+
+    <!-- Alternative platforms -->
+    <div class="alt-platforms">
+      <p class="alt-label">Not on {{ detectedPlatform() }}?</p>
+      <div class="alt-links">
+        @for (platform of alternativePlatforms(); track platform.name) {
+          <a [href]="platform.url" target="_blank" rel="noopener noreferrer" class="alt-link">
+            {{ platform.name }}
+          </a>
+        }
+      </div>
+    </div>
+
+    <!-- Android / Mobile section -->
+    <div class="mobile-section">
+      <h2 class="mobile-heading">Android</h2>
+      <div class="mobile-links">
+        <a href="https://github.com/block-core/angor/releases" target="_blank" rel="noopener noreferrer" class="btn-secondary-download">
+          <span class="material-icons">code</span>
+          GitHub Releases
+        </a>
+        <a href="https://zapstore.dev" target="_blank" rel="noopener noreferrer" class="btn-secondary-download">
+          <span class="material-icons">store</span>
+          Zapstore
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
