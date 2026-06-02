@@ -245,13 +245,13 @@
               }
 
               <!-- Invest Button -->
-              <div class="mt-6">
+              <div class="mt-6 flex flex-wrap gap-3">
                 <button
                   class="w-full sm:w-auto px-8 py-3 text-base font-bold text-white bg-accent rounded-xl shadow-lg transition-all duration-300 hover:bg-accent-dark hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed"
                   [disabled]="!canInvest()"
                   (click)="canInvest() && openInvestWindow()"
                 >
-                  @if (isProjectEnded()) {
+                  @if (isProjectEnded() && project()?.details?.projectType !== 1) {
                     <span class="flex items-center justify-center gap-2">
                       <span class="material-icons text-lg">timer_off</span>
                       Ended {{ project()?.details?.expiryDate ?? 0 | ago }}
@@ -259,10 +259,26 @@
                   } @else {
                     <span class="flex items-center justify-center gap-2">
                       <span class="material-icons text-lg">account_balance_wallet</span>
-                      Invest With Angor Wallet
+                      @if (project()?.details?.projectType === 1) {
+                        Fund With Angor Wallet
+                      } @else {
+                        Invest With Angor Wallet
+                      }
                     </span>
                   }
                 </button>
+
+                @if (projectNpub()) {
+                  <a
+                    [href]="'https://nostria.app/p/' + projectNpub()"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 text-base font-bold text-text bg-surface-card border border-border rounded-xl shadow-lg transition-all duration-300 hover:bg-surface-hover hover:shadow-xl"
+                  >
+                    <span class="material-icons text-lg">open_in_new</span>
+                    Open in Nostr
+                  </a>
+                }
               </div>
             </div>
           </div>
@@ -409,9 +425,11 @@
                   <span class="text-sm font-normal text-text-secondary">{{ networkService.isMain() ? 'BTC' : 'TBTC' }}</span>
                 </div>
               </div>
-              <div class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 text-sm font-bold">
-                {{ getFundingPercentage() }}%
-              </div>
+              @if (project()?.details?.targetAmount) {
+                <div class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 text-sm font-bold">
+                  {{ getFundingPercentage() }}%
+                </div>
+              }
             </div>
             <div class="relative w-full h-2 bg-surface-hover rounded-full overflow-hidden">
               <div
@@ -419,9 +437,15 @@
                 [style.width.%]="getFundingPercentage() > 100 ? 100 : getFundingPercentage()"
               ></div>
             </div>
-            <div class="text-xs text-text-secondary mt-2">
-              Goal: {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
-            </div>
+            @if (project()?.details?.targetAmount) {
+              <div class="text-xs text-text-secondary mt-2">
+                Goal: {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
+              </div>
+            } @else {
+              <div class="text-xs text-text-secondary mt-2">
+                No target goal set
+              </div>
+            }
           </div>
 
           <!-- Investors -->
@@ -564,14 +588,16 @@
                   <div class="text-sm font-semibold">{{ formatDate(project()?.details?.startDate) }}</div>
                 </div>
               </div>
-              <div class="flex items-start gap-3">
-                <span class="material-icons text-accent text-base mt-0.5">event_busy</span>
-                <div>
-                  <div class="text-sm text-text-secondary">End Date</div>
-                  <div class="text-sm font-semibold">{{ formatDate(project()?.details?.expiryDate) }}</div>
+              @if (project()?.details?.projectType !== 1) {
+                <div class="flex items-start gap-3">
+                  <span class="material-icons text-accent text-base mt-0.5">event_busy</span>
+                  <div>
+                    <div class="text-sm text-text-secondary">End Date</div>
+                    <div class="text-sm font-semibold">{{ formatDate(project()?.details?.expiryDate) }}</div>
+                  </div>
                 </div>
-              </div>
-              @if (projectDuration()) {
+              }
+              @if (projectDuration() && project()?.details?.projectType !== 1) {
                 <div class="flex items-start gap-3">
                   <span class="material-icons text-accent text-base mt-0.5">schedule</span>
                   <div>

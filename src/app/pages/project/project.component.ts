@@ -773,7 +773,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
   getFundingPercentage(): number {
     const amountInvested = this.project()?.stats?.amountInvested ?? 0;
-    const targetAmount = this.project()?.details?.targetAmount ?? 1;
+    const targetAmount = this.project()?.details?.targetAmount;
+    if (!targetAmount || targetAmount <= 0) return 0;
     return Number(((amountInvested / targetAmount) * 100).toFixed(1));
   }
 
@@ -784,12 +785,26 @@ export class ProjectComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const baseUrl = this.networkService.isMain()
-      ? 'https://beta.angor.io/'
-      : 'https://test.angor.io/';
+    // Try to open the native Angor app on mobile via deep link
+    if (this.isMobile()) {
+      const deepLink = `angor://view/${projectId}`;
+      const timeout = setTimeout(() => {
+        // If app didn't open, navigate to download page
+        this.router.navigate(['/app']);
+      }, 1500);
 
-    const url = `${baseUrl}view/${projectId}`;
-    window.open(url, '_blank');
+      window.addEventListener('blur', () => clearTimeout(timeout), { once: true });
+      window.location.href = deepLink;
+      return;
+    }
+
+    // On desktop, navigate to the download page
+    this.router.navigate(['/app']);
+  }
+
+  private isMobile(): boolean {
+    const ua = navigator.userAgent.toLowerCase();
+    return /android|iphone|ipad|ipod|mobile/.test(ua);
   }
 
   getWithdrawnPercentage(): number {

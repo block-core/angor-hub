@@ -406,7 +406,9 @@
 
               <div class="flex items-center gap-2 text-xs text-text-secondary mb-3">
                 <span class="material-icons text-sm text-primary">event</span>
-                @if (isProjectNotStarted(project.details?.startDate)) {
+                @if (project.details?.projectType === 1) {
+                  <span>Open for funding</span>
+                } @else if (isProjectNotStarted(project.details?.startDate)) {
                   @if (project.details) {
                     <span>Investment starts {{ project.details.startDate | ago }}</span>
                   }
@@ -436,11 +438,13 @@
                   <div class="flex items-center gap-2 text-text-secondary">
                     <span class="material-icons text-sm text-primary">people</span>
                     <span class="text-text">{{ project.stats?.investorCount ?? 0 }}</span>
-                    Investors
+                    {{ project.details?.projectType === 1 ? 'Funders' : 'Investors' }}
                   </div>
                   <div class="text-text-secondary">
                     <span class="text-text">{{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}</span>
-                    / {{ bitcoin.toBTC(project.details?.targetAmount ?? 0) }}
+                    @if (project.details?.targetAmount) {
+                      / {{ bitcoin.toBTC(project.details?.targetAmount ?? 0) }}
+                    }
                     {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                   </div>
                 </div>
