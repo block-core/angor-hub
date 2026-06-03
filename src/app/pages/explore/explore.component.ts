@@ -7,6 +7,7 @@ import { UtilsService } from '../../services/utils.service';
 import { TitleService } from '../../services/title.service';
 import { MetaService } from '../../services/meta.service';
 import { DenyService } from '../../services/deny.service';
+import { profileFromEvent } from '@nostr-dev-kit/ndk';
 import { RouterLink } from '@angular/router';
 import { ExploreStateService } from '../../services/explore-state.service';
 import { Router, NavigationEnd } from '@angular/router';
@@ -181,7 +182,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     
     this.relay.profileUpdates.subscribe((event) => {
       if (!event) return;
-      const update = JSON.parse(event.content);
+      const update = profileFromEvent(event);
       const id = event.pubkey;
       const project = this.indexer.projects().find((p) => p.details?.nostrPubKey === id);
 

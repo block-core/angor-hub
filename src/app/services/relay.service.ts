@@ -174,9 +174,9 @@ export class RelayService {
 
       if (event) {
         const projectDetails = JSON.parse(event.content);
+        this.projectUpdates.next(event);
         this.fetchProfile([projectDetails.nostrPubKey]);
         this.fetchContent([projectDetails.nostrPubKey]);
-        this.projectUpdates.next(event);
       }
     } catch (error) {
       console.error('Error fetching profiles:', error);

@@ -16,6 +16,7 @@ import {
   NDKKind,
   NDKUser,
   NDKUserProfile,
+  profileFromEvent,
 } from '@nostr-dev-kit/ndk';
 import { AgoPipe } from '../../pipes/ago.pipe';
 import { ImagePopupComponent } from '../../components/image-popup.component';
@@ -554,6 +555,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
             this.loadOnChainStats();
 
             this.relay.fetchProfile([details.nostrPubKey]);
+            this.relay.fetchContent([details.nostrPubKey]);
           }
         });
 
@@ -563,7 +565,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
             return;
           }
 
-          const update: NDKUserProfile = JSON.parse(event.content);
+          const update: NDKUserProfile = profileFromEvent(event);
 
           const current = this.project();
           if (event.pubkey == current?.details?.nostrPubKey) {

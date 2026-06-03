@@ -1,6 +1,6 @@
 import { Injectable, signal, inject, computed } from '@angular/core';
 import { ProjectUpdate, RelayService } from './relay.service';
-import { NDKEvent, NDKUserProfile } from '@nostr-dev-kit/ndk';
+import { NDKEvent, NDKUserProfile, profileFromEvent } from '@nostr-dev-kit/ndk';
 import { NetworkService } from './network.service';
 import { DenyService } from './deny.service';
 import { FeaturedService } from './featured.service';
@@ -650,7 +650,7 @@ export class IndexerService {
 
   private updateProjectMetadata(event: NDKEvent) {
     const pubkey = event.pubkey;
-    const metadata = JSON.parse(event.content) as NDKUserProfile;
+    const metadata = profileFromEvent(event);
 
     this._allProjects.update((projects) =>
       projects.map((project) => {
