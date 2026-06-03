@@ -269,15 +269,32 @@
                 </button>
 
                 @if (projectNpub()) {
-                  <a
-                    [href]="'https://nostria.app/p/' + projectNpub()"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 text-base font-bold text-text bg-surface-card border border-border rounded-xl shadow-lg transition-all duration-300 hover:bg-surface-hover hover:shadow-xl"
-                  >
-                    <span class="material-icons text-lg">open_in_new</span>
-                    Open in Nostr
-                  </a>
+                  <div class="relative">
+                    <button
+                      (click)="showNostrPopup.set(!showNostrPopup())"
+                      class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 text-base font-bold text-text bg-surface-card border border-border rounded-xl shadow-lg transition-all duration-300 hover:bg-surface-hover hover:shadow-xl"
+                    >
+                      <span class="material-icons text-lg">open_in_new</span>
+                      Open in Nostr
+                    </button>
+
+                    @if (showNostrPopup()) {
+                      <div class="absolute right-0 mt-2 w-56 bg-surface-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
+                        @for (client of nostrClients(); track client.name) {
+                          <a
+                            [href]="client.url"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            (click)="showNostrPopup.set(false)"
+                            class="flex items-center gap-3 px-4 py-3 text-text hover:bg-surface-hover transition-colors duration-200"
+                          >
+                            <span class="material-icons text-lg text-accent">{{ client.icon }}</span>
+                            <span class="font-medium">{{ client.name }}</span>
+                          </a>
+                        }
+                      </div>
+                    }
+                  </div>
                 }
               </div>
             </div>

@@ -293,6 +293,20 @@ export class ProjectComponent implements OnInit, OnDestroy {
     }
   });
 
+  public showNostrPopup = signal(false);
+
+  public nostrClients = computed(() => {
+    const npub = this.projectNpub();
+    if (!npub) return [];
+    return [
+      { name: 'Nostria', icon: 'public', url: `https://nostria.app/p/${npub}` },
+      { name: 'Primal', icon: 'diamond', url: `https://primal.net/p/${npub}` },
+      { name: 'Snort', icon: 'bolt', url: `https://snort.social/p/${npub}` },
+      { name: 'Coracle', icon: 'water', url: `https://coracle.social/${npub}` },
+      { name: 'Amethyst', icon: 'smartphone', url: `https://njump.me/${npub}` },
+    ];
+  });
+
   async setActiveTab(tabId: string) {
     this.activeTab = tabId;
     if (tabId === 'updates' && this.updates().length === 0 && !this.loadingUpdates() && !this.errorUpdates()) {
