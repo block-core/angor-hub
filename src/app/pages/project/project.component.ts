@@ -504,9 +504,10 @@ export class ProjectComponent implements OnInit, OnDestroy {
             relayUrls: this.relay.relayUrls(),
           });
 
-          if (!projectData.content) {
-            this.relay.fetchContent([projectData.details.nostrPubKey]);
-          }
+          // Always fetch latest profile and content from relays
+          // so updated images/metadata are picked up.
+          this.relay.fetchProfile([projectData.details.nostrPubKey]);
+          this.relay.fetchContent([projectData.details.nostrPubKey]);
         }
 
 
@@ -568,6 +569,12 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
             this.profileEvent = event;
             current.metadata = update;
+
+            // Reset image loading state so updated images are displayed
+            this.failedBannerImage.set(false);
+            this.failedProfileImage.set(false);
+            this.bannerLoaded.set(false);
+            this.profileLoaded.set(false);
 
             this.title.setTitle(update.name);
 
