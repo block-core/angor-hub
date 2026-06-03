@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 #  Build Angular app
 FROM node:22-alpine AS builder
 
