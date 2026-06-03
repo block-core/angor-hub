@@ -303,6 +303,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
       { name: 'Primal', icon: 'diamond', url: `https://primal.net/p/${npub}` },
       { name: 'Snort', icon: 'bolt', url: `https://snort.social/p/${npub}` },
       { name: 'Coracle', icon: 'water', url: `https://coracle.social/${npub}` },
+      { name: 'YakiHonne', icon: 'local_fire_department', url: `https://yakihonne.com/users/${npub}` },
       { name: 'Amethyst', icon: 'smartphone', url: `https://njump.me/${npub}` },
     ];
   });
