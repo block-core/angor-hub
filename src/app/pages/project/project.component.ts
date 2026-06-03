@@ -303,7 +303,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
       { name: 'Primal', icon: 'diamond', url: `https://primal.net/p/${npub}` },
       { name: 'Snort', icon: 'bolt', url: `https://snort.social/p/${npub}` },
       { name: 'Coracle', icon: 'water', url: `https://coracle.social/${npub}` },
-      { name: 'YakiHonne', icon: 'local_fire_department', url: `https://yakihonne.com/users/${npub}` },
+      { name: 'YakiHonne', icon: 'local_fire_department', url: `https://yakihonne.com/profile/${npub}` },
       { name: 'Amethyst', icon: 'smartphone', url: `https://njump.me/${npub}` },
     ];
   });
@@ -510,19 +510,12 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
         if (!projectData.details) {
           // Guard: only fetch from Nostr if we have a valid event ID
-          if (projectData.nostrEventId) {
-            this.relay.fetchData([projectData.nostrEventId]);
-          }
+          // Note: actual fetchData call is deferred until after subscriptions are set up
         } else {
           this.user = new NDKUser({
             pubkey: projectData.details.nostrPubKey,
             relayUrls: this.relay.relayUrls(),
           });
-
-          // Always fetch latest profile and content from relays
-          // so updated images/metadata are picked up.
-          this.relay.fetchProfile([projectData.details.nostrPubKey]);
-          this.relay.fetchContent([projectData.details.nostrPubKey]);
         }
 
 
@@ -650,6 +643,17 @@ export class ProjectComponent implements OnInit, OnDestroy {
         this.subscriptions.push(projectSub, profileSub, contentSub);
 
         console.log('Subscriptions: ', this.subscriptions);
+
+        // Fetch data from relays AFTER subscriptions are set up
+        // to avoid race conditions where events arrive before we're listening.
+        if (!projectData.details) {
+          if (projectData.nostrEventId) {
+            this.relay.fetchData([projectData.nostrEventId]);
+          }
+        } else {
+          this.relay.fetchProfile([projectData.details.nostrPubKey]);
+          this.relay.fetchContent([projectData.details.nostrPubKey]);
+        }
 
         if (this.project()?.metadata?.name) {
           this.title.setTitle(this.project()?.metadata?.name);
