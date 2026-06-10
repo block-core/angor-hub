@@ -284,6 +284,12 @@ export class ProjectComponent implements OnInit, OnDestroy {
     }
   });
 
+  public payoutDate = computed<number | undefined>(() => {
+    const details = this.project()?.details;
+    if (details?.projectType !== 1) return undefined;
+    return details.stages?.[0]?.releaseDate;
+  });
+
   public projectNpub = computed(() => {
     const hex = this.project()?.details?.nostrPubKey;
     if (!hex) return null;

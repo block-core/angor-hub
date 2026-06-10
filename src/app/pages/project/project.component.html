@@ -472,7 +472,7 @@
                 <span class="material-icons text-purple-500">people</span>
               </div>
               <div class="flex-1">
-                <div class="text-sm text-text-secondary">Investors</div>
+                <div class="text-sm text-text-secondary">{{ project()?.details?.projectType === 1 ? 'Funders' : 'Investors' }}</div>
                 <div class="text-xl font-bold">{{ project()?.stats?.investorCount || 0 }}</div>
               </div>
             </div>
@@ -533,7 +533,7 @@
             <div class="bg-surface-card rounded-2xl shadow-md p-4">
               <h3 class="text-lg font-bold mb-4 pb-3 border-b border-border flex items-center gap-2">
                 <span class="material-icons text-purple-500">groups</span>
-                Investor Transactions
+                {{ project()?.details?.projectType === 1 ? 'Funder Transactions' : 'Investor Transactions' }}
               </h3>
               <div class="space-y-3 max-h-[400px] overflow-y-auto">
                 @for (investment of getSortedInvestments(); track investment.transactionId) {
@@ -605,6 +605,15 @@
                   <div class="text-sm font-semibold">{{ formatDate(project()?.details?.startDate) }}</div>
                 </div>
               </div>
+              @if (payoutDate(); as payout) {
+                <div class="flex items-start gap-3">
+                  <span class="material-icons text-accent text-base mt-0.5">payments</span>
+                  <div>
+                    <div class="text-sm text-text-secondary">Payout Date</div>
+                    <div class="text-sm font-semibold">{{ formatDate(payout) }}</div>
+                  </div>
+                </div>
+              }
               @if (project()?.details?.projectType !== 1) {
                 <div class="flex items-start gap-3">
                   <span class="material-icons text-accent text-base mt-0.5">event_busy</span>
