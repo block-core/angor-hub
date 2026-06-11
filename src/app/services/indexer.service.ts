@@ -184,7 +184,8 @@ export class IndexerService {
       { url: 'https://electrs.angor.online/', isPrimary: false }
     ],
     testnet: [
-      { url: 'https://signet.angor.online/', isPrimary: true }
+      { url: 'https://signet.angor.online/', isPrimary: true },
+      { url: 'https://test.indexer.angor.io/', isPrimary: false }
     ]
   });
 
@@ -284,7 +285,10 @@ export class IndexerService {
         { url: 'https://fulcrum.angor.online/', isPrimary: true },
         { url: 'https://electrs.angor.online/', isPrimary: false }
       ],
-      testnet: [{ url: 'https://signet.angor.online/', isPrimary: true }]
+      testnet: [
+        { url: 'https://signet.angor.online/', isPrimary: true },
+        { url: 'https://test.indexer.angor.io/', isPrimary: false }
+      ]
     };
   }
 
@@ -1128,7 +1132,7 @@ export class IndexerService {
    *
    * Mirrors MempoolIndexerAngorApi.GetProjectStatsAsync (ReadFromAngorApi=false).
    */
-  async fetchProjectStats(id: string): Promise<ProjectStats | null> {
+  async fetchProjectStats(id: string, knownTrxId?: string): Promise<ProjectStats | null> {
     try {
       this.loading.set(true);
       const address = this.convertAngorKeyToBitcoinAddress(id);
@@ -1151,6 +1155,11 @@ export class IndexerService {
           fundingTxId = tx.txid;
           break;
         }
+      }
+
+      // Fallback: use cached trxId when funding tx is missing from address list
+      if (!fundingTxId && knownTrxId) {
+        fundingTxId = knownTrxId;
       }
       if (!fundingTxId) return null;
 
@@ -1203,7 +1212,8 @@ export class IndexerService {
   async fetchProjectInvestments(
     projectId: string,
     offset = 0,
-    limit = 10
+    limit = 10,
+    knownTrxId?: string
   ): Promise<ProjectInvestment[]> {
     try {
       const address = this.convertAngorKeyToBitcoinAddress(projectId);
@@ -1226,6 +1236,11 @@ export class IndexerService {
           fundingTxId = tx.txid;
           break;
         }
+      }
+
+      // Fallback: use cached trxId when funding tx is missing from address list
+      if (!fundingTxId && knownTrxId) {
+        fundingTxId = knownTrxId;
       }
       if (!fundingTxId) return [];
 
