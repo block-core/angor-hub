@@ -440,7 +440,12 @@ export class InvestorService {
    * This mirrors the logic in the Angor C# MempoolIndexerMappers when
    * ReadFromAngorApi is false.
    */
-  async getProjectOnChainStats(projectId: string, details?: ProjectUpdate): Promise<OnChainProjectStats | null> {
+  async getProjectOnChainStats(
+    projectId: string,
+    details?: ProjectUpdate,
+    knownTrxId?: string,
+    knownFounderKey?: string
+  ): Promise<OnChainProjectStats | null> {
     try {
       const address = this.convertAngorKeyToBitcoinAddress(projectId);
       console.log(`[InvestorService] Project ${projectId} -> address ${address}`);
@@ -475,6 +480,16 @@ export class InvestorService {
           console.log(`[InvestorService] Found funding tx: ${tx.txid}, founder: ${founderKey}`);
           break;
         }
+      }
+
+      // Fallback: use cached on-chain data when the funding tx is missing from
+      // the address transaction list (e.g. indexer only returns recent txs).
+      if (!fundingTx && knownTrxId) {
+        console.log(`[InvestorService] Funding tx not in address list, using cached trxId: ${knownTrxId}`);
+        fundingTx = { txid: knownTrxId } as MempoolTransaction;
+      }
+      if (!founderKey && knownFounderKey) {
+        founderKey = knownFounderKey;
       }
 
       if (!fundingTx || !founderKey) {

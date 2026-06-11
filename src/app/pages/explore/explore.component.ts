@@ -387,7 +387,10 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private async loadProjectStats(project: any) {
     try {
-      project.stats = await this.indexer.fetchProjectStats(project.projectIdentifier);
+      project.stats = await this.indexer.fetchProjectStats(
+        project.projectIdentifier,
+        project.trxId
+      );
     } catch (error) {
       console.error('Error loading project stats:', error);
     }
