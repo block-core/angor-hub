@@ -137,9 +137,8 @@ export class IndexerService {
   private readonly LIMIT = 8;
   private indexerUrl = 'https://signet.angor.online/';
 
-  // Mempool.space pagination — the API returns at most 25 transactions per page.
-  private readonly MEMPOOL_PAGE_SIZE = 25;
-  // Safety cap on address transaction pagination (25 × 20 = 500 txs max).
+  // Mempool.space pagination — the blockcore indexer returns at most 10 tx per page.
+  // We paginate with ?after_txid= until the response is empty or we hit the safety cap.
   private readonly MEMPOOL_MAX_PAGES = 20;
 
   // Nostr-first cursor-based pagination (using `until` timestamp)
@@ -570,7 +569,6 @@ export class IndexerService {
         const txs: MempoolTx[] = await response.json();
         if (!txs || txs.length === 0) break;
         all.push(...txs);
-        if (txs.length < this.MEMPOOL_PAGE_SIZE) break;
         lastTxId = txs[txs.length - 1].txid;
       } catch (err) {
         console.warn('[Angor Debug] fetchMempoolAddressTxs error:', err);
@@ -1132,7 +1130,7 @@ export class IndexerService {
    *
    * Mirrors MempoolIndexerAngorApi.GetProjectStatsAsync (ReadFromAngorApi=false).
    */
-  async fetchProjectStats(id: string, knownTrxId?: string): Promise<ProjectStats | null> {
+  async fetchProjectStats(id: string): Promise<ProjectStats | null> {
     try {
       this.loading.set(true);
       const address = this.convertAngorKeyToBitcoinAddress(id);
@@ -1155,11 +1153,6 @@ export class IndexerService {
           fundingTxId = tx.txid;
           break;
         }
-      }
-
-      // Fallback: use cached trxId when funding tx is missing from address list
-      if (!fundingTxId && knownTrxId) {
-        fundingTxId = knownTrxId;
       }
       if (!fundingTxId) return null;
 
@@ -1212,8 +1205,7 @@ export class IndexerService {
   async fetchProjectInvestments(
     projectId: string,
     offset = 0,
-    limit = 10,
-    knownTrxId?: string
+    limit = 10
   ): Promise<ProjectInvestment[]> {
     try {
       const address = this.convertAngorKeyToBitcoinAddress(projectId);
@@ -1236,11 +1228,6 @@ export class IndexerService {
           fundingTxId = tx.txid;
           break;
         }
-      }
-
-      // Fallback: use cached trxId when funding tx is missing from address list
-      if (!fundingTxId && knownTrxId) {
-        fundingTxId = knownTrxId;
       }
       if (!fundingTxId) return [];
 
