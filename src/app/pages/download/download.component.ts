@@ -14,23 +14,24 @@ interface PlatformLink {
   imports: [CommonModule],
   templateUrl: './download.component.html',
   styles: [`
+    /* Fill the space main leaves between the fixed header and the footer,
+       so the whole page (incl. footer) fits the viewport without scroll. */
+    :host {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
     .download-section {
       position: relative;
-      min-height: calc(100vh - 64px);
+      flex: 1 1 auto;
+      min-height: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      background-color: var(--surface-ground);
-    }
-
-    .download-background {
-      position: absolute;
-      inset: 0;
-      background-image: url('/assets/images/hero-bg-pattern.svg');
-      background-repeat: repeat;
-      background-size: 164px 164px;
-      opacity: 0.05;
+      background-color: transparent;
     }
 
     .download-content {
