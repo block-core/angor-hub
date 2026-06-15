@@ -41,10 +41,8 @@ import { ThemeService } from '../services/theme.service';
   ],
   template: `
     <header
-      class="sticky top-0 z-[1000] bg-header-bg/80 backdrop-blur-lg shadow-sm transition-transform duration-300 ease-in-out"
-      [class.shadow-md]="isScrolled()"
-      [class.-translate-y-full]="isScrollingDown()"
-      [class.translate-y-0]="isScrollingUp() || !isScrolled()">
+      class="fixed top-0 left-0 right-0 z-[1000] bg-header-bg/80 backdrop-blur-lg shadow-sm transition-shadow duration-300 ease-in-out"
+      [class.shadow-md]="isScrolled()">
       <div class="container mx-auto px-4 flex items-center justify-between h-16">
         <!-- Left Side -->
         <div class="flex items-center gap-4">

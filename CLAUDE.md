@@ -19,7 +19,8 @@ Source of truth for visual design is the local **Angor Prototype** (`~/Projects/
 - **Theme tokens** live in `src/styles.css` as CSS variables on `:root` (dark, default) and `html[data-theme="light"]`. Aligned to the prototype's `ultra-modern` / `ultra-modern-light` palettes. Use the Tailwind aliases (`bg-surface-ground`, `text-text`, `text-accent`, etc.) or `var(--token)`.
 - **Buttons** (global classes in `styles.css`, combine with `.btn-base`): `.btn-neutral` (flat grey, prototype's primary CTA), `.btn-green` (flat brand green), `.btn-gradient` (green gradient — the reusable atom style). All theme-aware.
 - **Hero text**: `.hero-font` + `.highlight-text` (italic green emphasis).
-- **Background pattern**: applied once on the app shell (`app.component`) via `.pattern-overlay` (fixed, behind all content). Pages should keep section backgrounds transparent so it shows through; don't re-add it per page.
+- **Background pattern**: the Angor logo mark (`/images/hero-bg-pattern.svg`) is applied once on the app shell (`app.component`) via `.pattern-overlay` (fixed `::before`, behind all content). Pages should keep section backgrounds transparent so it shows through; don't re-add it per page.
+- **Header is `fixed`** (always visible, no hide-on-scroll). It's removed from flow, so `<main>` carries `pt-16` (64px) to offset its `h-16` height. New full-height pages should account for `calc(100vh - 64px)`.
 - Theme is read reactively via `ThemeService.isDarkTheme()` (signal-backed). Treat `ThemeService` as read-only.
 
 ## Dev workflow
