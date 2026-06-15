@@ -166,12 +166,9 @@ export class ProjectComponent implements OnInit, OnDestroy {
     this.onChainStatsError.set(null);
 
     try {
-      const project = this.project();
       const stats = await this.investorService.getProjectOnChainStats(
         this.projectId,
-        project?.details,
-        project?.trxId,
-        project?.founderKey
+        this.project()?.details
       );
 
       if (stats) {

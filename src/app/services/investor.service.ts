@@ -138,14 +138,16 @@ export class InvestorService {
 
   /**
    * Fetches all transactions for a given address from the mempool.space-compatible API.
-   * Handles pagination (mempool.space returns max 25 txs per request).
+   * Handles pagination (the Blockcore indexer returns at most 10 txs per request).
    */
   async fetchAddressTransactions(address: string): Promise<MempoolTransaction[]> {
     const baseUrl = this.getApiBaseUrl();
     const allTxs: MempoolTransaction[] = [];
     let lastTxId: string | undefined;
+    let prevLastTxId: string | undefined;
+    const MAX_PAGES = 20;
 
-    while (true) {
+    for (let page = 0; page < MAX_PAGES; page++) {
       let url = `${baseUrl}/address/${address}/txs`;
       if (lastTxId) {
         url += `?after_txid=${lastTxId}`;
@@ -166,12 +168,14 @@ export class InvestorService {
 
       allTxs.push(...txs);
 
-      // Mempool.space returns 25 txs per page
-      if (txs.length < 25) {
+      prevLastTxId = lastTxId;
+      lastTxId = txs[txs.length - 1].txid;
+
+      // Stop if the cursor didn't advance (same page returned again)
+      // or we got fewer than 10 results (last page).
+      if (lastTxId === prevLastTxId || txs.length < 10) {
         break;
       }
-
-      lastTxId = txs[txs.length - 1].txid;
     }
 
     return allTxs;
@@ -440,12 +444,7 @@ export class InvestorService {
    * This mirrors the logic in the Angor C# MempoolIndexerMappers when
    * ReadFromAngorApi is false.
    */
-  async getProjectOnChainStats(
-    projectId: string,
-    details?: ProjectUpdate,
-    knownTrxId?: string,
-    knownFounderKey?: string
-  ): Promise<OnChainProjectStats | null> {
+  async getProjectOnChainStats(projectId: string, details?: ProjectUpdate): Promise<OnChainProjectStats | null> {
     try {
       const address = this.convertAngorKeyToBitcoinAddress(projectId);
       console.log(`[InvestorService] Project ${projectId} -> address ${address}`);
@@ -480,16 +479,6 @@ export class InvestorService {
           console.log(`[InvestorService] Found funding tx: ${tx.txid}, founder: ${founderKey}`);
           break;
         }
-      }
-
-      // Fallback: use cached on-chain data when the funding tx is missing from
-      // the address transaction list (e.g. indexer only returns recent txs).
-      if (!fundingTx && knownTrxId) {
-        console.log(`[InvestorService] Funding tx not in address list, using cached trxId: ${knownTrxId}`);
-        fundingTx = { txid: knownTrxId } as MempoolTransaction;
-      }
-      if (!founderKey && knownFounderKey) {
-        founderKey = knownFounderKey;
       }
 
       if (!fundingTx || !founderKey) {
