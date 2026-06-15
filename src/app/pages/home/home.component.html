@@ -1,6 +1,6 @@
 <section class="hero-section">
   <!-- App icon — swaps with theme (prototype: dark icon on dark, light icon on light) -->
-  <div class="logo-animation">
+  <div class="hero-anim hero-anim-1">
     <img
       [src]="themeService.isDarkTheme() ? '/images/app-icon-dark-mode.png' : '/images/app-icon.png'"
       alt="Angor"
@@ -9,13 +9,13 @@
   </div>
 
   <!-- Tagline with emphasized words -->
-  <h1 class="hero-font hero-headline tracking-tight">
+  <h1 class="hero-font hero-headline tracking-tight hero-anim hero-anim-2">
     The <em class="highlight-text">Only</em> Bitcoin Protocol<br>
     For <em class="highlight-text">Funding</em> Projects
   </h1>
 
   <!-- CTA Buttons -->
-  <div class="hero-cta">
+  <div class="hero-cta hero-anim hero-anim-3">
     <a routerLink="/explore" class="btn-base btn-neutral">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>

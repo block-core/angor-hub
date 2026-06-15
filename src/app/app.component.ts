@@ -12,24 +12,20 @@ import { trigger, transition, style, query, animate, group } from '@angular/anim
 const routeTransitionAnimations = trigger('routeAnimations', [
   transition('* <=> *', [
     style({ position: 'relative' }),
-    query(':enter, :leave', [
-      style({
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        opacity: 1,
-      })
-    ], { optional: true }),
-    query(':enter', [
-      style({ opacity: 0, transform: 'translateY(20px)' }) 
+    // Only the LEAVING view is taken out of flow (absolute) so it can fade
+    // out on top. The ENTERING view stays in normal flex flow — otherwise it
+    // would be positioned at top:0 (under the fixed header) then snap into the
+    // flex-centered layout, causing a visible content jump.
+    query(':leave', [
+      style({ position: 'absolute', top: 0, left: 0, width: '100%', opacity: 1 })
     ], { optional: true }),
     group([
       query(':leave', [
-        animate('400ms ease-in-out', style({ opacity: 0, transform: 'translateY(-10px)' })) 
+        animate('200ms ease-in-out', style({ opacity: 0 }))
       ], { optional: true }),
       query(':enter', [
-        animate('400ms ease-in-out', style({ opacity: 1, transform: 'translateY(0)' })) 
+        style({ opacity: 0 }),
+        animate('350ms 80ms ease-in-out', style({ opacity: 1 }))
       ], { optional: true })
     ])
   ])
@@ -40,9 +36,9 @@ const routeTransitionAnimations = trigger('routeAnimations', [
   standalone: true,
   imports: [RouterOutlet, HeaderComponent, FooterComponent],
   template: `
-    <div class="flex flex-col min-h-screen text-text pattern-overlay">
+    <div class="flex flex-col min-h-dvh text-text pattern-overlay">
       <app-header></app-header>
-      <main class="flex-grow relative pt-16" [@routeAnimations]="getRouteAnimationData()">
+      <main class="flex-grow flex flex-col relative pt-16" [@routeAnimations]="getRouteAnimationData()">
         <router-outlet></router-outlet>
       </main>
       <app-footer></app-footer>

@@ -11,16 +11,26 @@ import { ThemeService } from '../../services/theme.service';
   imports: [CommonModule, RouterLink],
   templateUrl: './home.component.html',
   styles: [`
+    /* Fill the space main leaves between the fixed header and the footer,
+       so the whole landing (incl. footer) fits the viewport without scroll. */
+    :host {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
     /* Hero layout — ported from prototype Landing.vue */
     .hero-section {
       position: relative;
-      min-height: calc(100vh - 64px);
+      flex: 1 1 auto;
+      min-height: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      padding: 4rem 2rem;
+      padding: 2rem;
       /* transparent so the app-shell pattern overlay shows through */
     }
 
@@ -30,6 +40,24 @@ import { ThemeService } from '../../services/theme.service';
       margin: 0 auto 2rem;
       filter: none !important;
       image-rendering: auto;
+    }
+
+    /* Staggered intro — fade + rise, replays whenever the page is entered */
+    .hero-anim {
+      opacity: 0;
+      animation: heroIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .hero-anim-1 { animation-delay: 0.05s; }
+    .hero-anim-2 { animation-delay: 0.2s; }
+    .hero-anim-3 { animation-delay: 0.35s; }
+
+    @keyframes heroIn {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-anim { animation: none; opacity: 1; }
     }
 
     .hero-headline {
