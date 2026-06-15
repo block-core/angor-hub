@@ -1,28 +1,33 @@
 <section class="hero-section">
-  <!-- Background pattern -->
-  <div class="hero-background"></div>
-  
-  <div class="hero-content">
-    <!-- Large Angor logo -->
-    <img src="/images/app-icon-dark-mode.png" alt="Angor" class="hero-logo" />
-    
-    <!-- Headline with emphasized words -->
-    <h1 class="hero-headline">
-      The <span class="emphasis">Only</span> Bitcoin Protocol<br>
-      For <span class="emphasis">Funding</span> Projects
-    </h1>
-    
-    <!-- CTA Buttons -->
-    <div class="hero-cta">
-      <a routerLink="/explore" class="btn-secondary">
-        <span class="material-icons">search</span>
-        Fund Projects
-      </a>
-      <a href="https://angor.io/app" target="_blank" rel="noopener noreferrer" class="btn-primary">
-        <span class="material-icons">description</span>
-        Get funded
-      </a>
-    </div>
+  <!-- App icon — swaps with theme (prototype: dark icon on dark, light icon on light) -->
+  <div class="logo-animation">
+    <img
+      [src]="themeService.isDarkTheme() ? '/images/app-icon-dark-mode.png' : '/images/app-icon.png'"
+      alt="Angor"
+      class="hero-logo"
+    />
+  </div>
+
+  <!-- Tagline with emphasized words -->
+  <h1 class="hero-font hero-headline tracking-tight">
+    The <em class="highlight-text">Only</em> Bitcoin Protocol<br>
+    For <em class="highlight-text">Funding</em> Projects
+  </h1>
+
+  <!-- CTA Buttons -->
+  <div class="hero-cta">
+    <a routerLink="/explore" class="btn-base btn-neutral">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+      </svg>
+      <span>Fund Projects</span>
+    </a>
+
+    <a routerLink="/app" class="btn-base btn-green">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+      </svg>
+      <span>Get funded</span>
+    </a>
   </div>
 </section>
-
