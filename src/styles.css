@@ -242,9 +242,13 @@ html[data-theme="light"] .custom-modal-border {
   background-repeat: repeat;
   background-position: center;
   background-size: 5%;
-  opacity: 0.2;
+  opacity: 0.4;            /* dark (default): grey mark needs more punch on near-black */
   pointer-events: none;
   z-index: -1;
+}
+/* Light mode has plenty of contrast already — keep it subtle */
+html[data-theme="light"] .pattern-overlay::before {
+  opacity: 0.2;
 }
 
 /* ===== Intro animation (prototype Landing logoFadeInUp) ===== */
