@@ -18,6 +18,7 @@
   --header-text: #fafafa;
   --btn-neutral: #606060;       /* prototype flat primary (e.g. "Fund Projects") */
   --btn-neutral-hover: #4a4a4a;
+  --pattern-size: 80px;         /* fixed bg-pattern tile size across all devices */
   --bitcoin-mainnet: #f7931a;
   --bitcoin-testnet: #28c025;
   --success: #22c55e;
@@ -238,25 +239,24 @@ html[data-theme="light"] .custom-modal-border {
   content: '';
   position: fixed;
   inset: 0;
-  background-image: url('/images/hero-bg-pattern.svg');
-  background-repeat: repeat;
-  background-position: center;
-  background-size: 5%;
-  opacity: 0.4;            /* dark (default): grey mark needs more punch on near-black */
+  /* The Angor "A" mark is rendered in brand green via a mask fill (so it
+     follows the theme accent), not the SVG's baked-in grey. */
+  background-color: var(--accent);
+  -webkit-mask-image: url('/images/hero-bg-pattern.svg');
+  mask-image: url('/images/hero-bg-pattern.svg');
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  /* Fixed tile size (NOT %/vw) so the mark renders identically on every
+     device instead of shrinking on smaller viewports. Tweak --pattern-size. */
+  -webkit-mask-size: var(--pattern-size) var(--pattern-size);
+  mask-size: var(--pattern-size) var(--pattern-size);
+  opacity: 0.55;           /* dark (default): green mark on near-black */
   pointer-events: none;
   z-index: -1;
 }
 /* Light mode has plenty of contrast already — keep it subtle */
 html[data-theme="light"] .pattern-overlay::before {
   opacity: 0.2;
-}
-
-/* ===== Intro animation (prototype Landing logoFadeInUp) ===== */
-@keyframes logoFadeInUp {
-  0% { opacity: 0; transform: translateY(30px); }
-  50% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-.logo-animation {
-  animation: logoFadeInUp 1.2s ease-out forwards;
 }
