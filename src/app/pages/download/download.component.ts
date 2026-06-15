@@ -14,23 +14,24 @@ interface PlatformLink {
   imports: [CommonModule],
   templateUrl: './download.component.html',
   styles: [`
+    /* Fill the space main leaves between the fixed header and the footer,
+       so the whole page (incl. footer) fits the viewport without scroll. */
+    :host {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
     .download-section {
       position: relative;
-      min-height: calc(100vh - 64px);
+      flex: 1 1 auto;
+      min-height: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      background-color: var(--surface-ground);
-    }
-
-    .download-background {
-      position: absolute;
-      inset: 0;
-      background-image: url('/assets/images/hero-bg-pattern.svg');
-      background-repeat: repeat;
-      background-size: 164px 164px;
-      opacity: 0.05;
+      background-color: transparent;
     }
 
     .download-content {
@@ -80,27 +81,6 @@ interface PlatformLink {
       font-size: 1.25rem;
     }
 
-    .btn-download {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 1rem 2.5rem;
-      border-radius: 0.75rem;
-      font-size: 1.125rem;
-      font-weight: 600;
-      background-color: var(--accent);
-      color: white;
-      transition: all 0.3s ease;
-      text-decoration: none;
-      margin-bottom: 1.5rem;
-    }
-
-    .btn-download:hover {
-      background-color: #3d6448;
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(75, 124, 90, 0.3);
-    }
-
     .alt-platforms {
       margin-bottom: 3rem;
     }
@@ -147,27 +127,6 @@ interface PlatformLink {
       flex-wrap: wrap;
     }
 
-    .btn-secondary-download {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.75rem;
-      font-size: 0.95rem;
-      font-weight: 500;
-      background-color: var(--surface-card);
-      color: var(--text);
-      border: 1px solid var(--border);
-      transition: all 0.3s ease;
-      text-decoration: none;
-    }
-
-    .btn-secondary-download:hover {
-      background-color: var(--surface-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    }
-
     @media (max-width: 768px) {
       .download-logo {
         width: 72px;
@@ -183,12 +142,6 @@ interface PlatformLink {
       .mobile-links {
         flex-direction: column;
         align-items: center;
-      }
-
-      .btn-secondary-download {
-        width: 100%;
-        max-width: 280px;
-        justify-content: center;
       }
     }
   `]

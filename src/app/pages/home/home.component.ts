@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TitleService } from '../../services/title.service';
 import { MetaService } from '../../services/meta.service';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-home',
@@ -10,120 +11,96 @@ import { MetaService } from '../../services/meta.service';
   imports: [CommonModule, RouterLink],
   templateUrl: './home.component.html',
   styles: [`
+    /* Fill the space main leaves between the fixed header and the footer,
+       so the whole landing (incl. footer) fits the viewport without scroll. */
+    :host {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    /* Hero layout — ported from prototype Landing.vue */
     .hero-section {
       position: relative;
-      min-height: calc(100vh - 64px);
+      flex: 1 1 auto;
+      min-height: 0;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      background-color: var(--surface-ground);
+      padding: 2rem;
+      /* transparent so the app-shell pattern overlay shows through */
     }
-    
-    .hero-background {
-      position: absolute;
-      inset: 0;
-      background-image: url('/assets/images/hero-bg-pattern.svg');
-      background-repeat: repeat;
-      background-size: 164px 164px;
-      opacity: 0.05;
-    }
-    
-    .hero-content {
-      position: relative;
-      z-index: 10;
-      text-align: center;
-      padding: 1rem 2rem 2rem;
-      max-width: 900px;
-    }
-    
+
     .hero-logo {
-      width: 120px;
-      height: auto;
-      margin: 0 auto 2.5rem;
-      filter: drop-shadow(0 10px 30px rgba(75, 124, 90, 0.3));
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 2rem;
+      filter: none !important;
+      image-rendering: auto;
     }
-    
+
+    /* Staggered intro — fade + rise, replays whenever the page is entered */
+    .hero-anim {
+      opacity: 0;
+      animation: heroIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .hero-anim-1 { animation-delay: 0.05s; }
+    .hero-anim-2 { animation-delay: 0.2s; }
+    .hero-anim-3 { animation-delay: 0.35s; }
+
+    @keyframes heroIn {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-anim { animation: none; opacity: 1; }
+    }
+
     .hero-headline {
-      font-size: clamp(2.5rem, 5vw, 4rem);
-      font-weight: 700;
-      line-height: 1.2;
+      font-size: 56px;
+      text-align: center;
       margin-bottom: 3rem;
       color: var(--text);
     }
-    
-    .hero-headline .emphasis {
-      color: var(--accent);
-      font-style: italic;
-    }
-    
+
     .hero-cta {
       display: flex;
-      gap: 1.5rem;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    
-    .btn-secondary {
-      display: inline-flex;
+      flex-direction: column;
       align-items: center;
-      gap: 0.75rem;
-      padding: 1rem 2rem;
-      border-radius: 0.75rem;
-      font-size: 1.125rem;
-      font-weight: 600;
-      background-color: var(--surface-card);
-      color: var(--text);
-      border: 2px solid var(--border);
-      transition: all 0.3s ease;
-      text-decoration: none;
+      gap: 1rem;
+      width: 100%;
     }
-    
-    .btn-secondary:hover {
-      background-color: var(--surface-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+
+    @media (min-width: 640px) {
+      .hero-cta {
+        flex-direction: row;
+        width: auto;
+      }
+      .hero-cta .btn-base {
+        min-width: 200px;
+      }
     }
-    
-    .btn-primary {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 1rem 2rem;
-      border-radius: 0.75rem;
-      font-size: 1.125rem;
-      font-weight: 600;
-      background-color: var(--accent);
-      color: white;
-      transition: all 0.3s ease;
-      text-decoration: none;
-    }
-    
-    .btn-primary:hover {
-      background-color: #3d6448;
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(75, 124, 90, 0.3);
-    }
-    
+
     @media (max-width: 768px) {
+      .hero-section {
+        padding: 1rem;
+      }
       .hero-logo {
-        width: 90px;
+        width: 72px;
+        height: 72px;
         margin-bottom: 1.5rem;
       }
-      
       .hero-headline {
-        font-size: 2rem;
+        font-size: 28px;
         margin-bottom: 2rem;
       }
-      
-      .hero-cta {
-        flex-direction: column;
-        gap: 1rem;
-      }
-      
-      .btn-primary, .btn-secondary {
+      .hero-cta .btn-base {
         width: 100%;
-        max-width: 300px;
+        max-width: 100%;
       }
     }
   `]
@@ -131,6 +108,7 @@ import { MetaService } from '../../services/meta.service';
 export class HomeComponent implements OnInit {
   private titleService = inject(TitleService);
   private metaService = inject(MetaService);
+  protected themeService = inject(ThemeService);
 
   async ngOnInit() {
     this.titleService.setTitle('Angor - Decentralized Bitcoin Fundraising');

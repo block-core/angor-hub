@@ -124,7 +124,7 @@ import { NetworkService } from '../services/network.service';
             <!-- Primary Action: Go to Settings -->
             <button 
               type="button"
-              class="flex items-center justify-center gap-2 w-full px-4 py-3 bg-accent hover:bg-accent-light text-white font-medium rounded-xl transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-surface-card text-sm"
+              class="btn-base btn-primary w-full"
               (click)="goToSettings()"
             >
               <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

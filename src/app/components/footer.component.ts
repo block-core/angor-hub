@@ -7,7 +7,7 @@ import { environment } from '../../environment';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <footer class="bg-surface-ground text-header-text text-center py-6 px-4 mt-auto shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+    <footer class="bg-transparent text-header-text text-center py-6 px-4 mt-auto">
       <div class="container mx-auto">
         <div class="text-xs opacity-70">
           <div class="flex justify-center items-center gap-1">

@@ -2,40 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { 
-  --accent: #4B7C5A; 
-  --accent-light: #3d6448; 
-  --accent-dark: #2d5a3d; 
-  --text: #cbdde1; 
-  --text-secondary: #a8b8bc; 
-  --surface-card: #0A0A0A; 
-  --surface-ground: #1a1a1a; 
-  --surface-hover: #2a2a2a; 
-  --border: #404040; 
-  --header-bg: #0A0A0A; 
-  --header-text: #cbdde1; 
+/* ===== Theme tokens: aligned to the Angor prototype "ultra-modern" palette ===== */
+/* Dark (default) — prototype `ultra-modern` */
+:root {
+  --accent: #5FAF78;            /* prototype hero green (dark) */
+  --accent-light: #7cc499;
+  --accent-dark: #4d9a6a;       /* hover */
+  --text: #fafafa;
+  --text-secondary: #a3a3a3;
+  --surface-card: #1a1a1a;      /* cards lift off the near-black ground */
+  --surface-ground: #0a0a0a;
+  --surface-hover: #2a2a2a;
+  --border: #2a2a2a;
+  --header-bg: #0a0a0a;
+  --header-text: #fafafa;
+  --pattern-size: 120px;        /* fixed bg-pattern tile size across all devices */
   --bitcoin-mainnet: #f7931a;
   --bitcoin-testnet: #28c025;
   --success: #22c55e;
   --error: #ef4444;
   --warning: #f59e0b;
   --info: #3b82f6;
-  --background: var(--surface-ground); 
+  --background: var(--surface-ground);
 }
 
+/* Light — prototype `ultra-modern-light` */
 html[data-theme="light"] {
-  --accent: #4B7C5A; 
-  --accent-light: #3d6448; 
-  --accent-dark: #2d5a3d; 
-  --text: #022229; 
-  --text-secondary: #547c85; 
-  --surface-card: #f9fafb; 
-  --surface-ground: #ffffff; 
-  --surface-hover: #eef4f5; 
-  --border: #e5e7eb; 
-  --header-bg: #ffffff; 
-  --header-text: #022229; 
-  --background: var(--surface-ground); 
+  --accent: #2d5a3d;            /* prototype hero green (light) */
+  --accent-light: #3d6448;
+  --accent-dark: #254a32;       /* hover */
+  --text: #0a0a0a;
+  --text-secondary: #6b7280;
+  --surface-card: #ffffff;
+  --surface-ground: #fafafa;
+  --surface-hover: #f3f4f6;
+  --border: #e5e7eb;
+  --header-bg: #fafafa;
+  --header-text: #0a0a0a;
+  --background: var(--surface-ground);
 }
 
 body {
@@ -138,4 +142,117 @@ html[data-theme="light"] .custom-modal-border {
 
 .virtual-scroll-viewport::-webkit-scrollbar-thumb:hover {
   background-color: var(--scrollbar-thumb-hover-color);
+}
+
+/* ===================================================================== */
+/* Angor button system (canonical — identical in light AND dark)         */
+/*   .btn-primary   → brand-green gradient fill   (e.g. "Get funded")     */
+/*   .btn-secondary → green outline, fills on hover (e.g. "Fund Projects")*/
+/* Compose with .btn-base for shared sizing/layout. Brand greens are      */
+/* fixed (not theme tokens) so both themes render the same correct look.  */
+/* ===================================================================== */
+.btn-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 2rem;
+  min-height: 48px;
+  box-sizing: border-box;
+  border: 2px solid transparent;   /* keeps height parity with outlined secondary */
+  border-radius: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-size: 1rem;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, background-image 0.2s ease,
+    color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* Primary — brand-GREEN gradient (e.g. "Get funded"). Light-correct values,
+   identical in both themes. */
+.btn-primary {
+  background-image: linear-gradient(135deg, #2d5a3d 0%, #254a32 100%);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.btn-primary:hover {
+  background-image: linear-gradient(135deg, #356b48 0%, #2d5a3d 100%);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Secondary — near-BLACK gradient (e.g. "Fund Projects"). Identical in both
+   themes. */
+.btn-secondary {
+  background-image: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  color: #fff;
+  border: 1px solid #0a0a0a;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.btn-secondary:hover {
+  background-image: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  border-color: #1a1a1a;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.btn-base:disabled,
+.btn-base.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+}
+
+/* ===== Hero typography & emphasis (prototype Landing) ===== */
+.hero-font {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+
+.highlight-text {
+  color: var(--accent);
+  font-style: italic;
+}
+
+/* ===== Pattern background overlay (prototype ultra-modern) ===== */
+/* Apply to any container to render the repeating Angor pattern behind its */
+/* direct children. Used app-wide on the shell so every page shows it.     */
+/* Root carries its own stacking context (z-index:0) so the pattern can sit  */
+/* behind content at z-index:-1 WITHOUT forcing a z-index onto children      */
+/* (doing so would clobber the header's z-[1000] and break nav clicks).      */
+.pattern-overlay {
+  position: relative;
+  z-index: 0;
+}
+.pattern-overlay::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  /* The Angor "A" mark is rendered in brand green via a mask fill (so it
+     follows the theme accent), not the SVG's baked-in grey. */
+  background-color: var(--accent);
+  -webkit-mask-image: url('/images/hero-bg-pattern.svg');
+  mask-image: url('/images/hero-bg-pattern.svg');
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  /* Fixed tile size (NOT %/vw) so the mark renders identically on every
+     device instead of shrinking on smaller viewports. Tweak --pattern-size. */
+  -webkit-mask-size: var(--pattern-size) var(--pattern-size);
+  mask-size: var(--pattern-size) var(--pattern-size);
+  opacity: 0.25;           /* dark (default): green mark on near-black */
+  pointer-events: none;
+  z-index: -1;
+}
+/* Light mode has plenty of contrast already — keep it subtle */
+html[data-theme="light"] .pattern-overlay::before {
+  opacity: 0.2;
 }

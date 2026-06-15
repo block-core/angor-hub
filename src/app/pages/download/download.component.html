@@ -1,7 +1,4 @@
 <section class="download-section">
-  <!-- Background pattern -->
-  <div class="download-background"></div>
-
   <div class="download-content">
     <!-- App icon -->
     <img src="/images/app-icon-dark-mode.png" alt="Angor" class="download-logo" />
@@ -18,7 +15,7 @@
     </div>
 
     <!-- Primary download button -->
-    <a [href]="primaryDownloadUrl()" target="_blank" rel="noopener noreferrer" class="btn-download">
+    <a [href]="primaryDownloadUrl()" target="_blank" rel="noopener noreferrer" class="btn-base btn-primary mb-6">
       <span class="material-icons">download</span>
       <span>Download for {{ detectedPlatform() }}</span>
     </a>
@@ -39,11 +36,11 @@
     <div class="mobile-section">
       <h2 class="mobile-heading">Android</h2>
       <div class="mobile-links">
-        <a href="https://github.com/block-core/angor/releases" target="_blank" rel="noopener noreferrer" class="btn-secondary-download">
+        <a href="https://github.com/block-core/angor/releases" target="_blank" rel="noopener noreferrer" class="btn-base btn-secondary w-full sm:w-auto max-w-[280px] sm:max-w-none">
           <span class="material-icons">code</span>
           GitHub Releases
         </a>
-        <a href="https://zapstore.dev" target="_blank" rel="noopener noreferrer" class="btn-secondary-download">
+        <a href="https://zapstore.dev" target="_blank" rel="noopener noreferrer" class="btn-base btn-secondary w-full sm:w-auto max-w-[280px] sm:max-w-none">
           <span class="material-icons">store</span>
           Zapstore
         </a>
