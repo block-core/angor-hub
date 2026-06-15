@@ -227,8 +227,12 @@ html[data-theme="light"] .custom-modal-border {
 /* ===== Pattern background overlay (prototype ultra-modern) ===== */
 /* Apply to any container to render the repeating Angor pattern behind its */
 /* direct children. Used app-wide on the shell so every page shows it.     */
+/* Root carries its own stacking context (z-index:0) so the pattern can sit  */
+/* behind content at z-index:-1 WITHOUT forcing a z-index onto children      */
+/* (doing so would clobber the header's z-[1000] and break nav clicks).      */
 .pattern-overlay {
   position: relative;
+  z-index: 0;
 }
 .pattern-overlay::before {
   content: '';
@@ -240,11 +244,7 @@ html[data-theme="light"] .custom-modal-border {
   background-size: 5%;
   opacity: 0.2;
   pointer-events: none;
-  z-index: 0;
-}
-.pattern-overlay > * {
-  position: relative;
-  z-index: 1;
+  z-index: -1;
 }
 
 /* ===== Intro animation (prototype Landing logoFadeInUp) ===== */

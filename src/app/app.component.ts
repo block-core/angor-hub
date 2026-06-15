@@ -40,7 +40,7 @@ const routeTransitionAnimations = trigger('routeAnimations', [
   standalone: true,
   imports: [RouterOutlet, HeaderComponent, FooterComponent],
   template: `
-    <div class="flex flex-col min-h-screen bg-surface-ground text-text pattern-overlay">
+    <div class="flex flex-col min-h-screen text-text pattern-overlay">
       <app-header></app-header>
       <main class="flex-grow relative pt-16" [@routeAnimations]="getRouteAnimationData()">
         <router-outlet></router-outlet>
