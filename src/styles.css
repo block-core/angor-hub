@@ -248,7 +248,7 @@ html[data-theme="light"] .custom-modal-border {
      device instead of shrinking on smaller viewports. Tweak --pattern-size. */
   -webkit-mask-size: var(--pattern-size) var(--pattern-size);
   mask-size: var(--pattern-size) var(--pattern-size);
-  opacity: 0.2;            /* dark (default): green mark on near-black */
+  opacity: 0.25;           /* dark (default): green mark on near-black */
   pointer-events: none;
   z-index: -1;
 }
