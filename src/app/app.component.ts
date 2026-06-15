@@ -7,27 +7,18 @@ import { ThemeService } from './services/theme.service';
 import { NetworkService } from './services/network.service';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
-import { trigger, transition, style, query, animate, group } from '@angular/animations';
+import { trigger, transition, style, query, animate } from '@angular/animations';
 
 const routeTransitionAnimations = trigger('routeAnimations', [
   transition('* <=> *', [
-    style({ position: 'relative' }),
-    // Only the LEAVING view is taken out of flow (absolute) so it can fade
-    // out on top. The ENTERING view stays in normal flex flow — otherwise it
-    // would be positioned at top:0 (under the fixed header) then snap into the
-    // flex-centered layout, causing a visible content jump.
-    query(':leave', [
-      style({ position: 'absolute', top: 0, left: 0, width: '100%', opacity: 1 })
-    ], { optional: true }),
-    group([
-      query(':leave', [
-        animate('200ms ease-in-out', style({ opacity: 0 }))
-      ], { optional: true }),
-      query(':enter', [
-        style({ opacity: 0 }),
-        animate('350ms 80ms ease-in-out', style({ opacity: 1 }))
-      ], { optional: true })
-    ])
+    // The leaving view is removed immediately (no :leave query) so it never
+    // gets absolutely repositioned — that repositioning was the source of the
+    // content jump. The entering view stays in normal flex flow and simply
+    // fades + rises into place, matching the prototype's content intro.
+    query(':enter', [
+      style({ opacity: 0, transform: 'translateY(14px)' }),
+      animate('400ms cubic-bezier(0.22, 1, 0.36, 1)', style({ opacity: 1, transform: 'translateY(0)' }))
+    ], { optional: true })
   ])
 ]);
 

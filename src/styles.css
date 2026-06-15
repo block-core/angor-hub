@@ -18,7 +18,7 @@
   --header-text: #fafafa;
   --btn-neutral: #606060;       /* prototype flat primary (e.g. "Fund Projects") */
   --btn-neutral-hover: #4a4a4a;
-  --pattern-size: 80px;         /* fixed bg-pattern tile size across all devices */
+  --pattern-size: 120px;        /* fixed bg-pattern tile size across all devices */
   --bitcoin-mainnet: #f7931a;
   --bitcoin-testnet: #28c025;
   --success: #22c55e;
@@ -252,7 +252,7 @@ html[data-theme="light"] .custom-modal-border {
      device instead of shrinking on smaller viewports. Tweak --pattern-size. */
   -webkit-mask-size: var(--pattern-size) var(--pattern-size);
   mask-size: var(--pattern-size) var(--pattern-size);
-  opacity: 0.55;           /* dark (default): green mark on near-black */
+  opacity: 0.2;            /* dark (default): green mark on near-black */
   pointer-events: none;
   z-index: -1;
 }
