@@ -138,14 +138,16 @@ export class InvestorService {
 
   /**
    * Fetches all transactions for a given address from the mempool.space-compatible API.
-   * Handles pagination (mempool.space returns max 25 txs per request).
+   * Handles pagination with ?after_txid= cursor.
    */
   async fetchAddressTransactions(address: string): Promise<MempoolTransaction[]> {
     const baseUrl = this.getApiBaseUrl();
     const allTxs: MempoolTransaction[] = [];
     let lastTxId: string | undefined;
+    let prevLastTxId: string | undefined;
+    const MAX_PAGES = 20;
 
-    while (true) {
+    for (let page = 0; page < MAX_PAGES; page++) {
       let url = `${baseUrl}/address/${address}/txs`;
       if (lastTxId) {
         url += `?after_txid=${lastTxId}`;
@@ -166,7 +168,14 @@ export class InvestorService {
 
       allTxs.push(...txs);
 
+      prevLastTxId = lastTxId;
       lastTxId = txs[txs.length - 1].txid;
+
+      // Stop if the cursor didn't advance (same page returned again)
+      // or we got fewer than 10 results (last page).
+      if (lastTxId === prevLastTxId || txs.length < 10) {
+        break;
+      }
     }
 
     return allTxs;

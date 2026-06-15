@@ -556,6 +556,7 @@ export class IndexerService {
 
     const all: MempoolTx[] = [];
     let lastTxId: string | undefined;
+    let prevLastTxId: string | undefined;
 
     for (let page = 0; page < this.MEMPOOL_MAX_PAGES; page++) {
       let url = `${this.indexerUrl}api/v1/address/${address}/txs`;
@@ -569,7 +570,11 @@ export class IndexerService {
         const txs: MempoolTx[] = await response.json();
         if (!txs || txs.length === 0) break;
         all.push(...txs);
+        prevLastTxId = lastTxId;
         lastTxId = txs[txs.length - 1].txid;
+        // Stop if the cursor didn't advance (same page returned again)
+        // or we got fewer than 10 results (last page).
+        if (lastTxId === prevLastTxId || txs.length < 10) break;
       } catch (err) {
         console.warn('[Angor Debug] fetchMempoolAddressTxs error:', err);
         break;
