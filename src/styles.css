@@ -16,8 +16,6 @@
   --border: #2a2a2a;
   --header-bg: #0a0a0a;
   --header-text: #fafafa;
-  --btn-neutral: #606060;       /* prototype flat primary (e.g. "Fund Projects") */
-  --btn-neutral-hover: #4a4a4a;
   --pattern-size: 120px;        /* fixed bg-pattern tile size across all devices */
   --bitcoin-mainnet: #f7931a;
   --bitcoin-testnet: #28c025;
@@ -41,8 +39,6 @@ html[data-theme="light"] {
   --border: #e5e7eb;
   --header-bg: #fafafa;
   --header-text: #0a0a0a;
-  --btn-neutral: #606060;
-  --btn-neutral-hover: #4a4a4a;
   --background: var(--surface-ground);
 }
 
@@ -149,12 +145,11 @@ html[data-theme="light"] .custom-modal-border {
 }
 
 /* ===================================================================== */
-/* Angor button system — ported from the prototype                       */
-/* Two intentional styles ("we use both"):                               */
-/*   .btn-neutral  → flat grey primary (prototype Landing "Fund Projects")*/
-/*   .btn-green    → flat brand green   (prototype Landing "Get funded")  */
-/*   .btn-gradient → green gradient     (prototype Button.vue atom)       */
-/* All are theme-aware via the tokens above.                             */
+/* Angor button system (canonical — identical in light AND dark)         */
+/*   .btn-primary   → brand-green gradient fill   (e.g. "Get funded")     */
+/*   .btn-secondary → green outline, fills on hover (e.g. "Fund Projects")*/
+/* Compose with .btn-base for shared sizing/layout. Brand greens are      */
+/* fixed (not theme tokens) so both themes render the same correct look.  */
 /* ===================================================================== */
 .btn-base {
   display: inline-flex;
@@ -163,44 +158,45 @@ html[data-theme="light"] .custom-modal-border {
   gap: 0.5rem;
   padding: 0.75rem 2rem;
   min-height: 48px;
-  border: none;
+  box-sizing: border-box;
+  border: 2px solid transparent;   /* keeps height parity with outlined secondary */
   border-radius: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.5px;
   font-size: 1rem;
   line-height: 1;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: background-color 0.2s ease, background-image 0.2s ease,
+    color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.btn-neutral {
-  background-color: var(--btn-neutral);
+/* Primary — brand-GREEN gradient (e.g. "Get funded"). Light-correct values,
+   identical in both themes. */
+.btn-primary {
+  background-image: linear-gradient(135deg, #2d5a3d 0%, #254a32 100%);
   color: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
-.btn-neutral:hover {
-  background-color: var(--btn-neutral-hover);
+.btn-primary:hover {
+  background-image: linear-gradient(135deg, #356b48 0%, #2d5a3d 100%);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transform: translateY(-1px);
 }
 
-.btn-green {
-  background-color: var(--accent);
+/* Secondary — near-BLACK gradient (e.g. "Fund Projects"). Identical in both
+   themes. */
+.btn-secondary {
+  background-image: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
   color: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  border: 1px solid #0a0a0a;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
-.btn-green:hover {
-  background-color: var(--accent-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-.btn-gradient {
-  background-image: linear-gradient(to right, var(--accent), var(--accent-dark));
-  color: #fff;
-  box-shadow: 0 10px 15px -3px rgba(95, 175, 120, 0.3);
-}
-.btn-gradient:hover {
-  background-image: linear-gradient(to right, var(--accent-dark), var(--accent-dark));
+.btn-secondary:hover {
+  background-image: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  border-color: #1a1a1a;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transform: translateY(-1px);
 }
 

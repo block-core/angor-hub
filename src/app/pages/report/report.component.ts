@@ -146,12 +146,12 @@ import { TitleService } from '../../services/title.service';
               <a href="https://github.com/block-core/blockcore-lists/issues/new?title=Report Problematic Angor Project: {{ projectId }}&body=I would like to report an issue with the project: {{ projectId }}." 
                 target="_blank" 
                 rel="noopener noreferrer"
-                class="flex items-center justify-center gap-2 py-2.5 px-5 rounded-lg text-decoration-none font-semibold transition duration-300 ease-in-out bg-accent text-white hover:-translate-y-0.5 hover:shadow-lg hover:shadow-accent/20 w-full md:w-auto text-sm"> 
+                class="btn-base btn-primary w-full md:w-auto">
                 <span class="material-icons text-lg">flag</span>
                 Submit Report on GitHub
               </a>
               
-              <a [routerLink]="['/project', projectId]" class="flex items-center justify-center gap-2 py-2.5 px-5 rounded-lg text-decoration-none font-semibold transition duration-300 ease-in-out bg-surface-hover text-text border border-border hover:bg-background hover:-translate-y-0.5 hover:shadow-md w-full md:w-auto text-sm"> 
+              <a [routerLink]="['/project', projectId]" class="btn-base btn-secondary w-full md:w-auto">
                 <span class="material-icons text-lg">arrow_back</span>
                 Back to Project
               </a>

@@ -80,27 +80,6 @@ interface PlatformLink {
       font-size: 1.25rem;
     }
 
-    .btn-download {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 1rem 2.5rem;
-      border-radius: 0.75rem;
-      font-size: 1.125rem;
-      font-weight: 600;
-      background-color: var(--accent);
-      color: white;
-      transition: all 0.3s ease;
-      text-decoration: none;
-      margin-bottom: 1.5rem;
-    }
-
-    .btn-download:hover {
-      background-color: #3d6448;
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(75, 124, 90, 0.3);
-    }
-
     .alt-platforms {
       margin-bottom: 3rem;
     }
@@ -147,27 +126,6 @@ interface PlatformLink {
       flex-wrap: wrap;
     }
 
-    .btn-secondary-download {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.75rem;
-      font-size: 0.95rem;
-      font-weight: 500;
-      background-color: var(--surface-card);
-      color: var(--text);
-      border: 1px solid var(--border);
-      transition: all 0.3s ease;
-      text-decoration: none;
-    }
-
-    .btn-secondary-download:hover {
-      background-color: var(--surface-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    }
-
     @media (max-width: 768px) {
       .download-logo {
         width: 72px;
@@ -183,12 +141,6 @@ interface PlatformLink {
       .mobile-links {
         flex-direction: column;
         align-items: center;
-      }
-
-      .btn-secondary-download {
-        width: 100%;
-        max-width: 280px;
-        justify-content: center;
       }
     }
   `]

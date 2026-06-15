@@ -46,7 +46,7 @@
         This project is not available due to content policy violations.
       </p>
       <a routerLink="/explore"
-        class="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-dark transition-all duration-300">
+        class="btn-base btn-primary">
         <span class="material-icons text-base">explore</span>
         Explore Projects
       </a>
@@ -65,12 +65,12 @@
       </p>
       <div class="flex gap-3 justify-center">
         <button (click)="reloadPage()"
-          class="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-dark transition-all duration-300">
+          class="btn-base btn-primary">
           <span class="material-icons text-base">refresh</span>
           Retry
         </button>
         <a routerLink="/explore"
-          class="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-surface-hover text-text hover:bg-surface-ground transition-all duration-300">
+          class="btn-base btn-secondary">
           <span class="material-icons text-base">explore</span>
           Explore
         </a>
@@ -247,7 +247,7 @@
               <!-- Invest Button -->
               <div class="mt-6 flex flex-wrap gap-3">
                 <button
-                  class="w-full sm:w-auto px-8 py-3 text-base font-bold text-white bg-accent rounded-xl shadow-lg transition-all duration-300 hover:bg-accent-dark hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  class="btn-base btn-primary w-full sm:w-auto"
                   [disabled]="!canInvest()"
                   (click)="canInvest() && openInvestWindow()"
                 >
@@ -272,7 +272,7 @@
                   <div class="relative">
                     <button
                       (click)="showNostrPopup.set(!showNostrPopup())"
-                      class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 text-base font-bold text-text bg-surface-card border border-border rounded-xl shadow-lg transition-all duration-300 hover:bg-surface-hover hover:shadow-xl"
+                      class="btn-base btn-secondary w-full sm:w-auto"
                     >
                       <span class="material-icons text-lg">open_in_new</span>
                       Open in Nostr
