@@ -337,16 +337,22 @@
           <div class="bg-surface-card rounded-2xl shadow-md p-6">
             <div class="flex items-center justify-between mb-3">
               <span class="font-semibold text-text">Funding Progress</span>
-              <span class="font-bold text-accent">{{ getFundingPercentage() }}%</span>
+              @if (hasTarget()) {
+                <span class="font-bold text-accent">{{ getFundingPercentage() }}%</span>
+              }
             </div>
-            <div class="relative w-full h-3 bg-surface-hover rounded-full overflow-hidden">
-              <div
-                class="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
-                [class.bg-red-500]="isProjectFailed()"
-                [class.bg-accent]="!isProjectFailed()"
-                [style.width.%]="getFundingPercentage() > 100 ? 100 : getFundingPercentage()"
-              ></div>
-            </div>
+            @if (hasTarget()) {
+              <div class="relative w-full h-3 bg-surface-hover rounded-full overflow-hidden">
+                <div
+                  class="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
+                  [class.bg-red-500]="isProjectFailed()"
+                  [class.bg-accent]="!isProjectFailed()"
+                  [style.width.%]="getFundingPercentage() > 100 ? 100 : getFundingPercentage()"
+                ></div>
+              </div>
+            } @else {
+              <p class="text-sm text-text-secondary">No target goal set</p>
+            }
           </div>
         }
 
@@ -366,7 +372,11 @@
                   <span class="stat-label">{{ statTargetLabel() }}</span>
                   <span class="material-icons stat-icon text-lg">currency_bitcoin</span>
                 </div>
-                <div class="stat-value text-2xl">{{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ unit }}</div>
+                @if (hasTarget()) {
+                  <div class="stat-value text-2xl">{{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ unit }}</div>
+                } @else {
+                  <div class="stat-value text-2xl">Not set</div>
+                }
               </div>
               <div class="stat-card">
                 <div class="stat-header">
@@ -505,10 +515,10 @@
                 <span class="material-icons text-3xl mb-2">error</span>
                 <p>{{ errorFaq() }}</p>
               </div>
-            } @else if (faqItems().length) {
+            } @else if (validFaqItems().length) {
               <!-- Accordion -->
               <div class="flex flex-col gap-0.5 -m-2">
-                @for (faq of faqItems(); track $index) {
+                @for (faq of validFaqItems(); track $index) {
                   <div class="rounded-xl overflow-hidden transition-colors hover:bg-surface-hover/60">
                     <button
                       (click)="toggleFaq($index)"

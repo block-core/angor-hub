@@ -321,6 +321,12 @@ export class ProjectComponent implements OnInit, OnDestroy {
   comments = signal<NDKEvent[]>([]);
   faqItems = signal<FaqItem[]>([]);
 
+  // Only FAQ entries with an actual question — filters out blank/placeholder
+  // items so the empty state shows instead of an empty accordion row.
+  validFaqItems = computed(() =>
+    this.faqItems().filter((f) => (f.question ?? '').trim().length > 0)
+  );
+
   // FAQ accordion open/closed state (ported from prototype)
   openFaqs = signal<Set<number>>(new Set<number>());
   toggleFaq(index: number): void {
@@ -952,6 +958,12 @@ export class ProjectComponent implements OnInit, OnDestroy {
     const targetAmount = this.project()?.details?.targetAmount;
     if (!targetAmount || targetAmount <= 0) return 0;
     return Number(((amountInvested / targetAmount) * 100).toFixed(1));
+  }
+
+  /** Whether the project has a positive funding target/goal. */
+  hasTarget(): boolean {
+    const t = this.project()?.details?.targetAmount;
+    return !!t && t > 0;
   }
 
   openInvestWindow() {
