@@ -353,14 +353,14 @@
         <!-- Statistics + Information Grid -->
         <div class="grid grid-cols-1 gap-6" [class.xl:grid-cols-2]="isInvestType() || isFundType()">
           <!-- Project Statistics (bitcoin/amber theme — ported from prototype) -->
-          <div class="stats-detail-card rounded-2xl shadow-md p-6">
+          <div class="stats-detail-card rounded-2xl shadow-md p-6 flex flex-col">
             <div class="flex items-center gap-3 mb-6">
               <div class="bitcoin-icon-circle">
                 <span class="material-icons text-white text-xl">currency_bitcoin</span>
               </div>
               <h2 class="stats-card-title text-lg">Project Statistics</h2>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1 auto-rows-fr">
               <div class="stat-card">
                 <div class="stat-header">
                   <span class="stat-label">{{ statTargetLabel() }}</span>
@@ -387,14 +387,14 @@
 
           <!-- Investment / Funding Information (omitted for subscription — no data) -->
           @if (isInvestType() || isFundType()) {
-            <div class="bg-surface-card rounded-2xl shadow-md p-6">
+            <div class="bg-surface-card rounded-2xl shadow-md p-6 flex flex-col">
               <div class="flex items-center gap-3 mb-6">
                 <span class="material-icons text-text-secondary text-2xl">{{ isFundType() ? 'volunteer_activism' : 'trending_up' }}</span>
                 <h2 class="text-lg font-bold text-text">{{ isFundType() ? 'Funding Information' : 'Investment Information' }}</h2>
               </div>
 
               @if (isInvestType()) {
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1 auto-rows-fr">
                   <div class="stat-card">
                     <div class="stat-header">
                       <span class="stat-label">Investment Start Date</span>
@@ -421,7 +421,7 @@
                 </div>
               } @else {
                 <!-- Fund type: only Penalty Duration is available in the data model -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 auto-rows-fr">
                   <div class="stat-card">
                     <div class="stat-header">
                       <span class="stat-label">Start Date</span>
@@ -442,114 +442,123 @@
           }
         </div>
 
-        <!-- Project / FAQ / Updates Tabs -->
-        <div class="bg-surface-card rounded-2xl shadow-md overflow-hidden">
-          <div class="flex border-b border-border overflow-x-auto">
+        <!-- Project / FAQ / Updates Tabs (segmented control — ported from prototype) -->
+        <div class="project-tabs-container">
+          <div class="flex gap-1 bg-surface-hover rounded-xl p-1">
             @for (tab of tabs; track tab.id) {
               <button
                 (click)="setActiveTab(tab.id)"
-                class="flex-1 min-w-[120px] px-4 py-3 text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2"
-                [class.bg-accent]="activeTab === tab.id"
-                [class.text-white]="activeTab === tab.id"
+                class="flex-1 px-4 py-2.5 rounded-[10px] text-sm font-semibold transition-all duration-200"
+                [class.bg-surface-card]="activeTab === tab.id"
+                [class.shadow-sm]="activeTab === tab.id"
+                [class.text-text]="activeTab === tab.id"
                 [class.text-text-secondary]="activeTab !== tab.id"
-                [class.hover:bg-surface-hover]="activeTab !== tab.id"
+                [class.hover:text-text]="activeTab !== tab.id"
               >
-                <span class="material-icons text-base">{{ tab.icon }}</span>
-                <span>{{ tab.label }}</span>
+                {{ tab.label }}
               </button>
             }
           </div>
+        </div>
 
-          <div class="p-6">
-            @if (activeTab === 'project') {
-              @if (project()?.content) {
-                <div class="prose prose-sm sm:prose-base max-w-none dark:prose-invert prose-headings:text-text prose-p:text-text-secondary prose-a:text-accent">
-                  <markdown [data]="project()?.content"></markdown>
-                </div>
-              } @else {
-                <div class="text-center py-12 text-text-secondary">
-                  <span class="material-icons text-5xl mb-3 opacity-50">description</span>
-                  <p>No project description available.</p>
-                </div>
-              }
+        <!-- Tab Content -->
+        <div class="bg-surface-card rounded-2xl shadow-md p-6">
+          @if (activeTab === 'project') {
+            @if (project()?.content) {
+              <div class="prose prose-sm sm:prose-base max-w-none dark:prose-invert prose-headings:text-text prose-p:text-text-secondary prose-a:text-accent">
+                <markdown [data]="project()?.content"></markdown>
+              </div>
+            } @else {
+              <div class="text-center py-8 text-text-secondary text-sm">
+                <span class="material-icons text-3xl mb-2 opacity-40">description</span>
+                <p>No project description available.</p>
+              </div>
+            }
 
-              <!-- Team Members (kept from angor-hub — real data) -->
-              @if (project()?.members?.length) {
-                <div class="mt-8 pt-8 border-t border-border">
-                  <h2 class="text-2xl font-bold mb-4 text-text">Project Team</h2>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    @for (member of project()?.members; track member) {
-                      <div class="bg-surface-hover rounded-xl p-4 hover:shadow-lg transition-all duration-300 relative">
-                        @if (isMemberVerified(member)) {
-                          <div class="absolute top-3 right-3" title="Verified Angor Member">
-                            <img src="/badges/badge-member-thumb.webp" alt="Angor Member Badge" class="w-8 h-8" />
-                          </div>
-                        }
-                        <app-profile [pubkey]="member"></app-profile>
-                      </div>
+            <!-- Team Members (kept from angor-hub — real data) -->
+            @if (project()?.members?.length) {
+              <div class="mt-8 pt-8 border-t border-border">
+                <h2 class="text-2xl font-bold mb-4 text-text">Project Team</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  @for (member of project()?.members; track member) {
+                    <div class="bg-surface-hover rounded-xl p-4 hover:shadow-lg transition-all duration-300 relative">
+                      @if (isMemberVerified(member)) {
+                        <div class="absolute top-3 right-3" title="Verified Angor Member">
+                          <img src="/badges/badge-member-thumb.webp" alt="Angor Member Badge" class="w-8 h-8" />
+                        </div>
+                      }
+                      <app-profile [pubkey]="member"></app-profile>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          }
+
+          @if (activeTab === 'faq') {
+            @if (loadingFaq()) {
+              <div class="flex justify-center py-12">
+                <div class="w-10 h-10 border-4 border-accent/30 border-t-accent rounded-full animate-spin"></div>
+              </div>
+            } @else if (errorFaq()) {
+              <div class="text-center py-8 text-red-500 text-sm">
+                <span class="material-icons text-3xl mb-2">error</span>
+                <p>{{ errorFaq() }}</p>
+              </div>
+            } @else if (faqItems().length) {
+              <!-- Accordion -->
+              <div class="flex flex-col gap-0.5 -m-2">
+                @for (faq of faqItems(); track $index) {
+                  <div class="rounded-xl overflow-hidden transition-colors hover:bg-surface-hover/60">
+                    <button
+                      (click)="toggleFaq($index)"
+                      class="w-full flex items-center justify-between gap-4 p-4 text-left"
+                    >
+                      <span class="text-[15px] font-semibold text-text">{{ faq.question }}</span>
+                      <span class="material-icons text-text-secondary transition-transform duration-200 flex-shrink-0" [class.rotate-180]="isFaqOpen($index)">expand_more</span>
+                    </button>
+                    @if (isFaqOpen($index)) {
+                      <div class="px-4 pb-4 text-sm leading-relaxed text-text-secondary">{{ faq.answer }}</div>
                     }
                   </div>
-                </div>
-              }
+                }
+              </div>
+            } @else {
+              <div class="text-center py-8 text-text-secondary text-sm">
+                <span class="material-icons text-3xl mb-2 opacity-40">help_outline</span>
+                <p>No FAQ items available.</p>
+                <p class="text-[13px] mt-1 opacity-70">The founder hasn't added any FAQ items yet.</p>
+              </div>
             }
+          }
 
-            @if (activeTab === 'faq') {
-              @if (loadingFaq()) {
-                <div class="flex justify-center py-12">
-                  <div class="w-10 h-10 border-4 border-accent/30 border-t-accent rounded-full animate-spin"></div>
-                </div>
-              } @else if (errorFaq()) {
-                <div class="text-center py-12 text-red-500">
-                  <span class="material-icons text-5xl mb-3">error</span>
-                  <p>{{ errorFaq() }}</p>
-                </div>
-              } @else if (faqItems().length) {
-                <div class="space-y-4">
-                  @for (faq of faqItems(); track $index) {
-                    <div class="bg-surface-hover rounded-xl p-4">
-                      <h3 class="font-semibold text-text mb-2">{{ faq.question }}</h3>
-                      <p class="text-text-secondary text-sm">{{ faq.answer }}</p>
-                    </div>
-                  }
-                </div>
-              } @else {
-                <div class="text-center py-12 text-text-secondary">
-                  <span class="material-icons text-5xl mb-3 opacity-50">help_outline</span>
-                  <p>No FAQ items available.</p>
-                </div>
-              }
+          @if (activeTab === 'updates') {
+            @if (loadingUpdates()) {
+              <div class="flex justify-center py-12">
+                <div class="w-10 h-10 border-4 border-accent/30 border-t-accent rounded-full animate-spin"></div>
+              </div>
+            } @else if (errorUpdates()) {
+              <div class="text-center py-8 text-red-500 text-sm">
+                <span class="material-icons text-3xl mb-2">error</span>
+                <p>{{ errorUpdates() }}</p>
+              </div>
+            } @else if (updates().length) {
+              <div class="flex flex-col gap-5">
+                @for (update of updates(); track update.id) {
+                  <div class="p-4 rounded-xl border border-border">
+                    <div class="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">{{ formatDate(update.created_at) }}</div>
+                    <p class="text-sm leading-relaxed text-text-secondary whitespace-pre-line">{{ update.content }}</p>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="text-center py-8 text-text-secondary text-sm">
+                <span class="material-icons text-3xl mb-2 opacity-40">campaign</span>
+                <p>No updates posted yet.</p>
+                <p class="text-[13px] mt-1 opacity-70">The founder will post updates here as the project progresses.</p>
+              </div>
             }
-
-            @if (activeTab === 'updates') {
-              @if (loadingUpdates()) {
-                <div class="flex justify-center py-12">
-                  <div class="w-10 h-10 border-4 border-accent/30 border-t-accent rounded-full animate-spin"></div>
-                </div>
-              } @else if (errorUpdates()) {
-                <div class="text-center py-12 text-red-500">
-                  <span class="material-icons text-5xl mb-3">error</span>
-                  <p>{{ errorUpdates() }}</p>
-                </div>
-              } @else if (updates().length) {
-                <div class="space-y-4">
-                  @for (update of updates(); track update.id) {
-                    <div class="bg-surface-hover rounded-xl p-4">
-                      <div class="flex items-center gap-2 mb-2 text-sm text-text-secondary">
-                        <span class="material-icons text-sm">schedule</span>
-                        <span>{{ (update.created_at ?? 0) | ago }}</span>
-                      </div>
-                      <p class="text-text">{{ update.content }}</p>
-                    </div>
-                  }
-                </div>
-              } @else {
-                <div class="text-center py-12 text-text-secondary">
-                  <span class="material-icons text-5xl mb-3 opacity-50">campaign</span>
-                  <p>No updates available.</p>
-                </div>
-              }
-            }
-          </div>
+          }
         </div>
 
         <!-- Stages (Invest-type only) -->
@@ -858,6 +867,25 @@
                     <button (click)="copyToClipboard(project()?.details?.nostrPubKey)" class="text-text-secondary hover:text-accent transition-colors flex-shrink-0" title="Copy hex">
                       <span class="material-icons text-sm">content_copy</span>
                     </button>
+                  </div>
+                </div>
+              }
+
+              @if (projectNpub() && nostrClients().length) {
+                <div>
+                  <h3 class="text-sm font-semibold text-text mb-2">Open in Nostr</h3>
+                  <div class="grid grid-cols-2 gap-2">
+                    @for (client of nostrClients(); track client.name) {
+                      <a
+                        [href]="client.url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="flex items-center gap-2 bg-surface-hover border border-border rounded-lg px-3 py-2 text-sm text-text-secondary hover:text-accent transition-colors"
+                      >
+                        <span class="material-icons text-base text-accent">{{ client.icon }}</span>
+                        <span class="truncate">{{ client.name }}</span>
+                      </a>
+                    }
                   </div>
                 </div>
               }

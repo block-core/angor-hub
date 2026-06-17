@@ -321,6 +321,21 @@ export class ProjectComponent implements OnInit, OnDestroy {
   comments = signal<NDKEvent[]>([]);
   faqItems = signal<FaqItem[]>([]);
 
+  // FAQ accordion open/closed state (ported from prototype)
+  openFaqs = signal<Set<number>>(new Set<number>());
+  toggleFaq(index: number): void {
+    const open = new Set(this.openFaqs());
+    if (open.has(index)) {
+      open.delete(index);
+    } else {
+      open.add(index);
+    }
+    this.openFaqs.set(open);
+  }
+  isFaqOpen(index: number): boolean {
+    return this.openFaqs().has(index);
+  }
+
   loadingUpdates = signal<boolean>(false);
   loadingComments = signal<boolean>(false);
   loadingFaq = signal<boolean>(false);
