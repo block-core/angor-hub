@@ -52,6 +52,110 @@ import { InvestorService, InvestmentInfo, OnChainProjectStats } from '../../serv
   ],
   templateUrl: './project.component.html',
   styles: [`
+    /* Status cards — ported faithfully from the Angor Prototype (brand greens are
+       fixed hex, identical in light + dark, per the design system). */
+    .opportunity-card {
+      background-image: linear-gradient(135deg, #2d5a3d 0%, #4a8f5f 100%);
+      color: #fff;
+    }
+    .success-card {
+      background-image: linear-gradient(135deg, #4B7C5A 0%, #3d6448 100%);
+      color: #fff;
+    }
+    .opportunity-invest-btn {
+      background: #fff;
+      color: #2d5a3d;
+    }
+    .opportunity-invest-btn:hover:not(:disabled) {
+      background: #f5f5f5;
+      transform: translateY(-1px);
+    }
+    .opportunity-invest-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Project Statistics + stat cards — bitcoin/amber theme, ported faithfully
+       from the prototype. Default = dark theme; light overridden below. */
+    .stats-detail-card {
+      background: linear-gradient(to bottom right, rgba(234, 88, 12, 0.15), rgba(251, 191, 36, 0.15));
+      border: 1px solid rgba(234, 88, 12, 0.3);
+    }
+    :host-context(html[data-theme="light"]) .stats-detail-card {
+      background: linear-gradient(to bottom right, #fff7ed, #fef3c7);
+      border-color: #fed7aa;
+    }
+    .bitcoin-icon-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #F7931A 0%, #FFA500 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+    }
+    .stats-card-title {
+      color: #fdba74;
+      font-weight: 700;
+    }
+    :host-context(html[data-theme="light"]) .stats-card-title {
+      color: #92400e;
+    }
+    .stat-card {
+      background: rgba(42, 42, 42, 0.7);
+      border: 2px solid rgba(234, 88, 12, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(10px);
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(234, 88, 12, 0.5);
+    }
+    :host-context(html[data-theme="light"]) .stat-card {
+      background: rgba(255, 255, 255, 0.7);
+      border-color: rgba(253, 186, 116, 0.4);
+    }
+    .stat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .stat-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fdba74;
+      line-height: 1.3;
+    }
+    :host-context(html[data-theme="light"]) .stat-label {
+      color: #92400e;
+    }
+    .stat-icon {
+      color: #fbbf24;
+      opacity: 0.8;
+      flex-shrink: 0;
+    }
+    :host-context(html[data-theme="light"]) .stat-icon {
+      color: #f59e0b;
+      opacity: 0.7;
+    }
+    .stat-value {
+      font-weight: 700;
+      color: #fafafa;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+    :host-context(html[data-theme="light"]) .stat-value {
+      color: #1a1a1a;
+    }
+
     :host ::ng-deep .prose img {
       display: block !important;
       margin-left: auto !important;
@@ -129,6 +233,16 @@ export class ProjectComponent implements OnInit, OnDestroy {
   // UI state
   bannerLoaded = signal<boolean>(false);
   profileLoaded = signal<boolean>(false);
+
+  // Collapsible sections (ported from prototype Project Details / Nostr cards)
+  isDetailsCollapsed = signal<boolean>(false);
+  isNostrCollapsed = signal<boolean>(true);
+
+  // Sticky "Invest" button in the sub-nav fades in once scrolled past the top section
+  showStickyInvest = signal<boolean>(false);
+  private onScroll = (): void => {
+    this.showStickyInvest.set(window.scrollY > 360);
+  };
 
   reloadPage(): void {
     window.location.reload();
@@ -470,6 +584,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     window.scrollTo(0, 0);
+    window.addEventListener('scroll', this.onScroll, { passive: true });
 
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
@@ -584,13 +699,23 @@ export class ProjectComponent implements OnInit, OnDestroy {
             }
 
             this.profileEvent = event;
+
+            // Only reset image-load state when the URL actually changes. If the
+            // banner/picture URL is unchanged, the cached <img> never re-fires its
+            // (load) event, so resetting the flag would leave it stuck at opacity-0
+            // (image loads, then disappears).
+            const prevBanner = current.metadata?.banner;
+            const prevPicture = current.metadata?.['picture'];
             current.metadata = update;
 
-            // Reset image loading state so updated images are displayed
-            this.failedBannerImage.set(false);
-            this.failedProfileImage.set(false);
-            this.bannerLoaded.set(false);
-            this.profileLoaded.set(false);
+            if (update?.banner !== prevBanner) {
+              this.failedBannerImage.set(false);
+              this.bannerLoaded.set(false);
+            }
+            if (update?.['picture'] !== prevPicture) {
+              this.failedProfileImage.set(false);
+              this.profileLoaded.set(false);
+            }
 
             this.title.setTitle(update.name);
 
@@ -691,6 +816,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+
+    window.removeEventListener('scroll', this.onScroll);
 
     this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.subscriptions = [];
@@ -1233,6 +1360,77 @@ export class ProjectComponent implements OnInit, OnDestroy {
       case 2: return { label: 'Subscribe', icon: 'sync', colorClass: 'bg-green-500/10 border-green-500/30 text-green-400' };
       default: return { label: 'Invest', icon: 'savings', colorClass: 'bg-green-500/10 border-green-500/30 text-green-400' };
     }
+  }
+
+  /** True for Invest-type projects (projectType 0 / undefined). Used to gate stages + duration. */
+  isInvestType(): boolean {
+    const t = this.project()?.details?.projectType;
+    return t === undefined || t === 0;
+  }
+
+  /** True for Fund-type projects (projectType 1). */
+  isFundType(): boolean {
+    return this.project()?.details?.projectType === 1;
+  }
+
+  /** True for Subscription-type projects (projectType 2). */
+  isSubscriptionType(): boolean {
+    return this.project()?.details?.projectType === 2;
+  }
+
+  /** Label for the "target" statistic, keyed off project type. */
+  statTargetLabel(): string {
+    return this.isFundType() ? 'Goal Amount' : 'Target Amount';
+  }
+
+  /** Label for the "raised" statistic, keyed off project type. */
+  statRaisedLabel(): string {
+    if (this.isSubscriptionType()) return 'Total Subscribed';
+    if (this.isFundType()) return 'Total Funded';
+    return 'Total Raised';
+  }
+
+  /** Label for the "participants" statistic, keyed off project type. */
+  statParticipantsLabel(): string {
+    if (this.isSubscriptionType()) return 'Total Subscribers';
+    if (this.isFundType()) return 'Total Funders';
+    return 'Total Investors';
+  }
+
+  /** Title shown on the "open" status card. */
+  opportunityTitle(): string {
+    if (this.isFundType()) return 'Funding Opportunity';
+    if (this.isSubscriptionType()) return 'Subscription Opportunity';
+    return 'Investment Opportunity';
+  }
+
+  /** Primary action button label, keyed off project type. */
+  actionButtonText(): string {
+    if (this.isFundType()) return 'Fund With Angor Wallet';
+    if (this.isSubscriptionType()) return 'Subscribe With Angor Wallet';
+    return 'Invest With Angor Wallet';
+  }
+
+  /**
+   * Builds the per-stage rows for the Stages table/cards (Invest-type only).
+   * `amountToRelease` on a stage is a percentage of the target amount.
+   */
+  getProjectStages(): { number: number; percentage: number; releaseDate: string; daysUntil: number; released: boolean; amount: string }[] {
+    const stages = this.project()?.details?.stages;
+    if (!stages) return [];
+    const now = Date.now();
+    return stages.map((stage, i) => {
+      const releaseMillis = stage.releaseDate * 1000;
+      const daysUntil = Math.max(0, Math.ceil((releaseMillis - now) / (1000 * 60 * 60 * 24)));
+      return {
+        number: i + 1,
+        percentage: stage.amountToRelease,
+        releaseDate: this.formatDate(stage.releaseDate),
+        daysUntil,
+        released: this.isStageCompleted(i),
+        amount: this.calculateStageAmount(stage.amountToRelease),
+      };
+    });
   }
 
   getSpentPercentage(): number {

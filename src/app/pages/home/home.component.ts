@@ -44,8 +44,11 @@ import { ThemeService } from '../../services/theme.service';
 
     /* Staggered intro — fade + rise, replays whenever the page is entered */
     .hero-anim {
-      opacity: 0;
-      animation: heroIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      /* Resting state is visible; the entrance fade is driven entirely by the
+         keyframes with fill-mode "both" (backwards fill hides it during the
+         delay). This avoids the element getting stuck at opacity:0 when the
+         animation doesn't run on route re-entry (e.g. navigating back home). */
+      animation: heroIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
     .hero-anim-1 { animation-delay: 0.05s; }
     .hero-anim-2 { animation-delay: 0.2s; }
