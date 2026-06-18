@@ -41,7 +41,7 @@ import { ThemeService } from '../services/theme.service';
   ],
   template: `
     <header
-      class="fixed top-0 left-0 right-0 z-[1000] bg-transparent">
+      class="fixed top-0 left-0 right-0 z-[1000] bg-surface-ground/80 backdrop-blur-md">
       <div class="container mx-auto px-4 flex items-center justify-between h-16">
         <!-- Left Side -->
         <div class="flex items-center gap-4">
