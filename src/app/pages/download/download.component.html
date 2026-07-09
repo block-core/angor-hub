@@ -1,49 +1,55 @@
 <section class="download-section">
   <div class="download-content">
-    <!-- App icon -->
-    <img src="/images/app-icon-dark-mode.png" alt="Angor" class="download-logo" />
+    <!-- App icon — swaps with theme (dark icon on dark, light icon on light) -->
+    <div class="dl-anim dl-anim-1">
+      <img
+        [src]="themeService.isDarkTheme() ? '/images/app-icon-dark-mode.png' : '/images/app-icon.png'"
+        alt="Angor"
+        class="download-logo"
+      />
+    </div>
 
     <!-- Title -->
-    <h1 class="download-headline">
-      Download <span class="emphasis">Angor</span>
+    <h1 class="hero-font download-headline tracking-tight dl-anim dl-anim-2">
+      Download <em class="highlight-text">Angor</em>
     </h1>
 
     <!-- Security advisory -->
-    <div class="security-badge">
+    <div class="security-badge dl-anim dl-anim-3">
       <span class="material-icons security-icon">verified_user</span>
       <span>We advise downloading the app for the best security</span>
     </div>
 
-    <!-- Primary download button -->
-    <a [href]="primaryDownloadUrl()" target="_blank" rel="noopener noreferrer" class="btn-base btn-primary mb-6">
-      <span class="material-icons">download</span>
-      <span>Download for {{ detectedPlatform() }}</span>
-    </a>
+    <!-- CTA — platform-detected download + GitHub, always present -->
+    <div class="cta-stack dl-anim dl-anim-4">
+      @if (primaryTarget(); as target) {
+        <a [href]="target.url" target="_blank" rel="noopener noreferrer" class="btn-base btn-primary">
+          <i class="cta-icon {{ target.icon }}" aria-hidden="true"></i>
+          <span>{{ target.label }}</span>
+        </a>
+      } @else {
+        <div class="ios-notice">
+          <span class="material-icons">info</span>
+          <span>Angor isn't available for iOS yet &mdash; get it on desktop or Android.</span>
+        </div>
+      }
 
-    <!-- Alternative platforms -->
-    <div class="alt-platforms">
-      <p class="alt-label">Not on {{ detectedPlatform() }}?</p>
-      <div class="alt-links">
-        @for (platform of alternativePlatforms(); track platform.name) {
-          <a [href]="platform.url" target="_blank" rel="noopener noreferrer" class="alt-link">
-            {{ platform.name }}
-          </a>
-        }
-      </div>
+      <a [href]="githubReleasesUrl" target="_blank" rel="noopener noreferrer" class="btn-base btn-secondary">
+        <i class="cta-icon fa-brands fa-github" aria-hidden="true"></i>
+        <span>GitHub Releases</span>
+      </a>
     </div>
 
-    <!-- Android / Mobile section -->
-    <div class="mobile-section">
-      <h2 class="mobile-heading">Android</h2>
-      <div class="mobile-links">
-        <a href="https://github.com/block-core/angor/releases" target="_blank" rel="noopener noreferrer" class="btn-base btn-secondary w-full sm:w-auto max-w-[280px] sm:max-w-none">
-          <span class="material-icons">code</span>
-          GitHub Releases
-        </a>
-        <a href="https://zapstore.dev" target="_blank" rel="noopener noreferrer" class="btn-base btn-secondary w-full sm:w-auto max-w-[280px] sm:max-w-none">
-          <span class="material-icons">store</span>
-          Zapstore
-        </a>
+    <!-- Other platforms -->
+    <div class="alt-platforms dl-anim dl-anim-5">
+      <span class="alt-label">Also available for</span>
+      <div class="alt-links">
+        @for (alt of alternativePlatforms(); track alt.platform) {
+          <a [href]="alt.url" target="_blank" rel="noopener noreferrer" class="alt-link">
+            <i class="{{ alt.icon }}" aria-hidden="true"></i>
+            <span>{{ alt.label }}</span>
+          </a>
+        }
       </div>
     </div>
   </div>
