@@ -1,0 +1,55 @@
+<section class="launch-section">
+  <div class="launch-content">
+    <!-- App icon — swaps with theme (dark icon on dark, light icon on light) -->
+    <div class="launch-anim launch-anim-1">
+      <img
+        [src]="themeService.isDarkTheme() ? '/images/app-icon-dark-mode.png' : '/images/app-icon.png'"
+        alt="Angor"
+        class="launch-logo"
+      />
+    </div>
+
+    <!-- Title -->
+    <h1 class="hero-font launch-headline tracking-tight launch-anim launch-anim-2">
+      Launch your project on <em class="highlight-text">Angor</em>
+    </h1>
+
+    <!-- Funded projects showcase — tapered tiles with staggered entrance -->
+    <div class="showcase">
+      @for (project of fundedProjects; track project.name; let i = $index) {
+        <a
+          routerLink="/explore"
+          class="showcase-link"
+          [title]="project.name"
+          [attr.aria-label]="project.name + ' raised ' + project.amount + ' on Angor'"
+        >
+          <div
+            class="tile tile-anim {{ project.sizeClass }} {{ project.variantClass }}"
+            [style.animation-delay]="0.5 + i * 0.1 + 's'"
+          >
+            <img [src]="project.image" [alt]="project.name" />
+          </div>
+          <div class="amount amount-anim" [style.animation-delay]="0.7 + i * 0.1 + 's'">
+            {{ project.amount }}
+          </div>
+        </a>
+      }
+    </div>
+
+    <!-- Raised on Angor -->
+    <div class="raised-text launch-anim launch-anim-3">
+      <span class="raised-amount">1.10 BTC</span>
+      <span>Raised on <em class="raised-highlight">Angor</em></span>
+    </div>
+
+    <!-- CTA -->
+    <div class="launch-cta launch-anim launch-anim-4">
+      <a routerLink="/app" class="btn-base btn-primary">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+        </svg>
+        <span>Download the Founder App</span>
+      </a>
+    </div>
+  </div>
+</section>

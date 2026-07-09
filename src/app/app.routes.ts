@@ -6,6 +6,7 @@ import { SettingsComponent } from './pages/settings/settings.component';
 import { ReportComponent } from './pages/report/report.component';
 import { AdminComponent } from './pages/admin/admin.component';
 import { DownloadComponent } from './pages/download/download.component';
+import { LaunchComponent } from './pages/launch/launch.component';
 
 export const routes: Routes = [
   {
@@ -19,6 +20,12 @@ export const routes: Routes = [
     component: ExploreComponent,
     title: 'Explore Projects',
     data: { animation: 'ExplorePage' } 
+  },
+  {
+    path: 'launch',
+    component: LaunchComponent,
+    title: 'Launch Your Project',
+    data: { animation: 'LaunchPage' } 
   },
   {
     path: 'project/:id',
