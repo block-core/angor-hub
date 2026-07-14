@@ -91,6 +91,9 @@ import { ThemeService } from '../services/theme.service';
             <a routerLink="/explore" routerLinkActive="bg-surface-hover text-accent" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
               Projects
             </a>
+            <a routerLink="/launch" routerLinkActive="bg-surface-hover text-accent" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
+              Launch
+            </a>
             <a routerLink="/app" routerLinkActive="bg-surface-hover text-accent" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
               App
             </a>
@@ -135,6 +138,9 @@ import { ThemeService } from '../services/theme.service';
           <nav class="mb-6 space-y-2">
             <a routerLink="/explore" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
               Projects
+            </a>
+            <a routerLink="/launch" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
+              Launch
             </a>
             <a routerLink="/app" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
               App
