@@ -14,7 +14,7 @@ interface DownloadTarget {
 }
 
 const GITHUB_RELEASES_URL = 'https://github.com/block-core/angor/releases';
-const ZAPSTORE_URL = 'https://zapstore.dev';
+const ZAPSTORE_URL = 'https://zapstore.dev/apps/io.angor.app';
 
 const PLATFORM_ICONS: Record<Platform, string> = {
   Windows: 'fa-brands fa-windows',
