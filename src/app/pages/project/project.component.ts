@@ -973,26 +973,9 @@ export class ProjectComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Try to open the native Angor app on mobile via deep link
-    if (this.isMobile()) {
-      const deepLink = `angor://view/${projectId}`;
-      const timeout = setTimeout(() => {
-        // If app didn't open, navigate to download page
-        this.router.navigate(['/app']);
-      }, 1500);
-
-      window.addEventListener('blur', () => clearTimeout(timeout), { once: true });
-      window.location.href = deepLink;
-      return;
-    }
-
-    // On desktop, navigate to the download page
-    this.router.navigate(['/app']);
-  }
-
-  private isMobile(): boolean {
-    const ua = navigator.userAgent.toLowerCase();
-    return /android|iphone|ipad|ipod|mobile/.test(ua);
+    // Open the project in the Angor web app (testnet uses test.angor.io)
+    const host = this.networkService.isMain() ? 'app.angor.io' : 'test.angor.io';
+    window.open(`https://${host}/investview/${projectId}`, '_blank', 'noopener');
   }
 
   getWithdrawnPercentage(): number {
