@@ -973,9 +973,8 @@ export class ProjectComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Open the project in the Angor web app (testnet uses test.angor.io)
-    const host = this.networkService.isMain() ? 'app.angor.io' : 'test.angor.io';
-    window.open(`https://${host}/investview/${projectId}`, '_blank', 'noopener');
+    // Open the in-app invest flow (app.angor.io remains available as an option within the flow)
+    this.router.navigate(['/project', projectId, 'invest']);
   }
 
   getWithdrawnPercentage(): number {

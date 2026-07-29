@@ -7,6 +7,7 @@ import { ReportComponent } from './pages/report/report.component';
 import { AdminComponent } from './pages/admin/admin.component';
 import { DownloadComponent } from './pages/download/download.component';
 import { LaunchComponent } from './pages/launch/launch.component';
+import { InvestComponent } from './pages/invest/invest.component';
 
 export const routes: Routes = [
   {
@@ -32,6 +33,12 @@ export const routes: Routes = [
     component: ProjectComponent,
     title: 'Project Details',
     data: { animation: 'ProjectPage' } 
+  },
+  {
+    path: 'project/:id/invest',
+    component: InvestComponent,
+    title: 'Invest',
+    data: { animation: 'InvestPage' }
   },
   {
     path: 'settings',
