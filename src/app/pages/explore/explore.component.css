@@ -1,9 +1,10 @@
 /* ---- Project card rendering / animation quality ---- */
 
 /* Entrance: subtle fade + rise. Transform/opacity only (compositor-friendly,
-   no layout thrash). `both` keeps first frame invisible to avoid pop-in. */
+   no layout thrash). Starts partially visible so a card replacing a skeleton
+   cross-fades instead of leaving a blank gap. */
 .project-card {
-  animation: card-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: card-enter 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
   /* Targeted transitions instead of transition-all: only what hover changes */
   transition:
     box-shadow 0.3s ease,
@@ -30,8 +31,8 @@
 
 @keyframes card-enter {
   from {
-    opacity: 0;
-    transform: translateY(12px);
+    opacity: 0.4;
+    transform: translateY(6px);
   }
   to {
     opacity: 1;

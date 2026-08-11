@@ -371,10 +371,11 @@
                   <img
                     [src]="project.metadata?.['picture']"
                     loading="lazy"
-                    class="w-full h-full object-cover"
+                    class="w-full h-full object-cover transition-opacity duration-300"
                     (error)="handleProfileError(project.projectIdentifier)"
                     (load)="onProfileImageLoad(project.projectIdentifier)"
-                    [class.hidden]="!isProfileImageLoaded(project.projectIdentifier)"
+                    [class.opacity-0]="!isProfileImageLoaded(project.projectIdentifier)"
+                    [class.opacity-100]="isProfileImageLoaded(project.projectIdentifier)"
                     alt="Project profile"
                   />
                   @if (!isProfileImageLoaded(project.projectIdentifier)) {
