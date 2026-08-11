@@ -1,0 +1,69 @@
+/* ---- Project card rendering / animation quality ---- */
+
+/* Entrance: subtle fade + rise. Transform/opacity only (compositor-friendly,
+   no layout thrash). `both` keeps first frame invisible to avoid pop-in. */
+.project-card {
+  animation: card-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* Targeted transitions instead of transition-all: only what hover changes */
+  transition:
+    box-shadow 0.3s ease,
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.3s ease,
+    filter 0.3s ease;
+  backface-visibility: hidden;
+}
+
+.project-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Gentle stagger for the first visible rows so a fresh page doesn't
+   slam in all at once. Capped so late/infinite-scroll cards never wait. */
+.project-card:nth-child(1) { animation-delay: 0ms; }
+.project-card:nth-child(2) { animation-delay: 40ms; }
+.project-card:nth-child(3) { animation-delay: 80ms; }
+.project-card:nth-child(4) { animation-delay: 120ms; }
+.project-card:nth-child(5) { animation-delay: 160ms; }
+.project-card:nth-child(6) { animation-delay: 200ms; }
+.project-card:nth-child(7) { animation-delay: 240ms; }
+.project-card:nth-child(8) { animation-delay: 280ms; }
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Skeletons: smooth cross-fade in, and no pop when replaced by real cards */
+.skeleton-card {
+  animation: skeleton-enter 0.3s ease both;
+}
+
+@keyframes skeleton-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Off-screen cards skip paint work entirely (big win on long lists) */
+.project-card,
+.skeleton-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 420px;
+}
+
+/* Accessibility: no motion for users who opted out */
+@media (prefers-reduced-motion: reduce) {
+  .project-card,
+  .skeleton-card {
+    animation: none;
+    transition: none;
+  }
+  .project-card:hover {
+    transform: none;
+  }
+}

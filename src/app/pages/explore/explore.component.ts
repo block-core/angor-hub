@@ -33,6 +33,7 @@ type FilterType = 'all' | 'active' | 'upcoming' | 'completed';
   standalone: true,
   imports: [RouterLink, BreadcrumbComponent, IndexerErrorComponent, CommonModule, AgoPipe, TitleCasePipe],
   templateUrl: './explore.component.html',
+  styleUrls: ['./explore.component.css'],
 })
 export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('scrollTrigger') scrollTrigger!: ElementRef;
