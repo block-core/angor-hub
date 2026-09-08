@@ -33,6 +33,7 @@ type FilterType = 'all' | 'active' | 'upcoming' | 'completed';
   standalone: true,
   imports: [RouterLink, BreadcrumbComponent, IndexerErrorComponent, CommonModule, AgoPipe, TitleCasePipe],
   templateUrl: './explore.component.html',
+  styleUrls: ['./explore.component.css'],
 })
 export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('scrollTrigger') scrollTrigger!: ElementRef;
@@ -73,6 +74,11 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Skeleton array for loading state
   skeletonItems = computed(() => Array(SKELETON_COUNT).fill(null));
+
+  // False until the first fetch cycle finishes; keeps skeletons on screen
+  // during pre-fetch async work (e.g. deny list reload) so the empty state
+  // never flashes before we have actually searched for projects.
+  initialLoadComplete = signal<boolean>(false);
 
   filterOptions: FilterType[] = ['all', 'active', 'upcoming', 'completed'];
   sortOptions: SortType[] = ['default', 'funding', 'endDate', 'investors'];
@@ -246,29 +252,33 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     this.favorites = JSON.parse(localStorage.getItem('angor-hub-favorites') || '[]');
     this.setupProjectStatsObserver();
 
-    // Force reload deny list to ensure it's fresh from Nostr
-    await this.denyService.reloadDenyList();
+    try {
+      // Force reload deny list to ensure it's fresh from Nostr
+      await this.denyService.reloadDenyList();
 
-    if (this.exploreState.hasState && this.indexer.projects().length > 0) {
-      console.log(`[Angor Debug] ExploreComponent.ngOnInit: hasState=${this.exploreState.hasState}, projects.length=${this.indexer.projects().length} → restoring cached state, offset=${this.exploreState.offset}`);
-      this.indexer.restoreOffset(this.exploreState.offset);
-      this.observeProjectCards();
+      if (this.exploreState.hasState && this.indexer.projects().length > 0) {
+        console.log(`[Angor Debug] ExploreComponent.ngOnInit: hasState=${this.exploreState.hasState}, projects.length=${this.indexer.projects().length} → restoring cached state, offset=${this.exploreState.offset}`);
+        this.indexer.restoreOffset(this.exploreState.offset);
+        this.observeProjectCards();
 
-      // Still fetch latest data so newly created projects appear
-      this.indexer.fetchLatestProjects();
-    } else {
-      console.log(`[Angor Debug] ExploreComponent.ngOnInit: hasState=${this.exploreState.hasState}, projects.length=${this.indexer.projects().length} → fresh fetch`);
-      this.exploreState.clearState();
+        // Still fetch latest data so newly created projects appear
+        this.indexer.fetchLatestProjects();
+      } else {
+        console.log(`[Angor Debug] ExploreComponent.ngOnInit: hasState=${this.exploreState.hasState}, projects.length=${this.indexer.projects().length} → fresh fetch`);
+        this.exploreState.clearState();
 
-      // Load cached projects from localStorage for instant display
-      const hasCached = this.indexer.loadCachedProjects();
-      if (hasCached) {
+        // Load cached projects from localStorage for instant display
+        const hasCached = this.indexer.loadCachedProjects();
+        if (hasCached) {
+          this.observeProjectCards();
+        }
+
+        // Always fetch fresh data from newest (will deduplicate against cached projects)
+        await this.indexer.fetchLatestProjects();
         this.observeProjectCards();
       }
-
-      // Always fetch fresh data from newest (will deduplicate against cached projects)
-      await this.indexer.fetchLatestProjects();
-      this.observeProjectCards();
+    } finally {
+      this.initialLoadComplete.set(true);
     }
   }
 

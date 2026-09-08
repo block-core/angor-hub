@@ -247,10 +247,10 @@
 
 
 <div class="container mx-auto px-4 pb-20">
-  @if ((indexer.loading() || indexer.validatingCount() > 0) && !filteredProjects().length) {
+  @if ((!initialLoadComplete() || indexer.loading() || indexer.validatingCount() > 0) && !filteredProjects().length) {
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
       @for (item of skeletonItems(); track $index) {
-        <div class="bg-surface-card rounded-2xl overflow-hidden shadow-md animate-pulse">
+        <div class="bg-surface-card rounded-2xl overflow-hidden shadow-md animate-pulse skeleton-card">
           <!-- Banner skeleton -->
           <div class="h-52 bg-surface-hover"></div>
           <!-- Content skeleton -->
@@ -302,7 +302,7 @@
         <a
           [routerLink]="['/project', project.projectIdentifier]"
           [attr.data-project-id]="project.projectIdentifier"
-          class="block bg-surface-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group relative project-card"
+          class="block bg-surface-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl group relative project-card"
           [class.opacity-50]="project.verified === false"
           [class.grayscale]="project.verified === false"
         >
@@ -367,14 +367,15 @@
           <div class="p-5 relative">
             <div class="absolute -top-12 left-5 z-10">
               @if (shouldShowProfileImage(project)) {
-                <div class="relative w-20 h-20 rounded-full border-4 border-surface-card shadow-2xl transition-all duration-300 group-hover:scale-110 group-hover:shadow-primary/30 overflow-hidden">
+                <div class="relative w-20 h-20 rounded-full border-4 border-surface-card shadow-2xl transition-transform duration-300 group-hover:scale-110 overflow-hidden">
                   <img
                     [src]="project.metadata?.['picture']"
                     loading="lazy"
-                    class="w-full h-full object-cover"
+                    class="w-full h-full object-cover transition-opacity duration-300"
                     (error)="handleProfileError(project.projectIdentifier)"
                     (load)="onProfileImageLoad(project.projectIdentifier)"
-                    [class.hidden]="!isProfileImageLoaded(project.projectIdentifier)"
+                    [class.opacity-0]="!isProfileImageLoaded(project.projectIdentifier)"
+                    [class.opacity-100]="isProfileImageLoaded(project.projectIdentifier)"
                     alt="Project profile"
                   />
                   @if (!isProfileImageLoaded(project.projectIdentifier)) {
@@ -385,7 +386,7 @@
                 </div>
               } @else {
                 <div
-                  class="w-20 h-20 rounded-full border-4 border-surface-card shadow-2xl flex items-center justify-center text-white text-2xl font-bold transition-all duration-300 group-hover:scale-110 group-hover:shadow-primary/30"
+                  class="w-20 h-20 rounded-full border-4 border-surface-card shadow-2xl flex items-center justify-center text-white text-2xl font-bold transition-transform duration-300 group-hover:scale-110"
                   [style.background]="'linear-gradient(135deg, ' + getRandomColor(project.projectIdentifier) + ', ' + getRandomColor(project.projectIdentifier + 'alt') + ')'"
                 >
                   {{ getInitial(project.metadata?.['name'] || project.projectIdentifier) }}
@@ -478,27 +479,25 @@
       }
 
       @if (indexer.validatingCount() > 0) {
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mt-6">
-          @for (item of skeletonItems().slice(0, indexer.validatingCount()); track $index) {
-            <div class="bg-surface-card rounded-2xl overflow-hidden shadow-md animate-pulse">
-              <div class="h-52 bg-surface-hover"></div>
-              <div class="p-5 relative">
-                <div class="absolute -top-12 left-5 z-10">
-                  <div class="w-20 h-20 rounded-full border-4 border-surface-card bg-surface-hover"></div>
+        @for (item of skeletonItems().slice(0, indexer.validatingCount()); track $index) {
+          <div class="bg-surface-card rounded-2xl overflow-hidden shadow-md animate-pulse skeleton-card">
+            <div class="h-52 bg-surface-hover"></div>
+            <div class="p-5 relative">
+              <div class="absolute -top-12 left-5 z-10">
+                <div class="w-20 h-20 rounded-full border-4 border-surface-card bg-surface-hover"></div>
+              </div>
+              <div class="pt-3 space-y-3">
+                <div class="h-6 bg-surface-hover rounded w-3/4"></div>
+                <div class="h-4 bg-surface-hover rounded w-1/2"></div>
+                <div class="space-y-2">
+                  <div class="h-4 bg-surface-hover rounded w-full"></div>
+                  <div class="h-4 bg-surface-hover rounded w-5/6"></div>
                 </div>
-                <div class="pt-3 space-y-3">
-                  <div class="h-6 bg-surface-hover rounded w-3/4"></div>
-                  <div class="h-4 bg-surface-hover rounded w-1/2"></div>
-                  <div class="space-y-2">
-                    <div class="h-4 bg-surface-hover rounded w-full"></div>
-                    <div class="h-4 bg-surface-hover rounded w-5/6"></div>
-                  </div>
-                  <div class="h-3 bg-surface-hover rounded-full"></div>
-                </div>
+                <div class="h-3 bg-surface-hover rounded-full"></div>
               </div>
             </div>
-          }
-        </div>
+          </div>
+        }
       }
     </div>
 

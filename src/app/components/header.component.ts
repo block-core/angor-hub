@@ -39,9 +39,32 @@ import { ThemeService } from '../services/theme.service';
       ])
     ])
   ],
+  styles: [`
+    /* Transparent at the top; frosted blur fades in once scrolled past the nav height */
+    .app-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: color-mix(in srgb, var(--surface-ground) 80%, transparent);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      opacity: 0;
+      transition: opacity 0.35s ease;
+      pointer-events: none;
+    }
+
+    .app-header.header-scrolled::before {
+      opacity: 1;
+    }
+
+    .app-header > * {
+      position: relative;
+    }
+  `],
   template: `
     <header
-      class="fixed top-0 left-0 right-0 z-[1000] bg-surface-ground/80 backdrop-blur-md">
+      class="app-header fixed top-0 left-0 right-0 z-[1000]"
+      [class.header-scrolled]="isScrolled()">
       <div class="container mx-auto px-4 flex items-center justify-between h-16">
         <!-- Left Side -->
         <div class="flex items-center gap-4">
@@ -324,7 +347,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private checkScrollPosition(): void {
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     
-    this.isScrolled.set(scrollTop > 20);
+    // Fade the frosted background in once scrolled past the nav bar's own height (h-16 = 64px)
+    this.isScrolled.set(scrollTop > 64);
     
     if (scrollTop > this.lastScrollTop && scrollTop > 100) {
       this.isScrollingDown.set(true);
