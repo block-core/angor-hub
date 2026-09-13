@@ -1511,3 +1511,16 @@
   background: #2a2a2a;
 }
 
+
+/* Keep the same four payment presets in one row across both payment screens. */
+.quick-amounts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.quick-amount-btn {
+  min-width: 0;
+  width: auto;
+  padding-left: 4px;
+  padding-right: 4px;
+}

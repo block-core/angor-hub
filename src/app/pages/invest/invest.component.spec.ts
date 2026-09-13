@@ -67,13 +67,27 @@ describe('InvestComponent project type flows', () => {
       expect(component.paymentStages().length).toBe(type === 1 || type === 2 ? 3 : 1);
       const open = spyOn(window, 'open');
       component.handleMobileInvestClick();
-      expect(open).toHaveBeenCalledWith(`https://app.angor.io/investview/${projectId}`, '_blank', 'noopener');
+      const firstUrl = new URL(open.calls.mostRecent().args[0] as string);
+      expect(firstUrl.origin).toBe('http://localhost:5062');
+      expect(firstUrl.pathname).toBe(`/investview/${projectId}`);
+      expect(firstUrl.searchParams.get('network')).toBe('Main');
+      expect(firstUrl.searchParams.get('theme')).toBe('dark');
+      expect(firstUrl.searchParams.get('amount')).toBe(component.investmentAmount());
+      if (type === 1 || type === 2) {
+        expect(firstUrl.searchParams.get('installments')).toBe('3');
+        expect(firstUrl.searchParams.get('frequency')).toBe('monthly');
+      } else {
+        expect(firstUrl.searchParams.has('installments')).toBeFalse();
+      }
       mainnet = false;
       component.setQuickAmount(0.01);
       component.generateInvoice();
       expect(component.showAppDownloadModal()).toBeTrue();
       component.continueWithWeb();
-      expect(open).toHaveBeenCalledWith(`https://test.angor.io/investview/${projectId}`, '_blank', 'noopener');
+      const nextUrl = new URL(open.calls.mostRecent().args[0] as string);
+      expect(nextUrl.origin).toBe('http://localhost:5062');
+      expect(nextUrl.searchParams.get('network')).toBe('Angornet');
+      expect(nextUrl.searchParams.get('amount')).toBe('0.01');
     }));
   }
 

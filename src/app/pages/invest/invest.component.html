@@ -360,7 +360,7 @@
   @if (showAppDownloadModal()) {
     <div class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black bg-opacity-50 mobile-modal-container modal-overlay"
          (click)="showAppDownloadModal.set(false)" (keydown.escape)="showAppDownloadModal.set(false)" tabindex="-1" role="presentation">
-      <div class="rounded-2xl shadow-2xl max-w-md w-full p-8 modal-panel" [class]="isDark() ? 'bg-[#2A2A2A] border border-[#404040]' : 'bg-white'"
+      <div class="bg-surface-card border border-border rounded-2xl shadow-2xl max-w-md w-full p-6 modal-panel"
            (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Use The App" tabindex="0">
         <div class="relative mb-6">
           <h2 class="text-2xl font-bold text-center" [class]="isDark() ? 'text-white' : 'text-gray-900'">Use The App</h2>
@@ -388,12 +388,6 @@
                   class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 border-2 font-semibold rounded-lg transition-all"
                   [class]="isDark() ? 'border-[#404040] bg-surface-card text-white hover:border-[#4B7C5A] hover:bg-[#2a2a2a]' : 'border-gray-300 bg-white text-gray-900 hover:border-[#4B7C5A] hover:bg-gray-50'">
             <span>Continue with web</span>
-          </button>
-
-          <button (click)="openExternalApp()"
-                  class="w-full text-center text-sm underline transition-colors"
-                  [class]="isDark() ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'">
-            Or continue on app.angor.io
           </button>
         </div>
       </div>

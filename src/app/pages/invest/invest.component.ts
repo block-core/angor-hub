@@ -4,6 +4,7 @@ import {
   computed,
   inject,
   signal,
+  isDevMode,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -67,7 +68,7 @@ export class InvestComponent implements OnInit {
   // ---- Modal state ----
   showAppDownloadModal = signal<boolean>(false);
 
-  quickAmounts = [0.001, 0.01, 0.1, 0.5];
+  quickAmounts = [0.005, 0.01, 0.05, 0.1];
 
   async ngOnInit(): Promise<void> {
     window.scrollTo(0, 0);
@@ -418,10 +419,19 @@ export class InvestComponent implements OnInit {
     this.router.navigate(['/app']);
   }
 
-  /** Opens the invest flow in the Angor web app (app.angor.io / test.angor.io). */
+  /** Opens the matching local or hosted payment flow with the current form context. */
   openExternalApp(): void {
     const host = this.networkService.isMain() ? 'app.angor.io' : 'test.angor.io';
-    window.open(`https://${host}/investview/${this.projectId}`, '_blank', 'noopener');
+    const base = isDevMode() ? 'http://localhost:5062' : `https://${host}`;
+    const url = new URL(`/investview/${encodeURIComponent(this.projectId)}`, base);
+    url.searchParams.set('theme', this.isDark() ? 'dark' : 'light');
+    url.searchParams.set('network', this.networkService.isMain() ? 'Main' : 'Angornet');
+    url.searchParams.set('amount', this.investmentAmount());
+    if (this.projectTypeName() !== 'invest') {
+      url.searchParams.set('installments', String(this.paymentStages().length));
+      url.searchParams.set('frequency', this.projectTypeName() === 'fund' ? this.selectedFrequency() : 'monthly');
+    }
+    window.open(url.href, '_blank', 'noopener');
   }
 
   continueWithWeb(): void {
