@@ -1,3 +1,5 @@
+@import './typography.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -45,7 +47,7 @@ html[data-theme="light"] {
 body {
   background-color: var(--background); 
   color: var(--text); 
-  font-family: 'Inter', sans-serif; 
+  font-family: var(--font-interface, 'Inter', sans-serif);
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
