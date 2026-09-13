@@ -12,7 +12,7 @@
   --accent-dark: #4d9a6a;       /* hover */
   --text: #fafafa;
   --text-secondary: #a3a3a3;
-  --surface-card: #1a1a1a;      /* cards lift off the near-black ground */
+  --surface-card: #101010;      /* shared near-black container surface */
   --surface-ground: #0a0a0a;
   --surface-hover: #2a2a2a;
   --border: #2a2a2a;

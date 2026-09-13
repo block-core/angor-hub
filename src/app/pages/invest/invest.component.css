@@ -501,7 +501,7 @@
 }
 
 .dark-mode .subscription-pattern-btn {
-  background: #1a1a1a;
+  background: var(--surface-card);
   border-color: #404040;
 }
 
@@ -588,7 +588,7 @@
 }
 
 .dark-mode .fund-option-btn {
-  background: #1a1a1a;
+  background: var(--surface-card);
   border-color: #404040;
 }
 
@@ -920,7 +920,7 @@
 
 /* Dark Mode */
 .dark-mode .back-button-floating {
-  background: #1a1a1a;
+  background: var(--surface-card);
   color: #fafafa;
   border-color: #333;
 }
@@ -930,7 +930,7 @@
 }
 
 .dark-mode .investment-label {
-  background: #1a1a1a;
+  background: var(--surface-card);
   border-color: #333;
 }
 
@@ -939,7 +939,7 @@
 }
 
 .dark-mode .nav-stat-item {
-  background: #1a1a1a;
+  background: var(--surface-card);
   border-color: #333;
 }
 
@@ -957,7 +957,7 @@
 }
 
 .dark-mode .header-stat {
-  background: #1a1a1a;
+  background: var(--surface-card);
   border-color: #333;
 }
 
@@ -970,7 +970,7 @@
 }
 
 .dark-mode .invest-card {
-  background: #1a1a1a;
+  background: var(--surface-card);
   border-color: #333;
 }
 
@@ -1091,7 +1091,7 @@
 }
 
 .dark-mode .stages-card {
-  background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+  background: var(--surface-card);
 }
 
 .dark-mode .stages-description {
@@ -1099,7 +1099,7 @@
 }
 
 .dark-mode .stage-breakdown-row {
-  background: #1a1a1a;
+  background: var(--surface-card);
   border-color: #333;
 }
 
@@ -1347,7 +1347,7 @@
   }
   
   .dark-mode .invest-fixed-footer {
-    background: #1a1a1a;
+    background: var(--surface-card);
     border-top-color: #333;
   }
 
@@ -1433,7 +1433,7 @@
 
 /* Dark Mode for Fixed Footer */
 .dark-mode .invest-fixed-footer {
-  background: #1a1a1a;
+  background: var(--surface-card);
   border-top-color: #404040;
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
 }
@@ -1553,7 +1553,7 @@
 /* Dark Mode - Mobile Floating Bottom Bar */
 
 .dark-mode .mobile-bar-back-btn {
-  background: #1a1a1a;
+  background: var(--surface-card);
   border-color: #404040;
   color: #fafafa;
 }
