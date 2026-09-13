@@ -1,0 +1,56 @@
+/* Interface typography from angor-prototype/src/style.css.
+ * The prototype supplies Light (300), Bold (600/700), Extra Bold and Black;
+ * regular/medium text uses the nearest available face, as in the prototype.
+ * Marketing headlines retain their explicit .hero-font family.
+ */
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proxima-nova/proximanova_light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proxima-nova/proximanova_bold.otf') format('opentype');
+  font-weight: 600 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proxima-nova/proximanova_boldit.otf') format('opentype');
+  font-weight: 600 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proxima-nova/proximanova_extrabold.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proxima-nova/proximanova_black.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proxima-nova/proximanova_blackit.otf') format('opentype');
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  --font-interface: 'Proxima Nova', system-ui, -apple-system, sans-serif;
+}

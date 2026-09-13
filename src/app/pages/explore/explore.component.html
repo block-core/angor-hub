@@ -247,38 +247,10 @@
 
 
 <div class="container mx-auto px-4 pb-20">
-  @if ((!initialLoadComplete() || indexer.loading() || indexer.validatingCount() > 0) && !filteredProjects().length) {
+  @if (showInitialLoading()) {
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
       @for (item of skeletonItems(); track $index) {
-        <div class="bg-surface-card rounded-2xl overflow-hidden shadow-md animate-pulse skeleton-card">
-          <!-- Banner skeleton -->
-          <div class="h-52 bg-surface-hover"></div>
-          <!-- Content skeleton -->
-          <div class="p-5 relative">
-            <!-- Profile skeleton -->
-            <div class="absolute -top-12 left-5 z-10">
-              <div class="w-20 h-20 rounded-full border-4 border-surface-card bg-surface-hover"></div>
-            </div>
-            <div class="pt-3 space-y-3">
-              <!-- Title skeleton -->
-              <div class="h-6 bg-surface-hover rounded w-3/4"></div>
-              <!-- Date skeleton -->
-              <div class="h-4 bg-surface-hover rounded w-1/2"></div>
-              <!-- Description skeleton -->
-              <div class="space-y-2">
-                <div class="h-4 bg-surface-hover rounded w-full"></div>
-                <div class="h-4 bg-surface-hover rounded w-5/6"></div>
-              </div>
-              <!-- Stats skeleton -->
-              <div class="flex justify-between items-center">
-                <div class="h-4 bg-surface-hover rounded w-24"></div>
-                <div class="h-4 bg-surface-hover rounded w-32"></div>
-              </div>
-              <!-- Progress bar skeleton -->
-              <div class="h-3 bg-surface-hover rounded-full"></div>
-            </div>
-          </div>
-        </div>
+        <ng-container [ngTemplateOutlet]="projectSkeleton" />
       }
     </div>
   } @else if (filteredProjects().length === 0) {
@@ -478,33 +450,22 @@
         </a>
       }
 
-      @if (indexer.validatingCount() > 0) {
-        @for (item of skeletonItems().slice(0, indexer.validatingCount()); track $index) {
-          <div class="bg-surface-card rounded-2xl overflow-hidden shadow-md animate-pulse skeleton-card">
-            <div class="h-52 bg-surface-hover"></div>
-            <div class="p-5 relative">
-              <div class="absolute -top-12 left-5 z-10">
-                <div class="w-20 h-20 rounded-full border-4 border-surface-card bg-surface-hover"></div>
-              </div>
-              <div class="pt-3 space-y-3">
-                <div class="h-6 bg-surface-hover rounded w-3/4"></div>
-                <div class="h-4 bg-surface-hover rounded w-1/2"></div>
-                <div class="space-y-2">
-                  <div class="h-4 bg-surface-hover rounded w-full"></div>
-                  <div class="h-4 bg-surface-hover rounded w-5/6"></div>
-                </div>
-                <div class="h-3 bg-surface-hover rounded-full"></div>
-              </div>
-            </div>
-          </div>
+      @if (isLoadingMore() && indexer.loading()) {
+        @for (item of skeletonItems(); track $index) {
+          <ng-container [ngTemplateOutlet]="projectSkeleton" />
         }
       }
+
     </div>
 
-      @if (!indexer.isComplete()) {
+  }
+
+  @if (indexer.projects().length > 0 || initialLoadComplete()) {
+      @if (!indexer.isComplete() || indexer.loading()) {
         @if (indexer.loading()) {
-          <div class="flex justify-center items-center py-12">
-            <div class="w-10 h-10 border-[3px] border-primary/30 border-t-primary rounded-full animate-spin"></div>
+          <div class="flex justify-center items-center gap-3 py-12 text-text-secondary" role="status">
+            <span class="w-5 h-5 border-2 border-border border-t-accent rounded-full animate-spin" aria-hidden="true"></span>
+            <span>Looking for more projects…</span>
           </div>
         } @else {
           <div class="text-center py-16">
@@ -544,6 +505,38 @@
 <app-indexer-error
   [visible]="!!indexer.error()"
   [errorDetails]="indexer.error()"
-  (onRetry)="retryLoadProjects()"
-  (onDismiss)="indexer.error.set(null)"
+  (retryEvent)="retryLoadProjects()"
+  (dismissEvent)="indexer.error.set(null)"
 ></app-indexer-error>
+
+<ng-template #projectSkeleton>
+        <div class="bg-surface-card rounded-2xl overflow-hidden shadow-md animate-pulse skeleton-card" aria-hidden="true">
+          <!-- Banner skeleton -->
+          <div class="h-52 bg-surface-hover"></div>
+          <!-- Content skeleton -->
+          <div class="p-5 relative">
+            <!-- Profile skeleton -->
+            <div class="absolute -top-12 left-5 z-10">
+              <div class="w-20 h-20 rounded-full border-4 border-surface-card bg-surface-hover"></div>
+            </div>
+            <div class="pt-3 space-y-3">
+              <!-- Title skeleton -->
+              <div class="h-6 bg-surface-hover rounded w-3/4"></div>
+              <!-- Date skeleton -->
+              <div class="h-4 bg-surface-hover rounded w-1/2"></div>
+              <!-- Description skeleton -->
+              <div class="space-y-2">
+                <div class="h-4 bg-surface-hover rounded w-full"></div>
+                <div class="h-4 bg-surface-hover rounded w-5/6"></div>
+              </div>
+              <!-- Stats skeleton -->
+              <div class="flex justify-between items-center">
+                <div class="h-4 bg-surface-hover rounded w-24"></div>
+                <div class="h-4 bg-surface-hover rounded w-32"></div>
+              </div>
+              <!-- Progress bar skeleton -->
+              <div class="h-3 bg-surface-hover rounded-full"></div>
+            </div>
+          </div>
+        </div>
+</ng-template>

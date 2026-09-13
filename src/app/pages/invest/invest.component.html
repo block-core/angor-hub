@@ -1,24 +1,24 @@
 <div class="hub-container flex flex-col transition-colors duration-300 min-h-screen" [class.dark-mode]="isDark()">
   <main class="flex-1 flex flex-col">
     @if (loading()) {
-      <div class="invest-page-container flex items-center justify-center flex-1" [class.dark-mode]="isDark()">
+      <div class="container mx-auto px-4 invest-page-container flex items-center justify-center flex-1" [class.dark-mode]="isDark()">
         <div class="text-center py-24">
           <p [class]="isDark() ? 'text-white' : 'text-gray-900'">Loading...</p>
         </div>
       </div>
     } @else if (error()) {
-      <div class="invest-page-container flex items-center justify-center flex-1" [class.dark-mode]="isDark()">
+      <div class="container mx-auto px-4 invest-page-container flex items-center justify-center flex-1" [class.dark-mode]="isDark()">
         <div class="text-center py-24">
           <p [class]="isDark() ? 'text-red-400' : 'text-red-600'">{{ error() }}</p>
           <button (click)="goBack()" class="mt-4 px-4 py-2 rounded-lg bg-[#4B7C5A] text-white">Back to Project</button>
         </div>
       </div>
     } @else if (project()) {
-      <div class="invest-page-container" [class.dark-mode]="isDark()">
+      <div class="container mx-auto px-4 invest-page-container" [class.dark-mode]="isDark()">
         <div class="invest-main-section">
           <!-- Fixed Navigation Bar -->
           <div class="sticky-nav-bar">
-            <div class="sticky-nav-bar-inner">
+            <div class="container mx-auto px-4 sticky-nav-bar-inner">
               <div class="nav-left">
                 <button class="back-button-floating" (click)="goBack()">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,7 +302,7 @@
 
         <!-- Fixed Footer (Desktop Only) -->
         <div class="invest-fixed-footer">
-          <div class="footer-content">
+          <div class="container mx-auto px-4 footer-content">
             <div class="footer-right-group">
               <div class="footer-summary">
                 <div class="summary-item">
@@ -340,7 +340,7 @@
       </div>
 
       <!-- Mobile Floating Bottom Bar -->
-      <div class="mobile-floating-bar md:hidden" [class.dark-mode]="isDark()">
+      <div class="mobile-floating-bar min-[769px]:hidden" [class.dark-mode]="isDark()">
         <div class="mobile-floating-bar-inner">
           <button (click)="goBack()" class="mobile-bar-back-btn">
             <span>Back</span>
@@ -386,7 +386,7 @@
 
           <button (click)="continueWithWeb()"
                   class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 border-2 font-semibold rounded-lg transition-all"
-                  [class]="isDark() ? 'border-[#404040] bg-[#1a1a1a] text-white hover:border-[#4B7C5A] hover:bg-[#2a2a2a]' : 'border-gray-300 bg-white text-gray-900 hover:border-[#4B7C5A] hover:bg-gray-50'">
+                  [class]="isDark() ? 'border-[#404040] bg-surface-card text-white hover:border-[#4B7C5A] hover:bg-[#2a2a2a]' : 'border-gray-300 bg-white text-gray-900 hover:border-[#4B7C5A] hover:bg-gray-50'">
             <span>Continue with web</span>
           </button>
 

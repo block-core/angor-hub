@@ -162,6 +162,13 @@ export class RelayService {
     }
   }
 
+  async fetchProjectDetails(eventId: string): Promise<ProjectUpdate | null> {
+    const ndk = await this.ensureConnected();
+    const event = await ndk.fetchEvent({ ids: [eventId] });
+    if (!event) return null;
+    return JSON.parse(event.content) as ProjectUpdate;
+  }
+
   async fetchData(ids: string[]): Promise<void> {
     try {
       const ndk = await this.ensureConnected();
@@ -316,35 +323,40 @@ export class RelayService {
       // Use subscribe + EOSE rather than fetchEvents
       const collected: NDKEvent[] = [];
 
-      const sub = ndk.subscribe(filter);
+      const sub = ndk.subscribe(filter, { closeOnEose: true }, false);
 
-      await new Promise<void>((resolve) => {
-        const timeout = setTimeout(() => {
-          console.warn('fetchNostrProjects: timeout reached, resolving with partial results');
-          resolve();
-        }, 8000);
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Project discovery timed out. Please retry.'));
+          }, 8000);
 
-        sub.on('event', (event: NDKEvent) => {
-          collected.push(event);
+          sub.on('event', (event: NDKEvent) => {
+            collected.push(event);
+          });
+
+          sub.on('eose', () => {
+            clearTimeout(timeout);
+            resolve();
+          });
+
+          sub.on('close', () => {
+            clearTimeout(timeout);
+            reject(new Error('Project discovery connection closed. Please retry.'));
+          });
+
+          sub.start();
         });
-
-        sub.on('eose', () => {
-          clearTimeout(timeout);
-          resolve();
-        });
-
-        sub.on('close', () => {
-          clearTimeout(timeout);
-          resolve();
-        });
-      });
+      } finally {
+        sub.stop();
+      }
 
       console.log(`[Angor] fetchNostrProjects: received ${collected.length} events`);
       return collected;
     } catch (error) {
       console.error('Error fetching Nostr projects (kind 3030):', error);
       if (retryCount >= 1) {
-        return [];
+        throw error;
       }
 
       try {
@@ -352,7 +364,7 @@ export class RelayService {
         return await this.fetchNostrProjects(limit, until, retryCount + 1);
       } catch (retryError) {
         console.error('Retry failed for fetchNostrProjects:', retryError);
-        return [];
+        throw retryError;
       }
     }
   }
