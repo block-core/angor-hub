@@ -1,29 +1,8 @@
-
-/* Matches header-inner-container width and padding */
+/* Use the same container utility as the main header and project details. */
 .invest-page-container {
-  padding: 0;
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-}
-
-@media (min-width: 768px) and (max-width: 1279px) {
-  .invest-page-container {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
-}
-
-@media (min-width: 1280px) {
-  .invest-page-container {
-    padding-left: 2rem;
-    padding-right: 2rem;
-  }
 }
 
 .invest-main-section {
@@ -49,35 +28,11 @@
 }
 
 .sticky-nav-bar-inner {
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
   box-sizing: border-box;
-}
-
-@media (min-width: 768px) and (max-width: 1279px) {
-  .sticky-nav-bar-inner {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
-}
-
-@media (min-width: 1280px) {
-  .sticky-nav-bar-inner {
-    padding-left: 2rem;
-    padding-right: 2rem;
-  }
-}
-
-@media (max-width: 1240px) {
-  .sticky-nav-bar-inner {
-    max-width: 900px;
-  }
 }
 
 .sticky-nav-bar > * {
@@ -89,18 +44,21 @@
 }
 
 .nav-left {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
 .nav-right {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
 .investment-label {
+  min-width: 0;
   display: flex;
   align-items: center;
   padding: 12px 20px;
@@ -113,6 +71,8 @@
 }
 
 .investment-label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 15px;
   font-weight: 600;
   color: #333;
@@ -264,8 +224,6 @@
 @media (max-width: 1240px) {
   .invest-content {
     grid-template-columns: repeat(2, 1fr);
-    max-width: 900px;
-    margin: 0 auto;
   }
 
   .transaction-details-card {
@@ -1143,7 +1101,7 @@
   .invest-header-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    padding: 0 16px;
+    padding: 0;
     margin-top: 1rem;
     margin-bottom: 1.5rem;
     gap: 8px;
@@ -1178,7 +1136,7 @@
   .invest-content {
     display: flex;
     flex-direction: column;
-    padding: 0 16px 32px 16px;
+    padding: 0 0 32px;
     gap: 16px;
   }
 
@@ -1339,7 +1297,8 @@
   }
 
   .invest-fixed-footer .footer-content {
-    padding: 20px 24px;
+    padding-top: 20px;
+    padding-bottom: 20px;
   }
 
   .invest-page-container {
@@ -1352,21 +1311,11 @@
   }
 
   .footer-content {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 20px 40px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 24px;
     height: 100%;
-  }
-
-  /* Adjust footer width for tablet */
-  @media (max-width: 1240px) {
-    .footer-content {
-      max-width: 900px;
-    }
   }
 
   .footer-right-group {

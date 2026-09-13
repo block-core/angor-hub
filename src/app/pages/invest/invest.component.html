@@ -1,24 +1,24 @@
 <div class="hub-container flex flex-col transition-colors duration-300 min-h-screen" [class.dark-mode]="isDark()">
   <main class="flex-1 flex flex-col">
     @if (loading()) {
-      <div class="invest-page-container flex items-center justify-center flex-1" [class.dark-mode]="isDark()">
+      <div class="container mx-auto px-4 invest-page-container flex items-center justify-center flex-1" [class.dark-mode]="isDark()">
         <div class="text-center py-24">
           <p [class]="isDark() ? 'text-white' : 'text-gray-900'">Loading...</p>
         </div>
       </div>
     } @else if (error()) {
-      <div class="invest-page-container flex items-center justify-center flex-1" [class.dark-mode]="isDark()">
+      <div class="container mx-auto px-4 invest-page-container flex items-center justify-center flex-1" [class.dark-mode]="isDark()">
         <div class="text-center py-24">
           <p [class]="isDark() ? 'text-red-400' : 'text-red-600'">{{ error() }}</p>
           <button (click)="goBack()" class="mt-4 px-4 py-2 rounded-lg bg-[#4B7C5A] text-white">Back to Project</button>
         </div>
       </div>
     } @else if (project()) {
-      <div class="invest-page-container" [class.dark-mode]="isDark()">
+      <div class="container mx-auto px-4 invest-page-container" [class.dark-mode]="isDark()">
         <div class="invest-main-section">
           <!-- Fixed Navigation Bar -->
           <div class="sticky-nav-bar">
-            <div class="sticky-nav-bar-inner">
+            <div class="container mx-auto px-4 sticky-nav-bar-inner">
               <div class="nav-left">
                 <button class="back-button-floating" (click)="goBack()">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,7 +302,7 @@
 
         <!-- Fixed Footer (Desktop Only) -->
         <div class="invest-fixed-footer">
-          <div class="footer-content">
+          <div class="container mx-auto px-4 footer-content">
             <div class="footer-right-group">
               <div class="footer-summary">
                 <div class="summary-item">

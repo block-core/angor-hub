@@ -162,6 +162,13 @@ export class RelayService {
     }
   }
 
+  async fetchProjectDetails(eventId: string): Promise<ProjectUpdate | null> {
+    const ndk = await this.ensureConnected();
+    const event = await ndk.fetchEvent({ ids: [eventId] });
+    if (!event) return null;
+    return JSON.parse(event.content) as ProjectUpdate;
+  }
+
   async fetchData(ids: string[]): Promise<void> {
     try {
       const ndk = await this.ensureConnected();

@@ -11,6 +11,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { IndexerService, IndexedProject } from '../../services/indexer.service';
 import { BitcoinUtilsService } from '../../services/bitcoin.service';
 import { NetworkService } from '../../services/network.service';
+import { RelayService } from '../../services/relay.service';
 import { ThemeService } from '../../services/theme.service';
 
 type ProjectTypeName = 'invest' | 'fund' | 'subscription';
@@ -37,6 +38,7 @@ export class InvestComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private indexer = inject(IndexerService);
+  private relay = inject(RelayService);
   private bitcoin = inject(BitcoinUtilsService);
   private networkService = inject(NetworkService);
   protected themeService = inject(ThemeService);
@@ -77,13 +79,22 @@ export class InvestComponent implements OnInit {
     }
 
     try {
-      const project = await this.indexer.fetchProject(this.projectId);
+      const project = this.indexer.getProject(this.projectId)
+        ?? await this.indexer.fetchProject(this.projectId);
       if (!project) {
         this.error.set('Project not found');
         this.loading.set(false);
         return;
       }
-      this.project.set(project);
+      const details = project.details
+        ?? await this.relay.fetchProjectDetails(project.nostrEventId);
+      if (!details || details.projectIdentifier !== this.projectId) {
+        throw new Error('Project details are unavailable or do not match this project');
+      }
+      if (details.projectType !== undefined && ![0, 1, 2].includes(details.projectType)) {
+        throw new Error('Unsupported project type');
+      }
+      this.project.set({ ...project, details });
 
       // Load stats for the nav bar (total raised / progress)
       try {
@@ -105,7 +116,7 @@ export class InvestComponent implements OnInit {
       }
     } catch (err) {
       console.error('Failed to load project:', err);
-      this.error.set('Failed to load project');
+      this.error.set('Failed to load project details. Please reload to try again.');
     } finally {
       this.loading.set(false);
     }
@@ -113,12 +124,12 @@ export class InvestComponent implements OnInit {
 
   // ---- Derived project data ----
 
-  projectTypeName(): ProjectTypeName {
+  projectTypeName = computed<ProjectTypeName>(() => {
     const type = this.project()?.details?.projectType ?? 0;
     if (type === 1) return 'fund';
     if (type === 2) return 'subscription';
     return 'invest';
-  }
+  });
 
   projectTitle(): string {
     const p = this.project();
@@ -146,9 +157,9 @@ export class InvestComponent implements OnInit {
   }
 
   actionButtonText = computed(() => {
-    const type = this.project()?.details?.projectType ?? 0;
-    if (type === 2) return 'Subscribe';
-    if (type === 1) return 'Fund';
+    const type = this.projectTypeName();
+    if (type === 'subscription') return 'Subscribe';
+    if (type === 'fund') return 'Fund';
     return 'Invest Now';
   });
 
@@ -173,7 +184,7 @@ export class InvestComponent implements OnInit {
 
   paymentStages = computed<PaymentStage[]>(() => {
     const amount = parseFloat(this.investmentAmount()) || 0;
-    const type = this.projectTypeNameFromSignal();
+    const type = this.projectTypeName();
 
     if (type === 'subscription' && this.selectedSubscriptionPattern()) {
       const patternCount = this.selectedSubscriptionPattern() === 'pattern1' ? 3 : 6;
@@ -230,15 +241,8 @@ export class InvestComponent implements OnInit {
     }));
   });
 
-  private projectTypeNameFromSignal(): ProjectTypeName {
-    const type = this.project()?.details?.projectType ?? 0;
-    if (type === 1) return 'fund';
-    if (type === 2) return 'subscription';
-    return 'invest';
-  }
-
   paymentPricePerInstallment = computed(() => {
-    const type = this.projectTypeNameFromSignal();
+    const type = this.projectTypeName();
     if ((type === 'subscription' || type === 'fund') && this.investmentAmount()) {
       const amount = parseFloat(this.investmentAmount()) || 0;
       const count = this.paymentStages().length;
@@ -250,8 +254,8 @@ export class InvestComponent implements OnInit {
   // ---- Validation ----
 
   canSubmit = computed(() => {
-    if (!this.project()) return false;
-    const type = this.projectTypeNameFromSignal();
+    if (this.loading() || this.error() || !this.project()?.details) return false;
+    const type = this.projectTypeName();
     const amount = parseFloat(this.investmentAmount());
     if (type === 'subscription') {
       return this.selectedSubscriptionPattern() !== null && !!this.investmentAmount() && amount > 0 && !this.amountError();
@@ -271,7 +275,9 @@ export class InvestComponent implements OnInit {
   validateAmount(): void {
     const amount = parseFloat(this.investmentAmount());
     if (this.investmentAmount() && amount < MIN_AMOUNT_BTC) {
-      this.amountError.set('Minimum investment is 0.001 BTC');
+      this.amountError.set(this.projectTypeName() === 'fund'
+        ? 'Minimum funding is 0.001 BTC'
+        : 'Minimum investment is 0.001 BTC');
     } else if (this.investmentAmount() && isNaN(amount)) {
       this.amountError.set('Please enter a valid amount');
     } else {
@@ -323,7 +329,7 @@ export class InvestComponent implements OnInit {
   showValidationErrors(): void {
     this.clearValidationError();
     let firstErrorSelector: string | null = null;
-    const type = this.projectTypeNameFromSignal();
+    const type = this.projectTypeName();
     const amount = parseFloat(this.investmentAmount());
 
     if (type === 'subscription') {
