@@ -250,11 +250,11 @@ html[data-theme="light"] .custom-modal-border {
      device instead of shrinking on smaller viewports. Tweak --pattern-size. */
   -webkit-mask-size: var(--pattern-size) var(--pattern-size);
   mask-size: var(--pattern-size) var(--pattern-size);
-  opacity: 0.25;           /* dark (default): green mark on near-black */
+  opacity: 0.1;            /* dark: subtle texture behind content */
   pointer-events: none;
   z-index: -1;
 }
 /* Light mode has plenty of contrast already — keep it subtle */
 html[data-theme="light"] .pattern-overlay::before {
-  opacity: 0.2;
+  opacity: 0.07;
 }
