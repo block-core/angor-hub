@@ -1,4 +1,4 @@
-import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, signal, computed, Signal, DOCUMENT } from '@angular/core';
+import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, signal, computed, effect, Signal, DOCUMENT } from '@angular/core';
 import { RelayService } from '../../services/relay.service';
 import { IndexedProject, IndexerService } from '../../services/indexer.service';
 import { NetworkService } from '../../services/network.service';
@@ -49,7 +49,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   private routerSubscription: Subscription | null = null;
   private isBackNavigation = false;
   private projectStatsObserver: IntersectionObserver | null = null;
-  private isLoadingMore = false;
+  readonly isLoadingMore = signal(false);
   private loadMoreQueued = false;
   private document = inject(DOCUMENT);
 
@@ -79,6 +79,10 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   // during pre-fetch async work (e.g. deny list reload) so the empty state
   // never flashes before we have actually searched for projects.
   initialLoadComplete = signal<boolean>(false);
+
+  showInitialLoading = computed(() => this.indexer.projects().length === 0
+    && !this.indexer.error()
+    && (!this.initialLoadComplete() || this.indexer.loading() || !this.indexer.isComplete()));
 
   filterOptions: FilterType[] = ['all', 'active', 'upcoming', 'completed'];
   sortOptions: SortType[] = ['default', 'funding', 'endDate', 'investors'];
@@ -158,6 +162,22 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   showMobileFilters = false;
 
   constructor() {
+    // IntersectionObserver only reports crossings, not completion of a fetch.
+    // Recheck after each batch so a visible sentinel cannot strand a short grid.
+    effect((onCleanup) => {
+      const ready = this.initialLoadComplete() && !this.indexer.loading()
+        && !this.indexer.error() && !this.indexer.isComplete();
+      this.filteredProjects();
+      if (!ready) return;
+      const frame = requestAnimationFrame(() => {
+        const target = this.document.querySelector('.scroll-trigger');
+        if (target && target.getBoundingClientRect().top <= window.innerHeight + 200) {
+          void this.loadMore();
+        }
+      });
+      onCleanup(() => cancelAnimationFrame(frame));
+    });
+
     // Set up debounced search
     this.searchSubscription = this.searchSubject.pipe(
       debounceTime(SEARCH_DEBOUNCE_MS),
@@ -230,7 +250,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
 
   favorites: string[] = [];
   async loadMoreProjects() {
-    await this.indexer.loadMore();
+    await this.loadMore();
   }
 
   trackByProjectIdentifier(index: number, project: IndexedProject): string {
@@ -262,7 +282,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
         this.observeProjectCards();
 
         // Still fetch latest data so newly created projects appear
-        this.indexer.fetchLatestProjects();
+        await this.indexer.fetchLatestProjects();
       } else {
         console.log(`[Angor Debug] ExploreComponent.ngOnInit: hasState=${this.exploreState.hasState}, projects.length=${this.indexer.projects().length} → fresh fetch`);
         this.exploreState.clearState();
@@ -314,7 +334,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     this.document.removeEventListener('click', this.closeFilterDropdown);
     this.document.removeEventListener('click', this.closeSortDropdown);
 
-    this.isLoadingMore = false
+    this.isLoadingMore.set(false);
     this.loadMoreQueued = false;
   }
 
@@ -481,17 +501,17 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async loadMore(): Promise<void> {
-    if (this.isLoadingMore) {
+    if (this.isLoadingMore()) {
       this.loadMoreQueued = true;
       return;
     }
-    if (!this.indexer.loading() && !this.indexer.isComplete()) {
+    if (!this.indexer.loading() && !this.indexer.error() && !this.indexer.isComplete()) {
       try {
-        this.isLoadingMore = true;
+        this.isLoadingMore.set(true);
         await this.indexer.loadMore();
         this.observeProjectCards();
       } finally {
-        this.isLoadingMore = false;
+        this.isLoadingMore.set(false);
         if (this.loadMoreQueued) {
           this.loadMoreQueued = false;
           this.loadMore();
@@ -502,7 +522,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async retryLoadProjects(): Promise<void> {
     this.indexer.error.set(null);
-    await this.indexer.fetchProjects(true);
+    await this.indexer.fetchProjects();
     this.observeProjectCards();
   }
 

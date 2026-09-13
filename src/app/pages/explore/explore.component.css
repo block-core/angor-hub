@@ -1,5 +1,10 @@
 /* ---- Project card rendering / animation quality ---- */
 
+:host-context(html:not([data-theme="light"])) .project-card,
+:host-context(html:not([data-theme="light"])) .skeleton-card {
+  --surface-card: #101010;
+}
+
 /* Entrance: subtle fade + rise. Transform/opacity only (compositor-friendly,
    no layout thrash). Starts partially visible so a card replacing a skeleton
    cross-fades instead of leaving a blank gap. */

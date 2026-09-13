@@ -960,7 +960,7 @@
   <app-indexer-error
     [visible]="!!indexer.error()"
     [errorDetails]="indexer.error()"
-    (onRetry)="retryLoadProject()"
-    (onDismiss)="indexer.error.set(null)"
+    (retryEvent)="retryLoadProject()"
+    (dismissEvent)="indexer.error.set(null)"
   ></app-indexer-error>
 }
