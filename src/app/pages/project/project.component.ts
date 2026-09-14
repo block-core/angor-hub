@@ -21,6 +21,7 @@ import {
 import { AgoPipe } from '../../pipes/ago.pipe';
 import { ImagePopupComponent } from '../../components/image-popup.component';
 import { NetworkService } from '../../services/network.service';
+import { PaymentNavigationService } from '../../services/payment-navigation.service';
 import { ExternalIdentity, FaqItem } from '../../models/models';
 import { UtilsService } from '../../services/utils.service';
 import { ProfileComponent } from '../../components/profile.component';
@@ -200,6 +201,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
   private relay = inject(RelayService);
   private subscriptions: { unsubscribe: () => void }[] = [];
   public networkService = inject(NetworkService);
+  private paymentNavigation = inject(PaymentNavigationService);
   public utils = inject(UtilsService);
   public bitcoin = inject(BitcoinUtilsService);
   public title = inject(TitleService);
@@ -973,8 +975,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Open the in-app invest flow (app.angor.io remains available as an option within the flow)
-    this.router.navigate(['/project', projectId, 'invest']);
+    this.paymentNavigation.open(projectId);
   }
 
   getWithdrawnPercentage(): number {
