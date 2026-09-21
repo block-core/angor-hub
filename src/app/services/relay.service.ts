@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import NDK, { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
+import NDK, { NDKEvent, NDKKind, NDKRelaySet } from '@nostr-dev-kit/ndk';
 import { Subject } from 'rxjs';
 
 export interface ProjectUpdate {
@@ -323,7 +323,10 @@ export class RelayService {
       // Use subscribe + EOSE rather than fetchEvents
       const collected: NDKEvent[] = [];
 
-      const sub = ndk.subscribe(filter, { closeOnEose: true }, false);
+      // Use the connected relay objects so NDK tracks completion with canonical
+      // URLs and does not wait for an unavailable configured relay.
+      const relaySet = new NDKRelaySet(new Set(ndk.pool.connectedRelays()), ndk);
+      const sub = ndk.subscribe(filter, { closeOnEose: true, relaySet }, false);
 
       try {
         await new Promise<void>((resolve, reject) => {
