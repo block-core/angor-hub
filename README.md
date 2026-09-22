@@ -18,6 +18,8 @@ Blazor runs with runtime optimizations enabled for testing the investment flow. 
 
 Use `npm run start:hub` to run only Angular. Angular options can still be passed through, for example `npm start -- --host 0.0.0.0`.
 
+For the current investment-flow status and resume checklist, see [INVESTMENT_FLOW_HANDOFF.md](INVESTMENT_FLOW_HANDOFF.md).
+
 ## Code scaffolding
 
 Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
