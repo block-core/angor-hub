@@ -14,6 +14,8 @@ Open the Hub at `http://localhost:4200/`. The Blazor app runs at `http://localho
 
 The launcher expects the Blazor checkout at `../angor-blazor` and a .NET 8 SDK. It uses `~/.local/share/angor-dotnet/dotnet` when an SDK is installed there, otherwise `dotnet` from your PATH. Set `ANGOR_BLAZOR_PROJECT` to a different `.csproj` path or `ANGOR_DOTNET` to a different `dotnet` executable if needed.
 
+Blazor runs with runtime optimizations enabled for testing the investment flow. To enable managed breakpoints, use `ANGOR_BLAZOR_DEBUG=1 npm start`; wallet cryptography is slower in that mode.
+
 Use `npm run start:hub` to run only Angular. Angular options can still be passed through, for example `npm start -- --host 0.0.0.0`.
 
 ## Code scaffolding

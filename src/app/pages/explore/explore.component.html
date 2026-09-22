@@ -410,40 +410,52 @@
                 <div class="flex justify-between items-center text-xs mb-2 font-medium">
                   <div class="flex items-center gap-2 text-text-secondary">
                     <span class="material-icons text-sm text-primary">people</span>
-                    <span class="text-text">{{ project.stats?.investorCount ?? 0 }}</span>
+                    @if (project.stats; as stats) {
+                      <span class="text-text">{{ stats.investorCount }}</span>
+                    } @else {
+                      <app-stat-placeholder [failed]="statsErrors().has(project.projectIdentifier)" />
+                    }
                     {{ project.details?.projectType === 1 ? 'Funders' : 'Investors' }}
                   </div>
                   <div class="text-text-secondary">
-                    <span class="text-text">{{ bitcoin.toBTC(project.stats?.amountInvested ?? 0) }}</span>
+                    @if (project.stats; as stats) {
+                      <span class="text-text">{{ bitcoin.toBTC(stats.amountInvested) }}</span>
+                    } @else {
+                      <app-stat-placeholder [failed]="statsErrors().has(project.projectIdentifier)" />
+                    }
                     @if (project.details?.targetAmount) {
                       / {{ bitcoin.toBTC(project.details?.targetAmount ?? 0) }}
                     }
                     {{ networkService.isMain() ? 'BTC' : 'TBTC' }}
                   </div>
                 </div>
-                @let fundingPercent = getFundingPercentage(project);
-                @let displayWidth = fundingPercent > 100 ? 100 : fundingPercent;
-                <div class="relative h-3 bg-surface-hover rounded-full overflow-hidden">
-                  <div
-                    class="absolute top-0 left-0 h-full rounded-full transition-all duration-700 ease-out"
-                    [style.width.%]="displayWidth"
-                    [ngClass]="{
-                      'bg-success': fundingPercent >= 100,
-                      'bg-yellow-500': fundingPercent > 0 && fundingPercent < 100,
-                      'bg-primary': fundingPercent === 0
-                    }"
-                  ></div>
-                  <span
-                    class="absolute top-0 right-2 -mt-5 text-xs font-bold"
-                    [ngClass]="{
-                      'text-success': fundingPercent >= 100,
-                      'text-yellow-500': fundingPercent > 0 && fundingPercent < 100,
-                      'text-primary': fundingPercent === 0
-                    }"
-                  >
-                    {{ fundingPercent }}%
-                  </span>
-                </div>
+                @if (project.stats) {
+                  @let fundingPercent = getFundingPercentage(project);
+                  @let displayWidth = fundingPercent > 100 ? 100 : fundingPercent;
+                  <div class="relative h-3 bg-surface-hover rounded-full overflow-hidden">
+                    <div
+                      class="absolute top-0 left-0 h-full rounded-full transition-all duration-700 ease-out"
+                      [style.width.%]="displayWidth"
+                      [ngClass]="{
+                        'bg-success': fundingPercent >= 100,
+                        'bg-yellow-500': fundingPercent > 0 && fundingPercent < 100,
+                        'bg-primary': fundingPercent === 0
+                      }"
+                    ></div>
+                    <span
+                      class="absolute top-0 right-2 -mt-5 text-xs font-bold"
+                      [ngClass]="{
+                        'text-success': fundingPercent >= 100,
+                        'text-yellow-500': fundingPercent > 0 && fundingPercent < 100,
+                        'text-primary': fundingPercent === 0
+                      }"
+                    >
+                      {{ fundingPercent }}%
+                    </span>
+                  </div>
+                } @else {
+                  <div class="h-3 rounded-full bg-surface-hover" [class.motion-safe:animate-pulse]="!statsErrors().has(project.projectIdentifier)" aria-hidden="true"></div>
+                }
               </div>
             </div>
           </div>

@@ -1,3 +1,4 @@
+import { StatPlaceholderComponent } from '../../components/stat-placeholder.component';
 import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, signal, computed, effect, Signal, DOCUMENT } from '@angular/core';
 import { RelayService } from '../../services/relay.service';
 import { IndexedProject, IndexerService } from '../../services/indexer.service';
@@ -31,7 +32,7 @@ type FilterType = 'all' | 'active' | 'upcoming' | 'completed';
 @Component({
   selector: 'app-explore',
   standalone: true,
-  imports: [RouterLink, BreadcrumbComponent, IndexerErrorComponent, CommonModule, AgoPipe, TitleCasePipe],
+  imports: [StatPlaceholderComponent, RouterLink, BreadcrumbComponent, IndexerErrorComponent, CommonModule, AgoPipe, TitleCasePipe],
   templateUrl: './explore.component.html',
   styleUrls: ['./explore.component.css'],
 })
@@ -49,6 +50,8 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   private routerSubscription: Subscription | null = null;
   private isBackNavigation = false;
   private projectStatsObserver: IntersectionObserver | null = null;
+  readonly statsErrors = signal(new Set<string>());
+  private pendingStats = new Set<string>();
   readonly isLoadingMore = signal(false);
   private loadMoreQueued = false;
   private document = inject(DOCUMENT);
@@ -415,11 +418,24 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 100);
   }
 
-  private async loadProjectStats(project: any) {
+  private async loadProjectStats(project: IndexedProject): Promise<void> {
+    const id = project.projectIdentifier;
+    if (this.pendingStats.has(id)) return;
+    this.pendingStats.add(id);
     try {
-      project.stats = await this.indexer.fetchProjectStats(project.projectIdentifier);
+      const stats = await this.indexer.fetchProjectStats(id);
+      if (!stats) throw new Error('Investment values unavailable');
+      this.indexer.setProjectStats(id, stats);
+      this.statsErrors.update(errors => {
+        const next = new Set(errors);
+        next.delete(id);
+        return next;
+      });
     } catch (error) {
+      this.statsErrors.update(errors => new Set(errors).add(id));
       console.error('Error loading project stats:', error);
+    } finally {
+      this.pendingStats.delete(id);
     }
   }
 

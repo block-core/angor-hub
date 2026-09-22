@@ -72,6 +72,9 @@ console.log('Press Ctrl+C to stop both servers.');
 launch('Blazor', dotnet, [
   'watch', '--project', project, '--non-interactive',
   'run', '--launch-profile', 'http', '--urls', 'http://localhost:5062',
+  // Managed debugging disables the WASM jiterpreter and stalls wallet crypto.
+  // Opt in to breakpoints with ANGOR_BLAZOR_DEBUG=1 when needed.
+  '--property', `WasmDebugLevel=${process.env.ANGOR_BLAZOR_DEBUG === '1' ? '-1' : '0'};BlazorWebAssemblyJiterpreter=true`,
 ], {
   ...process.env,
   ...(dotnet.includes('/') ? { DOTNET_ROOT: dirname(dotnet) } : {}),
