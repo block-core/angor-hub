@@ -515,10 +515,10 @@
 
 <!-- Indexer Error Modal -->
 <app-indexer-error
-  [visible]="!!indexer.error()"
-  [errorDetails]="indexer.error()"
+  [visible]="!!indexer.discoveryError()"
+  [errorDetails]="indexer.discoveryError()"
   (retryEvent)="retryLoadProjects()"
-  (dismissEvent)="indexer.error.set(null)"
+  (dismissEvent)="indexer.discoveryError.set(null)"
 ></app-indexer-error>
 
 <ng-template #projectSkeleton>

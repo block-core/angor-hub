@@ -133,14 +133,14 @@ describe('IndexerService discovery', () => {
     flushMicrotasks();
     expect(service.projects().length).toBe(128);
     expect(service.isComplete()).toBeFalse();
-    expect(service.error()).toContain('timed out');
+    expect(service.discoveryError()).toContain('timed out');
     const cursor = relay.fetchNostrProjects.calls.mostRecent().args[1];
     relay.fetchNostrProjects.and.resolveTo([announcement('angor1older')]);
     void service.fetchProjects();
     flushMicrotasks();
     expect(relay.fetchNostrProjects.calls.mostRecent().args[1]).toBe(cursor);
     expect(service.projects().length).toBe(129);
-    expect(service.error()).toBeNull();
+    expect(service.discoveryError()).toBeNull();
   }));
 
   it('does not let card statistics end an active discovery request', fakeAsync(() => {
@@ -182,7 +182,7 @@ describe('IndexerService discovery', () => {
     validate.and.rejectWith(new Error('Indexer unavailable'));
     void service.fetchProjects();
     flushMicrotasks();
-    expect(service.error()).toBe('Indexer unavailable');
+    expect(service.discoveryError()).toBe('Indexer unavailable');
     expect(service.isComplete()).toBeFalse();
     expect(service.validatingCount()).toBe(0);
     expect(service.getCurrentOffset()).toBe(0);
@@ -191,7 +191,20 @@ describe('IndexerService discovery', () => {
     flushMicrotasks();
     expect(relay.fetchNostrProjects.calls.mostRecent().args[1]).toBeUndefined();
     expect(service.projects().length).toBe(1);
-    expect(service.error()).toBeNull();
+    expect(service.discoveryError()).toBeNull();
+  }));
+
+  it('keeps project-detail failures separate from successful discovery', fakeAsync(() => {
+    service.error.set('Project statistics unavailable');
+    relay.fetchNostrProjects.and.resolveTo([announcement('angor1separate')]);
+    validate.and.resolveTo(proof('angor1separate'));
+
+    void service.fetchProjects();
+    flushMicrotasks();
+
+    expect(service.projects().length).toBe(1);
+    expect(service.discoveryError()).toBeNull();
+    expect(service.error()).toBe('Project statistics unavailable');
   }));
 
   it('replaces the retired explorer hostname while retaining the saved primary', () => {
@@ -289,7 +302,7 @@ describe('IndexerService discovery', () => {
     flushMicrotasks();
     expect(service.projects().map(project => project.projectIdentifier)).toEqual(['angor1valid']);
     expect(service.isComplete()).toBeFalse();
-    expect(service.error()).toBeNull();
+    expect(service.discoveryError()).toBeNull();
     expect(service.getCurrentOffset()).toBe(0);
     validate.and.callFake(async id => proof(id));
     void service.loadMore();

@@ -84,7 +84,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   initialLoadComplete = signal<boolean>(false);
 
   showInitialLoading = computed(() => this.indexer.projects().length === 0
-    && !this.indexer.error()
+    && !this.indexer.discoveryError()
     && (!this.initialLoadComplete() || this.indexer.loading() || !this.indexer.isComplete()));
 
   filterOptions: FilterType[] = ['all', 'active', 'upcoming', 'completed'];
@@ -169,7 +169,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     // Recheck after each batch so a visible sentinel cannot strand a short grid.
     effect((onCleanup) => {
       const ready = this.initialLoadComplete() && !this.indexer.loading()
-        && !this.indexer.error() && !this.indexer.isComplete();
+        && !this.indexer.discoveryError() && !this.indexer.isComplete();
       this.filteredProjects();
       if (!ready) return;
       const frame = requestAnimationFrame(() => {
@@ -521,7 +521,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       this.loadMoreQueued = true;
       return;
     }
-    if (!this.indexer.loading() && !this.indexer.error() && !this.indexer.isComplete()) {
+    if (!this.indexer.loading() && !this.indexer.discoveryError() && !this.indexer.isComplete()) {
       try {
         this.isLoadingMore.set(true);
         await this.indexer.loadMore();
@@ -537,7 +537,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async retryLoadProjects(): Promise<void> {
-    this.indexer.error.set(null);
+    this.indexer.discoveryError.set(null);
     await this.indexer.fetchProjects();
     this.observeProjectCards();
   }

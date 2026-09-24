@@ -178,6 +178,9 @@ export class IndexerService {
     });
   });
   public error = signal<string | null>(null);
+  // Discovery failures must not share the project-detail error state: Explore
+  // uses this signal to gate pagination and display its retry dialog.
+  public discoveryError = signal<string | null>(null);
   private network = inject(NetworkService);
 
   public indexers = signal<IndexerConfig>({
@@ -790,7 +793,7 @@ export class IndexerService {
     const MAX_BATCHES = 5;
     const initialCount = this._allProjects().length;
     this.loading.set(true);
-    this.error.set(null);
+    this.discoveryError.set(null);
 
     try {
       // Load both deny list and whitelist for hub mode filtering
@@ -1012,7 +1015,7 @@ export class IndexerService {
 
     } catch (err) {
       if (generation !== this.discoveryGeneration) return;
-      this.error.set(err instanceof Error ? err.message : 'Failed to fetch projects');
+      this.discoveryError.set(err instanceof Error ? err.message : 'Failed to fetch projects');
       console.error(err);
     } finally {
       if (generation === this.discoveryGeneration) this.loading.set(false);
