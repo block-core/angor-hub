@@ -8,6 +8,7 @@ import { AdminComponent } from './pages/admin/admin.component';
 import { DownloadComponent } from './pages/download/download.component';
 import { LaunchComponent } from './pages/launch/launch.component';
 import { InvestComponent } from './pages/invest/invest.component';
+import { BitfestComponent } from './pages/bitfest/bitfest.component';
 
 export const routes: Routes = [
   {
@@ -39,6 +40,12 @@ export const routes: Routes = [
     component: InvestComponent,
     title: 'Invest',
     data: { animation: 'InvestPage' }
+  },
+  {
+    path: 'bitfest',
+    component: BitfestComponent,
+    title: 'Bitfest Hackathon',
+    data: { animation: 'BitfestPage' }
   },
   {
     path: 'settings',
