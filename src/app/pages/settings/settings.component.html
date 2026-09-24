@@ -1,710 +1,180 @@
-<section class="container mx-auto px-4 pt-8 pb-4 relative overflow-hidden">
-  <div class="absolute inset-0 z-0 pointer-events-none">
-    <div class="absolute top-0 left-0 w-64 h-64 bg-primary/10 rounded-full filter blur-3xl animate-pulse-slow"></div>
-    <div class="absolute bottom-0 right-0 w-96 h-96 bg-bitcoin-mainnet/10 rounded-full filter blur-3xl animate-float">
-    </div>
-  </div>
-
-  <app-breadcrumb [items]="[
-      { label: 'Home', url: '/' },
-      { label: 'Settings', url: '' }
-    ]" class="mb-6 relative z-10"></app-breadcrumb>
-
-
-  <div class="relative z-10 text-center">
-
-    <h1 class="text-4xl md:text-6xl font-bold mb-4 mt-6 text-text animate-in fade-in slide-in-from-top-4 duration-700">
-      Settings
-    </h1>
-    <p
-      class="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto mb-8 leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-      Customize your Angor Hub experience </p>
-  </div>
-</section>
-
-<section class="container mx-auto px-4 pt-8 pb-12 relative">
-  <div class="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-4 md:gap-8 max-w-7xl mx-auto">
-    <div class="flex flex-row flex-wrap md:flex-col gap-2 h-fit rounded-xl bg-surface-card p-4 shadow-md">
-      <div
-        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text flex-1 md:flex-none justify-center md:justify-start"
-        [class.bg-accent]="activeTab() === 'appearance'" [class.text-white]="activeTab() === 'appearance'"
-        (click)="setActiveTab('appearance')">
-        <span class="material-icons text-text-secondary transition duration-200 ease-in-out"
-          [class.text-white]="activeTab() === 'appearance'">palette</span>
-        <span class="hidden md:inline">Appearance</span>
-      </div>
-      <div
-        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text flex-1 md:flex-none justify-center md:justify-start"
-        [class.bg-accent]="activeTab() === 'network'" [class.text-white]="activeTab() === 'network'"
-        (click)="setActiveTab('network')">
-        <span class="material-icons text-text-secondary transition duration-200 ease-in-out"
-          [class.text-white]="activeTab() === 'network'">public</span>
-        <span class="hidden md:inline">Network</span>
-      </div>
-      <div
-        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text flex-1 md:flex-none justify-center md:justify-start"
-        [class.bg-accent]="activeTab() === 'relays'" [class.text-white]="activeTab() === 'relays'"
-        (click)="setActiveTab('relays')">
-        <span class="material-icons text-text-secondary transition duration-200 ease-in-out"
-          [class.text-white]="activeTab() === 'relays'">settings_input_antenna</span>
-        <span class="hidden md:inline">Relays</span>
-      </div>
-      <div
-        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text flex-1 md:flex-none justify-center md:justify-start"
-        [class.bg-accent]="activeTab() === 'indexers'" [class.text-white]="activeTab() === 'indexers'"
-        (click)="setActiveTab('indexers')">
-        <span class="material-icons text-text-secondary transition duration-200 ease-in-out"
-          [class.text-white]="activeTab() === 'indexers'">storage</span>
-        <span class="hidden md:inline">Indexers</span>
-      </div>
-      <div
-        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text flex-1 md:flex-none justify-center md:justify-start"
-        [class.bg-accent]="activeTab() === 'hub'" [class.text-white]="activeTab() === 'hub'"
-        (click)="setActiveTab('hub')">
-        <span class="material-icons text-text-secondary transition duration-200 ease-in-out"
-          [class.text-white]="activeTab() === 'hub'">hub</span>
-        <span class="hidden md:inline">Hub</span>
-      </div>
-      <div
-        class="flex items-center gap-4 p-3 md:p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out text-text flex-1 md:flex-none justify-center md:justify-start"
-        [class.bg-accent]="activeTab() === 'about'" [class.text-white]="activeTab() === 'about'"
-        (click)="setActiveTab('about')">
-        <span class="material-icons text-text-secondary transition duration-200 ease-in-out"
-          [class.text-white]="activeTab() === 'about'">info</span>
-        <span class="hidden md:inline">About</span>
-      </div>
-    </div>
-
-    <div class="flex flex-col gap-6" [@fadeInOut]>
-
+<section class="settings-page container mx-auto px-4">
+  <header class="settings-heading">
+    <h1>Settings</h1>
+    <p>Manage your display preferences and connections.</p>
+  </header>
+  <div class="settings-layout">
+    <nav class="settings-nav" aria-label="Settings sections">
+      @for (tab of settingsTabs; track tab.id) {
+        <button type="button" [class.is-selected]="activeTab() === tab.id"
+          [attr.aria-pressed]="activeTab() === tab.id" aria-controls="settings-content" (click)="setActiveTab(tab.id)">
+          <span class="material-icons" aria-hidden="true">{{ tab.icon }}</span>
+          <span>{{ tab.label }}</span>
+        </button>
+      }
+    </nav>
+    <div id="settings-content" class="settings-content">
       @if (activeTab() === 'appearance') {
-      <div class="bg-surface-card rounded-xl p-4 sm:p-6 shadow-md">
-        <h2 class="flex items-center gap-3 mt-0 mb-6 text-2xl font-semibold text-text">
-          <span class="material-icons text-accent text-3xl">palette</span>
-          Appearance
-        </h2>
-
-        <div class="pt-5 border-b border-border last:border-b-0 last:pb-0">
-          <label class="block text-lg font-semibold mb-2 text-text">Theme</label>
-          <p class="text-text-secondary mb-5 text-sm leading-normal">Choose your preferred theme mode</p>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <button
-              class="flex flex-col items-center gap-3 p-4 rounded-lg bg-surface-hover border-2 border-transparent cursor-pointer transition duration-200 ease-in-out hover:-translate-y-1 hover:shadow-lg"
-              [class.border-accent]="currentTheme() === 'light'" [class.bg-accent]="currentTheme() === 'light'"
-              (click)="setTheme('light')">
-              <div
-                class="w-14 h-14 rounded-full flex items-center justify-center transition duration-200 ease-in-out bg-white border border-border">
-                <span class="material-icons text-3xl text-yellow-500">light_mode</span>
-              </div>
-              <span class="font-medium transition duration-200 ease-in-out text-text"
-                [class.text-accent]="currentTheme() === 'light'"
-                [class.font-semibold]="currentTheme() === 'light'">Light</span>
-            </button>
-
-            <button
-              class="flex flex-col items-center gap-3 p-4 rounded-lg bg-surface-hover border-2 border-transparent cursor-pointer transition duration-200 ease-in-out hover:border-accent/50 hover:-translate-y-1 hover:shadow-lg"
-              [class.!border-accent]="currentTheme() === 'dark'" [class.ring-2]="currentTheme() === 'dark'"
-              [class.ring-accent]="currentTheme() === 'dark'" (click)="setTheme('dark')" aria-label="Select Dark Theme">
-              <div
-                class="w-14 h-14 rounded-full flex items-center justify-center transition duration-200 ease-in-out bg-gray-800 border border-gray-700 shadow-inner">
-                <span class="material-icons text-3xl text-blue-300">dark_mode</span>
-              </div>
-              <span class="font-medium transition duration-200 ease-in-out text-text"
-                [class.text-accent]="currentTheme() === 'dark'"
-                [class.font-semibold]="currentTheme() === 'dark'">Dark</span>
-            </button>
-
-            <button
-              class="flex flex-col items-center gap-3 p-4 rounded-lg bg-surface-hover border-2 border-transparent cursor-pointer transition duration-200 ease-in-out hover:border-accent/50 hover:-translate-y-1 hover:shadow-lg"
-              [class.!border-accent]="currentTheme() === 'system'" [class.ring-2]="currentTheme() === 'system'"
-              [class.ring-accent]="currentTheme() === 'system'" (click)="setTheme('system')"
-              aria-label="Select System Theme">
-              <div
-                class="w-14 h-14 rounded-full flex items-center justify-center transition duration-200 ease-in-out bg-surface-hover border border-border shadow-inner">
-                <span class="material-icons text-3xl text-text-secondary">desktop_windows</span>
-              </div>
-              <span class="font-medium transition duration-200 ease-in-out text-text"
-                [class.text-accent]="currentTheme() === 'system'"
-                [class.font-semibold]="currentTheme() === 'system'">System</span>
-            </button>
+        <section class="settings-card" aria-labelledby="appearance-title">
+          <header class="section-heading"><h2 id="appearance-title">Appearance</h2></header>
+          <div class="section-body">
+            <h3>Theme</h3>
+            <p class="section-description">Choose a theme, or follow your device’s appearance.</p>
+            <div class="choice-grid" role="group" aria-label="Theme">
+              @for (theme of themeOptions; track theme.id) {
+                <button type="button" class="choice" [class.is-selected]="currentTheme() === theme.id"
+                  [attr.aria-pressed]="currentTheme() === theme.id" (click)="setTheme(theme.id)">
+                  <span class="material-icons" aria-hidden="true">{{ theme.icon }}</span>
+                  <span>{{ theme.label }}</span>
+                  @if (currentTheme() === theme.id) { <span class="material-icons choice-check" aria-hidden="true">check</span> }
+                </button>
+              }
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
       }
-
-
       @if (activeTab() === 'network') {
-      <div class="bg-surface-card rounded-xl p-5 sm:p-6 shadow-md">
-        <h2 class="flex items-center gap-3 mt-0 mb-6 text-2xl font-semibold text-text">
-          <span class="material-icons text-accent text-3xl">public</span>
-          Network
-        </h2>
-
-        <div class="pt-5 border-t border-border">
-          <label class="block text-lg font-semibold mb-2 text-text">Bitcoin Network</label>
-          <p class="text-text-secondary mb-5 text-sm leading-normal">Select which Bitcoin network to use for data and
-            interactions.</p>
-
-          <div class="flex flex-col gap-4">
-            <button
-              class="flex items-center gap-4 p-4 rounded-lg bg-surface-ground border-2 border-transparent cursor-pointer transition duration-200 ease-in-out text-left w-full hover:border-accent/50 hover:-translate-y-0.5 hover:shadow-md"
-              [class.!border-accent]="currentNetwork() === 'main'" [class.ring-2]="currentNetwork() === 'main'"
-              [class.ring-accent]="currentNetwork() === 'main'" (click)="setNetwork('main')"
-              [attr.aria-pressed]="currentNetwork() === 'main'">
-              <div
-                class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-orange-500/10 text-bitcoin-mainnet border border-orange-500/20">
-                <span class="material-icons text-3xl">currency_bitcoin</span>
-              </div>
-              <div class="flex-1">
-                <span class="block font-semibold mb-1 text-text">Mainnet</span>
-                <span class="text-sm text-text-secondary">Live Bitcoin network with real value transactions.</span>
-              </div>
-              @if (currentNetwork() === 'main') {
-              <span class="material-icons text-accent ml-auto text-2xl">check_circle</span>
+        <section class="settings-card" aria-labelledby="network-title">
+          <header class="section-heading"><h2 id="network-title">Network</h2></header>
+          <div class="section-body">
+            <h3>Bitcoin network</h3>
+            <p class="section-description">Switching networks reloads the Hub with projects and data from that network.</p>
+            <div class="network-choices" role="group" aria-label="Bitcoin network">
+              @for (network of networkOptions; track network.id) {
+                <button type="button" class="choice network-choice" [class.is-selected]="currentNetwork() === network.id"
+                  [attr.aria-pressed]="currentNetwork() === network.id" (click)="setNetwork(network.id)">
+                  <span class="material-icons" [class.text-bitcoin-mainnet]="network.id === 'main'"
+                    [class.text-bitcoin-testnet]="network.id === 'test'" aria-hidden="true">{{ network.icon }}</span>
+                  <span class="choice-copy"><strong>{{ network.label }}</strong><span>{{ network.description }}</span></span>
+                  @if (currentNetwork() === network.id) { <span class="material-icons choice-check" aria-hidden="true">check</span> }
+                </button>
               }
-            </button>
-
-            <button
-              class="flex items-center gap-4 p-4 rounded-lg bg-surface-ground border-2 border-transparent cursor-pointer transition duration-200 ease-in-out text-left w-full hover:border-accent/50 hover:-translate-y-0.5 hover:shadow-md"
-              [class.!border-accent]="currentNetwork() === 'test'" [class.ring-2]="currentNetwork() === 'test'"
-              [class.ring-accent]="currentNetwork() === 'test'" (click)="setNetwork('test')"
-              [attr.aria-pressed]="currentNetwork() === 'test'">
-              <div
-                class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-green-500/10 text-bitcoin-testnet border border-green-500/20">
-                <span class="material-icons text-3xl">science</span>
-              </div>
-              <div class="flex-1">
-                <span class="block font-semibold mb-1 text-text">Testnet</span>
-                <span class="text-sm text-text-secondary">Testing network using valueless test Bitcoin.</span>
-              </div>
-              @if (currentNetwork() === 'test') {
-              <span class="material-icons text-accent ml-auto text-2xl">check_circle</span>
-              }
-            </button>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
       }
-
-
       @if (activeTab() === 'relays') {
-      <div class="bg-surface-card rounded-xl p-5 sm:p-6 shadow-md">
-        <h2 class="flex items-center gap-3 mt-0 mb-6 text-2xl font-semibold text-text">
-          <span class="material-icons text-accent text-3xl">settings_input_antenna</span>
-          Nostr Relays
-        </h2>
-
-        <div class="pt-5 border-t border-border">
-          <label class="block text-lg font-semibold mb-2 text-text">Manage Relays</label>
-          <p class="text-text-secondary mb-5 text-sm leading-normal">Configure which Nostr relays to connect to for
-            real-time updates and interactions.</p>
-
-          <div class="flex items-center justify-between mb-4">
-            <span class="text-text-secondary text-sm">{{ relayUrls().length }} relays configured</span>
-            <button
-              class="flex items-center dark:text-white text-gray-700 gap-2 bg-none border-none text-sm text-accent cursor-pointer p-2 rounded transition duration-200 ease-in-out hover:bg-accent/10"
-              (click)="resetToDefaultRelays()">
-              <span class="material-icons text-lg">restart_alt</span>
-              Reset to defaults
-            </button>
-          </div>
-
-          <div class="max-h-72 overflow-y-auto mb-6 border border-border rounded-lg bg-surface-ground">
-            @if (relayUrls().length === 0) {
-            <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary min-h-[120px]">
-              <span class="material-icons text-4xl mb-4 opacity-50">signal_wifi_off</span>
-              <p>No relays configured. Add a relay or reset to defaults.</p>
-            </div>
-            }
-
-            @for (relay of relayUrls(); track relay) {
-            <div
-              class="flex items-center justify-between py-3 px-4 border-b border-border last:border-b-0 hover:bg-surface-hover transition-colors duration-150 ease-in-out"
-              [@fadeInOut]>
-              <div class="flex items-center gap-3 min-w-0">
-                <span class="material-icons text-accent flex-shrink-0">wifi</span>
-                <span class="break-all font-mono text-sm text-text truncate">{{ relay }}</span>
+        <section class="settings-card" aria-labelledby="relays-title">
+          <header class="section-heading"><h2 id="relays-title">Nostr relays</h2><span class="count-badge">{{ relayUrls().length }} configured</span></header>
+          <div class="section-body">
+            <p class="section-description">Relays provide project announcements, profiles and updates.</p>
+            <form class="endpoint-form" (submit)="$event.preventDefault(); addRelay()">
+              <div class="field">
+                <label for="new-relay">Relay URL</label>
+                <input id="new-relay" type="url" placeholder="wss://relay.example.com" autocomplete="off" spellcheck="false"
+                  [value]="newRelayUrl()" (input)="newRelayUrl.set(inputValue($event))" aria-describedby="relay-hint"
+                  [attr.aria-invalid]="!!newRelayUrl() && !isValidUrl(newRelayUrl())" />
               </div>
-              <button
-                class="bg-none border-none text-text-secondary w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition duration-200 ease-in-out flex-shrink-0 hover:bg-red-500/10 hover:text-warning"
-                (click)="removeRelay(relay)" title="Remove relay">
-                <span class="material-icons text-lg">close</span>
+              <button class="settings-button primary" type="submit" [disabled]="!isValidUrl(newRelayUrl()) || isSavingRelays()">Add relay</button>
+            </form>
+            <p id="relay-hint" class="field-hint" [class.is-error]="!!newRelayUrl() && !isValidUrl(newRelayUrl())">Use a secure WebSocket address starting with wss://.</p>
+            <ul class="endpoint-list" aria-label="Configured relays">
+              @for (relay of relayUrls(); track relay) {
+                <li class="endpoint-row">
+                  <span class="endpoint-url">{{ relay }}</span>
+                  <button type="button" class="settings-button danger" (click)="removeRelay(relay)" [disabled]="isSavingRelays()"
+                    [attr.aria-label]="'Remove relay ' + relay">Remove</button>
+                </li>
+              } @empty { <li class="empty-row">No relays configured. Add a relay or restore the defaults.</li> }
+            </ul>
+            <div class="section-actions">
+              <button type="button" class="settings-button" (click)="resetToDefaultRelays()" [disabled]="isSavingRelays()">Reset to defaults</button>
+              <button type="button" class="settings-button primary" (click)="saveAndReloadRelays()" [disabled]="!relayUrls().length || isSavingRelays()">
+                {{ isSavingRelays() ? 'Connecting…' : 'Save & reconnect' }}
               </button>
             </div>
-            }
+            @if (relaySaveMessage()) { <p class="feedback" [class.is-error]="relaySaveError()" role="status">{{ relaySaveMessage() }}</p> }
           </div>
-
-          <div class="mb-3 w-full">
-            <div
-              class="flex rounded-lg overflow-hidden shadow-sm border border-border transition duration-300 ease-in-out w-full flex-nowrap relative focus-within:ring-2 focus-within:ring-accent focus-within:border-accent bg-surface-ground">
-              <div class="flex-1 relative min-w-0">
-                <span
-                  class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none z-[1]">add_link</span>
-                <input #newRelayInput type="url" placeholder="wss://relay.example.com"
-                  class="w-full py-3 pl-10 pr-4 bg-transparent border-none focus:outline-none text-text"
-                  [value]="newRelayUrl()" (input)="newRelayUrl.set($any($event.target).value)" (keyup.enter)="addRelay()" />
-              </div>
-              <button
-                class="px-4 bg-accent text-white border-none flex items-center justify-center hover:bg-accent-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                [disabled]="!newRelayUrl() || !isValidUrl(newRelayUrl())" (click)="addRelay()">
-                <span class="material-icons">add</span>
-              </button>
-            </div>
-          </div>
-
-          @if (newRelayUrl() && !isValidUrl(newRelayUrl())) {
-          <div class="flex items-center gap-2 text-warning text-sm mb-4" [@fadeInOut]>
-            <span class="material-icons text-lg">error</span>
-            Must be a valid WebSocket URL (wss://)
-          </div>
-          }
-
-          <div class="text-center mt-6">
-            <button
-              class="btn-base btn-primary w-full max-w-xs mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
-              [disabled]="relayUrls().length === 0" (click)="saveAndReloadRelays()">
-              <span class="material-icons">save</span>
-              Save & Reload Relays
-            </button>
-
-            @if (relaySaveMessage()) {
-            <div class="mt-4 text-success text-sm p-2 bg-green-500/10 rounded" [@fadeInOut]>
-              {{ relaySaveMessage() }}
-            </div>
-            }
-          </div>
-        </div>
-      </div>
+        </section>
       }
-
-
       @if (activeTab() === 'indexers') {
-      <div class="bg-surface-card rounded-xl p-5 sm:p-6 shadow-md">
-        <h2 class="flex items-center gap-3 mt-0 mb-6 text-2xl font-semibold text-text">
-          <span class="material-icons text-accent text-3xl">storage</span>
-          Indexers
-        </h2>
-
-        <div class="pt-5 border-t border-border">
-          <label class="block text-lg font-semibold mb-2 text-text">Manage Indexers</label>
-          <p class="text-text-secondary mb-5 text-sm leading-normal">Configure indexer endpoints for project data
-            retrieval on each network.</p>
-
-          <div class="flex items-center justify-end mb-4">
-            <button
-              class="flex items-center gap-2 bg-none border-none text-sm text-accent cursor-pointer p-2 rounded transition duration-200 ease-in-out hover:bg-accent/10"
-              (click)="resetToDefaultIndexers()">
-              <span class="material-icons text-lg">restart_alt</span>
-              Reset to defaults
-            </button>
-          </div>
-
-
-          <div class="mb-8 pb-6 border-b border-border last:border-b-0 last:mb-4">
-            <h3 class="flex items-center gap-2 text-lg mt-2 mb-4 font-semibold text-text">
-              <span class="material-icons text-xl text-bitcoin-mainnet">currency_bitcoin</span>
-              Mainnet Indexers
-            </h3>
-
-            <div class="max-h-72 overflow-y-auto mb-6 border border-border rounded-lg bg-surface-ground">
-              @if (getMainnetIndexers().length === 0) {
-              <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary min-h-[100px]">
-                <span class="material-icons text-4xl mb-4 opacity-50">dns_disabled</span>
-                <p>No mainnet indexers configured. Add an indexer or reset to defaults.</p>
-              </div>
-              }
-
-              @for (indexer of getMainnetIndexers(); track indexer.url) {
-              <div
-                class="flex flex-col py-3 px-4 border-b border-border last:border-b-0 hover:bg-surface-hover transition-colors duration-150 ease-in-out"
-                [@fadeInOut]>
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center w-full gap-2">
-                  <div class="flex items-center gap-3 flex-1 min-w-0">
-                    <div class="relative flex items-center justify-center w-8 h-8 flex-shrink-0">
-                      <span class="material-icons text-accent indexer-icon">dns</span>
-                      @if (indexer.isPrimary) {
-                      <span
-                        class="absolute -top-1 -right-1 bg-surface-card rounded-full w-5 h-5 flex items-center justify-center shadow"
-                        title="Primary Indexer">
-                        <span class="material-icons text-sm text-yellow-500">star</span>
-                      </span>
+        <section class="settings-card" aria-labelledby="indexers-title">
+          <header class="section-heading"><h2 id="indexers-title">Indexers</h2><button type="button" class="settings-button" (click)="resetToDefaultIndexers()" [disabled]="indexerTestingUrl() !== null">Reset to defaults</button></header>
+          <div class="section-body">
+            <p class="section-description">Indexers provide on-chain project data. Choose a primary endpoint for each network.</p>
+            @for (network of networkOptions; track network.id) {
+              @let isMainnet = network.id === 'main';
+              @let entries = isMainnet ? getMainnetIndexers() : getTestnetIndexers();
+              @let newUrl = isMainnet ? newMainnetIndexerUrl() : newTestnetIndexerUrl();
+              <section class="indexer-network" [attr.aria-labelledby]="network.id + '-indexers-title'">
+                <h3 [id]="network.id + '-indexers-title'">{{ network.label }} indexers</h3>
+                <ul class="endpoint-list" [attr.aria-label]="network.label + ' indexers'">
+                  @for (indexer of entries; track indexer.url) {
+                    <li class="indexer-row">
+                      <div class="endpoint-identity"><span class="endpoint-url">{{ indexer.url }}</span>
+                        @if (indexer.isPrimary) { <span class="primary-badge">Primary</span> }
+                      </div>
+                      <div class="endpoint-actions">
+                        <button type="button" class="settings-button" (click)="testIndexerConnection(indexer.url)"
+                          [disabled]="indexerTestingUrl() !== null" [attr.aria-label]="'Test connection to ' + indexer.url">{{ indexerTestingUrl() === indexer.url && indexerTestResult() === null ? 'Testing…' : 'Test' }}</button>
+                        @if (!indexer.isPrimary) {
+                          <button type="button" class="settings-button" (click)="setPrimaryIndexer(indexer.url, isMainnet)"
+                            [disabled]="indexerTestingUrl() !== null" [attr.aria-label]="'Make ' + indexer.url + ' primary'">Make primary</button>
+                        }
+                        @if (entries.length > 1) {
+                          <button type="button" class="settings-button danger" (click)="removeIndexer(indexer.url, isMainnet)"
+                            [disabled]="indexer.isPrimary || indexerTestingUrl() !== null" [attr.aria-label]="'Remove indexer ' + indexer.url">Remove</button>
+                        }
+                      </div>
+                      @if (indexerTestingUrl() === indexer.url && indexerTestResult() !== null) {
+                        <p class="feedback" [class.is-error]="!indexerTestResult()" role="status">{{ indexerTestResult() ? 'Connection successful' : 'Connection failed' }}</p>
                       }
-                    </div>
-                    <span class="break-all font-mono text-sm text-text flex-1 min-w-0 pr-4 truncate">{{ indexer.url
-                      }}</span>
+                    </li>
+                  } @empty { <li class="empty-row">No indexers configured. Add an endpoint or restore the defaults.</li> }
+                </ul>
+                <form class="endpoint-form" (submit)="$event.preventDefault(); addIndexer(isMainnet)">
+                  <div class="field">
+                    <label [for]="network.id + '-indexer-url'">{{ network.label }} indexer URL</label>
+                    <input [id]="network.id + '-indexer-url'" type="url" placeholder="https://indexer.example.com" autocomplete="off" spellcheck="false"
+                      [value]="newUrl" (input)="setIndexerInput($event, isMainnet)" [attr.aria-describedby]="network.id + '-indexer-hint'"
+                      [attr.aria-invalid]="!!newUrl && !isValidIndexerUrl(newUrl)" />
                   </div>
-                  <div class="flex items-center gap-2 flex-shrink-0 w-full md:w-auto justify-end">
-                    @if (indexerTestingUrl() === indexer.url && indexerTestResult() === null) {
-                    <span class="text-sm text-text-secondary inline-flex items-center gap-2 px-2">
-                      <div class="w-4 h-4 border-2 border-accent/20 border-t-accent rounded-full animate-spin"></div>
-                      Testing...
-                    </span>
-                    } @else {
-                    <button
-                      class="bg-none border-none w-9 h-9 rounded-md flex items-center justify-center cursor-pointer transition duration-200 ease-in-out flex-shrink-0 text-text-secondary hover:bg-blue-500/10 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                      (click)="testIndexerConnection(indexer.url)" title="Test connection"
-                      [disabled]="indexerTestingUrl() !== null">
-                      <span class="material-icons text-lg">network_check</span>
-                    </button>
-                    }
-
-                    @if (!indexer.isPrimary) {
-                    <button
-                      class="bg-none border-none w-9 h-9 rounded-md flex items-center justify-center cursor-pointer transition duration-200 ease-in-out flex-shrink-0 text-text-secondary hover:bg-yellow-500/10 hover:text-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                      (click)="setPrimaryIndexer(indexer.url, true)" title="Make primary"
-                      [disabled]="indexerTestingUrl() !== null">
-                      <span class="material-icons text-lg">star_outline</span>
-                    </button>
-                    }
-
-                    @if (getMainnetIndexers().length > 1) {
-                    <button
-                      class="bg-none border-none w-9 h-9 rounded-md flex items-center justify-center cursor-pointer transition duration-200 ease-in-out flex-shrink-0 text-text-secondary hover:bg-red-500/10 hover:text-warning disabled:opacity-50 disabled:cursor-not-allowed"
-                      (click)="removeIndexer(indexer.url, true)" title="Remove indexer"
-                      [disabled]="indexerTestingUrl() !== null || indexer.isPrimary">
-                      <span class="material-icons text-lg">close</span>
-                    </button>
-                    }
-                  </div>
-                </div>
-
-                @if (indexerTestingUrl() === indexer.url && indexerTestResult() !== null) {
-                <div class="mt-2 text-sm p-3 rounded-md bg-surface-card border-l-4"
-                  [class.border-success]="indexerTestResult()" [class.border-warning]="!indexerTestResult()"
-                  [@fadeInOut]>
-                  @if (indexerTestResult()) {
-                  <span class="text-success flex items-center gap-2">
-                    <span class="material-icons text-success">check_circle</span>
-                    Connection successful
-                  </span>
-                  } @else {
-                  <span class="text-warning flex items-center gap-2">
-                    <span class="material-icons text-warning">error</span>
-                    Connection failed
-                  </span>
-                  }
-                </div>
-                }
-              </div>
-              }
-            </div>
-
-            <div class="mb-4 w-full">
-              <div
-                class="flex rounded-lg overflow-hidden shadow-sm border border-border transition duration-300 ease-in-out w-full flex-nowrap relative focus-within:ring-2 focus-within:ring-accent focus-within:border-accent bg-surface-ground">
-                <div class="flex-1 relative min-w-0">
-                  <span
-                    class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none z-[1]">dns</span>
-                  <input #newMainnetIndexerInput type="url" placeholder="https://indexer.example.com"
-                    class="w-full py-3 pl-10 pr-4 bg-transparent border-none focus:outline-none text-text"
-                    [value]="newMainnetIndexerUrl()" (input)="newMainnetIndexerUrl.set($any($event.target).value)" (keyup.enter)="addIndexer(true)" />
-                </div>
-                <button
-                  class="px-4 bg-accent text-white border-none flex items-center justify-center hover:bg-accent-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  [disabled]="!newMainnetIndexerUrl() || !isValidIndexerUrl(newMainnetIndexerUrl())"
-                  (click)="addIndexer(true)">
-                  <span class="material-icons">add</span>
-                </button>
-              </div>
-            </div>
-
-            @if (newMainnetIndexerUrl() && !isValidIndexerUrl(newMainnetIndexerUrl())) {
-            <div class="flex items-center gap-2 text-warning text-sm mb-4" [@fadeInOut]>
-              <span class="material-icons text-lg">error</span>
-              Must be a valid HTTPS or HTTP URL (https:// or http://)
-            </div>
+                  <button class="settings-button primary" type="submit" [disabled]="!isValidIndexerUrl(newUrl) || indexerTestingUrl() !== null">Add indexer</button>
+                </form>
+                <p [id]="network.id + '-indexer-hint'" class="field-hint" [class.is-error]="!!newUrl && !isValidIndexerUrl(newUrl)">Use an HTTPS or HTTP endpoint.</p>
+              </section>
             }
+            <div class="section-actions"><button type="button" class="settings-button primary" (click)="saveAndApplyIndexers()">Save & apply indexers</button></div>
+            @if (indexerSaveMessage()) { <p class="feedback" [class.is-error]="indexerSaveMessage().includes('exists')" role="status">{{ indexerSaveMessage() }}</p> }
           </div>
-
-
-          <div class="mb-8 pb-6 border-b border-border last:border-b-0 last:mb-4">
-            <h3 class="flex items-center gap-2 text-lg mt-2 mb-4 font-semibold text-text">
-              <span class="material-icons text-xl text-bitcoin-testnet">science</span>
-              Testnet Indexers
-            </h3>
-
-            <div class="max-h-72 overflow-y-auto mb-6 border border-border rounded-lg bg-surface-ground">
-              @if (getTestnetIndexers().length === 0) {
-              <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary min-h-[100px]">
-                <span class="material-icons text-4xl mb-4 opacity-50">dns_disabled</span>
-                <p>No testnet indexers configured. Add an indexer or reset to defaults.</p>
-              </div>
-              }
-
-              @for (indexer of getTestnetIndexers(); track indexer.url) {
-              <div
-                class="flex flex-col py-3 px-4 border-b border-border last:border-b-0 hover:bg-surface-hover transition-colors duration-150 ease-in-out"
-                [@fadeInOut]>
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center w-full gap-2">
-                  <div class="flex items-center gap-3 flex-1 min-w-0">
-                    <div class="relative flex items-center justify-center w-8 h-8 flex-shrink-0">
-                      <span class="material-icons text-accent indexer-icon">dns</span>
-                      @if (indexer.isPrimary) {
-                      <span
-                        class="absolute -top-1 -right-1 bg-surface-card rounded-full w-5 h-5 flex items-center justify-center shadow"
-                        title="Primary Indexer">
-                        <span class="material-icons text-sm text-yellow-500">star</span>
-                      </span>
-                      }
-                    </div>
-                    <span class="break-all font-mono text-sm text-text flex-1 min-w-0 pr-4 truncate">{{ indexer.url
-                      }}</span>
-                  </div>
-                  <div class="flex items-center gap-2 flex-shrink-0 w-full md:w-auto justify-end">
-                    @if (indexerTestingUrl() === indexer.url && indexerTestResult() === null) {
-                    <span class="text-sm text-text-secondary inline-flex items-center gap-2 px-2">
-                      <div class="w-4 h-4 border-2 border-accent/20 border-t-accent rounded-full animate-spin"></div>
-                      Testing...
-                    </span>
-                    } @else {
-                    <button
-                      class="bg-none border-none w-9 h-9 rounded-md flex items-center justify-center cursor-pointer transition duration-200 ease-in-out flex-shrink-0 text-text-secondary hover:bg-blue-500/10 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                      (click)="testIndexerConnection(indexer.url)" title="Test connection"
-                      [disabled]="indexerTestingUrl() !== null">
-                      <span class="material-icons text-lg">network_check</span>
-                    </button>
-                    }
-
-                    @if (!indexer.isPrimary) {
-                    <button
-                      class="bg-none border-none w-9 h-9 rounded-md flex items-center justify-center cursor-pointer transition duration-200 ease-in-out flex-shrink-0 text-text-secondary hover:bg-yellow-500/10 hover:text-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                      (click)="setPrimaryIndexer(indexer.url, false)" title="Make primary"
-                      [disabled]="indexerTestingUrl() !== null">
-                      <span class="material-icons text-lg">star_outline</span>
-                    </button>
-                    }
-
-                    @if (getTestnetIndexers().length > 1) {
-                    <button
-                      class="bg-none border-none w-9 h-9 rounded-md flex items-center justify-center cursor-pointer transition duration-200 ease-in-out flex-shrink-0 text-text-secondary hover:bg-red-500/10 hover:text-warning disabled:opacity-50 disabled:cursor-not-allowed"
-                      (click)="removeIndexer(indexer.url, false)" title="Remove indexer"
-                      [disabled]="indexerTestingUrl() !== null || indexer.isPrimary">
-                      <span class="material-icons text-lg">close</span>
-                    </button>
-                    }
-                  </div>
-                </div>
-
-                @if (indexerTestingUrl() === indexer.url && indexerTestResult() !== null) {
-                <div class="mt-2 text-sm p-3 rounded-md bg-surface-card border-l-4"
-                  [class.border-success]="indexerTestResult()" [class.border-warning]="!indexerTestResult()"
-                  [@fadeInOut]>
-                  @if (indexerTestResult()) {
-                  <span class="text-success flex items-center gap-2">
-                    <span class="material-icons text-success">check_circle</span>
-                    Connection successful
-                  </span>
-                  } @else {
-                  <span class="text-warning flex items-center gap-2">
-                    <span class="material-icons text-warning">error</span>
-                    Connection failed
-                  </span>
-                  }
-                </div>
-                }
-              </div>
-              }
-            </div>
-
-            <div class="mb-4 w-full">
-              <div
-                class="flex rounded-lg overflow-hidden shadow-sm border border-border transition duration-300 ease-in-out w-full flex-nowrap relative focus-within:ring-2 focus-within:ring-accent focus-within:border-accent bg-surface-ground">
-                <div class="flex-1 relative min-w-0">
-                  <span
-                    class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none z-[1]">dns</span>
-                  <input #newTestnetIndexerInput type="url" placeholder="https://testnet-indexer.example.com"
-                    class="w-full py-3 pl-10 pr-4 bg-transparent border-none focus:outline-none text-text"
-                    [value]="newTestnetIndexerUrl()" (input)="newTestnetIndexerUrl.set($any($event.target).value)" (keyup.enter)="addIndexer(false)" />
-                </div>
-                <button
-                  class="px-4 bg-accent text-white border-none flex items-center justify-center hover:bg-accent-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  [disabled]="!newTestnetIndexerUrl() || !isValidIndexerUrl(newTestnetIndexerUrl())"
-                  (click)="addIndexer(false)">
-                  <span class="material-icons">add</span>
-                </button>
-              </div>
-            </div>
-
-            @if (newTestnetIndexerUrl() && !isValidIndexerUrl(newTestnetIndexerUrl())) {
-            <div class="flex items-center gap-2 text-warning text-sm mb-4" [@fadeInOut]>
-              <span class="material-icons text-lg">error</span>
-              Must be a valid HTTPS or HTTP URL (https:// or http://)
-            </div>
-            }
-          </div>
-
-          <div class="text-center mt-6">
-            <button
-              class="btn-base btn-primary w-full max-w-xs mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
-              (click)="saveAndApplyIndexers()">
-              <span class="material-icons">save</span>
-              Save & Apply Indexers
-            </button>
-
-            @if (indexerSaveMessage()) {
-            <div class="mt-4 text-sm p-2 rounded" [class.text-success]="!indexerSaveMessage().includes('exists')"
-              [class.bg-green-500]="!indexerSaveMessage().includes('exists')"
-              [class.text-warning]="indexerSaveMessage().includes('exists')"
-              [class.bg-yellow-500]="indexerSaveMessage().includes('exists')" [@fadeInOut]>
-              {{ indexerSaveMessage() }}
-            </div>
-            }
-          </div>
-        </div>
-      </div>
+        </section>
       }
-
-
       @if (activeTab() === 'hub') {
-      <div class="bg-surface-card rounded-xl p-5 sm:p-6 shadow-md">
-        <h2 class="flex items-center gap-3 mt-0 mb-6 text-2xl font-semibold text-text">
-          <span class="material-icons text-accent text-3xl">hub</span>
-          Hub Configuration
-        </h2>
-
-        <!-- Hub Identity Info -->
-        <div class="p-4 mb-6 rounded-lg border border-border bg-surface-ground">
-          <div class="flex items-center gap-3 mb-2">
-            <span class="material-icons text-accent">info</span>
-            <span class="font-semibold text-text">Hub Identity</span>
+        <section class="settings-card" aria-labelledby="hub-title">
+          <header class="section-heading"><h2 id="hub-title">Hub configuration</h2><span class="count-badge">Read only</span></header>
+          <div class="section-body">
+            <p class="section-description">The Hub operator manages which projects are visible here.</p>
+            <dl class="settings-details">
+              <div><dt>Project visibility</dt><dd>{{ getHubMode() === 'blacklist' ? 'Blacklist mode' : 'Whitelist mode' }}<p>{{ getHubMode() === 'blacklist' ? 'Show all projects except those on the deny list.' : 'Show only projects on the featured list.' }}</p></dd></div>
+              <div><dt>Admin public keys</dt><dd>
+                @for (pubkey of getAdminPubkeys(); track pubkey) { <p class="endpoint-url">{{ pubkey }}</p> }
+                @empty { <p>No admin public key configured.</p> }
+              </dd></div>
+            </dl>
           </div>
-          <p class="text-text-secondary text-sm">
-            The admin key controls which projects are visible on this hub via Nostr deny/whitelist events.
-            These settings are configured at deployment time.
-          </p>
-        </div>
-
-        <!-- Hub Mode (read-only) -->
-        <div class="pt-5 border-t border-border">
-          <label class="block text-lg font-semibold mb-2 text-text">Hub Mode</label>
-          <p class="text-text-secondary mb-5 text-sm leading-normal">
-            How projects are filtered on this hub.
-          </p>
-
-          <div class="border border-border rounded-lg bg-surface-ground">
-            @if (getHubMode() === 'blacklist') {
-            <div class="flex items-center gap-4 p-4">
-              <div
-                class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-red-500/10 text-red-500 border border-red-500/20">
-                <span class="material-icons text-3xl">block</span>
-              </div>
-              <div class="flex-1">
-                <span class="block font-semibold mb-1 text-text">Blacklist Mode</span>
-                <span class="text-sm text-text-secondary">Show all projects except those in the deny list.</span>
-              </div>
-              <span class="material-icons text-accent ml-auto text-2xl">check_circle</span>
-            </div>
-            } @else {
-            <div class="flex items-center gap-4 p-4">
-              <div
-                class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-green-500/10 text-green-500 border border-green-500/20">
-                <span class="material-icons text-3xl">verified</span>
-              </div>
-              <div class="flex-1">
-                <span class="block font-semibold mb-1 text-text">Whitelist Mode</span>
-                <span class="text-sm text-text-secondary">Show only projects in the featured/whitelist.</span>
-              </div>
-              <span class="material-icons text-accent ml-auto text-2xl">check_circle</span>
-            </div>
-            }
-          </div>
-        </div>
-
-        <!-- Admin Public Key Section -->
-        <div class="pt-5 mt-6 border-t border-border">
-          <label class="block text-lg font-semibold mb-2 text-text">Admin Public Key</label>
-          <p class="text-text-secondary mb-5 text-sm leading-normal">
-            The Nostr public key that controls project visibility on this hub.
-            The admin's deny list and whitelist will be applied based on the hub mode.
-          </p>
-
-          @if (getAdminPubkeys().length > 0) {
-          <div class="border border-border rounded-lg bg-surface-ground">
-            <div
-              class="flex items-center py-3 px-4">
-              <div class="flex items-center gap-3 min-w-0">
-                <span class="material-icons text-accent flex-shrink-0">key</span>
-                <span class="break-all font-mono text-sm text-text" [title]="getAdminPubkeys()[0]">{{ getAdminPubkeys()[0] }}</span>
-              </div>
-            </div>
-          </div>
-          } @else {
-          <div class="flex flex-col items-center justify-center p-8 text-center text-text-secondary min-h-[120px] border border-border rounded-lg bg-surface-ground">
-            <span class="material-icons text-4xl mb-4 opacity-50">person_off</span>
-            <p>No admin pubkey configured.</p>
-          </div>
-          }
-
-          <p class="text-text-secondary text-xs mt-4">
-            The admin key and hub mode are configured at deployment time in <code class="text-text bg-surface-ground px-1 py-0.5 rounded">environment.ts</code>.
-          </p>
-        </div>
-      </div>
+        </section>
       }
-
-
       @if (activeTab() === 'about') {
-      <div class="bg-surface-card rounded-xl p-5 sm:p-6 shadow-md">
-        <h2 class="flex items-center gap-3 mt-0 mb-6 text-2xl font-semibold text-text">
-          <span class="material-icons text-accent text-3xl">info</span>
-          About Angor Hub
-        </h2>
-
-        <div class="flex flex-col items-center text-center py-5 border-t border-border">
-          <div class="mb-6">
-            <img src="/images/logo-text.svg" alt="Angor Logo" class="w-32 h-32 object-contain" />
-          </div>
-
-          <div class="mb-6">
-            <p class="text-xl font-semibold text-text m-0 mb-1">Version {{ appVersion }}</p>
-          </div>
-
-          <div class="mb-8 max-w-2xl">
-            <p class="leading-relaxed text-text-secondary">Angor Hub is an explorer for Bitcoin fundraising projects
-              built on the Angor protocol. It provides a way to discover, track, and interact with Bitcoin funding
-              opportunities powered by Nostr.</p>
-          </div>
-
-          <div class="w-full max-w-lg">
-            <h3 class="text-lg mb-4 text-text relative inline-block font-semibold">Resources</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <a href="https://angor.io" target="_blank" rel="noopener"
-                class="flex items-center justify-center gap-3 p-4 text-text bg-surface-ground rounded-lg transition duration-200 ease-in-out no-underline hover:-translate-y-0.5 hover:bg-accent/10 hover:shadow-md border border-border hover:border-accent/30">
-                <span class="material-icons text-accent">language</span> Website
-              </a>
-              <a href="https://docs.angor.io" target="_blank" rel="noopener"
-                class="flex items-center justify-center gap-3 p-4 text-text bg-surface-ground rounded-lg transition duration-200 ease-in-out no-underline hover:-translate-y-0.5 hover:bg-accent/10 hover:shadow-md border border-border hover:border-accent/30">
-                <span class="material-icons text-accent">menu_book</span> Documentation
-              </a>
-              <a href="https://github.com/block-core/angor" target="_blank" rel="noopener"
-                class="flex items-center justify-center gap-3 p-4 text-text bg-surface-ground rounded-lg transition duration-200 ease-in-out no-underline hover:-translate-y-0.5 hover:bg-accent/10 hover:shadow-md border border-border hover:border-accent/30">
-                <span class="material-icons text-accent">code</span> GitHub
-              </a>
-              <a href="https://blog.angor.io" target="_blank" rel="noopener"
-                class="flex items-center justify-center gap-3 p-4 text-text bg-surface-ground rounded-lg transition duration-200 ease-in-out no-underline hover:-translate-y-0.5 hover:bg-accent/10 hover:shadow-md border border-border hover:border-accent/30">
-                <span class="material-icons text-accent">article</span> Blog
-              </a>
+        <section class="settings-card" aria-labelledby="about-title">
+          <header class="section-heading"><h2 id="about-title">About Angor Hub</h2><span class="count-badge">Version {{ appVersion }}</span></header>
+          <div class="section-body">
+            <p class="section-description">Discover, track and support Bitcoin fundraising projects built on the Angor protocol and powered by Nostr.</p>
+            <div class="resource-links">
+              <a href="https://angor.io" target="_blank" rel="noopener">Website <span aria-hidden="true">↗</span></a>
+              <a href="https://docs.angor.io" target="_blank" rel="noopener">Documentation <span aria-hidden="true">↗</span></a>
+              <a href="https://github.com/block-core/angor" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span></a>
+              <a href="https://blog.angor.io" target="_blank" rel="noopener">Blog <span aria-hidden="true">↗</span></a>
             </div>
           </div>
-
-          <div class="w-full max-w-lg mt-8 pt-6 border-t border-border">
-            <h3 class="text-lg mb-4 text-text relative inline-block font-semibold">Data & Cache</h3>
-            <p class="text-text-secondary text-sm mb-4">
-              Clear locally cached project data and validation results. This will force a fresh fetch from relays and the indexer on the next page load.
-            </p>
-            <button
-              (click)="clearCache()"
-              class="flex items-center gap-2 px-5 py-3 rounded-lg bg-red-500/10 text-red-500 border border-red-500/30 hover:bg-red-500/20 transition duration-200 ease-in-out font-medium">
-              <span class="material-icons text-lg">delete_sweep</span>
-              Clear Cache
-            </button>
-            @if (cacheClearMessage()) {
-              <p class="mt-3 text-sm text-success">{{ cacheClearMessage() }}</p>
-            }
+        </section>
+        <section class="settings-card" aria-labelledby="cache-title">
+          <header class="section-heading"><h2 id="cache-title">Data & cache</h2></header>
+          <div class="section-body">
+            <p class="section-description">Remove locally cached project data and validation results. Projects will be fetched again when you return to Explore.</p>
+            <button type="button" class="settings-button" (click)="clearCache()">Clear project cache</button>
+            @if (cacheClearMessage()) { <p class="feedback" role="status">{{ cacheClearMessage() }}</p> }
           </div>
-        </div>
-      </div>
+        </section>
       }
     </div>
   </div>

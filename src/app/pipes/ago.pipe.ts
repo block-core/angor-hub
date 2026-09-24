@@ -12,7 +12,7 @@ export class AgoPipe implements PipeTransform {
 
         const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
 
-        const thresholds: Array<{ unit: Intl.RelativeTimeFormatUnit; seconds: number }> = [
+        const thresholds: { unit: Intl.RelativeTimeFormatUnit; seconds: number }[] = [
             { unit: 'year', seconds: 60 * 60 * 24 * 365 },
             { unit: 'month', seconds: 60 * 60 * 24 * 30 },
             { unit: 'week', seconds: 60 * 60 * 24 * 7 },

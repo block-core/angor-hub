@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, effect, HostListener, Renderer2, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject, signal, effect, HostListener, Renderer2, OnDestroy, isDevMode } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AppLauncherComponent } from './app-launcher.component';
@@ -120,7 +120,7 @@ import { ThemeService } from '../services/theme.service';
             <a routerLink="/app" routerLinkActive="bg-surface-hover text-accent" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="closeAllMenus()">
               App
             </a>
-            <a href="https://profile.angor.io/angor-profile/" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors">
+            <a [href]="profileUrl" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors">
               Profile
             </a>
             <a href="https://docs.angor.io" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-lg text-sm font-medium text-header-text hover:bg-surface-hover transition-colors">
@@ -168,7 +168,7 @@ import { ThemeService } from '../services/theme.service';
             <a routerLink="/app" routerLinkActive="bg-surface-hover text-accent" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
               App
             </a>
-            <a href="https://profile.angor.io/angor-profile/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
+            <a [href]="profileUrl" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
               Profile
             </a>
             <a href="https://docs.angor.io" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-header-text hover:bg-surface-hover transition-colors" (click)="toggleMobileMenu()">
@@ -264,6 +264,9 @@ import { ThemeService } from '../services/theme.service';
   `,
 })
 export class HeaderComponent implements OnInit, OnDestroy {
+  readonly profileUrl = isDevMode()
+    ? 'http://localhost:4201/'
+    : 'https://profile.angor.io/angor-profile/';
   public networkService = inject(NetworkService);
   public themeService = inject(ThemeService);
   private renderer = inject(Renderer2);

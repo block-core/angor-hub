@@ -4,13 +4,21 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 
 ## Development server
 
-To start a local development server, run:
+To start the Hub and the Blazor payment app together, run:
 
 ```bash
-ng serve
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Open the Hub at `http://localhost:4200/`. The Blazor app runs at `http://localhost:5062/`, matching the Hub's development payment links. Both apps watch for source changes. Press Ctrl+C to stop both servers.
+
+The launcher expects the Blazor checkout at `../angor-blazor` and a .NET 8 SDK. It uses `~/.local/share/angor-dotnet/dotnet` when an SDK is installed there, otherwise `dotnet` from your PATH. Set `ANGOR_BLAZOR_PROJECT` to a different `.csproj` path or `ANGOR_DOTNET` to a different `dotnet` executable if needed.
+
+Blazor runs with runtime optimizations enabled for testing the investment flow. To enable managed breakpoints, use `ANGOR_BLAZOR_DEBUG=1 npm start`; wallet cryptography is slower in that mode.
+
+Use `npm run start:hub` to run only Angular. Angular options can still be passed through, for example `npm start -- --host 0.0.0.0`.
+
+For the current investment-flow status and resume checklist, see [INVESTMENT_FLOW_HANDOFF.md](INVESTMENT_FLOW_HANDOFF.md).
 
 ## Code scaffolding
 

@@ -312,23 +312,19 @@ export class NostrListService {
           console.log(`Publishing attempt ${attempt}/${MAX_RETRIES} to ${relayUrls.length} relays...`);
           
           // Try NDK first
-          const publishPromise = new Promise<number>(async (resolve, reject) => {
-            try {
-              // Publish returns a Set of relays that accepted the event
-              const relaySet = await ndkEvent.publish();
-              
-              // NDK publish() returns Set<NDKRelay>
-              const count = relaySet ? relaySet.size : 0;
-              console.log(`NDK: ${count} relays accepted the event`);
-              
-              // Give relays a bit more time to confirm
-              await new Promise(r => setTimeout(r, 500));
-              
-              resolve(count);
-            } catch (err) {
-              reject(err);
-            }
-          });
+          const publishPromise = (async (): Promise<number> => {
+            // Publish returns a Set of relays that accepted the event
+            const relaySet = await ndkEvent.publish();
+
+            // NDK publish() returns Set<NDKRelay>
+            const count = relaySet ? relaySet.size : 0;
+            console.log(`NDK: ${count} relays accepted the event`);
+
+            // Give relays a bit more time to confirm
+            await new Promise(r => setTimeout(r, 500));
+
+            return count;
+})();
 
           // Publish with timeout
           try {
@@ -716,17 +712,13 @@ export class NostrListService {
         try {
           console.log(`Publishing whitelist attempt ${attempt}/${MAX_RETRIES} to ${relayUrls.length} relays...`);
           
-          const publishPromise = new Promise<number>(async (resolve, reject) => {
-            try {
-              const relaySet = await ndkEvent.publish();
-              const count = relaySet ? relaySet.size : 0;
-              console.log(`NDK: ${count} relays accepted the whitelist event`);
-              await new Promise(r => setTimeout(r, 500));
-              resolve(count);
-            } catch (err) {
-              reject(err);
-            }
-          });
+          const publishPromise = (async (): Promise<number> => {
+            const relaySet = await ndkEvent.publish();
+            const count = relaySet ? relaySet.size : 0;
+            console.log(`NDK: ${count} relays accepted the whitelist event`);
+            await new Promise(r => setTimeout(r, 500));
+            return count;
+          })();
 
           try {
             totalPublished = await Promise.race([

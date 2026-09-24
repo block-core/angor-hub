@@ -134,8 +134,11 @@ interface MempoolAddressResponse {
   providedIn: 'root',
 })
 export class IndexerService {
-  private readonly LIMIT = 8;
-  private indexerUrl = 'https://signet.angor.online/';
+  // Relay events are not project cards: kind 3030 also contains unrelated data.
+  private readonly LIMIT = 128;
+  private readonly PROJECT_PAGE_SIZE = 8;
+  private indexerFallback: Promise<string> | null = null;
+  private indexerUrl = 'https://test.indexer.angor.io/';
 
   // Mempool.space pagination — the blockcore indexer returns at most 10 tx per page.
   // We paginate with ?after_txid= until the response is empty or we hit the safety cap.
@@ -143,7 +146,8 @@ export class IndexerService {
 
   // Nostr-first cursor-based pagination (using `until` timestamp)
   private oldestEventTimestamp: number | undefined;
-  private totalProjectsFetched = false;
+  private totalProjectsFetched = signal(false);
+  private discoveryGeneration = 0;
   private fetchPromise: Promise<void> | null = null;
 
   // In-memory cache for mempool address transactions (avoids duplicate fetches
@@ -161,7 +165,7 @@ export class IndexerService {
   private verification = inject(NostrProjectVerificationService);
 
   public loading = signal<boolean>(false);
-  /** Number of projects currently being validated (for skeleton display). */
+  /** Number of projects currently being validated. */
   public validatingCount = signal<number>(0);
   private _allProjects = signal<IndexedProject[]>([]);
   public projects = computed(() => {
@@ -174,17 +178,20 @@ export class IndexerService {
     });
   });
   public error = signal<string | null>(null);
+  // Discovery failures must not share the project-detail error state: Explore
+  // uses this signal to gate pagination and display its retry dialog.
+  public discoveryError = signal<string | null>(null);
   private network = inject(NetworkService);
 
   public indexers = signal<IndexerConfig>({
     mainnet: [
-      { url: 'https://explorer.angor.io/', isPrimary: false },
-      { url: 'https://fulcrum.angor.online/', isPrimary: true },
+      { url: 'https://indexer.angor.io/', isPrimary: true },
+      { url: 'https://fulcrum.angor.online/', isPrimary: false },
       { url: 'https://electrs.angor.online/', isPrimary: false }
     ],
     testnet: [
-      { url: 'https://signet.angor.online/', isPrimary: true },
-      { url: 'https://test.indexer.angor.io/', isPrimary: false }
+      { url: 'https://signet.angor.online/', isPrimary: false },
+      { url: 'https://test.indexer.angor.io/', isPrimary: true }
     ]
   });
 
@@ -261,6 +268,12 @@ export class IndexerService {
     if (savedConfig) {
       try {
         const config = JSON.parse(savedConfig) as IndexerConfig;
+        // The old explorer hostname no longer resolves. Preserve the user's
+        // primary selection while restoring a usable configured fallback.
+        config.mainnet = config.mainnet.map(entry => ({
+          ...entry,
+          url: entry.url.replace(/^https:\/\/explorer\.angor\.io\/?$/, 'https://indexer.angor.io/'),
+        }));
         this.indexers.set(config);
       } catch (error) {
         console.error('Failed to parse saved indexer config', error);
@@ -280,13 +293,13 @@ export class IndexerService {
   getDefaultIndexerConfig(): IndexerConfig {
     return {
       mainnet: [
-        { url: 'https://explorer.angor.io/', isPrimary: false },
-        { url: 'https://fulcrum.angor.online/', isPrimary: true },
+        { url: 'https://indexer.angor.io/', isPrimary: true },
+        { url: 'https://fulcrum.angor.online/', isPrimary: false },
         { url: 'https://electrs.angor.online/', isPrimary: false }
       ],
       testnet: [
-        { url: 'https://signet.angor.online/', isPrimary: true },
-        { url: 'https://test.indexer.angor.io/', isPrimary: false }
+        { url: 'https://signet.angor.online/', isPrimary: false },
+        { url: 'https://test.indexer.angor.io/', isPrimary: true }
       ]
     };
   }
@@ -306,7 +319,11 @@ export class IndexerService {
     const networkIndexers = isMainnet ? config.mainnet : config.testnet;
     const primary = networkIndexers.find(indexer => indexer.isPrimary);
     return primary ? primary.url : networkIndexers[0]?.url ||
-      (isMainnet ? 'https://explorer.angor.io/' : 'https://signet.angor.online/');
+      (isMainnet ? 'https://indexer.angor.io/' : 'https://test.indexer.angor.io/');
+  }
+
+  getActiveIndexerUrl(): string {
+    return this.indexerUrl;
   }
 
   updateActiveIndexer(): void {
@@ -543,6 +560,44 @@ export class IndexerService {
     }
   }
 
+  /** Retry an unavailable indexer using another configured server on this network. */
+  async fetchIndexerResponse(path: string): Promise<Response> {
+    const generation = this.discoveryGeneration;
+    const failedUrl = this.indexerUrl;
+    try {
+      const response = await fetch(`${failedUrl}${path}`, { signal: AbortSignal.timeout(10000) });
+      if (response.ok || response.status === 404) return response;
+      throw new Error(`HTTP ${response.status}`);
+    } catch {
+      if (generation !== this.discoveryGeneration) throw new Error('Indexer settings changed. Please retry.');
+      // Concurrent project validations share one fallback connection check.
+      if (this.indexerUrl === failedUrl) {
+        if (!this.indexerFallback) {
+          const entries = this.network.isMain() ? this.indexers().mainnet : this.indexers().testnet;
+          this.indexerFallback = (async () => {
+            for (const entry of entries) {
+              if (entry.url !== failedUrl && await this.testIndexerConnection(entry.url)) return entry.url;
+            }
+            throw new Error('Unable to reach the configured indexers. Please retry or change indexer in Settings.');
+          })();
+        }
+        const pending = this.indexerFallback;
+        try {
+          const url = await pending;
+          if (generation !== this.discoveryGeneration) throw new Error('Indexer settings changed. Please retry.');
+          this.indexerUrl = url;
+        } finally {
+          if (this.indexerFallback === pending) this.indexerFallback = null;
+        }
+      }
+      const response = await fetch(`${this.indexerUrl}${path}`, { signal: AbortSignal.timeout(10000) });
+      if (!response.ok && response.status !== 404) {
+        throw new Error('Unable to load project transactions from the indexer. Please retry.');
+      }
+      return response;
+    }
+  }
+
   /**
    * Fetches all transactions for a Bitcoin address from the mempool.space-
    * compatible API, paginating with ?after_txid= as needed.
@@ -559,26 +614,17 @@ export class IndexerService {
     let prevLastTxId: string | undefined;
 
     for (let page = 0; page < this.MEMPOOL_MAX_PAGES; page++) {
-      let url = `${this.indexerUrl}api/v1/address/${address}/txs`;
-      if (lastTxId) url += `?after_txid=${lastTxId}`;
-      try {
-        const response = await fetch(url);
-        if (!response.ok) {
-          if (response.status === 404) break;
-          throw new Error(`HTTP ${response.status}`);
-        }
-        const txs: MempoolTx[] = await response.json();
-        if (!txs || txs.length === 0) break;
-        all.push(...txs);
-        prevLastTxId = lastTxId;
-        lastTxId = txs[txs.length - 1].txid;
-        // Stop if the cursor didn't advance (same page returned again)
-        // or we got fewer than 10 results (last page).
-        if (lastTxId === prevLastTxId || txs.length < 10) break;
-      } catch (err) {
-        console.warn('[Angor Debug] fetchMempoolAddressTxs error:', err);
-        break;
-      }
+      let path = `api/v1/address/${address}/txs`;
+      if (lastTxId) path += `?after_txid=${lastTxId}`;
+      const response = await this.fetchIndexerResponse(path);
+      if (response.status === 404) break;
+      const txs: MempoolTx[] = await response.json();
+      if (!txs || txs.length === 0) break;
+      all.push(...txs);
+      prevLastTxId = lastTxId;
+      lastTxId = txs[txs.length - 1].txid;
+      // Stop if the cursor didn't advance or this was the last page.
+      if (lastTxId === prevLastTxId || txs.length < 10) break;
     }
 
     // Cache the result for reuse by stats loading
@@ -601,37 +647,37 @@ export class IndexerService {
     trxId: string;
     createdOnBlock: number;
   } | null> {
+    let address: string;
     try {
-      const address = this.convertAngorKeyToBitcoinAddress(projectId);
-      const txs = await this.fetchMempoolAddressTxs(address);
-      if (!txs.length) return null;
-
-      // Sort oldest-first — the funding transaction is the first at this address
-      const sorted = [...txs].sort((a, b) => {
-        const aH = a.status.confirmed ? a.status.block_height : Number.MAX_SAFE_INTEGER;
-        const bH = b.status.confirmed ? b.status.block_height : Number.MAX_SAFE_INTEGER;
-        return aH - bH;
-      });
-
-      for (const tx of sorted) {
-        if (tx.vout.length < 2) continue;
-        const opReturn = tx.vout[1];
-        if (opReturn.scriptpubkey_type !== 'op_return' && opReturn.scriptpubkey_type !== 'nulldata') continue;
-        const parsed = this.parseOpReturnFounderInfo(opReturn.scriptpubkey);
-        if (parsed) {
-          return {
-            founderKey: parsed.founderKey,
-            nostrEventId: parsed.nostrEventId,
-            trxId: tx.txid,
-            createdOnBlock: tx.status.confirmed ? tx.status.block_height : 0,
-          };
-        }
-      }
-      return null;
-    } catch (err) {
-      console.warn(`[Angor Debug] fetchProjectFromMempool ${projectId}: error`, err);
+      address = this.convertAngorKeyToBitcoinAddress(projectId);
+    } catch {
       return null;
     }
+    const txs = await this.fetchMempoolAddressTxs(address);
+    if (!txs.length) return null;
+
+    // Sort oldest-first — the funding transaction is the first at this address
+    const sorted = [...txs].sort((a, b) => {
+      const aH = a.status.confirmed ? a.status.block_height : Number.MAX_SAFE_INTEGER;
+      const bH = b.status.confirmed ? b.status.block_height : Number.MAX_SAFE_INTEGER;
+      return aH - bH;
+    });
+
+    for (const tx of sorted) {
+      if (tx.vout.length < 2) continue;
+      const opReturn = tx.vout[1];
+      if (opReturn.scriptpubkey_type !== 'op_return' && opReturn.scriptpubkey_type !== 'nulldata') continue;
+      const parsed = this.parseOpReturnFounderInfo(opReturn.scriptpubkey);
+      if (parsed) {
+        return {
+          founderKey: parsed.founderKey,
+          nostrEventId: parsed.nostrEventId,
+          trxId: tx.txid,
+          createdOnBlock: tx.status.confirmed ? tx.status.block_height : 0,
+        };
+      }
+    }
+    return null;
   }
 
   /**
@@ -710,41 +756,21 @@ export class IndexerService {
     }
   }
 
-  /**
-   * Fetches projects using an optimistic Nostr-first discovery approach.
-   *
-   * Flow:
-   *   1. Query Nostr relays for the latest kind 3030 events.
-   *   2. Parse each event — immediately add projects to the view so the
-   *      user sees content right away (with metadata/images loading).
-   *   3. Kick off profile fetches from Nostr in parallel with validation.
-   *   4. Validate each project against the indexer (cache or API) in the
-   *      background. Remove any projects that fail validation.
-   *
-   * This "show first, validate in background" approach gives near-instant
-   * rendering while still ensuring only on-chain-verified projects remain.
-   *
-   * Pagination uses Nostr's `until` parameter (timestamp cursor) instead
-   * of offset-based pagination against the indexer.
-   */
+  /** Discover relay announcements, then show only blockchain-verified projects. */
   async fetchProjects(reset = false): Promise<void> {
-    if (reset) {
-      this.oldestEventTimestamp = undefined;
-      this.totalProjectsFetched = false;
-      this._allProjects.set([]);
-      this.fetchPromise = null;
-    }
+    if (reset) this.resetProjects();
 
     // If a fetch is already in flight, wait for it instead of silently returning
     if (this.fetchPromise) {
       return this.fetchPromise;
     }
 
-    this.fetchPromise = this._doFetchProjects();
+    const pending = this._doFetchProjects(this.discoveryGeneration);
+    this.fetchPromise = pending;
     try {
-      await this.fetchPromise;
+      await pending;
     } finally {
-      this.fetchPromise = null;
+      if (this.fetchPromise === pending) this.fetchPromise = null;
     }
   }
 
@@ -755,15 +781,19 @@ export class IndexerService {
    * projects are already loaded.
    */
   async fetchLatestProjects(): Promise<void> {
+    if (this.fetchPromise) await this.fetchPromise;
     this.oldestEventTimestamp = undefined;
-    this.totalProjectsFetched = false;
+    this.totalProjectsFetched.set(false);
     await this.fetchProjects();
   }
 
-  private async _doFetchProjects(): Promise<void> {
-    // Maximum number of consecutive empty batches before giving up.
+  private async _doFetchProjects(generation: number): Promise<void> {
+    // Maximum number of relay batches in one loading cycle.
     // Prevents infinite loops when relays return only non-project events.
-    const MAX_EMPTY_BATCHES = 5;
+    const MAX_BATCHES = 5;
+    const initialCount = this._allProjects().length;
+    this.loading.set(true);
+    this.discoveryError.set(null);
 
     try {
       // Load both deny list and whitelist for hub mode filtering
@@ -772,24 +802,25 @@ export class IndexerService {
         this.featuredService.loadFeaturedProjects()
       ]);
 
+      if (generation !== this.discoveryGeneration) return;
       // Mark lists as loaded in hub config
       this.hubConfig.setListsLoaded(true);
 
-      this.loading.set(true);
-      this.error.set(null);
       const isMainnet = this.network.isMain();
       console.log(`[Angor Debug] _doFetchProjects: network=${isMainnet ? 'main' : 'test'}, indexerUrl=${this.indexerUrl}`);
 
-      let emptyBatchCount = 0;
+      let batchCount = 0;
 
       // Loop to handle batches where all events are filtered out (parse errors, duplicates, etc.).
       // Without this loop, a batch of only non-project events would leave the page empty.
-      while (emptyBatchCount < MAX_EMPTY_BATCHES) {
+      while (batchCount < MAX_BATCHES) {
         // Step 1: Discover projects from Nostr relays
         let nostrEvents = await this.relay.fetchNostrProjects(
           this.LIMIT,
           this.oldestEventTimestamp
         );
+
+        if (generation !== this.discoveryGeneration) return;
 
         // If no events and we have relays configured, it might be a connection issue
         if (nostrEvents.length === 0) {
@@ -805,16 +836,19 @@ export class IndexerService {
               );
             } catch (reconnectError) {
               console.error('Failed to reconnect to relays:', reconnectError);
-              this.totalProjectsFetched = true;
-              return;
+              throw reconnectError;
             }
           }
         }
 
+        if (generation !== this.discoveryGeneration) return;
         if (nostrEvents.length === 0) {
-          this.totalProjectsFetched = true;
+          this.totalProjectsFetched.set(true);
           return;
         }
+
+        const previousCursor = this.oldestEventTimestamp;
+        const previousComplete = this.totalProjectsFetched();
 
         // Update the pagination cursor to the oldest event's timestamp
         // so the next call fetches older events.
@@ -822,11 +856,12 @@ export class IndexerService {
           (min, ev) => (ev.created_at! < min.created_at! ? ev : min),
           nostrEvents[0]
         );
-        this.oldestEventTimestamp = oldestEvent.created_at!;
+        // Nostr's until is inclusive; exclude the page boundary on the next query.
+        this.oldestEventTimestamp = oldestEvent.created_at! - 1;
 
         // If we got fewer events than requested, we've reached the end
         if (nostrEvents.length < this.LIMIT) {
-          this.totalProjectsFetched = true;
+          this.totalProjectsFetched.set(true);
         }
 
         // Step 2: Parse events, filter by network, and deduplicate against already-loaded projects
@@ -837,7 +872,7 @@ export class IndexerService {
         for (const event of nostrEvents) {
           try {
             const details: ProjectUpdate = JSON.parse(event.content);
-            if (!details.projectIdentifier) { skipNoId++; continue; }
+            if (!details || typeof details.projectIdentifier !== 'string' || !details.projectIdentifier.startsWith('angor1')) { skipNoId++; continue; }
             if (existingIds.has(details.projectIdentifier)) { skipDupe++; continue; }
 
             // Filter by network when networkName is explicitly set.
@@ -851,9 +886,8 @@ export class IndexerService {
             }
 
             candidateEvents.push({ event, details });
-          } catch (parseErr) {
+          } catch {
             skipParse++;
-            console.log(`[Angor Debug] Parse error for event ${event.id?.slice(0, 8)}:`, typeof event.content, event.content?.slice(0, 80));
             continue;
           }
         }
@@ -863,8 +897,8 @@ export class IndexerService {
         if (candidateEvents.length === 0) {
           // All events in this batch were filtered out (parse errors, duplicates, wrong network).
           // If we haven't reached the end, continue to the next batch.
-          if (!this.totalProjectsFetched) {
-            emptyBatchCount++;
+          if (!this.totalProjectsFetched()) {
+            batchCount++;
             continue;
           }
           return;
@@ -883,8 +917,8 @@ export class IndexerService {
         console.log(`[Angor Debug] Hub mode filter: ${candidateEvents.length} candidates → ${filteredCandidates.length} (hubMode=${this.hubConfig.hubMode()}, ${hubModeRejected} rejected)`);
 
         if (filteredCandidates.length === 0) {
-          if (!this.totalProjectsFetched) {
-            emptyBatchCount++;
+          if (!this.totalProjectsFetched()) {
+            batchCount++;
             continue;
           }
           return;
@@ -949,42 +983,69 @@ export class IndexerService {
           }
         }
 
-        // Step 5: Validate uncached projects in background — only add them after validation passes.
-        // Show skeleton placeholders while validating.
+        // Keep this loading cycle active through validation. Unverified announcements
+        // must not create temporary cards or start a competing pagination request.
         if (toValidate.length > 0) {
           this.validatingCount.update(c => c + toValidate.length);
-          this.validateAndAddProjects(toValidate);
+          try {
+            await this.validateAndAddProjects(toValidate, generation);
+          } catch (error) {
+            if (generation === this.discoveryGeneration) {
+              this.oldestEventTimestamp = previousCursor;
+              this.totalProjectsFetched.set(previousComplete);
+              // Keep successfully verified cards visible if one address failed.
+              // The unchanged cursor lets Load More retry the unfinished page.
+              if (this._allProjects().length > initialCount) {
+                console.warn('Some projects could not be verified; retry the remaining projects with Load More.', error);
+                return;
+              }
+            }
+            throw error;
+          } finally {
+            if (generation === this.discoveryGeneration) this.validatingCount.set(0);
+          }
+          if (generation !== this.discoveryGeneration) return;
         }
 
-        // Found candidates — exit the loop
-        return;
+        // A relay page can contain only rejected announcements, or just one valid
+        // project. Keep scanning until we have a useful page of actual projects.
+        if (this.totalProjectsFetched() || this._allProjects().length - initialCount >= this.PROJECT_PAGE_SIZE) return;
+        batchCount++;
       }
 
     } catch (err) {
-      await this.setErrorWithRetry(
-        err instanceof Error ? err.message : 'Failed to fetch projects'
-      );
+      if (generation !== this.discoveryGeneration) return;
+      this.discoveryError.set(err instanceof Error ? err.message : 'Failed to fetch projects');
       console.error(err);
     } finally {
-      this.loading.set(false);
+      if (generation === this.discoveryGeneration) this.loading.set(false);
     }
   }
 
   /**
    * Validates uncached projects against the blockchain and adds valid ones to the view.
    * Projects that fail validation are simply not added (no more disappearing).
-   * Runs in the background after cached projects are already shown.
+   * Cached projects stay visible while this loading cycle awaits validation.
    */
   private async validateAndAddProjects(
-    candidates: { event: NDKEvent; details: ProjectUpdate }[]
+    candidates: { event: NDKEvent; details: ProjectUpdate }[],
+    generation: number
   ): Promise<void> {
     console.log(`[Angor Debug] validateAndAddProjects: validating ${candidates.length} projects via mempool API`);
 
-    const results = await Promise.all(
+    // Several announcements may reference one address. Validate the on-chain
+    // event ID for each, while sharing the address lookup across duplicates.
+    const lookups = new Map<string, ReturnType<IndexerService['fetchProjectFromMempool']>>();
+    const results = await Promise.allSettled(
       candidates.map(async ({ event, details }) => {
         const projectId = details.projectIdentifier;
 
-        const onChain = await this.fetchProjectFromMempool(projectId);
+        let lookup = lookups.get(projectId);
+        if (!lookup) {
+          lookup = this.fetchProjectFromMempool(projectId);
+          lookups.set(projectId, lookup);
+        }
+        const onChain = await lookup;
         if (!onChain) {
           console.log(`[Angor Debug] Validate ${projectId}: not-found-in-mempool`);
           return null;
@@ -995,6 +1056,7 @@ export class IndexerService {
           return null;
         }
 
+        if (generation !== this.discoveryGeneration) return null;
         // Cache for future loads
         this.verification.cacheValidation(projectId, {
           founderKey: onChain.founderKey,
@@ -1012,10 +1074,13 @@ export class IndexerService {
       })
     );
 
+    if (generation !== this.discoveryGeneration) return;
+
     // Add valid projects to the view
     const validProjects: IndexedProject[] = [];
-    for (const result of results) {
-      if (!result) continue;
+    for (const settled of results) {
+      if (settled.status === 'rejected' || !settled.value) continue;
+      const result = settled.value;
       validProjects.push({
         founderKey: result.onChain.founderKey,
         nostrEventId: result.onChain.nostrEventId,
@@ -1067,6 +1132,14 @@ export class IndexerService {
 
     // Persist validated projects for instant display on next page load
     this.saveProjectsToCache();
+    const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
+    if (failure) throw failure.reason;
+  }
+
+  setProjectStats(id: string, stats: ProjectStats): void {
+    this._allProjects.update(projects => projects.map(project =>
+      project.projectIdentifier === id ? { ...project, stats } : project
+    ));
   }
 
   getProject(id: string): IndexedProject | undefined {
@@ -1137,7 +1210,6 @@ export class IndexerService {
    */
   async fetchProjectStats(id: string): Promise<ProjectStats | null> {
     try {
-      this.loading.set(true);
       const address = this.convertAngorKeyToBitcoinAddress(id);
       const txs = await this.fetchMempoolAddressTxs(address);
       if (!txs.length) return null;
@@ -1197,8 +1269,7 @@ export class IndexerService {
         err instanceof Error ? err.message : `Failed to fetch stats for project ${id}`
       );
       return null;
-    } finally {
-      this.loading.set(false);
+
     }
   }
 
@@ -1445,14 +1516,16 @@ export class IndexerService {
   }
 
   async loadMore(): Promise<void> {
-    if (!this.totalProjectsFetched) {
+    if (!this.totalProjectsFetched()) {
       await this.fetchProjects();
     }
   }
 
   resetProjects(): void {
+    this.discoveryGeneration++;
+    this.indexerFallback = null;
     this.oldestEventTimestamp = undefined;
-    this.totalProjectsFetched = false;
+    this.totalProjectsFetched.set(false);
     this.fetchPromise = null;
     this.loading.set(false);
     this.validatingCount.set(0);
@@ -1461,7 +1534,7 @@ export class IndexerService {
   }
 
   isComplete(): boolean {
-    return this.totalProjectsFetched;
+    return this.totalProjectsFetched();
   }
 
   restoreOffset(offset: number) {

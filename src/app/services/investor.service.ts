@@ -127,33 +127,22 @@ export class InvestorService {
   }
 
   /**
-   * Gets the base URL for the mempool-compatible API on the current indexer.
-   * The Blockcore indexer supports /api/v1/ endpoints for mempool.space compatibility.
-   */
-  private getApiBaseUrl(): string {
-    const isMainnet = this.network.isMain();
-    const indexerUrl = this.indexer.getPrimaryIndexerUrl(isMainnet);
-    return `${indexerUrl}api/v1`;
-  }
-
-  /**
    * Fetches all transactions for a given address from the mempool.space-compatible API.
    * Handles pagination with ?after_txid= cursor.
    */
   async fetchAddressTransactions(address: string): Promise<MempoolTransaction[]> {
-    const baseUrl = this.getApiBaseUrl();
     const allTxs: MempoolTransaction[] = [];
     let lastTxId: string | undefined;
     let prevLastTxId: string | undefined;
     const MAX_PAGES = 20;
 
     for (let page = 0; page < MAX_PAGES; page++) {
-      let url = `${baseUrl}/address/${address}/txs`;
+      let url = `api/v1/address/${address}/txs`;
       if (lastTxId) {
         url += `?after_txid=${lastTxId}`;
       }
 
-      const response = await fetch(url);
+      const response = await this.indexer.fetchIndexerResponse(url);
       if (!response.ok) {
         if (response.status === 404) {
           return allTxs;
@@ -185,8 +174,7 @@ export class InvestorService {
    * Fetches outspend info for a transaction (which outputs are spent, by which tx).
    */
   async fetchOutspends(txId: string): Promise<MempoolOutspend[]> {
-    const baseUrl = this.getApiBaseUrl();
-    const response = await fetch(`${baseUrl}/tx/${txId}/outspends`);
+    const response = await this.indexer.fetchIndexerResponse(`api/v1/tx/${txId}/outspends`);
     if (!response.ok) {
       throw new Error(`Failed to fetch outspends for ${txId}: ${response.status}`);
     }
