@@ -133,6 +133,8 @@ describe('IndexerService discovery', () => {
     flushMicrotasks();
     expect(service.projects().length).toBe(128);
     expect(service.isComplete()).toBeFalse();
+    // Discovery failures use their own signal so an unrelated project-page
+    // error (stats/investments) cannot leave explore's pagination gated.
     expect(service.discoveryError()).toContain('timed out');
     const cursor = relay.fetchNostrProjects.calls.mostRecent().args[1];
     relay.fetchNostrProjects.and.resolveTo([announcement('angor1older')]);

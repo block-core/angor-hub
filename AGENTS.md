@@ -160,6 +160,52 @@ describe('MyService', () => {
 - `@angular-eslint/template/click-events-have-key-events`
 - `@angular-eslint/template/interactive-supports-focus`
 
+## Scope Boundaries (CRITICAL)
+
+**This agent works on front-end UI/UX only.** Angor Hub is a display/discovery
+layer over Nostr + Bitcoin data — it must never become the place where key
+handling, signing, or trust-sensitive protocol logic gets modified.
+
+### Do NOT touch without explicit, specific user instruction naming the file
+
+- `src/app/services/nostr-auth.service.ts` (+ its `.spec.ts`) — Nostr
+  login/signing/auth (NIP-07/`nostr-login`, extension signer, auth events).
+- Any key material: private keys, `nsec`, signer selection/config, NIP-04/44
+  encryption, event signing logic. There are currently none committed in
+  this repo (and there should never be) — if something like this appears,
+  stop and flag it instead of editing it.
+- `src/app/services/relay.service.ts` — relay connection/subscription/publish
+  logic (protocol-level, not display). UI consuming it (lists, badges,
+  loading states) is fine; changing how it connects, publishes, or verifies
+  events is not.
+- `src/app/services/indexer.service.ts` and `bitcoin.service.ts` /
+  `bitcoin-info.service.ts` — on-chain/indexer data fetching and parsing
+  (funding tx validation, address derivation, payout calculation). Treat as
+  backend/protocol logic even though it lives in the frontend repo.
+- `nostr-project-verification.service.ts` — project authenticity/signature
+  verification logic.
+- Anything under `.github/workflows/` (CI/CD, secrets, deploy) unless asked.
+
+### Safe to work on freely
+
+- Components, pages, templates, and styles (`*.component.ts/.html`,
+  `*.css`, Tailwind classes) — layout, visual design, responsiveness,
+  copy, animations, accessibility.
+- Presentational/display logic: formatting, filtering/sorting already-fetched
+  data, loading/empty/error states, routing between pages.
+- `theme.service.ts`, `title.service.ts`, `meta.service.ts`,
+  `hub-config.service.ts` (display/branding config, not key/trust logic).
+- Tests for the above.
+
+### When in doubt
+
+If a change would touch signing, key material, relay publish/subscribe
+behavior, or on-chain/indexer data correctness, **stop and ask the user
+first**, even if it looks incidental to a UI task (e.g. a UI bug that seems
+to require changing how `relay.service.ts` publishes events). Prefer the
+smallest UI-only fix, and call out explicitly if the real fix needs backend
+/protocol changes instead.
+
 ## Quick Reference
 
 | Task | Command |

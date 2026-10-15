@@ -1,3 +1,4 @@
+import { isDevMode } from '@angular/core';
 import { version } from '../package.json';
 
 /**
@@ -43,4 +44,12 @@ export const environment = {
   ]) as string[],
 
   denyListUrl: 'https://lists.blockcore.net/deny/angor.json',
+
+  // Profile app URL. `isDevMode()` is true for any non-production build (not
+  // just `ng serve`), so this only ever points local dev builds at the local
+  // Profile dev server; anything built with `--configuration production`
+  // gets the live URL.
+  profileUrl: isDevMode()
+    ? 'http://localhost:4201/'
+    : 'https://profile.angor.io/angor-profile/',
 };
