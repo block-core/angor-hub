@@ -28,7 +28,7 @@ export class RelayService {
   private connectionReady: Promise<void>;
   private readonly relayConnectTimeoutMs = 4000;
   public relayUrls = signal<string[]>([]);
-  private defaultRelays = ['wss://relay.damus.io', 'wss://relay.primal.net', 'wss://nos.lol', 'wss://relay.angor.io', 'wss://relay2.angor.io'];
+  private defaultRelays = ['wss://relay.angor.io', 'wss://relay2.angor.io', 'wss://relay.damus.io', 'wss://nos.lol'];
 
   public loading = signal<boolean>(false);
   public profileUpdates = new Subject<NDKEvent>();

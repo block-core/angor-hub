@@ -187,11 +187,13 @@ export class IndexerService {
     mainnet: [
       { url: 'https://indexer.angor.io/', isPrimary: true },
       { url: 'https://fulcrum.angor.online/', isPrimary: false },
-      { url: 'https://electrs.angor.online/', isPrimary: false }
+      { url: 'https://electrs.angor.online/', isPrimary: false },
+      { url: 'https://cyphermunkhouse.angor.online/', isPrimary: false }
     ],
     testnet: [
+      { url: 'https://test.indexer.angor.io/', isPrimary: true },
       { url: 'https://signet.angor.online/', isPrimary: false },
-      { url: 'https://test.indexer.angor.io/', isPrimary: true }
+      { url: 'https://signet2.angor.online/', isPrimary: false }
     ]
   });
 
@@ -295,11 +297,13 @@ export class IndexerService {
       mainnet: [
         { url: 'https://indexer.angor.io/', isPrimary: true },
         { url: 'https://fulcrum.angor.online/', isPrimary: false },
-        { url: 'https://electrs.angor.online/', isPrimary: false }
+        { url: 'https://electrs.angor.online/', isPrimary: false },
+        { url: 'https://cyphermunkhouse.angor.online/', isPrimary: false }
       ],
       testnet: [
+        { url: 'https://test.indexer.angor.io/', isPrimary: true },
         { url: 'https://signet.angor.online/', isPrimary: false },
-        { url: 'https://test.indexer.angor.io/', isPrimary: true }
+        { url: 'https://signet2.angor.online/', isPrimary: false }
       ]
     };
   }
