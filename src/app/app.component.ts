@@ -1,7 +1,9 @@
-import { Component, inject, Renderer2, HostListener, OnDestroy, OnInit, DOCUMENT } from '@angular/core';
+import { Component, computed, inject, Renderer2, HostListener, OnDestroy, OnInit, DOCUMENT } from '@angular/core';
 import { RouterOutlet, ChildrenOutletContexts, Router, NavigationEnd } from '@angular/router'; 
 import { HeaderComponent } from './components/header.component';
 import { FooterComponent } from './components/footer.component';
+import { IndexerErrorComponent } from './components/indexer-error.component';
+import { IndexerService } from './services/indexer.service';
 
 import { ThemeService } from './services/theme.service';
 import { NetworkService } from './services/network.service';
@@ -25,7 +27,7 @@ const routeTransitionAnimations = trigger('routeAnimations', [
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, FooterComponent],
+  imports: [RouterOutlet, HeaderComponent, FooterComponent, IndexerErrorComponent],
   template: `
     <div class="flex flex-col min-h-dvh text-text pattern-overlay">
       <app-header></app-header>
@@ -33,6 +35,12 @@ const routeTransitionAnimations = trigger('routeAnimations', [
         <router-outlet></router-outlet>
       </main>
       <app-footer></app-footer>
+      <app-indexer-error
+        [visible]="!!indexerErrorMessage()"
+        [errorDetails]="indexerErrorMessage()"
+        (retryEvent)="indexer.requestRecovery()"
+        (dismissEvent)="indexer.dismissIndexerError()"
+      ></app-indexer-error>
     </div>
   `,
   animations: [routeTransitionAnimations]
@@ -43,6 +51,8 @@ export class AppComponent implements OnInit, OnDestroy {
   private document = inject(DOCUMENT);
   private themeService = inject(ThemeService);
   private networkService = inject(NetworkService);
+  indexer = inject(IndexerService);
+  indexerErrorMessage = computed(() => this.indexer.discoveryError() || this.indexer.error());
   private router = inject(Router);
   private contexts = inject(ChildrenOutletContexts);
   private scrollTimeout: ReturnType<typeof setTimeout> | null = null;

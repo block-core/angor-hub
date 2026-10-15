@@ -1,5 +1,5 @@
 import { StatPlaceholderComponent } from '../../components/stat-placeholder.component';
-import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, signal, computed, effect, Signal, DOCUMENT } from '@angular/core';
+import { Component, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, HostListener, signal, computed, effect, untracked, Signal, DOCUMENT } from '@angular/core';
 import { RelayService } from '../../services/relay.service';
 import { IndexedProject, IndexerService } from '../../services/indexer.service';
 import { NetworkService } from '../../services/network.service';
@@ -13,7 +13,6 @@ import { RouterLink } from '@angular/router';
 import { ExploreStateService } from '../../services/explore-state.service';
 import { Router, NavigationEnd } from '@angular/router';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
-import { IndexerErrorComponent } from '../../components/indexer-error.component';
 import { CommonModule } from '@angular/common';
 import { filter, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Subject, Subscription } from 'rxjs';
@@ -32,7 +31,7 @@ type FilterType = 'all' | 'active' | 'upcoming' | 'completed';
 @Component({
   selector: 'app-explore',
   standalone: true,
-  imports: [StatPlaceholderComponent, RouterLink, BreadcrumbComponent, IndexerErrorComponent, CommonModule, AgoPipe, TitleCasePipe],
+  imports: [StatPlaceholderComponent, RouterLink, BreadcrumbComponent, CommonModule, AgoPipe, TitleCasePipe],
   templateUrl: './explore.component.html',
   styleUrls: ['./explore.component.css'],
 })
@@ -165,6 +164,14 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   showMobileFilters = false;
 
   constructor() {
+    // Reload after the user recovers via the global unavailable-indexer popup.
+    let lastRecovery = this.indexer.recoveryTick();
+    effect(() => {
+      const tick = this.indexer.recoveryTick();
+      if (tick === lastRecovery) return;
+      lastRecovery = tick;
+      untracked(() => { void this.retryLoadProjects(); });
+    });
     // IntersectionObserver only reports crossings, not completion of a fetch.
     // Recheck after each batch so a visible sentinel cannot strand a short grid.
     effect((onCleanup) => {
