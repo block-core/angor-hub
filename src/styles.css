@@ -1,3 +1,5 @@
+@import './typography.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,7 +12,7 @@
   --accent-dark: #4d9a6a;       /* hover */
   --text: #fafafa;
   --text-secondary: #a3a3a3;
-  --surface-card: #1a1a1a;      /* cards lift off the near-black ground */
+  --surface-card: #101010;      /* shared near-black container surface */
   --surface-ground: #0a0a0a;
   --surface-hover: #2a2a2a;
   --border: #2a2a2a;
@@ -45,7 +47,7 @@ html[data-theme="light"] {
 body {
   background-color: var(--background); 
   color: var(--text); 
-  font-family: 'Inter', sans-serif; 
+  font-family: var(--font-interface, 'Inter', sans-serif);
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
@@ -248,11 +250,11 @@ html[data-theme="light"] .custom-modal-border {
      device instead of shrinking on smaller viewports. Tweak --pattern-size. */
   -webkit-mask-size: var(--pattern-size) var(--pattern-size);
   mask-size: var(--pattern-size) var(--pattern-size);
-  opacity: 0.25;           /* dark (default): green mark on near-black */
+  opacity: 0.1;            /* dark: subtle texture behind content */
   pointer-events: none;
   z-index: -1;
 }
 /* Light mode has plenty of contrast already — keep it subtle */
 html[data-theme="light"] .pattern-overlay::before {
-  opacity: 0.2;
+  opacity: 0.07;
 }

@@ -19,7 +19,8 @@ interface ProjectItem {
   selector: 'app-admin',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
-  templateUrl: './admin.component.html'
+  templateUrl: './admin.component.html',
+  styleUrl: './admin.component.css'
 })
 export class AdminComponent implements OnInit {
   isLoggedIn = signal<boolean>(false);
@@ -43,7 +44,7 @@ export class AdminComponent implements OnInit {
   // Authorization: true only if logged-in pubkey is in the hub's admin pubkeys
   isAuthorizedAdmin = signal<boolean>(false);
 
-  // Deny list (private - kind 10000)
+  // Deny list (public project keys - kind 30000)
   deniedProjects = signal<ProjectItem[]>([]);
   newProjectId = signal<string>('');
   searchQuery = signal<string>('');
@@ -59,7 +60,7 @@ export class AdminComponent implements OnInit {
   );
 
   // Relay connection status
-  relayStatus = signal<{ url: string; connected: boolean }[]>([]);
+  relayStatus = signal<{ url: string }[]>([]);
   showRelayStatus = signal<boolean>(false);
 
   filteredProjects = computed(() => {
@@ -82,11 +83,11 @@ export class AdminComponent implements OnInit {
 
   public hubConfig = inject(HubConfigService);
 
-  constructor(
-    private nostrListService: NostrListService,
-    private relayService: RelayService,
-    public nostrAuth: NostrAuthService
-  ) {
+  private nostrListService = inject(NostrListService);
+  private relayService = inject(RelayService);
+  public nostrAuth = inject(NostrAuthService);
+
+  constructor() {
     // Watch for auth changes
     effect(() => {
       const user = this.nostrAuth.currentUser();
@@ -142,7 +143,7 @@ export class AdminComponent implements OnInit {
 
   async updateRelayStatus() {
     const relayUrls = this.relayService.getRelayUrls();
-    this.relayStatus.set(relayUrls.map(url => ({ url, connected: true })));
+    this.relayStatus.set(relayUrls.map(url => ({ url })));
   }
 
   toggleRelayStatus() {
@@ -186,6 +187,7 @@ export class AdminComponent implements OnInit {
     } catch (err: any) {
       this.error.set(err.message || 'Failed to login');
       console.error('[Admin] Login error:', err);
+    } finally {
       this.loading.set(false);
     }
   }
@@ -270,7 +272,7 @@ export class AdminComponent implements OnInit {
   }
 
   async addProject() {
-    if (!this.requireAuthorization()) return;
+    if (this.loading() || !this.requireAuthorization()) return;
 
     const nostrPubKey = this.resolveToHexPubkey(this.newProjectId());
 
@@ -308,7 +310,7 @@ export class AdminComponent implements OnInit {
   }
 
   async removeProject(projectId: string) {
-    if (!this.requireAuthorization()) return;
+    if (this.loading() || !this.requireAuthorization()) return;
 
     if (!confirm(`Are you sure you want to remove project ${projectId} from the list?`)) {
       return;
@@ -365,7 +367,7 @@ export class AdminComponent implements OnInit {
   }
 
   async addFeaturedProject() {
-    if (!this.requireAuthorization()) return;
+    if (this.loading() || !this.requireAuthorization()) return;
 
     const nostrPubKey = this.resolveToHexPubkey(this.newFeaturedId());
 
@@ -403,7 +405,7 @@ export class AdminComponent implements OnInit {
   }
 
   async removeFeaturedProject(projectId: string) {
-    if (!this.requireAuthorization()) return;
+    if (this.loading() || !this.requireAuthorization()) return;
 
     if (!confirm(`Are you sure you want to remove project ${projectId} from the featured list?`)) {
       return;
@@ -456,11 +458,14 @@ export class AdminComponent implements OnInit {
 
   // ==================== UTILITY METHODS ====================
 
-  copyToClipboard(text: string) {
-    navigator.clipboard.writeText(text).then(() => {
+  async copyToClipboard(text: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
       this.success.set('Copied to clipboard');
       setTimeout(() => this.success.set(null), 2000);
-    });
+    } catch {
+      this.error.set('Could not copy the public key. Select the key and copy it manually.');
+    }
   }
 
   formatPubkey(pubkey: string): string {

@@ -1,3 +1,4 @@
+import { StatPlaceholderComponent } from '../../components/stat-placeholder.component';
 import { Component, OnInit, OnDestroy, inject, signal, computed, effect } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
@@ -21,6 +22,7 @@ import {
 import { AgoPipe } from '../../pipes/ago.pipe';
 import { ImagePopupComponent } from '../../components/image-popup.component';
 import { NetworkService } from '../../services/network.service';
+import { PaymentNavigationService } from '../../services/payment-navigation.service';
 import { ExternalIdentity, FaqItem } from '../../models/models';
 import { UtilsService } from '../../services/utils.service';
 import { ProfileComponent } from '../../components/profile.component';
@@ -39,6 +41,7 @@ import { InvestorService, InvestmentInfo, OnChainProjectStats } from '../../serv
   selector: 'app-project',
   standalone: true,  
   imports: [
+    StatPlaceholderComponent,
     RouterModule,
     CommonModule,
     BreadcrumbComponent,
@@ -200,6 +203,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
   private relay = inject(RelayService);
   private subscriptions: { unsubscribe: () => void }[] = [];
   public networkService = inject(NetworkService);
+  private paymentNavigation = inject(PaymentNavigationService);
   public utils = inject(UtilsService);
   public bitcoin = inject(BitcoinUtilsService);
   public title = inject(TitleService);
@@ -285,22 +289,21 @@ export class ProjectComponent implements OnInit, OnDestroy {
         this.project()?.details
       );
 
-      if (stats) {
-        this.onChainStats.set(stats);
+      if (!stats) throw new Error('Investment values unavailable');
+      this.onChainStats.set(stats);
 
-        // Update the project's stats with on-chain data
-        const project = this.project();
-        if (project) {
-          project.stats = {
-            investorCount: stats.investorCount,
-            amountInvested: stats.amountInvested,
-            amountSpentSoFarByFounder: stats.amountSpentSoFarByFounder,
-            amountInPenalties: stats.amountInPenalties,
-            countInPenalties: stats.countInPenalties,
-          };
-          // Trigger reactivity
-          this.project.set({ ...project });
-        }
+      // Update the project's stats with on-chain data
+      const project = this.project();
+      if (project) {
+        project.stats = {
+          investorCount: stats.investorCount,
+          amountInvested: stats.amountInvested,
+          amountSpentSoFarByFounder: stats.amountSpentSoFarByFounder,
+          amountInPenalties: stats.amountInPenalties,
+          countInPenalties: stats.countInPenalties,
+        };
+        // Trigger reactivity
+        this.project.set({ ...project });
       }
     } catch (err) {
       console.error('[ProjectComponent] Error loading on-chain stats:', err);
@@ -973,8 +976,7 @@ export class ProjectComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Open the in-app invest flow (app.angor.io remains available as an option within the flow)
-    this.router.navigate(['/project', projectId, 'invest']);
+    this.paymentNavigation.open(projectId);
   }
 
   getWithdrawnPercentage(): number {
@@ -1445,13 +1447,13 @@ export class ProjectComponent implements OnInit, OnDestroy {
   getSpentPercentage(): number {
     const spent = this.project()?.stats?.amountSpentSoFarByFounder ?? 0;
     const invested = this.project()?.stats?.amountInvested ?? 1;
-    return Math.min(100, Number(((spent / invested) * 100).toFixed(1)));
+    return invested > 0 ? Math.min(100, Number(((spent / invested) * 100).toFixed(1))) : 0;
   }
 
   getPenaltiesPercentage(): number {
     const penalties = this.project()?.stats?.amountInPenalties ?? 0;
     const invested = this.project()?.stats?.amountInvested ?? 1;
-    return Math.min(100, Number(((penalties / invested) * 100).toFixed(1)));
+    return invested > 0 ? Math.min(100, Number(((penalties / invested) * 100).toFixed(1))) : 0;
   }
 
   getWebsiteUrl(website: string | undefined): string {

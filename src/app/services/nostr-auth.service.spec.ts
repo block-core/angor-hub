@@ -61,12 +61,14 @@ describe('NostrAuthService (persistence)', () => {
     const service = TestBed.inject(NostrAuthService);
 
     (service as any).user.set({ pubkey: 'pk3', npub: 'npub3' });
+    TestBed.tick();
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}')).toEqual({
       pubkey: 'pk3',
       npub: 'npub3',
     });
 
     (service as any).user.set(null);
+    TestBed.tick();
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 

@@ -278,8 +278,12 @@
             </div>
             <h3 class="text-xl font-bold text-text mb-3">Investment Period Closed</h3>
             <p class="text-sm text-text-secondary leading-relaxed">
-              Raised {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }} of
-              {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ unit }} goal ({{ getFundingPercentage() }}% funded)
+              @if (project()?.stats) {
+                Raised {{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }} of
+                {{ bitcoin.toBTC(project()?.details?.targetAmount ?? 0) }} {{ unit }} goal ({{ getFundingPercentage() }}% funded)
+              } @else {
+                <app-stat-placeholder [failed]="!!onChainStatsError()" />
+              }
             </p>
           </div>
         } @else {
@@ -338,11 +342,15 @@
             <div class="flex items-center justify-between mb-3">
               <span class="font-semibold text-text">Funding Progress</span>
               @if (hasTarget()) {
-                <span class="font-bold text-accent">{{ getFundingPercentage() }}%</span>
+                @if (project()?.stats) {
+                  <span class="font-bold text-accent">{{ getFundingPercentage() }}%</span>
+                } @else {
+                  <app-stat-placeholder [failed]="!!onChainStatsError()" />
+                }
               }
             </div>
             @if (hasTarget()) {
-              <div class="relative w-full h-3 bg-surface-hover rounded-full overflow-hidden">
+              <div class="relative w-full h-3 bg-surface-hover rounded-full overflow-hidden" [class.motion-safe:animate-pulse]="!project()?.stats && !onChainStatsError()">
                 <div
                   class="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
                   [class.bg-red-500]="isProjectFailed()"
@@ -383,14 +391,26 @@
                   <span class="stat-label">{{ statRaisedLabel() }}</span>
                   <span class="material-icons stat-icon text-lg">trending_up</span>
                 </div>
-                <div class="stat-value text-2xl">{{ bitcoin.toBTC(project()?.stats?.amountInvested ?? 0) }} {{ unit }}</div>
+                <div class="stat-value text-2xl">
+                  @if (project()?.stats; as stats) {
+                    {{ bitcoin.toBTC(stats.amountInvested) }} {{ unit }}
+                  } @else {
+                    <app-stat-placeholder [failed]="!!onChainStatsError()" />
+                  }
+                </div>
               </div>
               <div class="stat-card">
                 <div class="stat-header">
                   <span class="stat-label">{{ statParticipantsLabel() }}</span>
                   <span class="material-icons stat-icon text-lg">group</span>
                 </div>
-                <div class="stat-value text-2xl">{{ project()?.stats?.investorCount || 0 }}</div>
+                <div class="stat-value text-2xl">
+                  @if (project()?.stats; as stats) {
+                    {{ stats.investorCount }}
+                  } @else {
+                    <app-stat-placeholder [failed]="!!onChainStatsError()" />
+                  }
+                </div>
               </div>
             </div>
           </div>
@@ -663,12 +683,20 @@
               <div class="flex-1">
                 <div class="text-sm text-text-secondary">Founder Spent</div>
                 <div class="text-lg font-bold text-text">
-                  {{ bitcoin.toBTC(project()?.stats?.amountSpentSoFarByFounder ?? 0) }}
+                  @if (onChainStats(); as stats) {
+                    {{ bitcoin.toBTC(stats.amountSpentSoFarByFounder) }}
+                  } @else {
+                    <app-stat-placeholder [failed]="!!onChainStatsError()" />
+                  }
                   <span class="text-xs font-normal text-text-secondary">{{ unit }}</span>
                 </div>
               </div>
               <div class="px-3 py-1 rounded-full bg-orange-500/10 text-orange-600 text-sm font-bold">
-                {{ getSpentPercentage() }}%
+                @if (onChainStats()) {
+                  {{ getSpentPercentage() }}%
+                } @else {
+                  <app-stat-placeholder [failed]="!!onChainStatsError()" />
+                }
               </div>
             </div>
             <div class="relative w-full h-2 bg-surface-hover rounded-full overflow-hidden">
@@ -685,12 +713,20 @@
               <div class="flex-1">
                 <div class="text-sm text-text-secondary">Withdrawals</div>
                 <div class="text-lg font-bold text-text">
-                  {{ bitcoin.toBTC(project()?.stats?.amountInPenalties ?? 0) }}
+                  @if (onChainStats(); as stats) {
+                    {{ bitcoin.toBTC(stats.amountInPenalties) }}
+                  } @else {
+                    <app-stat-placeholder [failed]="!!onChainStatsError()" />
+                  }
                   <span class="text-xs font-normal text-text-secondary">{{ unit }}</span>
                 </div>
               </div>
               <div class="px-3 py-1 rounded-full bg-red-500/10 text-red-600 text-sm font-bold">
-                {{ project()?.stats?.countInPenalties || 0 }}
+                @if (onChainStats(); as stats) {
+                  {{ stats.countInPenalties }}
+                } @else {
+                  <app-stat-placeholder [failed]="!!onChainStatsError()" />
+                }
               </div>
             </div>
             <div class="relative w-full h-2 bg-surface-hover rounded-full overflow-hidden">
@@ -960,7 +996,7 @@
   <app-indexer-error
     [visible]="!!indexer.error()"
     [errorDetails]="indexer.error()"
-    (onRetry)="retryLoadProject()"
-    (onDismiss)="indexer.error.set(null)"
+    (retryEvent)="retryLoadProject()"
+    (dismissEvent)="indexer.error.set(null)"
   ></app-indexer-error>
 }

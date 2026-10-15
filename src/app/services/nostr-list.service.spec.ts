@@ -20,6 +20,7 @@ describe('NostrListService (auth wiring)', () => {
     const auth = createAuthStub(null);
 
     TestBed.configureTestingModule({
+      teardown: { destroyAfterEach: true },
       providers: [
         NostrListService,
         { provide: RelayService, useValue: {} },
@@ -31,6 +32,7 @@ describe('NostrListService (auth wiring)', () => {
     expect(service.isLoggedIn()).toBeFalse();
 
     auth.__setUser({ pubkey: 'pk1', npub: 'npub1' });
+    TestBed.tick();
     expect(service.isLoggedIn()).toBeTrue();
     expect(service.getAdminPubkey()).toBe('pk1');
   });
@@ -39,6 +41,7 @@ describe('NostrListService (auth wiring)', () => {
     const auth = createAuthStub({ pubkey: 'pk2', npub: 'npub2' });
 
     TestBed.configureTestingModule({
+      teardown: { destroyAfterEach: true },
       providers: [
         NostrListService,
         { provide: RelayService, useValue: {} },

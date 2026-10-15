@@ -11,6 +11,8 @@ interface BreadcrumbItem {
   selector: 'app-breadcrumb',
   standalone: true,
   imports: [CommonModule, RouterLink],
+  // Breadcrumbs are temporarily hidden app-wide; remove this style to restore them.
+  styles: [':host { display: none; }'],
   template: `
     <nav aria-label="breadcrumb" class="w-full overflow-hidden whitespace-nowrap text-sm">
       <ol class="inline-flex flex-nowrap items-center p-3 rounded-lg bg-surface-card/50 dark:bg-surface-card/70 backdrop-blur-sm">
