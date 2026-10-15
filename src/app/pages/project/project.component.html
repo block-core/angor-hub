@@ -991,12 +991,4 @@
       (onClose)="showShareModal.set(false)"
     ></app-share-modal>
   }
-
-  <!-- Indexer Error Modal -->
-  <app-indexer-error
-    [visible]="!!indexer.error()"
-    [errorDetails]="indexer.error()"
-    (retryEvent)="retryLoadProject()"
-    (dismissEvent)="indexer.error.set(null)"
-  ></app-indexer-error>
 }
