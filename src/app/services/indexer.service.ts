@@ -198,6 +198,7 @@ export class IndexerService {
     ],
     testnet: [
       { url: 'https://test.indexer.angor.io/', isPrimary: true },
+      { url: 'https://test2.indexer.angor.io/', isPrimary: false },
       { url: 'https://signet.angor.online/', isPrimary: false },
       { url: 'https://signet2.angor.online/', isPrimary: false }
     ]
@@ -308,6 +309,7 @@ export class IndexerService {
       ],
       testnet: [
         { url: 'https://test.indexer.angor.io/', isPrimary: true },
+        { url: 'https://test2.indexer.angor.io/', isPrimary: false },
         { url: 'https://signet.angor.online/', isPrimary: false },
         { url: 'https://signet2.angor.online/', isPrimary: false }
       ]
