@@ -192,6 +192,7 @@ export class IndexerService {
   public indexers = signal<IndexerConfig>({
     mainnet: [
       { url: 'https://indexer.angor.io/', isPrimary: true },
+      { url: 'https://indexer2.angor.io/', isPrimary: false },
       { url: 'https://fulcrum.angor.online/', isPrimary: false },
       { url: 'https://electrs.angor.online/', isPrimary: false },
       { url: 'https://cyphermunkhouse.angor.online/', isPrimary: false }
@@ -303,6 +304,7 @@ export class IndexerService {
     return {
       mainnet: [
         { url: 'https://indexer.angor.io/', isPrimary: true },
+        { url: 'https://indexer2.angor.io/', isPrimary: false },
         { url: 'https://fulcrum.angor.online/', isPrimary: false },
         { url: 'https://electrs.angor.online/', isPrimary: false },
         { url: 'https://cyphermunkhouse.angor.online/', isPrimary: false }
