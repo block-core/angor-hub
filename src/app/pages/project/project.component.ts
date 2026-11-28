@@ -1,5 +1,5 @@
 import { StatPlaceholderComponent } from '../../components/stat-placeholder.component';
-import { Component, OnInit, OnDestroy, inject, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, effect, untracked } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
   IndexedProject,
@@ -7,7 +7,6 @@ import {
 } from '../../services/indexer.service';
 import { CommonModule } from '@angular/common';
 import { BreadcrumbComponent } from '../../components/breadcrumb.component';
-import { IndexerErrorComponent } from '../../components/indexer-error.component';
 import {
   ProjectUpdate,
   RelayService,
@@ -45,7 +44,6 @@ import { InvestorService, InvestmentInfo, OnChainProjectStats } from '../../serv
     RouterModule,
     CommonModule,
     BreadcrumbComponent,
-    IndexerErrorComponent,
     AgoPipe,
     RouterModule,
     ImagePopupComponent,
@@ -217,6 +215,14 @@ export class ProjectComponent implements OnInit, OnDestroy {
   onChainStatsError = signal<string | null>(null);
 
   constructor() {
+    // Reload after the user recovers via the global unavailable-indexer popup.
+    let lastRecovery = this.indexer.recoveryTick();
+    effect(() => {
+      const tick = this.indexer.recoveryTick();
+      if (tick === lastRecovery) return;
+      lastRecovery = tick;
+      untracked(() => { void this.retryLoadProject(); });
+    });
     // Update meta tags when project data changes
     effect(() => {
       const project = this.project();

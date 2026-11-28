@@ -182,16 +182,25 @@ export class IndexerService {
   // uses this signal to gate pagination and display its retry dialog.
   public discoveryError = signal<string | null>(null);
   private network = inject(NetworkService);
+  private readonly REQUEST_TIMEOUT_MS = 10000;
+  // Incremented when the user switches/retries from the unavailable-indexer popup
+  // so active pages can reload their data without a manual refresh.
+  public recoveryTick = signal<number>(0);
+  // Indexer URL for which the user dismissed the popup (prevents re-spamming).
+  private dismissedIndexerUrl: string | null = null;
 
   public indexers = signal<IndexerConfig>({
     mainnet: [
       { url: 'https://indexer.angor.io/', isPrimary: true },
       { url: 'https://fulcrum.angor.online/', isPrimary: false },
-      { url: 'https://electrs.angor.online/', isPrimary: false }
+      { url: 'https://electrs.angor.online/', isPrimary: false },
+      { url: 'https://cyphermunkhouse.angor.online/', isPrimary: false }
     ],
     testnet: [
+      { url: 'https://test.indexer.angor.io/', isPrimary: true },
+      { url: 'https://test2.indexer.angor.io/', isPrimary: false },
       { url: 'https://signet.angor.online/', isPrimary: false },
-      { url: 'https://test.indexer.angor.io/', isPrimary: true }
+      { url: 'https://signet2.angor.online/', isPrimary: false }
     ]
   });
 
@@ -295,11 +304,14 @@ export class IndexerService {
       mainnet: [
         { url: 'https://indexer.angor.io/', isPrimary: true },
         { url: 'https://fulcrum.angor.online/', isPrimary: false },
-        { url: 'https://electrs.angor.online/', isPrimary: false }
+        { url: 'https://electrs.angor.online/', isPrimary: false },
+        { url: 'https://cyphermunkhouse.angor.online/', isPrimary: false }
       ],
       testnet: [
+        { url: 'https://test.indexer.angor.io/', isPrimary: true },
+        { url: 'https://test2.indexer.angor.io/', isPrimary: false },
         { url: 'https://signet.angor.online/', isPrimary: false },
-        { url: 'https://test.indexer.angor.io/', isPrimary: true }
+        { url: 'https://signet2.angor.online/', isPrimary: false }
       ]
     };
   }
@@ -328,7 +340,9 @@ export class IndexerService {
 
   updateActiveIndexer(): void {
     const isMain = this.network.isMain();
-    this.indexerUrl = this.getPrimaryIndexerUrl(isMain);
+    const newUrl = this.getPrimaryIndexerUrl(isMain);
+    if (newUrl !== this.indexerUrl) this.dismissedIndexerUrl = null;
+    this.indexerUrl = newUrl;
     this.resetProjects();
   }
 
@@ -419,7 +433,23 @@ export class IndexerService {
     return false;
   }
 
+  /** Dismisses the popup; it will not reappear for the current indexer. */
+  dismissIndexerError(): void {
+    this.dismissedIndexerUrl = this.indexerUrl;
+    this.error.set(null);
+    this.discoveryError.set(null);
+  }
+
+  /** Clears errors and signals pages to reload using the (possibly new) indexer. */
+  requestRecovery(): void {
+    this.dismissedIndexerUrl = null;
+    this.error.set(null);
+    this.discoveryError.set(null);
+    this.recoveryTick.update(n => n + 1);
+  }
+
   async setErrorWithRetry(errorMsg: string, retryCount = 1, delayMs = 1000): Promise<void> {
+    if (this.dismissedIndexerUrl === this.indexerUrl) return;
     const isMainnet = this.network.isMain();
     const config = this.getIndexerConfig();
     const indexers = isMainnet ? config.mainnet : config.testnet;
@@ -453,7 +483,7 @@ export class IndexerService {
   private async fetchJson<T>(
     url: string
   ): Promise<{ data: T; headers: Headers }> {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(this.REQUEST_TIMEOUT_MS) });
     if (!response.ok) {
       const err = new Error(`HTTP error! status: ${response.status}`);
       (err as any).status = response.status;
@@ -1015,7 +1045,9 @@ export class IndexerService {
 
     } catch (err) {
       if (generation !== this.discoveryGeneration) return;
-      this.discoveryError.set(err instanceof Error ? err.message : 'Failed to fetch projects');
+      if (this.dismissedIndexerUrl !== this.indexerUrl) {
+        this.discoveryError.set(err instanceof Error ? err.message : 'Failed to fetch projects');
+      }
       console.error(err);
     } finally {
       if (generation === this.discoveryGeneration) this.loading.set(false);
