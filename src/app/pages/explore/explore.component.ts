@@ -163,6 +163,13 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   showSortDropdown = false;
   showMobileFilters = false;
 
+  // On a narrow filter the sentinel can stay in the viewport across every
+  // page, so the effect below would otherwise drain all remaining pages in
+  // one uninterrupted burst. Cap consecutive auto-triggers and require a
+  // fresh user scroll (IntersectionObserver re-entry) before resuming.
+  private static readonly MAX_CONSECUTIVE_AUTO_LOADS = 3;
+  private consecutiveAutoLoads = 0;
+
   constructor() {
     // Reload after the user recovers via the global unavailable-indexer popup.
     let lastRecovery = this.indexer.recoveryTick();
@@ -176,12 +183,14 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     // Recheck after each batch so a visible sentinel cannot strand a short grid.
     effect((onCleanup) => {
       const ready = this.initialLoadComplete() && !this.indexer.loading()
-        && !this.indexer.discoveryError() && !this.indexer.isComplete();
+        && !this.indexer.discoveryError() && !this.indexer.isComplete()
+        && this.consecutiveAutoLoads < ExploreComponent.MAX_CONSECUTIVE_AUTO_LOADS;
       this.filteredProjects();
       if (!ready) return;
       const frame = requestAnimationFrame(() => {
         const target = this.document.querySelector('.scroll-trigger');
         if (target && target.getBoundingClientRect().top <= window.innerHeight + 200) {
+          this.consecutiveAutoLoads++;
           void this.loadMore();
         }
       });
@@ -194,6 +203,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
       distinctUntilChanged()
     ).subscribe((term) => {
       this.searchTerm.set(term);
+      this.consecutiveAutoLoads = 0;
 
       // Auto-trigger project lookup when a project ID is pasted/typed
       if (term.trim().startsWith('angor1')) {
@@ -382,6 +392,8 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     this.scrollTriggerObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting && !this.indexer.loading() && !this.indexer.isComplete()) {
+          // Real user scroll (not the effect's own recheck) — resume auto-loading.
+          this.consecutiveAutoLoads = 0;
           this.loadMore();
         }
       });
@@ -552,6 +564,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
   setFilter(filter: FilterType): void {
     this.activeFilter.set(filter);
     this.showFilterDropdown = false;
+    this.consecutiveAutoLoads = 0;
   }
 
   setSort(sort: SortType): void {
@@ -566,6 +579,7 @@ export class ExploreComponent implements OnInit, AfterViewInit, OnDestroy {
     this.showFilterDropdown = false;
     this.showSortDropdown = false;
     this.showMobileFilters = false;
+    this.consecutiveAutoLoads = 0;
   }
 
   toggleFilterDropdown(event: Event): void {

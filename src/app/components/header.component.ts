@@ -1,8 +1,9 @@
-import { Component, OnInit, inject, signal, effect, HostListener, Renderer2, OnDestroy, isDevMode } from '@angular/core';
+import { Component, OnInit, inject, signal, effect, HostListener, Renderer2, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AppLauncherComponent } from './app-launcher.component';
 import { NetworkService } from '../services/network.service';
+import { environment } from '../../environment';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { ThemeService } from '../services/theme.service';
 
@@ -264,9 +265,7 @@ import { ThemeService } from '../services/theme.service';
   `,
 })
 export class HeaderComponent implements OnInit, OnDestroy {
-  readonly profileUrl = isDevMode()
-    ? 'http://localhost:4201/'
-    : 'https://profile.angor.io/angor-profile/';
+  readonly profileUrl = environment.profileUrl;
   public networkService = inject(NetworkService);
   public themeService = inject(ThemeService);
   private renderer = inject(Renderer2);
